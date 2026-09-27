@@ -1,10 +1,10 @@
-# Phát hành Android
+# Android releases
 
-## Điều kiện phát hành
+## Release conditions
 
-1. `main` sạch, đã qua review và tất cả GitHub Actions xanh.
-2. Cập nhật `version:` trong `pubspec.yaml` theo `MAJOR.MINOR.PATCH+BUILD` và merge PR này vào `main`.
-3. Tạo tag đúng ba phần đầu của version, chẳng hạn version `1.2.0+15` dùng tag `v1.2.0`.
+1. `main` is clean, reviewed, and all required GitHub Actions checks pass.
+2. Update `version:` in `pubspec.yaml` using `MAJOR.MINOR.PATCH+BUILD`, then merge that pull request into `main`.
+3. Create a tag matching the first three parts of the version. For example, version `1.2.0+15` uses tag `v1.2.0`.
 
 ```bash
 git switch main
@@ -13,17 +13,17 @@ git tag -a v1.2.0 -m "Release v1.2.0"
 git push origin v1.2.0
 ```
 
-Push tag sẽ khởi chạy workflow **Release Android**. Workflow kiểm tra tag/version, build APK release, lưu artifact và tạo GitHub Release kèm file APK.
+Pushing the tag starts the `Release Android` workflow. It validates the tag and version, builds the release APK, uploads an artifact, and creates a GitHub Release with the APK attached.
 
-## Chữ ký để đưa lên Google Play
+## Google Play signing
 
-APK hiện được tạo từ cấu hình Android của repository. Trước khi đưa bản đầu tiên lên Google Play, tạo upload keystore và lưu các giá trị vào GitHub Secrets; tuyệt đối không commit keystore hoặc mật khẩu.
+The repository does not yet contain the signing configuration or Play Console service account needed to publish to Google Play. Never commit a keystore or its password.
 
-| Secret | Nội dung |
+Before the first Play Store release, add the following GitHub Secrets and update the Android release configuration to consume them only in CI:
+
+| Secret | Value |
 | --- | --- |
-| `ANDROID_KEYSTORE_BASE64` | File upload keystore đã mã hóa Base64 |
-| `ANDROID_KEY_ALIAS` | Alias của key |
-| `ANDROID_KEY_PASSWORD` | Mật khẩu key |
-| `ANDROID_STORE_PASSWORD` | Mật khẩu keystore |
-
-Sau đó cập nhật cấu hình Android để chỉ dùng secrets trong workflow phát hành. Việc xuất bản Play Store cần một bước riêng vì hiện repository chưa có Play Console service account hay cấu hình ký.
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded upload keystore |
+| `ANDROID_KEY_ALIAS` | Key alias |
+| `ANDROID_KEY_PASSWORD` | Key password |
+| `ANDROID_STORE_PASSWORD` | Keystore password |

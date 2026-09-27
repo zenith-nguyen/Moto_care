@@ -1,24 +1,24 @@
-## Mục tiêu
+## Goal
 
-<!-- Vấn đề nào được giải quyết? -->
+<!-- Which problem does this pull request solve? -->
 
-## Phạm vi thay đổi
+## Scope of changes
 
-- <!-- Liệt kê các thay đổi chính. -->
+- <!-- List the main changes. -->
 
-## Kiểm tra đã thực hiện
+## Validation completed
 
 - [ ] `dart format --output=none --set-exit-if-changed lib test`
 - [ ] `flutter analyze`
 - [ ] `flutter test`
-- [ ] Đã kiểm tra thủ công nếu thay đổi UI hoặc luồng người dùng
+- [ ] Manually tested if the UI or a user flow changed
 
-## Ảnh chụp màn hình
+## Screenshots
 
-<!-- Bắt buộc nếu thay đổi giao diện; nếu không áp dụng, ghi N/A. -->
+<!-- Required for UI changes. Write N/A when not applicable. -->
 
-## Danh sách xác nhận
+## Checklist
 
-- [ ] Branch nguồn và branch đích tuân thủ `CONTRIBUTING.md`.
-- [ ] Không có secrets, keystore, tệp build hay thay đổi ngoài phạm vi.
-- [ ] Đã cập nhật test/tài liệu khi phù hợp.
+- [ ] Source and target branches follow `docs/CONTRIBUTING.md`.
+- [ ] No secrets, keystores, build output, or out-of-scope changes are included.
+- [ ] Tests and documentation are updated where appropriate.

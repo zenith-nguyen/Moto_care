@@ -1,14 +1,14 @@
-# Hướng dẫn nhánh Cẩm Thư
+# Cam Thu branch guide
 
-Nhánh tích hợp là `cam-thu`. Mọi task của Cẩm Thư bắt đầu từ nhánh này và quay về nhánh này bằng PR.
+Cam Thu's integration branch is `cam-thu`. Every Cam Thu task starts from this branch and returns to it through a pull request.
 
 ```bash
 git switch cam-thu
 git pull origin cam-thu
-git switch -c feat/cam-thu/<mo-ta>
+git switch -c feat/cam-thu/<description>
 ```
 
-- Chỉ dùng prefix có owner `cam-thu`: `feat/cam-thu/*`, `fix/cam-thu/*`, `docs/cam-thu/*`, `refactor/cam-thu/*`, `test/cam-thu/*`, hoặc `chore/cam-thu/*`.
-- Base branch của PR là `cam-thu`.
-- Đọc `AGENTS.md` trước khi dùng AI và điền đủ `.github/PULL_REQUEST_TEMPLATE.md`.
-- Sau khi PR đã merge, xóa nhánh công việc và đồng bộ lại `cam-thu` trước task tiếp theo.
+- Use only `cam-thu` task-branch names: `feat/cam-thu/*`, `fix/cam-thu/*`, `docs/cam-thu/*`, `refactor/cam-thu/*`, `test/cam-thu/*`, or `chore/cam-thu/*`.
+- Set the pull request base branch to `cam-thu`.
+- Before using an AI, read [`AI_GUIDE.md`](../AI_GUIDE.md) and [`WORKFLOW.md`](../WORKFLOW.md). Complete `.github/PULL_REQUEST_TEMPLATE.md`.
+- Do not delete a task branch automatically after merging. Delete it manually only when Cam Thu and the repository owner agree that the task is complete.
