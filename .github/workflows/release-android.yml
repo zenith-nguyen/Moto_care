@@ -1,0 +1,73 @@
+name: Release Android
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          pub-cache: true
+
+      - name: Validate tag matches pubspec version
+        shell: bash
+        run: |
+          app_version="$(awk '/^version:/ { print $2; exit }' pubspec.yaml)"
+          app_release_version="${app_version%%+*}"
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [[ "$tag_version" != "$app_release_version" ]]; then
+            echo "Tag $GITHUB_REF_NAME does not match pubspec version $app_version."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run validation
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Build Android release APK
+        run: flutter build apk --release
+
+      - name: Prepare release asset
+        run: |
+          mkdir -p release
+          cp build/app/outputs/flutter-apk/app-release.apk "release/MotoCare-${GITHUB_REF_NAME}.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MotoCare-${{ github.ref_name }}-apk
+          path: release/MotoCare-${{ github.ref_name }}.apk
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: release/MotoCare-${{ github.ref_name }}.apk

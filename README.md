@@ -1,17 +1,26 @@
-# mobilecare_1
+# Moto Care
 
-A new Flutter project.
+Ứng dụng Flutter cho Moto Care.
 
-## Getting Started
+## Cách làm việc
 
-This project is a starting point for a Flutter application.
+Mã nguồn được quản lý qua Pull Request (PR). Không push trực tiếp lên các nhánh tích hợp.
 
-A few resources to get you started if this is your first Flutter project:
+- [`main`](docs/WORKFLOW.md): bản ổn định và nguồn duy nhất để phát hành.
+- [`cam-thu`](docs/branches/cam-thu.md): nhánh tích hợp công việc của Cẩm Thư.
+- [`thanh-vy`](docs/branches/thanh-vy.md): nhánh tích hợp công việc của Thanh Vy.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Đọc [quy trình cộng tác](CONTRIBUTING.md) trước khi bắt đầu. Nếu dùng AI để hỗ trợ code, hãy đọc [hướng dẫn cho AI](AGENTS.md) và hướng dẫn theo nhánh đang làm.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Kiểm tra tự động và phát hành
+
+GitHub Actions sẽ chạy format check, phân tích tĩnh, unit test và build Android cho mỗi PR và mỗi lần cập nhật các nhánh tích hợp. Khi tạo tag theo mẫu `vMAJOR.MINOR.PATCH`, workflow phát hành sẽ tạo APK release và GitHub Release.
+
+Chi tiết: [quy trình nhánh](docs/WORKFLOW.md) và [quy trình phát hành](docs/RELEASES.md).
+
+## Chạy ở máy cá nhân
+
+```bash
+flutter pub get
+flutter run
+```
