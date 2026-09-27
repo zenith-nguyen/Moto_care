@@ -4,7 +4,7 @@
 
 ## Phạm vi thay đổi
 
-- 
+- <!-- Liệt kê các thay đổi chính. -->
 
 ## Kiểm tra đã thực hiện
 
