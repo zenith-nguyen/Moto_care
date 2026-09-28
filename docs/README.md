@@ -15,6 +15,7 @@ This folder is the single source of truth for technical guides, collaboration ru
 
 - [`AI_GUIDE.md`](AI_GUIDE.md): mandatory rules for coding agents.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): branches, commits, and pull requests.
+- [`DEPENDENCIES.md`](DEPENDENCIES.md): approved dependencies and usage boundaries.
 - [`WORKFLOW.md`](WORKFLOW.md): branch protection, CI/CD, and versioning.
 - [`RELEASES.md`](RELEASES.md): Android release procedure.
 - [`branches/cam-thu.md`](branches/cam-thu.md): Cam Thu's branch guide.

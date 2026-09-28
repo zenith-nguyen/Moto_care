@@ -1,6 +1,6 @@
 # AI coding guide
 
-This guide is mandatory for every coding agent before it proposes or changes Moto Care source code. Read [the workflow](WORKFLOW.md) and the relevant contributor guide before starting.
+This guide is mandatory for every coding agent before it proposes or changes Moto Care source code. Read [the workflow](WORKFLOW.md), [dependency guide](DEPENDENCIES.md), and the relevant contributor guide before starting.
 
 ## Mandatory rules
 
