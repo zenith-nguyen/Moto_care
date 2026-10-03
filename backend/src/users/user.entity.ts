@@ -10,10 +10,10 @@ export class User {
   @Column({ length: 100 })
   name!: string;
 
-  @Column({ length: 255, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 255, unique: true, nullable: true })
   email!: string | null;
 
-  @Column({ length: 20, unique: true, nullable: true })
+  @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   phone!: string | null;
 
   @Column({ name: 'password_hash', select: false })
