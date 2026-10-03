@@ -8,6 +8,7 @@ This is the authoritative workflow document for every branch. Coding agents must
 flowchart LR
   F1[feat/cam-thu/*] --> CT[cam-thu]
   F2[feat/thanh-vy/*] --> TV[thanh-vy]
+  F3[feat/zenith/*] --> M[main]
   CT -->|reviewed PR| M[main]
   TV -->|reviewed PR| M
   M -->|tag vX.Y.Z| R[GitHub Release and APK]
@@ -25,7 +26,7 @@ The following GitHub rules apply to `main`, `cam-thu`, and `thanh-vy`:
 - All review conversations must be resolved and history must stay linear.
 - Force pushes, protected-branch deletion, and rule bypasses are blocked, including for administrators.
 
-Pull requests into `cam-thu` and `thanh-vy` must use `feat|fix|docs|refactor|test|chore/<owner>/<description>` as the source branch. Pull requests into `main` must originate from `cam-thu`, `thanh-vy`, or `hotfix/<description>`. The `PR Policy` workflow enforces this naming rule.
+Pull requests into `cam-thu` and `thanh-vy` must use `feat|fix|docs|refactor|test|chore/<owner>/<description>` as the source branch. The repository owner may use `feat|fix|docs|refactor|test|chore/zenith/<description>` directly into `main`; reviewed integration branches and hotfixes may also target `main`. The `PR Policy` workflow enforces this naming rule.
 
 ## CI and CD
 
