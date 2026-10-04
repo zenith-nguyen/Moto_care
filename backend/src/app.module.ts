@@ -11,6 +11,7 @@ import { envValidationSchema } from './config/env.validation';
 import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { ProvidersModule } from './providers/providers.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { UsersModule } from './users/users.module';
@@ -42,6 +43,7 @@ import { UsersModule } from './users/users.module';
     OrdersModule,
     RealtimeModule,
     PaymentsModule,
+    ProvidersModule,
     ReviewsModule,
     AdminModule,
   ],
