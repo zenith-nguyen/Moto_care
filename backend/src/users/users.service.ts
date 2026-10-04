@@ -1,8 +1,9 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
+import { Provider } from '../providers/provider.entity';
 import { User } from './user.entity';
 
 export interface CreateUserInput {
@@ -16,10 +17,20 @@ export interface CreateUserInput {
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private readonly usersRepository: Repository<User>) {}
+  constructor(
+    @InjectRepository(User) private readonly usersRepository: Repository<User>,
+    private readonly dataSource: DataSource,
+  ) {}
 
   async create(input: CreateUserInput): Promise<User> {
     try {
+      if (input.role === UserRole.PROVIDER) {
+        return await this.dataSource.transaction(async (manager) => {
+          const user = await manager.getRepository(User).save(manager.getRepository(User).create(input));
+          await manager.getRepository(Provider).save(manager.getRepository(Provider).create({ userId: user.id }));
+          return user;
+        });
+      }
       return await this.usersRepository.save(this.usersRepository.create(input));
     } catch (error) {
       if (error instanceof QueryFailedError && (error as QueryFailedError & { code?: string }).code === '23505') {
