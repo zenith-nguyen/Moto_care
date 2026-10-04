@@ -2,7 +2,9 @@
 
 Moto Care is a mobile roadside-assistance application for motorbike riders. It connects customers who need help with nearby approved mobile mechanics.
 
-This repository contains the Flutter mobile application. The NestJS, PostgreSQL/PostGIS, WebSocket, payment, and administration services live in a separate backend repository.
+This repository is the MotoCare monorepo. The Flutter mobile application lives at the repository root, and the NestJS API lives in `backend/`.
+
+The backend uses PostgreSQL + PostGIS locally through Docker Compose. See [`backend/README.md`](backend/README.md) for backend setup and database commands.
 
 ## Product scope
 
