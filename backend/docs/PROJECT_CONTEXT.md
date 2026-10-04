@@ -51,6 +51,7 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 - Realtime: thợ gửi GPS mỗi 3-5s khi có đơn active qua WebSocket; server đẩy cho khách của đơn đó. Không lưu lịch sử tọa độ, chỉ giữ vị trí hiện tại. Socket phải xác thực JWT và kiểm tra quyền theo đơn.
 - QR xác nhận bắt đầu dịch vụ: payload = `orderId + timestamp + HMAC` do server ký; app chỉ hiển thị/quét, thợ gửi lên server verify. Secret HMAC chỉ ở server.
 - Thanh toán: MotoCare nhận tiền. Khách chuyển khoản vào tài khoản MotoCare, nội dung = mã đơn. SePay webhook đối chiếu mã đơn + số tiền -> đơn `PAID` (idempotent theo `sepay_transaction_id`) -> cộng ví thợ (trừ phí nền tảng nếu có). Rút tiền được Admin duyệt và chuyển khoản tay ngoài hệ thống. Mọi thay đổi số dư dùng DB transaction.
+- **Đang xem xét thay đổi** sang thu giá tạm tính trước khi matching, giữ khoản đã thu trên sổ hệ thống và hoàn khi hủy; không nhầm với escrow tại ngân hàng. Chưa code/chưa chốt chính sách, xem `docs/NEXT_MILESTONES.md` trước khi làm payment.
 
 ## 8. Bảo mật
 
