@@ -26,7 +26,7 @@ The following GitHub rules apply to `main`, `cam-thu`, and `thanh-vy`:
 - All review conversations must be resolved and history must stay linear.
 - Force pushes, protected-branch deletion, and rule bypasses are blocked, including for administrators.
 
-Pull requests into `cam-thu` and `thanh-vy` must use `feat|fix|docs|refactor|test|chore/<owner>/<description>` as the source branch. The repository owner may use `feat|fix|docs|refactor|test|chore/zenith/<description>` directly into `main`; reviewed integration branches and hotfixes may also target `main`. The `PR Policy` workflow enforces this naming rule.
+Pull requests into `cam-thu` and `thanh-vy` must use `feat|fix|docs|refactor|test|chore/<owner>/<description>` as the source branch. The repository owner may use `feat|fix|docs|refactor|test|chore/zenith/<description>` directly into `main`; the dedicated `feat/db-schema` branch is also allowed for the database-schema milestone. Reviewed integration branches and hotfixes may also target `main`. The `PR Policy` workflow enforces this naming rule.
 
 ## CI and CD
 

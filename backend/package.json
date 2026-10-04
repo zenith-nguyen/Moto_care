@@ -11,7 +11,9 @@
     "test:watch": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watch",
     "migration:run": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run",
     "migration:revert": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert",
-    "migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate"
+    "migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate",
+    "seed": "ts-node src/database/seed.ts",
+    "db:check-nearest-provider": "ts-node src/database/check-nearest-provider.ts"
   },
   "keywords": [],
   "author": "",

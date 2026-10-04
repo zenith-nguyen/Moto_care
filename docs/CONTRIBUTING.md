@@ -12,7 +12,7 @@
 | `docs/<owner>/<description>` | Contributor | Documentation or configuration that does not change app behavior. |
 | `chore/<owner>/<description>` | Contributor | Small maintenance work. |
 
-`<owner>` is `cam-thu`, `thanh-vy`, or `zenith`. `<description>` uses lowercase letters, numbers, and hyphens. Example: `feat/cam-thu/booking-form` or `feat/zenith/backend-auth`.
+`<owner>` is `cam-thu`, `thanh-vy`, or `zenith`. `<description>` uses lowercase letters, numbers, and hyphens. Example: `feat/cam-thu/booking-form` or `feat/zenith/backend-auth`. The database-schema milestone uses the dedicated owner branch `feat/db-schema`.
 
 The integration branches are destinations for pull requests. A task branch such as `feat/cam-thu/booking-form` is where a contributor writes the code. A branch cannot open a pull request into itself, so both are required.
 
