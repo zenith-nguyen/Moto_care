@@ -1,6 +1,6 @@
 # MotoCare Backend — Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-10-04
+Cập nhật lần cuối: 2026-10-05
 
 ## Đã xong
 
@@ -22,10 +22,12 @@ Cập nhật lần cuối: 2026-10-04
 - Migration `PreventConcurrentOffers` thêm unique index bảo vệ một offer PENDING cho mỗi order/provider và một order active cho mỗi provider.
 - Đã kiểm tra migration từ DB test trống, 12 test PostGIS/concurrency, 5 unit test, lint, build, HTTP thực tế và Swagger `/docs-json`.
 - Test đồng thời phát hiện snapshot query cũ có thể nhìn thợ rảnh sau khi transaction khác vừa tạo offer; matching nay kiểm tra lại dưới khóa provider bằng statement mới, trả PENDING_MATCH thay vì lỗi unique. Đã chạy lặp lại bộ test DB 3 lần.
+- Prompt C đã merge qua PR #5; Backend CI, Flutter CI và PR Policy đều xanh.
 
 ## Đang làm / Tiếp theo
 
-- Hoàn tất PR cho Prompt C. Sau đó Flutter có thể poll REST; bước sau là Google Maps/GPS hiển thị, WebSocket realtime/chat rồi payment SePay/wallet.
+- Theo kế hoạch trong `docs/NEXT_MILESTONES.md`: chuẩn bị backend/DB HTTPS có thể phục vụ APK trên điện thoại khác; phối hợp API với UI Flutter của Cam Thu/Vy; realtime GPS/chat; hoàn thiện vòng đời đơn; sau đó payment sandbox và đối soát.
+- Đề xuất thu trước giá tạm tính bằng chuyển khoản + hoàn khi hủy **chưa được chốt hoặc code**. Không triển khai tiền thật trước khi có chính sách hoàn và xác nhận khả năng hoàn của ngân hàng/nhà cung cấp.
 
 ## Quyết định đã chốt (không hỏi lại)
 
@@ -40,6 +42,7 @@ Cập nhật lần cuối: 2026-10-04
 - Provider gửi GPS qua REST mỗi 30–60 giây khi online; matching chỉ nhận GPS còn mới trong 120 giây, mặc định bán kính 10 km.
 - Offer hết hạn sau 15 giây; `@nestjs/schedule` quét mỗi 5 giây. PostgreSQL transaction/row lock xử lý race condition.
 - WebSocket giai đoạn sau: `provider:{providerId}` nhận offer.created/expired; `order:{orderId}` nhận trạng thái đơn, GPS theo đơn, tin nhắn. REST pending offers/order là fallback.
+- Sản phẩm cuối là APK dùng trên điện thoại khác; Flutter UI cho khách, thợ và Admin do Cam Thu/Vy làm. Backend/DB là dịch vụ dùng chung bên ngoài APK, không để `localhost` trong APK phát hành.
 
 ## Việc đã bỏ / không dùng nữa
 
