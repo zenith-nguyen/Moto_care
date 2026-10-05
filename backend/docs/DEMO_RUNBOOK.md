@@ -15,18 +15,29 @@ Cập nhật: 2026-10-05. Tài liệu này là **hướng dẫn chuẩn bị**, 
 3. Bật `DEMO_MODE=true`, giữ `NODE_ENV=development` cho tính năng giả lập. **Đây là sandbox công khai, không có nghĩa là production an toàn**. Không chạy webhook/QR ngân hàng hoặc lấy tiền thật. Tắt Funnel ngay sau buổi demo. Không gửi URL cho người ngoài lớp.
 4. `DEMO_MODE=true` sẽ tắt Swagger `/docs`. Login/register có giới hạn 10 request/phút theo IP ở mức một NestJS process (không thay thế WAF); vẫn cần kiểm tra log không có token/secret, backup và phục hồi DB. Chưa hoàn tất các mục đó ở mốc này thì chỉ demo với nhóm tin cậy trong thời gian ngắn.
 
-## Khởi động và thử truy cập
+## Chuẩn bị DB demo và khởi động
 
-Trong PowerShell bình thường tại `mobilecare_1/backend`:
+Làm một lần trong PowerShell bình thường tại `mobilecare_1/backend` (không cần Administrator):
 
 ```powershell
 docker compose up -d
 docker compose ps
+docker exec motocare-postgres createdb -U motocare motocare_demo
+Copy-Item .env.example .env.demo
+```
+
+Nếu `createdb` báo database đã tồn tại, **không xóa/ghi đè**; kiểm tra xem DB đó đã có dữ liệu/mật khẩu mẫu chưa, hoặc chọn tên DB demo mới. Mở `.env.demo` (file này được `.gitignore` bỏ qua), chỉnh `DATABASE_NAME=motocare_demo`, `DATABASE_PASSWORD` khớp role PostgreSQL, `DEMO_MODE=true`, `NODE_ENV=development`, ba `SEED_*_PASSWORD` riêng nhau (16+ ký tự) và một `JWT_SECRET` mới dài ít nhất 32 ký tự. Ghi các mật khẩu demo vào password manager riêng; không gửi chat. Trước khi public, vào `psql` trong container và dùng lệnh tương tác `\password motocare` để đổi mật khẩu **thực tế** của role DB, sau đó cập nhật cả `.env` và `.env.demo` nếu còn dùng DB local cũ. Không đặt mật khẩu vào lệnh PowerShell/SQL lưu lịch sử. Sao lưu DB trước khi đổi nếu đang có dữ liệu cần giữ.
+
+Mỗi PowerShell chạy backend/migration/seed cần chọn file config demo trước:
+
+```powershell
+$env:DOTENV_CONFIG_PATH = '.env.demo'
 npm run migration:run
+npm run seed
 npm run start:dev
 ```
 
-`npm run seed` chỉ chạy **một lần trên DB demo mới**, sau khi đã cấu hình mật khẩu demo riêng. Trên PowerShell thứ hai, sau khi cài/đăng nhập Tailscale và cho phép Funnel trong trình duyệt theo hướng dẫn chính thức:
+Chỉ chạy `npm run seed` **một lần trên DB demo mới**; lần khởi động sau chỉ cần đặt `DOTENV_CONFIG_PATH` rồi chạy `npm run start:dev`. Kiểm tra `http://localhost:3000/health/ready` trên laptop. Trên PowerShell thứ hai, sau khi cài/đăng nhập Tailscale và cho phép Funnel trong trình duyệt theo hướng dẫn chính thức:
 
 ```powershell
 tailscale funnel 3000
