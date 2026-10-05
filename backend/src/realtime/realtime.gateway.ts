@@ -34,7 +34,9 @@ export class RealtimeGateway implements OnGatewayConnection {
         throw new Error('Invalid token payload');
       }
       const user = await this.database.getRepository(User).findOneBy({ id: payload.sub });
-      if (!user || user.status !== UserStatus.ACTIVE || user.role !== payload.role) throw new Error('Inactive account');
+      if (!user || user.status !== UserStatus.ACTIVE || user.role !== payload.role || user.authVersion !== payload.ver) {
+        throw new Error('Inactive account');
+      }
       client.data.userId = user.id;
       client.data.role = user.role;
 

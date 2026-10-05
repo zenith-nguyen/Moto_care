@@ -1,8 +1,9 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { jest } from '@jest/globals';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
+import * as argon2 from 'argon2';
 import { DataSource } from 'typeorm';
 import { AdminService } from '../src/admin/admin.service';
 import 'dotenv/config';
@@ -35,6 +36,10 @@ import { Provider } from '../src/providers/provider.entity';
 import { ProvidersService } from '../src/providers/providers.service';
 import { User } from '../src/users/user.entity';
 import { UsersService } from '../src/users/users.service';
+import { PasswordResetCode } from '../src/auth/password-reset-code.entity';
+import { PasswordRecoveryService } from '../src/auth/password-recovery.service';
+import { MailService } from '../src/auth/mail.service';
+import { JwtStrategy } from '../src/auth/jwt.strategy';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -51,6 +56,8 @@ describe('Orders and matching on PostGIS', () => {
   const messageCreated = jest.fn();
   const providerLocation = jest.fn();
   let providersService: ProvidersService;
+  let passwordRecovery: PasswordRecoveryService;
+  let deliveredCode: string | undefined;
   let incident: IncidentType;
   let customer: User;
 
@@ -62,7 +69,7 @@ describe('Orders and matching on PostGIS', () => {
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: testDatabase,
-      entities: [User, Provider, IncidentType, Order, OrderOffer, Payment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review],
+      entities: [User, Provider, IncidentType, Order, OrderOffer, Payment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review, PasswordResetCode],
       synchronize: false,
       logging: false,
     });
@@ -88,11 +95,20 @@ describe('Orders and matching on PostGIS', () => {
       database.getRepository(User),
       config,
     );
+    passwordRecovery = new PasswordRecoveryService(
+      database,
+      { sendPasswordResetCode: jest.fn(async (_email: string, code: string) => {
+        deliveredCode = code;
+        return true;
+      }) } as unknown as MailService,
+      config,
+    );
   });
 
   beforeEach(async () => {
     await database.query('TRUNCATE TABLE users, incident_types RESTART IDENTITY CASCADE');
     customer = await makeUser(UserRole.CUSTOMER);
+    deliveredCode = undefined;
     incident = await database.getRepository(IncidentType).save(
       database.getRepository(IncidentType).create({ code: 'FLAT_TIRE', name: 'Flat tire', basePrice: '100000.00', isActive: true }),
     );
@@ -315,7 +331,7 @@ describe('Orders and matching on PostGIS', () => {
     const jwt = new JwtService({ secret: 'test-only-socket-secret-with-more-than-32-characters' });
     const gateway = new RealtimeGateway(jwt, database);
     const participant = {
-      handshake: { auth: { token: await jwt.signAsync({ sub: assigned.user.id, role: UserRole.PROVIDER }), orderId: created.id } },
+      handshake: { auth: { token: await jwt.signAsync({ sub: assigned.user.id, role: UserRole.PROVIDER, ver: 0 }), orderId: created.id } },
       data: {}, join: jest.fn(), disconnect: jest.fn(),
     } as unknown as Socket;
     await gateway.handleConnection(participant);
@@ -323,7 +339,7 @@ describe('Orders and matching on PostGIS', () => {
     expect(participant.join).toHaveBeenCalledWith(`order:${created.id}`);
     expect(participant.disconnect).not.toHaveBeenCalled();
     const intruder = {
-      handshake: { auth: { token: await jwt.signAsync({ sub: stranger.id, role: UserRole.CUSTOMER }), orderId: created.id } },
+      handshake: { auth: { token: await jwt.signAsync({ sub: stranger.id, role: UserRole.CUSTOMER, ver: 0 }), orderId: created.id } },
       data: {}, join: jest.fn(), disconnect: jest.fn(),
     } as unknown as Socket;
     await gateway.handleConnection(intruder);
@@ -469,6 +485,38 @@ describe('Orders and matching on PostGIS', () => {
     await expect(providersService.updateStatus(selected.user.id, true)).rejects.toThrow();
     await providersService.updateLocation(selected.user.id, { latitude: 10.7769, longitude: 106.7009 });
     expect((await providersService.updateStatus(selected.user.id, true)).isOnline).toBe(true);
+  });
+
+  it('resets a password once and increments the JWT auth version', async () => {
+    await passwordRecovery.forgot(customer.email!);
+    expect(deliveredCode).toMatch(/^\d{6}$/);
+    await expect(passwordRecovery.reset(customer.email!, '999999', 'NewPassword123!'))
+      .rejects.toBeInstanceOf(BadRequestException);
+    await passwordRecovery.reset(customer.email!, deliveredCode!, 'NewPassword123!');
+    const updated = await database.getRepository(User).createQueryBuilder('user')
+      .addSelect('user.passwordHash')
+      .where('user.id = :id', { id: customer.id })
+      .getOneOrFail();
+    expect(await argon2.verify(updated.passwordHash, 'NewPassword123!')).toBe(true);
+    expect(updated.authVersion).toBe(1);
+    const users = new UsersService(database.getRepository(User), database);
+    const strategy = new JwtStrategy(
+      new ConfigService({ JWT_SECRET: 'test-only-order-start-secret-longer-than-32-characters' }), users,
+    );
+    await expect(strategy.validate({ sub: customer.id, role: UserRole.CUSTOMER, ver: 0 }))
+      .rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(strategy.validate({ sub: customer.id, role: UserRole.CUSTOMER, ver: 1 }))
+      .resolves.toMatchObject({ sub: customer.id, ver: 1 });
+    await expect(passwordRecovery.reset(customer.email!, deliveredCode!, 'AnotherPassword123!'))
+      .rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('temporarily locks an account after five failed logins', async () => {
+    const users = new UsersService(database.getRepository(User), database);
+    for (let attempt = 0; attempt < 5; attempt += 1) await users.recordFailedLogin(customer.id);
+    const locked = await database.getRepository(User).findOneByOrFail({ id: customer.id });
+    expect(locked.failedLoginAttempts).toBe(0);
+    expect(locked.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
   });
 
   it('creates a pending provider profile together with registration', async () => {

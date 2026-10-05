@@ -114,7 +114,7 @@ describe('Sandbox demo flow over HTTP', () => {
     if (role === UserRole.PROVIDER) {
       await database.getRepository(Provider).save(database.getRepository(Provider).create({ userId: user.id }));
     }
-    return { token: await jwt.signAsync({ sub: user.id, role }), userId: user.id };
+    return { token: await jwt.signAsync({ sub: user.id, role, ver: user.authVersion }), userId: user.id };
   }
 
   async function prepareActors() {

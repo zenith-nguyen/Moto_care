@@ -8,6 +8,8 @@ import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
+const dummyPasswordHash = argon2.hash('motocare-login-timing-placeholder');
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -41,18 +43,24 @@ export class AuthService {
   async login(dto: LoginDto) {
     const identity = dto.identity.trim();
     const user = await this.usersService.findByIdentityWithPassword(identity);
-    if (!user || !(await argon2.verify(user.passwordHash, dto.password))) {
+    if (user?.lockedUntil && user.lockedUntil > new Date()) {
+      throw new UnauthorizedException('Invalid credentials or account temporarily locked');
+    }
+    const passwordMatches = await argon2.verify(user?.passwordHash ?? await dummyPasswordHash, dto.password);
+    if (!user || !passwordMatches) {
+      if (user) await this.usersService.recordFailedLogin(user.id);
       throw new UnauthorizedException('Invalid credentials');
     }
     if (user.status === UserStatus.SUSPENDED) {
       throw new UnauthorizedException('Account is suspended');
     }
+    await this.usersService.clearLoginFailures(user.id);
     return this.createAuthResponse(user);
   }
 
   private createAuthResponse(user: User) {
     return {
-      accessToken: this.jwtService.sign({ sub: user.id, role: user.role }),
+      accessToken: this.jwtService.sign({ sub: user.id, role: user.role, ver: user.authVersion }),
       user: {
         id: user.id,
         name: user.name,

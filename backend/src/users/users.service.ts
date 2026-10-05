@@ -52,4 +52,21 @@ export class UsersService {
       .orWhere('user.phone = :identity', { identity })
       .getOne();
   }
+
+  async recordFailedLogin(userId: number): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const user = await manager.getRepository(User).findOne({
+        where: { id: userId }, lock: { mode: 'pessimistic_write' },
+      });
+      if (!user || (user.lockedUntil && user.lockedUntil > new Date())) return;
+      const attempts = user.failedLoginAttempts + 1;
+      await manager.getRepository(User).update(user.id, attempts >= 5
+        ? { failedLoginAttempts: 0, lockedUntil: new Date(Date.now() + 15 * 60_000) }
+        : { failedLoginAttempts: attempts });
+    });
+  }
+
+  async clearLoginFailures(userId: number): Promise<void> {
+    await this.usersRepository.update(userId, { failedLoginAttempts: 0, lockedUntil: null });
+  }
 }

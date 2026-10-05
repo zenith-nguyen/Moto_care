@@ -12,6 +12,8 @@ describe('AuthService', () => {
   const usersService = {
     create: jest.fn(),
     findByIdentityWithPassword: jest.fn(),
+    recordFailedLogin: jest.fn(),
+    clearLoginFailures: jest.fn(),
   };
   const jwtService = { sign: jest.fn().mockReturnValue('signed-access-token') };
   let authService: AuthService;
@@ -70,6 +72,19 @@ describe('AuthService', () => {
     await expect(authService.login({ identity: 'customer@example.com', password: 'wrong-password' })).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+    expect(usersService.recordFailedLogin).toHaveBeenCalledWith(1);
+  });
+
+  it('rejects login while the account is temporarily locked', async () => {
+    usersService.findByIdentityWithPassword.mockResolvedValue({
+      id: 1,
+      role: UserRole.CUSTOMER,
+      status: UserStatus.ACTIVE,
+      lockedUntil: new Date(Date.now() + 60_000),
+    });
+    await expect(authService.login({ identity: 'customer@example.com', password: 'safe-password' }))
+      .rejects.toBeInstanceOf(UnauthorizedException);
+    expect(usersService.recordFailedLogin).not.toHaveBeenCalled();
   });
 
   it('rejects a registration without an email or phone number', async () => {

@@ -17,4 +17,11 @@ export const envValidationSchema = Joi.object({
   PROVIDER_LOCATION_MAX_AGE_SECONDS: Joi.number().integer().positive().max(3600).default(120),
   CHAT_UPLOAD_DIR: Joi.string().trim().min(1).default('storage/chat'),
   CHAT_IMAGE_MAX_BYTES: Joi.number().integer().min(1024).max(5_242_880).default(5_242_880),
+  EMAIL_ENABLED: Joi.boolean().default(false),
+  SMTP_HOST: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
+  SMTP_PORT: Joi.number().port().default(587),
+  SMTP_SECURE: Joi.boolean().default(false),
+  SMTP_USER: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
+  SMTP_PASSWORD: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
+  SMTP_FROM: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
 });
