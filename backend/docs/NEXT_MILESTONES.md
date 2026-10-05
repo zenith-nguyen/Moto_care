@@ -1,6 +1,6 @@
 # MotoCare — các mốc sau Prompt C (thiết kế và trạng thái)
 
-Cập nhật: 2026-10-05. Chính sách thu trước và hoàn 100% trước khi sửa **đã được duyệt**. Nhánh `feat/zenith/demo-backend` đang triển khai giả lập thanh toán/hoàn, realtime và admin duyệt thợ; chưa có tiền thật hoặc APK hoàn chỉnh. Trạng thái chính xác theo `PROGRESS.md`; hướng dẫn demo theo `DEMO_RUNBOOK.md`. Các dòng mô tả triển khai production bên dưới là kế hoạch, không phải chức năng đã chạy.
+Cập nhật: 2026-10-05. Chính sách thu trước và hoàn 100% trước khi sửa **đã được duyệt**. PR #7 đã đưa giả lập thanh toán/hoàn, realtime và admin duyệt thợ vào `main`; chưa có tiền thật hoặc APK hoàn chỉnh. Trạng thái chính xác theo `PROGRESS.md`; hợp đồng Flutter theo `FLUTTER_API_HANDOFF.md`; hướng dẫn demo theo `DEMO_RUNBOOK.md`. Các dòng mô tả triển khai production bên dưới là kế hoạch, không phải chức năng đã chạy.
 
 ## Phạm vi và trách nhiệm
 
@@ -42,7 +42,7 @@ Thu trước matching và hoàn 100% trước khi bắt đầu sửa đã đư�
 
 ## Thứ tự triển khai đề xuất
 
-1. Hoàn thiện và review nhánh demo-backend; migration/test trên DB riêng. Bản không phí chạy trên laptop với Tailscale Funnel theo `DEMO_RUNBOOK.md`, không có uptime khi laptop tắt. Không dùng môi trường này cho tiền thật.
+1. Hoàn thiện test HTTP/CI và bàn giao API Flutter; migration/test trên DB riêng. Bản không phí chạy trên laptop với Tailscale Funnel theo `DEMO_RUNBOOK.md`, không có uptime khi laptop tắt. Không dùng môi trường này cho tiền thật.
 2. Cam Thu/Vy merge UI và nối API contract; trải nghiệm đầu tiên dùng REST polling, sau đó realtime Socket.IO, GPS/marker Flutter. Bản đồ ưu tiên nguồn không cần billing nhưng vẫn tuân thủ chính sách tile.
 3. Test APK release ở 4G và ba vai trò đồng thời; kiểm tra mất mạng/kết nối lại, từ chối GPS, offer hết hạn, laptop ngủ/tắt, backup và phục hồi.
 4. Sau demo: giá cuối khác giá tạm tính, thu bù/hoàn chênh lệch, khiếu nại sau bắt đầu, rút tiền và QR/webhook/hoàn ngân hàng **thật** là milestone riêng, không được xem là đã xong vì sandbox chạy.
