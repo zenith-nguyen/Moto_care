@@ -38,7 +38,7 @@ Customers may call `POST /orders/:id/cancel` before work starts. An unpaid order
 
 For a successful demo order, the assigned provider calls `POST /orders/:id/arrive`. The customer fetches `GET /orders/:id/start-token` and presents its five-minute HMAC token as text/QR; the provider sends it to `POST /orders/:id/start`. The provider then calls `POST /orders/:id/complete`. Completion currently accepts **only an exactly prepaid demo order at its original estimated price**: extra cost is zero, final price equals the prepaid amount, and one simulated credit is recorded in the provider wallet. `GET /wallets/me` shows this **demo-only** balance, not withdrawable funds. Customer and provider may each `POST /orders/:id/reviews` once after completion, then `GET /orders/:id/reviews`. Price changes, top-up, partial refund, real wallet settlement and withdrawal require separate implementation.
 
-Socket.IO connects at the same API origin with `auth: { token: '<JWT>', orderId: <id> }`. Providers that were already approved and online at connection time also join their provider room; reconnect after changing online status. Events: `offer.created`/`offer.expired` for providers and `order.status_changed`/`provider.location_updated`/`message.created` for order participants. On reconnect, fetch `GET /orders/:id`, `GET /providers/me/offers/pending`, and `GET /orders/:id/messages` rather than assuming no event was missed. See [DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) for the integration contract and the three-screen/teacher demo checklist.
+Socket.IO connects at the same API origin with `auth: { token: '<JWT>', orderId: <id> }`. Providers that were already approved and online at connection time also join their provider room; reconnect after changing online status. Events: `offer.created`/`offer.expired` for providers and `order.status_changed`/`provider.location_updated`/`message.created` for order participants. On reconnect, fetch `GET /orders/:id`, `GET /providers/me/offers/pending`, and `GET /orders/:id/messages` rather than assuming no event was missed. See [FLUTTER_API_HANDOFF.md](docs/FLUTTER_API_HANDOFF.md) for the Flutter contract and [DEMO_RUNBOOK.md](docs/DEMO_RUNBOOK.md) for the three-screen/teacher demo checklist.
 
 ## Quality checks
 
@@ -62,7 +62,7 @@ npm run test:db
 Remove-Item Env:TEST_DATABASE_NAME
 ```
 
-After the test database exists, only the last three commands are needed for another run. The test suite covers matching order, exclusions, offer expiry, provider presence, and concurrent accepts on real PostgreSQL/PostGIS.
+After the test database exists, only the last three commands are needed for another run. The test suite covers matching order, exclusions, offer expiry, provider presence, concurrent accepts, and the complete three-role sandbox flow over HTTP with real JWT guards and validation. CI starts an isolated PostGIS service, runs migrations, then executes this suite.
 
 The GitHub Actions workflow runs these checks for pull requests and updates to `main` or `feat/**` branches. Changes must be proposed through a PR using Conventional Commits.
 
