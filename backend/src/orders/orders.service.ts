@@ -1,12 +1,20 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { DataSource, EntityManager, MoreThan } from 'typeorm';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
+import { ConfigService } from '@nestjs/config';
 import { ApprovalStatus } from '../common/enums/approval-status.enum';
 import { OfferStatus } from '../common/enums/offer-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { PaymentStatus } from '../common/enums/payment-status.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
+import { UserRole } from '../common/enums/user-role.enum';
 import { IncidentType } from '../incident-types/incident-type.entity';
 import { Provider } from '../providers/provider.entity';
+import { Payment } from '../payments/payment.entity';
+import { Wallet } from '../payments/wallet.entity';
+import { WalletTransaction } from '../payments/wallet-transaction.entity';
+import { WalletTransactionType } from '../common/enums/wallet-transaction-type.enum';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { User } from '../users/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MatchingService } from './matching.service';
@@ -15,7 +23,12 @@ import { Order } from './order.entity';
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly dataSource: DataSource, private readonly matching: MatchingService) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly matching: MatchingService,
+    private readonly config: ConfigService,
+    @Optional() private readonly realtime?: RealtimeGateway,
+  ) {}
 
   async create(customerId: number, dto: CreateOrderDto) {
     return this.dataSource.transaction(async (manager) => {
@@ -31,7 +44,7 @@ export class OrdersService {
           code: `MC-${randomUUID().replaceAll('-', '').slice(0, 20)}`,
           customerId,
           incidentTypeId: incident.id,
-          status: OrderStatus.PENDING_MATCH,
+          status: OrderStatus.AWAITING_PREPAYMENT,
           customerLocation: {
             type: 'Point',
             coordinates: [dto.customer_location.longitude, dto.customer_location.latitude],
@@ -40,8 +53,15 @@ export class OrdersService {
           extraCost: '0.00',
         }),
       );
-      const offer = await this.matching.matchLockedOrder(manager, order);
-      return this.formatMatchResult(order, offer);
+      await manager.getRepository(Payment).save(
+        manager.getRepository(Payment).create({
+          orderId: order.id,
+          amount: order.estimatedPrice,
+          status: PaymentStatus.PENDING,
+          isDemo: false,
+        }),
+      );
+      return this.formatMatchResult(order, null);
     });
   }
 
@@ -61,6 +81,13 @@ export class OrdersService {
         throw new NotFoundException('Order not found');
       }
     }
+    const payment = await this.dataSource.getRepository(Payment).findOne({
+      where: { orderId },
+      order: { id: 'ASC' },
+    });
+    const location = order.providerId && [OrderStatus.ACCEPTED, OrderStatus.ARRIVED, OrderStatus.IN_PROGRESS].includes(order.status)
+      ? (await this.dataSource.getRepository(Provider).findOneBy({ id: order.providerId }))?.currentLocation ?? null
+      : null;
     return {
       id: order.id,
       code: order.code,
@@ -72,17 +99,77 @@ export class OrdersService {
       estimatedPrice: order.estimatedPrice,
       extraCost: order.extraCost,
       finalPrice: order.finalPrice,
-      message: order.status === OrderStatus.PENDING_MATCH ? 'No provider found yet; retry matching later' : null,
+      payment: payment ? { id: payment.id, amount: payment.amount, status: payment.status, isDemo: payment.isDemo } : null,
+      providerLocation: location,
+      message: order.status === OrderStatus.AWAITING_PREPAYMENT
+        ? 'Awaiting prepayment; demo confirmation is not a real bank transfer'
+        : order.status === OrderStatus.PENDING_MATCH ? 'No provider found yet; retry matching later' : null,
     };
+  }
+
+  async listMine(userId: number, role: UserRole) {
+    let where: { customerId: number } | { providerId: number };
+    if (role === UserRole.CUSTOMER) {
+      where = { customerId: userId };
+    } else {
+      const provider = await this.dataSource.getRepository(Provider).findOneBy({ userId });
+      if (!provider) throw new NotFoundException('Provider profile not found');
+      where = { providerId: provider.id };
+    }
+    const orders = await this.dataSource.getRepository(Order).find({
+      where, order: { createdAt: 'DESC', id: 'DESC' }, take: 30,
+    });
+    return orders.map((order) => ({
+      id: order.id, code: order.code, status: order.status, customerId: order.customerId,
+      providerId: order.providerId, incidentTypeId: order.incidentTypeId,
+      estimatedPrice: order.estimatedPrice, finalPrice: order.finalPrice, createdAt: order.createdAt,
+    }));
+  }
+
+  async cancel(orderId: number, customerId: number, reason: string) {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const order = await this.lockOrder(manager, orderId);
+      if (order.customerId !== customerId) throw new NotFoundException('Order not found');
+      if (![OrderStatus.AWAITING_PREPAYMENT, OrderStatus.PENDING_MATCH, OrderStatus.OFFERED,
+        OrderStatus.ACCEPTED, OrderStatus.ARRIVED].includes(order.status)) {
+        throw new ConflictException('Order requires admin review or is already closed');
+      }
+      const payment = await manager.getRepository(Payment).findOne({
+        where: { orderId }, lock: { mode: 'pessimistic_write' }, order: { id: 'ASC' },
+      });
+      if (order.status === OrderStatus.OFFERED) {
+        await manager.getRepository(OrderOffer).update(
+          { orderId, status: OfferStatus.PENDING }, { status: OfferStatus.EXPIRED },
+        );
+      }
+      order.cancelReason = reason;
+      order.cancelledById = customerId;
+      if (payment?.status === PaymentStatus.PAID) {
+        payment.status = PaymentStatus.REFUND_PENDING;
+        order.status = OrderStatus.REFUND_PENDING;
+        await manager.getRepository(Payment).save(payment);
+      } else {
+        if (payment) {
+          payment.status = PaymentStatus.CANCELLED;
+          await manager.getRepository(Payment).save(payment);
+        }
+        order.status = OrderStatus.CANCELLED;
+      }
+      await manager.getRepository(Order).save(order);
+      return { orderId: order.id, status: order.status, refundAmount: payment?.status === PaymentStatus.REFUND_PENDING ? payment.amount : null };
+    });
+    this.realtime?.orderStatusChanged(orderId, result.status);
+    return result;
   }
 
   async retry(orderId: number, customerId: number) {
     const { order, offer } = await this.matching.retry(orderId, customerId);
+    if (offer) this.realtime?.offerCreated(offer.providerId, order.id, offer.id, offer.expiresAt);
     return this.formatMatchResult(order, offer);
   }
 
   async accept(orderId: number, offerId: number, userId: number) {
-    return this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, userId);
       const offer = await this.lockOffer(manager, orderId, offerId, provider.id);
@@ -115,10 +202,12 @@ export class OrdersService {
       await manager.getRepository(Order).save(order);
       return { orderId: order.id, providerId: provider.id, status: order.status, offerStatus: offer.status };
     });
+    this.realtime?.orderStatusChanged(orderId, result.status);
+    return result;
   }
 
   async reject(orderId: number, offerId: number, userId: number) {
-    return this.dataSource.transaction(async (manager) => {
+    const { response, nextOffer } = await this.dataSource.transaction(async (manager) => {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, userId);
       const offer = await this.lockOffer(manager, orderId, offerId, provider.id);
@@ -130,8 +219,94 @@ export class OrdersService {
       order.status = OrderStatus.PENDING_MATCH;
       await manager.getRepository(Order).save(order);
       const nextOffer = await this.matching.matchLockedOrder(manager, order);
-      return { orderId: order.id, offerStatus: offer.status, ...this.formatMatchResult(order, nextOffer) };
+      return { response: { orderId: order.id, offerStatus: offer.status, ...this.formatMatchResult(order, nextOffer) }, nextOffer };
     });
+    this.realtime?.orderStatusChanged(orderId, response.status);
+    if (nextOffer) this.realtime?.offerCreated(nextOffer.providerId, orderId, nextOffer.id, nextOffer.expiresAt);
+    return response;
+  }
+
+  async arrive(orderId: number, providerUserId: number) {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const order = await this.lockOrder(manager, orderId);
+      const provider = await this.lockOwnProvider(manager, providerUserId);
+      if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
+      if (order.status !== OrderStatus.ACCEPTED) throw new ConflictException('Order is not awaiting arrival');
+      order.status = OrderStatus.ARRIVED;
+      await manager.getRepository(Order).save(order);
+      return { orderId, status: order.status };
+    });
+    this.realtime?.orderStatusChanged(orderId, result.status);
+    return result;
+  }
+
+  async startToken(orderId: number, customerId: number) {
+    const order = await this.dataSource.getRepository(Order).findOneBy({ id: orderId, customerId });
+    if (!order) throw new NotFoundException('Order not found');
+    if (order.status !== OrderStatus.ARRIVED) throw new ConflictException('Provider has not arrived');
+    const expiresAt = Date.now() + 5 * 60_000;
+    const signature = this.startSignature(order.id, customerId, expiresAt);
+    return { orderId, token: `${expiresAt}.${signature}`, expiresAt: new Date(expiresAt) };
+  }
+
+  async start(orderId: number, providerUserId: number, token: string) {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const order = await this.lockOrder(manager, orderId);
+      const provider = await this.lockOwnProvider(manager, providerUserId);
+      if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
+      if (order.status !== OrderStatus.ARRIVED) throw new ConflictException('Order cannot start now');
+      const [expiryText, signature, extra] = token.split('.');
+      const expiresAt = Number(expiryText);
+      if (extra || !Number.isSafeInteger(expiresAt) || expiresAt <= Date.now() || !/^[0-9a-f]{64}$/.test(signature ?? '')) {
+        throw new ForbiddenException('Invalid or expired start token');
+      }
+      const expected = Buffer.from(this.startSignature(order.id, order.customerId, expiresAt), 'hex');
+      if (!timingSafeEqual(Buffer.from(signature, 'hex'), expected)) {
+        throw new ForbiddenException('Invalid or expired start token');
+      }
+      order.status = OrderStatus.IN_PROGRESS;
+      await manager.getRepository(Order).save(order);
+      return { orderId, status: order.status };
+    });
+    this.realtime?.orderStatusChanged(orderId, result.status);
+    return result;
+  }
+
+  async complete(orderId: number, providerUserId: number) {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const order = await this.lockOrder(manager, orderId);
+      const provider = await this.lockOwnProvider(manager, providerUserId);
+      if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
+      if (order.status !== OrderStatus.IN_PROGRESS) throw new ConflictException('Order is not in progress');
+      const payment = await manager.getRepository(Payment).findOne({
+        where: { orderId }, lock: { mode: 'pessimistic_write' }, order: { id: 'ASC' },
+      });
+      if (!payment?.isDemo || payment.status !== PaymentStatus.PAID || payment.amount !== order.estimatedPrice) {
+        throw new ConflictException('Only an exactly prepaid demo order can be completed');
+      }
+      await manager.query('INSERT INTO wallets (provider_id, balance) VALUES ($1, 0) ON CONFLICT (provider_id) DO NOTHING', [provider.id]);
+      const wallet = await manager.getRepository(Wallet).findOne({
+        where: { providerId: provider.id }, lock: { mode: 'pessimistic_write' },
+      });
+      if (!wallet) throw new ConflictException('Provider wallet unavailable');
+      await manager.query('UPDATE wallets SET balance = balance + $1::numeric WHERE id = $2', [payment.amount, wallet.id]);
+      await manager.getRepository(WalletTransaction).save(manager.getRepository(WalletTransaction).create({
+        walletId: wallet.id, type: WalletTransactionType.CREDIT, amount: payment.amount, orderId,
+      }));
+      order.extraCost = '0.00';
+      order.finalPrice = payment.amount;
+      order.status = OrderStatus.COMPLETED;
+      await manager.getRepository(Order).save(order);
+      return { orderId, status: order.status, finalPrice: order.finalPrice, settlement: 'DEMO_ONLY' };
+    });
+    this.realtime?.orderStatusChanged(orderId, result.status);
+    return result;
+  }
+
+  private startSignature(orderId: number, customerId: number, expiresAt: number): string {
+    return createHmac('sha256', this.config.getOrThrow<string>('JWT_SECRET'))
+      .update(`motocare:start:${orderId}:${customerId}:${expiresAt}`)
+      .digest('hex');
   }
 
   private async lockOrder(manager: EntityManager, orderId: number): Promise<Order> {
@@ -169,7 +344,9 @@ export class OrdersService {
       estimatedPrice: order.estimatedPrice,
       matched: offer !== null,
       offerExpiresAt: offer?.expiresAt ?? null,
-      message: offer ? null : 'No provider found yet; retry matching later',
+      message: order.status === OrderStatus.AWAITING_PREPAYMENT
+        ? 'Awaiting prepayment; no provider has been offered this order'
+        : offer ? null : 'No provider found yet; retry matching later',
     };
   }
 }

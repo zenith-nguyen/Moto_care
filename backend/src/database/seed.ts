@@ -11,6 +11,15 @@ import { Wallet } from '../payments/wallet.entity';
 
 const DEV_PASSWORD = 'MotoCareDev123!';
 
+function seedPassword(role: UserRole): string {
+  const variable = `SEED_${role}_PASSWORD`;
+  const configured = process.env[variable];
+  if (process.env.DEMO_MODE === 'true' && (!configured || configured.length < 16 || configured === DEV_PASSWORD)) {
+    throw new Error(`${variable} must be a unique password of at least 16 characters in demo mode`);
+  }
+  return configured ?? DEV_PASSWORD;
+}
+
 const incidentSeeds = [
   { code: 'OUT_OF_FUEL', name: 'Hết xăng', basePrice: '80000.00' },
   { code: 'FLAT_TIRE', name: 'Xẹp lốp', basePrice: '100000.00' },
@@ -62,12 +71,22 @@ async function findOrCreateUser(
     repository.create({
       ...input,
       phone: input.phone ?? null,
-      passwordHash: await argon2.hash(DEV_PASSWORD),
+      passwordHash: await argon2.hash(seedPassword(input.role)),
     }),
   );
 }
 
 async function seed(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('Development seed is forbidden in production');
+  }
+  if (process.env.DEMO_MODE === 'true') {
+    const roles = [UserRole.CUSTOMER, UserRole.PROVIDER, UserRole.ADMIN];
+    const passwords = roles.map(seedPassword);
+    if (new Set(passwords).size !== passwords.length) {
+      throw new Error('Demo seed roles must use different passwords');
+    }
+  }
   await dataSource.initialize();
 
   try {
@@ -120,7 +139,7 @@ async function seed(): Promise<void> {
     }
 
     console.log(`Seed complete. Customer: ${customer.email}; Admin: ${admin.email}`);
-    console.log(`Development password for all seeded accounts: ${DEV_PASSWORD}`);
+    console.log('Seed passwords are documented for local development only; configured demo passwords are never printed.');
   } finally {
     await dataSource.destroy();
   }

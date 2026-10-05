@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -20,6 +20,16 @@ export class ProvidersController {
   @ApiOkResponse({ description: 'Provider location updated' })
   updateLocation(@CurrentUser() user: JwtPayload, @Body() dto: UpdateLocationDto) {
     return this.providers.updateLocation(user.sub, dto);
+  }
+
+  @Patch('orders/:orderId/location')
+  @ApiOkResponse({ description: 'Updates provider GPS and emits to authenticated order participants' })
+  updateOrderLocation(
+    @CurrentUser() user: JwtPayload,
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Body() dto: UpdateLocationDto,
+  ) {
+    return this.providers.updateOrderLocation(user.sub, orderId, dto);
   }
 
   @Patch('status')

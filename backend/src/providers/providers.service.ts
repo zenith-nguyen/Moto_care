@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException, Optional, UnprocessableEntityException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
@@ -6,6 +6,9 @@ import { ApprovalStatus } from '../common/enums/approval-status.enum';
 import { OfferStatus } from '../common/enums/offer-status.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { OrderOffer } from '../orders/order-offer.entity';
+import { Order } from '../orders/order.entity';
+import { OrderStatus } from '../common/enums/order-status.enum';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { User } from '../users/user.entity';
 import { Provider } from './provider.entity';
 import { UpdateLocationDto } from './dto/update-location.dto';
@@ -17,6 +20,8 @@ export class ProvidersService {
     @InjectRepository(OrderOffer) private readonly offers: Repository<OrderOffer>,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly config: ConfigService,
+    @Optional() @InjectRepository(Order) private readonly orders?: Repository<Order>,
+    @Optional() private readonly realtime?: RealtimeGateway,
   ) {}
 
   private async ownProvider(userId: number): Promise<Provider> {
@@ -33,6 +38,17 @@ export class ProvidersService {
       lastSeenAt,
     });
     return { id: provider.id, isOnline: provider.isOnline, lastSeenAt };
+  }
+
+  async updateOrderLocation(userId: number, orderId: number, location: UpdateLocationDto) {
+    const provider = await this.ownProvider(userId);
+    const order = await this.orders?.findOneBy({ id: orderId, providerId: provider.id });
+    if (!order || ![OrderStatus.ACCEPTED, OrderStatus.ARRIVED, OrderStatus.IN_PROGRESS].includes(order.status)) {
+      throw new NotFoundException('Active order not found for provider');
+    }
+    const result = await this.updateLocation(userId, location);
+    this.realtime?.providerLocation(orderId, provider.id, location.latitude, location.longitude, result.lastSeenAt);
+    return { orderId, providerId: provider.id, ...result };
   }
 
   async updateStatus(userId: number, isOnline: boolean) {

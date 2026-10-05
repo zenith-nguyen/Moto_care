@@ -1,7 +1,10 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { jest } from '@jest/globals';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
+import { AdminService } from '../src/admin/admin.service';
 import 'dotenv/config';
 import { ApprovalStatus } from '../src/common/enums/approval-status.enum';
 import { OfferStatus } from '../src/common/enums/offer-status.enum';
@@ -13,6 +16,19 @@ import { MatchingService } from '../src/orders/matching.service';
 import { OfferExpiryService } from '../src/orders/offer-expiry.service';
 import { OrderOffer } from '../src/orders/order-offer.entity';
 import { Order } from '../src/orders/order.entity';
+import { Message } from '../src/messages/message.entity';
+import { MessagesService } from '../src/messages/messages.service';
+import { RealtimeGateway } from '../src/realtime/realtime.gateway';
+import { Socket } from 'socket.io';
+import { PaymentStatus } from '../src/common/enums/payment-status.enum';
+import { DemoPaymentsService } from '../src/payments/demo-payments.service';
+import { Payment } from '../src/payments/payment.entity';
+import { Wallet } from '../src/payments/wallet.entity';
+import { WalletTransaction } from '../src/payments/wallet-transaction.entity';
+import { WithdrawalRequest } from '../src/payments/withdrawal-request.entity';
+import { WalletsController } from '../src/payments/wallets.controller';
+import { Review } from '../src/reviews/review.entity';
+import { ReviewsService } from '../src/reviews/reviews.service';
 import { OrdersService } from '../src/orders/orders.service';
 import { Provider } from '../src/providers/provider.entity';
 import { ProvidersService } from '../src/providers/providers.service';
@@ -28,6 +44,11 @@ describe('Orders and matching on PostGIS', () => {
   let database: DataSource;
   let orders: OrdersService;
   let matching: MatchingService;
+  let demoPayments: DemoPaymentsService;
+  let admin: AdminService;
+  let messages: MessagesService;
+  const messageCreated = jest.fn();
+  const providerLocation = jest.fn();
   let providersService: ProvidersService;
   let incident: IncidentType;
   let customer: User;
@@ -40,7 +61,7 @@ describe('Orders and matching on PostGIS', () => {
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: testDatabase,
-      entities: [User, Provider, IncidentType, Order, OrderOffer],
+      entities: [User, Provider, IncidentType, Order, OrderOffer, Payment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review],
       synchronize: false,
       logging: false,
     });
@@ -49,9 +70,15 @@ describe('Orders and matching on PostGIS', () => {
       MATCH_RADIUS_KM: 10,
       OFFER_TTL_SECONDS: 15,
       PROVIDER_LOCATION_MAX_AGE_SECONDS: 120,
+      NODE_ENV: 'test',
+      DEMO_MODE: true,
+      JWT_SECRET: 'test-only-order-start-secret-longer-than-32-characters',
     });
     matching = new MatchingService(database, config);
-    orders = new OrdersService(database, matching);
+    orders = new OrdersService(database, matching, config);
+    demoPayments = new DemoPaymentsService(database, config, matching);
+    admin = new AdminService(database);
+    messages = new MessagesService(database, { messageCreated } as unknown as RealtimeGateway);
     providersService = new ProvidersService(
       database.getRepository(Provider),
       database.getRepository(OrderOffer),
@@ -104,11 +131,201 @@ describe('Orders and matching on PostGIS', () => {
   }
 
   async function createOrder() {
-    return orders.create(customer.id, {
+    const created = await orders.create(customer.id, {
       incident_type_id: incident.id,
       customer_location: { longitude: 106.7009, latitude: 10.7769 },
     });
+    const confirmed = await demoPayments.confirm(created.id, customer.id);
+    return { ...created, ...confirmed, id: created.id };
   }
+
+  it('does not match before demo prepayment and confirms exactly once', async () => {
+    await makeProvider(106.7009, 10.7769);
+    const created = await orders.create(customer.id, {
+      incident_type_id: incident.id,
+      customer_location: { longitude: 106.7009, latitude: 10.7769 },
+    });
+    expect(created.status).toBe(OrderStatus.AWAITING_PREPAYMENT);
+    expect(await database.getRepository(OrderOffer).countBy({ orderId: created.id })).toBe(0);
+    const pending = await database.getRepository(Payment).findOneByOrFail({ orderId: created.id });
+    expect(pending.amount).toBe('100000.00');
+    expect(pending.status).toBe(PaymentStatus.PENDING);
+    const first = await demoPayments.confirm(created.id, customer.id);
+    const second = await demoPayments.confirm(created.id, customer.id);
+    expect(first.status).toBe(OrderStatus.OFFERED);
+    expect(second.status).toBe(OrderStatus.OFFERED);
+    expect(await database.getRepository(OrderOffer).countBy({ orderId: created.id })).toBe(1);
+    const paid = await database.getRepository(Payment).findOneByOrFail({ orderId: created.id });
+    expect(paid.isDemo).toBe(true);
+    expect(paid.sepayTransactionId).toBeNull();
+  });
+
+  it('cancels an unpaid order without refund', async () => {
+    const created = await orders.create(customer.id, {
+      incident_type_id: incident.id,
+      customer_location: { longitude: 106.7009, latitude: 10.7769 },
+    });
+    const result = await orders.cancel(created.id, customer.id, 'No longer needed');
+    expect(result.status).toBe(OrderStatus.CANCELLED);
+    expect(result.refundAmount).toBeNull();
+    await expect(demoPayments.confirm(created.id, customer.id)).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('rejects a demo prepayment record with an amount different from the order snapshot', async () => {
+    const created = await orders.create(customer.id, {
+      incident_type_id: incident.id,
+      customer_location: { longitude: 106.7009, latitude: 10.7769 },
+    });
+    await database.getRepository(Payment).update({ orderId: created.id }, { amount: '1.00' });
+    await expect(demoPayments.confirm(created.id, customer.id)).rejects.toBeInstanceOf(ConflictException);
+    expect(await database.getRepository(OrderOffer).countBy({ orderId: created.id })).toBe(0);
+  });
+
+  it('requests a full refund before service and admin demo refund is idempotent', async () => {
+    const created = await createOrder();
+    const cancelled = await orders.cancel(created.id, customer.id, 'No provider found');
+    expect(cancelled.status).toBe(OrderStatus.REFUND_PENDING);
+    expect(cancelled.refundAmount).toBe('100000.00');
+    expect((await admin.pendingRefunds())[0].amount).toBe('100000.00');
+    const refunded = await demoPayments.refund(created.id);
+    expect(refunded.status).toBe(OrderStatus.REFUNDED);
+    expect(await demoPayments.refund(created.id)).toEqual(refunded);
+  });
+
+  it('only allows demo confirmation outside production with the feature flag', async () => {
+    const created = await orders.create(customer.id, {
+      incident_type_id: incident.id,
+      customer_location: { longitude: 106.7009, latitude: 10.7769 },
+    });
+    const disabled = new DemoPaymentsService(database, new ConfigService({ NODE_ENV: 'production', DEMO_MODE: true }), matching);
+    await expect(disabled.confirm(created.id, customer.id)).rejects.toThrow('Demo payments are disabled');
+    const payment = await database.getRepository(Payment).findOneByOrFail({ orderId: created.id });
+    expect(payment.status).toBe(PaymentStatus.PENDING);
+  });
+
+  it('confirms concurrent demo payments without creating duplicate offers', async () => {
+    await makeProvider(106.7009, 10.7769);
+    const created = await orders.create(customer.id, {
+      incident_type_id: incident.id,
+      customer_location: { longitude: 106.7009, latitude: 10.7769 },
+    });
+    const results = await Promise.all([
+      demoPayments.confirm(created.id, customer.id), demoPayments.confirm(created.id, customer.id),
+    ]);
+    expect(results.every((result) => result.status === OrderStatus.OFFERED)).toBe(true);
+    expect(await database.getRepository(OrderOffer).countBy({ orderId: created.id })).toBe(1);
+  });
+
+  it('admin can approve a pending provider only once', async () => {
+    const candidate = await makeProvider(106.7, 10.77, { approved: false, online: false });
+    await database.getRepository(User).update(candidate.user.id, { status: UserStatus.PENDING_APPROVAL });
+    expect((await admin.pendingProviders()).map((provider) => provider.id)).toContain(candidate.provider.id);
+    const reviewed = await admin.reviewProvider(candidate.provider.id, ApprovalStatus.APPROVED);
+    expect(reviewed.approvalStatus).toBe(ApprovalStatus.APPROVED);
+    expect((await database.getRepository(User).findOneByOrFail({ id: candidate.user.id })).status).toBe(UserStatus.ACTIVE);
+    expect((await providersService.updateStatus(candidate.user.id, true)).isOnline).toBe(true);
+    await expect(admin.reviewProvider(candidate.provider.id, ApprovalStatus.REJECTED)).rejects.toBeInstanceOf(ConflictException);
+    const rejected = await makeProvider(106.7, 10.77, { approved: false, online: false });
+    await database.getRepository(User).update(rejected.user.id, { status: UserStatus.PENDING_APPROVAL });
+    await admin.reviewProvider(rejected.provider.id, ApprovalStatus.REJECTED);
+    expect((await database.getRepository(User).findOneByOrFail({ id: rejected.user.id })).status).toBe(UserStatus.SUSPENDED);
+  });
+
+  it('restricts chat and location to active order participants', async () => {
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const outsider = await makeProvider(106.701, 10.777);
+    const created = await createOrder();
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    expect((await orders.listMine(customer.id, UserRole.CUSTOMER))[0].id).toBe(created.id);
+    expect((await orders.listMine(assigned.user.id, UserRole.PROVIDER))[0].id).toBe(created.id);
+    expect((await admin.recentOrders())[0].id).toBe(created.id);
+    const sent = await messages.create(created.id, customer.id, 'Please come soon');
+    expect((await messages.list(created.id, assigned.user.id))[0].content).toBe('Please come soon');
+    expect(messageCreated).toHaveBeenCalledWith(created.id, expect.objectContaining({ id: sent.id }));
+    await expect(messages.list(created.id, outsider.user.id)).rejects.toBeInstanceOf(NotFoundException);
+    const providerService = new ProvidersService(
+      database.getRepository(Provider), database.getRepository(OrderOffer), database.getRepository(User),
+      new ConfigService({ PROVIDER_LOCATION_MAX_AGE_SECONDS: 120 }), database.getRepository(Order),
+      { providerLocation } as unknown as RealtimeGateway,
+    );
+    await providerService.updateOrderLocation(assigned.user.id, created.id, { latitude: 10.778, longitude: 106.702 });
+    expect(providerLocation).toHaveBeenCalledWith(created.id, assigned.provider.id, 10.778, 106.702, expect.any(Date));
+    await expect(providerService.updateOrderLocation(outsider.user.id, created.id, { latitude: 10.778, longitude: 106.702 }))
+      .rejects.toBeInstanceOf(NotFoundException);
+    await orders.cancel(created.id, customer.id, 'Cancel before repair');
+    await expect(messages.create(created.id, assigned.user.id, 'Still coming?')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('requires arrival and a customer start token, then settles the demo order once', async () => {
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const outsider = await makeProvider(106.701, 10.777);
+    const created = await createOrder();
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    await expect(orders.startToken(created.id, customer.id)).rejects.toBeInstanceOf(ConflictException);
+    await expect(orders.arrive(created.id, outsider.user.id)).rejects.toBeInstanceOf(NotFoundException);
+    expect((await orders.arrive(created.id, assigned.user.id)).status).toBe(OrderStatus.ARRIVED);
+    const token = (await orders.startToken(created.id, customer.id)).token;
+    await expect(orders.start(created.id, outsider.user.id, token)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(orders.start(created.id, assigned.user.id, token.slice(0, -1) + (token.endsWith('0') ? '1' : '0'))).rejects.toThrow();
+    expect((await orders.start(created.id, assigned.user.id, token)).status).toBe(OrderStatus.IN_PROGRESS);
+    await expect(orders.cancel(created.id, customer.id, 'Changed my mind')).rejects.toBeInstanceOf(ConflictException);
+    expect((await orders.complete(created.id, assigned.user.id)).finalPrice).toBe('100000.00');
+    expect((await database.getRepository(Wallet).findOneByOrFail({ providerId: assigned.provider.id })).balance).toBe('100000.00');
+    expect(await database.getRepository(WalletTransaction).countBy({ orderId: created.id })).toBe(1);
+    const wallet = await new WalletsController(database).mine({ sub: assigned.user.id, role: UserRole.PROVIDER });
+    expect(wallet.balance).toBe('100000.00');
+    expect(wallet.demoOnly).toBe(true);
+    const reviews = new ReviewsService(database);
+    expect((await reviews.create(created.id, customer.id, { rating: 5, comment: 'Helpful' })).revieweeId).toBe(assigned.user.id);
+    expect((await reviews.create(created.id, assigned.user.id, { rating: 4 })).revieweeId).toBe(customer.id);
+    expect(await reviews.list(created.id, customer.id)).toHaveLength(2);
+    await expect(reviews.create(created.id, customer.id, { rating: 1 })).rejects.toBeInstanceOf(ConflictException);
+    await expect(reviews.list(created.id, outsider.user.id)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(orders.complete(created.id, assigned.user.id)).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('allows only one concurrent demo completion and one wallet credit', async () => {
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const created = await createOrder();
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    await orders.arrive(created.id, assigned.user.id);
+    const token = (await orders.startToken(created.id, customer.id)).token;
+    await orders.start(created.id, assigned.user.id, token);
+    const results = await Promise.allSettled([
+      orders.complete(created.id, assigned.user.id), orders.complete(created.id, assigned.user.id),
+    ]);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(await database.getRepository(WalletTransaction).countBy({ orderId: created.id })).toBe(1);
+    expect((await database.getRepository(Wallet).findOneByOrFail({ providerId: assigned.provider.id })).balance).toBe('100000.00');
+  });
+
+  it('only joins a socket to a room after JWT and order participation checks', async () => {
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const stranger = await makeUser(UserRole.CUSTOMER);
+    const created = await createOrder();
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    const jwt = new JwtService({ secret: 'test-only-socket-secret-with-more-than-32-characters' });
+    const gateway = new RealtimeGateway(jwt, database);
+    const participant = {
+      handshake: { auth: { token: await jwt.signAsync({ sub: assigned.user.id, role: UserRole.PROVIDER }), orderId: created.id } },
+      data: {}, join: jest.fn(), disconnect: jest.fn(),
+    } as unknown as Socket;
+    await gateway.handleConnection(participant);
+    expect(participant.join).toHaveBeenCalledWith(`provider:${assigned.provider.id}`);
+    expect(participant.join).toHaveBeenCalledWith(`order:${created.id}`);
+    expect(participant.disconnect).not.toHaveBeenCalled();
+    const intruder = {
+      handshake: { auth: { token: await jwt.signAsync({ sub: stranger.id, role: UserRole.CUSTOMER }), orderId: created.id } },
+      data: {}, join: jest.fn(), disconnect: jest.fn(),
+    } as unknown as Socket;
+    await gateway.handleConnection(intruder);
+    expect(intruder.join).not.toHaveBeenCalledWith(`order:${created.id}`);
+    expect(intruder.disconnect).toHaveBeenCalled();
+  });
 
   it('creates an order and snapshots the current price', async () => {
     await makeProvider(106.7009, 10.7769);

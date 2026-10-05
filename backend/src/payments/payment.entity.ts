@@ -30,6 +30,12 @@ export class Payment {
   @Column({ name: 'sepay_transaction_id', type: 'varchar', length: 120, unique: true, nullable: true })
   sepayTransactionId!: string | null;
 
+  @Column({ type: 'boolean', name: 'is_demo', default: false })
+  isDemo!: boolean;
+
+  @Column({ name: 'refunded_at', type: 'timestamptz', nullable: true })
+  refundedAt!: Date | null;
+
   @Column({ type: 'enum', enum: PaymentStatus, default: PaymentStatus.PENDING })
   status!: PaymentStatus;
 

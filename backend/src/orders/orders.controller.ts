@@ -5,6 +5,8 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { CancelOrderDto } from './dto/cancel-order.dto';
+import { StartOrderDto } from './dto/start-order.dto';
 import {
   AcceptOfferResponseDto,
   OrderDetailsResponseDto,
@@ -19,9 +21,16 @@ import { OrdersService } from './orders.service';
 export class OrdersController {
   constructor(private readonly orders: OrdersService) {}
 
+  @Get()
+  @Roles(UserRole.CUSTOMER, UserRole.PROVIDER)
+  @ApiOkResponse({ description: 'Latest 30 own orders; providers have a separate pending-offers endpoint' })
+  listMine(@CurrentUser() user: JwtPayload) {
+    return this.orders.listMine(user.sub, user.role);
+  }
+
   @Post()
   @Roles(UserRole.CUSTOMER)
-  @ApiCreatedResponse({ description: 'Order created and matching attempted', type: OrderMatchResponseDto })
+  @ApiCreatedResponse({ description: 'Order created; matching starts only after demo prepayment confirmation', type: OrderMatchResponseDto })
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateOrderDto) {
     return this.orders.create(user.sub, dto);
   }
@@ -39,6 +48,49 @@ export class OrdersController {
   @ApiOkResponse({ description: 'Matching retried for an unmatched order', type: OrderMatchResponseDto })
   retry(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
     return this.orders.retry(orderId, user.sub);
+  }
+
+  @Post(':orderId/cancel')
+  @Roles(UserRole.CUSTOMER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Cancel before service starts; paid orders require full refund' })
+  cancel(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CancelOrderDto,
+  ) {
+    return this.orders.cancel(orderId, user.sub, dto.reason);
+  }
+
+  @Post(':orderId/arrive')
+  @Roles(UserRole.PROVIDER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Assigned provider marks arrival at the customer' })
+  arrive(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
+    return this.orders.arrive(orderId, user.sub);
+  }
+
+  @Get(':orderId/start-token')
+  @Roles(UserRole.CUSTOMER)
+  @ApiOkResponse({ description: 'Five-minute service-start token for customer to show as QR/text; not a payment QR' })
+  startToken(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
+    return this.orders.startToken(orderId, user.sub);
+  }
+
+  @Post(':orderId/start')
+  @Roles(UserRole.PROVIDER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Assigned provider starts service with the customer-presented token' })
+  start(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload, @Body() dto: StartOrderDto) {
+    return this.orders.start(orderId, user.sub, dto.token);
+  }
+
+  @Post(':orderId/complete')
+  @Roles(UserRole.PROVIDER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Complete an exactly prepaid demo order at its original price; simulated wallet credit only' })
+  complete(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
+    return this.orders.complete(orderId, user.sub);
   }
 
   @Post(':orderId/offers/:offerId/accept')
