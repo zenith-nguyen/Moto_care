@@ -22,13 +22,15 @@ async function bootstrap() {
     }),
   );
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('MotoCare API')
-    .setDescription('MotoCare mobile roadside-assistance backend')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+  if (configService.get<string>('NODE_ENV') !== 'production' && !configService.get<boolean>('DEMO_MODE')) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('MotoCare API')
+      .setDescription('MotoCare mobile roadside-assistance backend')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    SwaggerModule.setup('docs', app, SwaggerModule.createDocument(app, swaggerConfig));
+  }
 
   await app.listen(configService.getOrThrow<number>('PORT'));
 }

@@ -1,10 +1,11 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager } from 'typeorm';
 import { OfferStatus } from '../common/enums/offer-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { OrderOffer } from './order-offer.entity';
 import { Order } from './order.entity';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 interface CandidateRow {
   id: number;
@@ -12,7 +13,11 @@ interface CandidateRow {
 
 @Injectable()
 export class MatchingService {
-  constructor(private readonly dataSource: DataSource, private readonly config: ConfigService) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly config: ConfigService,
+    @Optional() private readonly realtime?: RealtimeGateway,
+  ) {}
 
   async matchLockedOrder(manager: EntityManager, order: Order): Promise<OrderOffer | null> {
     if (order.status !== OrderStatus.PENDING_MATCH) {
@@ -107,31 +112,39 @@ export class MatchingService {
   }
 
   async expireOffer(offerId: number): Promise<void> {
-    await this.dataSource.transaction(async (manager) => {
+    const event = await this.dataSource.transaction(async (manager) => {
       const found = await manager.getRepository(OrderOffer).findOneBy({ id: offerId });
-      if (!found) return;
+      if (!found) return null;
       const order = await manager.getRepository(Order).findOne({
         where: { id: found.orderId },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!order) return;
+      if (!order) return null;
       const offer = await manager.getRepository(OrderOffer).findOne({
         where: { id: offerId },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!offer || offer.status !== OfferStatus.PENDING) return;
+      if (!offer || offer.status !== OfferStatus.PENDING) return null;
       const [{ expired }] = (await manager.query(
         'SELECT expires_at <= clock_timestamp() AS expired FROM order_offers WHERE id = $1',
         [offer.id],
       )) as Array<{ expired: boolean }>;
-      if (!expired) return;
+      if (!expired) return null;
       offer.status = OfferStatus.EXPIRED;
       await manager.getRepository(OrderOffer).save(offer);
       if (order.status === OrderStatus.OFFERED) {
         order.status = OrderStatus.PENDING_MATCH;
         await manager.getRepository(Order).save(order);
-        await this.matchLockedOrder(manager, order);
+        const nextOffer = await this.matchLockedOrder(manager, order);
+        return { orderId: order.id, providerId: offer.providerId, offerId: offer.id, status: order.status, nextOffer };
       }
+      return { orderId: order.id, providerId: offer.providerId, offerId: offer.id, status: order.status, nextOffer: null };
     });
+    if (!event) return;
+    this.realtime?.offerExpired(event.providerId, event.orderId, event.offerId);
+    this.realtime?.orderStatusChanged(event.orderId, event.status);
+    if (event.nextOffer) {
+      this.realtime?.offerCreated(event.nextOffer.providerId, event.orderId, event.nextOffer.id, event.nextOffer.expiresAt);
+    }
   }
 }

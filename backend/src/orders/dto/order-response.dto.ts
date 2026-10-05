@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { OfferStatus } from '../../common/enums/offer-status.enum';
 import { OrderStatus } from '../../common/enums/order-status.enum';
+import { PaymentStatus } from '../../common/enums/payment-status.enum';
 
 export class OrderMatchResponseDto {
   @ApiProperty({ example: 1 })
@@ -41,6 +42,20 @@ export class GeoPointResponseDto {
   coordinates!: [number, number];
 }
 
+export class OrderPaymentSummaryDto {
+  @ApiProperty()
+  id!: number;
+
+  @ApiProperty({ example: '100000.00' })
+  amount!: string;
+
+  @ApiProperty({ enum: PaymentStatus })
+  status!: PaymentStatus;
+
+  @ApiProperty({ description: 'True means no bank transfer occurred' })
+  isDemo!: boolean;
+}
+
 export class OrderDetailsResponseDto {
   @ApiProperty()
   id!: number;
@@ -71,6 +86,12 @@ export class OrderDetailsResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   finalPrice!: string | null;
+
+  @ApiProperty({ nullable: true, type: OrderPaymentSummaryDto })
+  payment!: OrderPaymentSummaryDto | null;
+
+  @ApiProperty({ nullable: true, type: GeoPointResponseDto, description: 'Current provider position only while driving or working' })
+  providerLocation!: GeoPointResponseDto | null;
 
   @ApiProperty({ type: String, nullable: true })
   message!: string | null;
