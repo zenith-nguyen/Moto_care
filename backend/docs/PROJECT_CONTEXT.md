@@ -32,9 +32,9 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 - Mobile: Flutter/Dart (do 2 thành viên FE làm, không thuộc phạm vi backend).
 - Backend: NestJS (TypeScript), REST + WebSocket (Socket.io), JWT.
 - DB: PostgreSQL + PostGIS. ORM TypeORM + migrations; query địa lý bằng SQL thô (`ST_DWithin`, `ST_Distance`, chỉ mục GiST); không dùng Prisma.
-- Push: Firebase Cloud Messaging. Bản đồ: Google Maps. Thanh toán: SePay webhook.
-- Admin web: React (làm mỏng, ưu tiên thấp).
-- Deploy: Railway hoặc Render (HTTPS). Local: docker-compose (`postgis/postgis`).
+- Push: chưa tích hợp FCM; bản demo ưu tiên Socket.IO + REST polling. Bản đồ Flutter ưu tiên `flutter_map` với nguồn tile tuân thủ chính sách OSM vì yêu cầu không phát sinh phí; Google Maps cần billing nên không tự đưa vào. Thanh toán SePay thật chưa tích hợp, hiện chỉ sandbox.
+- Admin: API đã có duyệt thợ, danh sách đơn/refund; UI do Cam Thu/Vy làm.
+- Demo không phí: NestJS + Docker/PostGIS trên laptop, HTTPS/WSS công khai tạm qua Tailscale Funnel (cần máy luôn bật). Không dùng Railway/Render trả phí ở mốc này; chưa có server 24/7. Xem `docs/DEMO_RUNBOOK.md`.
 
 ## 5. Module backend (NestJS)
 
@@ -47,11 +47,11 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 ## 7. Quy tắc nghiệp vụ cốt lõi
 
 - Matching: query PostGIS thợ online + rảnh + đã duyệt trong bán kính X km, gần nhất trước. Gửi đơn cho một thợ tại một thời điểm (bản ghi `order_offers`), chờ 15s. Từ chối/hết giờ -> thợ kế tiếp. Hết thợ -> báo khách. Việc thợ nhận đơn phải atomic (`UPDATE` có điều kiện trạng thái đơn).
-- Trạng thái đơn: `PENDING_MATCH -> OFFERED -> ACCEPTED -> ARRIVED -> IN_PROGRESS -> AWAITING_PAYMENT -> PAID -> COMPLETED`; nhánh `CANCELLED` lưu lý do, bên hủy.
+- Trạng thái mục tiêu: `AWAITING_PREPAYMENT -> PENDING_MATCH -> OFFERED -> ACCEPTED -> ARRIVED -> IN_PROGRESS -> COMPLETED`; nhánh `CANCELLED`/`REFUND_PENDING`/`REFUNDED`. **Hiện chỉ code đến ACCEPTED, hủy trước khi sửa và hoàn giả lập**; các trạng thái còn lại là thiết kế, không được quảng cáo là đã chạy.
 - Realtime: thợ gửi GPS mỗi 3-5s khi có đơn active qua WebSocket; server đẩy cho khách của đơn đó. Không lưu lịch sử tọa độ, chỉ giữ vị trí hiện tại. Socket phải xác thực JWT và kiểm tra quyền theo đơn.
 - QR xác nhận bắt đầu dịch vụ: payload = `orderId + timestamp + HMAC` do server ký; app chỉ hiển thị/quét, thợ gửi lên server verify. Secret HMAC chỉ ở server.
-- Thanh toán: MotoCare nhận tiền. Khách chuyển khoản vào tài khoản MotoCare, nội dung = mã đơn. SePay webhook đối chiếu mã đơn + số tiền -> đơn `PAID` (idempotent theo `sepay_transaction_id`) -> cộng ví thợ (trừ phí nền tảng nếu có). Rút tiền được Admin duyệt và chuyển khoản tay ngoài hệ thống. Mọi thay đổi số dư dùng DB transaction.
-- **Đang xem xét thay đổi** sang thu giá tạm tính trước khi matching, giữ khoản đã thu trên sổ hệ thống và hoàn khi hủy; không nhầm với escrow tại ngân hàng. Chưa code/chưa chốt chính sách, xem `docs/NEXT_MILESTONES.md` trước khi làm payment.
+- Quyết định đã chốt: thu giá tạm tính **trước** matching. Nếu không tìm được thợ hoặc hủy trước khi bắt đầu sửa thì hoàn 100%; sau khi bắt đầu, Admin xét từng trường hợp. Khoản tiền thật (khi tích hợp) vào tài khoản MotoCare, **không phải escrow ngân hàng**. SePay webhook đối chiếu mã đơn, số tiền, giao dịch duy nhất; không cộng ví thợ tại lúc nhận tiền, chỉ quyết toán khi hoàn tất và xử lý chênh lệch/tranh chấp.
+- Nhánh demo hiện dùng `POST /payments/demo/.../confirm` và `/refund` giả lập, không nhận/hoàn tiền thật và không tạo QR ngân hàng. SePay, chuyển khoản/hoàn thật, giá cuối/chênh lệch, ví và rút tiền còn phải code và kiểm chứng riêng. Không chạy seed mật khẩu mẫu khi mở API công khai. Xem `docs/PROGRESS.md` và `docs/DEMO_RUNBOOK.md` để biết phần nào đã xong.
 
 ## 8. Bảo mật
 

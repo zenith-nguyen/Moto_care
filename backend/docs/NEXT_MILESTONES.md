@@ -1,6 +1,6 @@
-# MotoCare — các mốc sau Prompt C (bản thiết kế để duyệt)
+# MotoCare — các mốc sau Prompt C (thiết kế và trạng thái)
 
-Cập nhật: 2026-10-05. Tài liệu này phân biệt việc **đã chốt** với phương án **chưa chốt**; không phải xác nhận rằng các tính năng bên dưới đã được code hoặc có thể dùng tiền thật.
+Cập nhật: 2026-10-05. Chính sách thu trước và hoàn 100% trước khi sửa **đã được duyệt**. Nhánh `feat/zenith/demo-backend` đang triển khai giả lập thanh toán/hoàn, realtime và admin duyệt thợ; chưa có tiền thật hoặc APK hoàn chỉnh. Trạng thái chính xác theo `PROGRESS.md`; hướng dẫn demo theo `DEMO_RUNBOOK.md`. Các dòng mô tả triển khai production bên dưới là kế hoạch, không phải chức năng đã chạy.
 
 ## Phạm vi và trách nhiệm
 
@@ -23,9 +23,9 @@ Cập nhật: 2026-10-05. Tài liệu này phân biệt việc **đã chốt** v
 - QR thanh toán: backend lấy khoản phải thu đã chốt cho đơn để tạo QR ngân hàng với tài khoản nhận, số tiền VND và mã đối soát của đơn. Khách dùng app ngân hàng quét QR trên thiết bị/màn hình khác, hoặc mở deeplink/lưu QR nếu luồng ngân hàng hỗ trợ. MotoCare APK không tự chuyển tiền chỉ bằng cách quét ảnh QR.
 - Giá tạm tính lúc đặt có thể khác giá cuối do chi phí phát sinh. Phải định nghĩa khoản thu thêm hoặc hoàn phần chênh trước khi tích hợp tiền thật.
 
-## Đề xuất thay đổi thanh toán — **CHỜ CHỐT, CHƯA CODE**
+## Quyết định thanh toán — đã chốt chính sách, chỉ code sandbox
 
-Người dùng muốn chỉ nhận chuyển khoản ngân hàng, yêu cầu thanh toán ngay khi tạo đơn và có thể hoàn khi hủy. Điều này thay đổi quy tắc hiện ghi ở `PROJECT_CONTEXT.md` mục 7 (thanh toán sau hoàn thành); không tự coi là quyết định cuối cho tới khi nhóm duyệt.
+Người dùng đã duyệt thu giá tạm tính trước matching: không tìm được thợ hoặc hủy trước khi bắt đầu sửa thì hoàn 100%; sau khi bắt đầu sửa thì Admin xét từng trường hợp. `PROJECT_CONTEXT.md` mục 7 đã cập nhật. Ngân hàng/SePay thật và xử lý giá chênh lệch vẫn chưa triển khai.
 
 Đề xuất cho bản demo/sandbox:
 
@@ -38,12 +38,11 @@ Người dùng muốn chỉ nhận chuyển khoản ngân hàng, yêu cầu than
 
 SePay xác nhận mô hình QR + webhook là báo **tiền đã vào tài khoản**: https://developer.sepay.vn/vi/sepay-webhooks/tao-qr-va-form-thanh-toan. API hoàn tự động của SePay có điều kiện ngân hàng/tài khoản, không thể giả định dùng được cho mọi ngân hàng: https://developer.sepay.vn/vi/sepay-api/v2/hoan-tien/hoan-tien-giao-dich.
 
-Trước khi code payment cần chốt: thu trước khi matching hay sau khi thợ nhận; chính sách hủy/hoàn; ai và lúc nào quyết toán cho thợ; tài khoản ngân hàng/SePay dùng sandbox và (nếu triển khai thật) cách hoàn tiền được hỗ trợ. Cần backend HTTPS public cho webhook thật. Không lưu số tài khoản, token hay secret trong repo.
+Thu trước matching và hoàn 100% trước khi bắt đầu sửa đã được chốt. Trước khi code **tiền thật** còn phải chốt chính sách quyết toán ví thợ, phí nền tảng, xử lý giá chênh lệch/tranh chấp, tài khoản ngân hàng/SePay và cách hoàn tiền ngân hàng thực sự hỗ trợ. Cần backend HTTPS public đáng tin cậy cho webhook thật. Không lưu số tài khoản, token hay secret trong repo.
 
 ## Thứ tự triển khai đề xuất
 
-1. Môi trường public dùng thử: chọn hosting + PostgreSQL/PostGIS có backup và mức độ hoạt động phù hợp 15 giây offer/WebSocket; chuẩn bị cấu hình API URL cho APK. Không dùng gói ngủ/DB hết hạn cho thanh toán thật.
-2. Đồng bộ API contract với Cam Thu/Vy; backend bổ sung duyệt thợ và các endpoint thiếu cho trải nghiệm đăng nhập/đơn. UI Flutter có thể bắt đầu với REST polling, không phụ thuộc hoàn thành WebSocket.
-3. Realtime offer, vị trí theo đơn và chat có kiểm tra quyền, fallback REST; phối hợp UI bản đồ/marker với nhóm Flutter.
-4. Hoàn thiện vòng đời đơn (đến nơi, xác nhận bắt đầu, giá cuối, hủy). Sau khi duyệt quy tắc thanh toán mới: migration + payment sandbox + test đối soát/hoàn; production payment là bước riêng cần tài khoản và kiểm thử an toàn.
-5. Test APK release trên ít nhất hai điện thoại ở mạng khác nhau; kiểm tra mất mạng/kết nối lại, định vị bị từ chối, cold start server, backup và phục hồi DB.
+1. Hoàn thiện và review nhánh demo-backend; migration/test trên DB riêng. Bản không phí chạy trên laptop với Tailscale Funnel theo `DEMO_RUNBOOK.md`, không có uptime khi laptop tắt. Không dùng môi trường này cho tiền thật.
+2. Cam Thu/Vy merge UI và nối API contract; trải nghiệm đầu tiên dùng REST polling, sau đó realtime Socket.IO, GPS/marker Flutter. Bản đồ ưu tiên nguồn không cần billing nhưng vẫn tuân thủ chính sách tile.
+3. Test APK release ở 4G và ba vai trò đồng thời; kiểm tra mất mạng/kết nối lại, từ chối GPS, offer hết hạn, laptop ngủ/tắt, backup và phục hồi.
+4. Sau demo: giá cuối khác giá tạm tính, thu bù/hoàn chênh lệch, khiếu nại sau bắt đầu, rút tiền và QR/webhook/hoàn ngân hàng **thật** là milestone riêng, không được xem là đã xong vì sandbox chạy.

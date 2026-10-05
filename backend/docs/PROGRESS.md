@@ -4,52 +4,29 @@ Cập nhật lần cuối: 2026-10-05
 
 ## Đã xong
 
-- Prompt A: khung NestJS, Auth (JWT + argon2), RolesGuard, Swagger, health check.
-- Migration: `EnablePostgis`, `CreateUsers`.
-- TypeORM kết nối PostgreSQL/PostGIS, không dùng `synchronize`.
-- Docker Compose chạy PostgreSQL + PostGIS local.
-- Đã kiểm tra đăng ký qua Swagger, JWT và `GET /users/me` thành công.
-- Backend đã nằm trong `mobilecare_1/backend` và đã merge vào `main`.
-- Đã sửa kiểu cột nullable của `users.email` và `users.phone` để migration PostgreSQL chạy được.
-- Prompt B: tạo entity + migration cho providers, incident_types, orders, order_offers, messages, reviews, payments, wallets, wallet_transactions và withdrawal_requests.
-- Mọi cột tiền dùng PostgreSQL `numeric`, có check không âm; location dùng PostGIS geography + GiST.
-- Seed 5 incident types, 3 provider approved/online quanh TP.HCM, 1 customer, 1 admin và provider wallets.
-- Script `db:check-nearest-provider` kiểm chứng `ST_DWithin` + thứ tự `ST_Distance`.
-- Đã chạy migration, seed, nearest-provider check, lint, test và build thành công.
-- Đã bỏ quan hệ entity hai chiều `User`-`Provider` để tránh vòng import Jest; quan hệ database vẫn giữ FK 1-1 từ provider tới user.
-- Prompt C: API incident types, provider GPS/online, tạo đơn, matching PostGIS, retry, accept/reject, danh sách offer đang chờ và job hết hạn offer.
-- Đăng ký thợ nay tạo hồ sơ provider PENDING/offline cùng transaction với user.
-- Migration `PreventConcurrentOffers` thêm unique index bảo vệ một offer PENDING cho mỗi order/provider và một order active cho mỗi provider.
-- Đã kiểm tra migration từ DB test trống, 12 test PostGIS/concurrency, 5 unit test, lint, build, HTTP thực tế và Swagger `/docs-json`.
-- Test đồng thời phát hiện snapshot query cũ có thể nhìn thợ rảnh sau khi transaction khác vừa tạo offer; matching nay kiểm tra lại dưới khóa provider bằng statement mới, trả PENDING_MATCH thay vì lỗi unique. Đã chạy lặp lại bộ test DB 3 lần.
-- Prompt C đã merge qua PR #5; Backend CI, Flutter CI và PR Policy đều xanh.
+- Prompt A: NestJS, Auth JWT/argon2, RolesGuard, Swagger, health; migration PostGIS và users. Đã thử đăng ký, đăng nhập, `/users/me`.
+- Prompt B: 11 bảng lõi (users, providers, incident_types, orders, order_offers, messages, reviews, payments, wallets, wallet_transactions, withdrawal_requests); migration, seed local, index GiST, tiền `numeric`, test truy vấn `ST_DWithin`.
+- Prompt C (đã merge PR #5): loại sự cố, GPS/online của thợ, tạo đơn, matching PostGIS, accept/reject, offer 15 giây, job hết hạn 5 giây, retry, REST polling, khóa dòng + unique index chống nhận trùng. CI/lint/test đã xanh khi merge.
+- Nhánh `feat/zenith/demo-backend` đang phát triển: API admin duyệt thợ; demo trả trước/hoàn 100% giả lập; hủy trước khi bắt đầu; chat lưu DB; Socket.IO offer/trạng thái/GPS/chat; tới nơi/mã bắt đầu/hoàn tất đúng giá gốc; ví demo và đánh giá hai chiều; `/health/ready` kiểm tra DB; hướng dẫn demo một laptop. **Chưa merge, chưa phải chức năng của main.** Đã thử migration trong DB test riêng, seed demo với mật khẩu riêng, `ST_DWithin`, 23 DB tests + 5 unit tests, lint/build và HTTP readiness, Swagger disabled, rate limit. `npm audit --omit=dev` có 0 cảnh báo sau cập nhật TypeORM 0.3.31.
 
 ## Đang làm / Tiếp theo
 
-- Theo kế hoạch trong `docs/NEXT_MILESTONES.md`: chuẩn bị backend/DB HTTPS có thể phục vụ APK trên điện thoại khác; phối hợp API với UI Flutter của Cam Thu/Vy; realtime GPS/chat; hoàn thiện vòng đời đơn; sau đó payment sandbox và đối soát.
-- Đề xuất thu trước giá tạm tính bằng chuyển khoản + hoàn khi hủy **chưa được chốt hoặc code**. Không triển khai tiền thật trước khi có chính sách hoàn và xác nhận khả năng hoàn của ngân hàng/nhà cung cấp.
+1. Hoàn tất review, CI và merge nhánh demo-backend. Không migrate DB dev/production tự động; chạy migration theo README sau khi merge.
+2. Cam Thu/Vy merge UI Flutter Khách/Thợ/Admin và nối API; `lib/main.dart` trên main hiện vẫn là counter starter. Chưa có APK MotoCare hoàn chỉnh để gửi thầy.
+3. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
+4. Thiếu giá cuối **khác** giá tạm tính/thu bù/hoàn chênh lệch, rút tiền, webhook SePay thật, hoàn tiền thật và khiếu nại Admin sau khi bắt đầu sửa. Không quảng cáo sandbox là xử lý tiền thật.
 
-## Quyết định đã chốt (không hỏi lại)
+## Quyết định đã chốt
 
-- DB: PostgreSQL + PostGIS, TypeORM, migration thủ công; không dùng `synchronize`.
-- Thanh toán: khách chuyển khoản vào tài khoản MotoCare, SePay webhook, cộng ví thợ, Admin duyệt rút tay.
-- Mọi cột tiền dùng `numeric`/`decimal`, không dùng `float`.
-- Vị trí dùng `geography(Point, 4326)` và GiST index.
-- `provider.approval_status` tách khỏi `users.status` để phân biệt duyệt hồ sơ thợ và trạng thái tài khoản.
-- `payments.sepay_transaction_id` unique nhưng nullable để cho phép tạo payment pending trước webhook.
-- Branch milestone schema là `feat/db-schema`; PR policy đã cho phép riêng branch này.
-- Prompt C dùng branch `feat/zenith/orders-matching`, không sửa PR Policy.
-- Provider gửi GPS qua REST mỗi 30–60 giây khi online; matching chỉ nhận GPS còn mới trong 120 giây, mặc định bán kính 10 km.
-- Offer hết hạn sau 15 giây; `@nestjs/schedule` quét mỗi 5 giây. PostgreSQL transaction/row lock xử lý race condition.
-- WebSocket giai đoạn sau: `provider:{providerId}` nhận offer.created/expired; `order:{orderId}` nhận trạng thái đơn, GPS theo đơn, tin nhắn. REST pending offers/order là fallback.
-- Sản phẩm cuối là APK dùng trên điện thoại khác; Flutter UI cho khách, thợ và Admin do Cam Thu/Vy làm. Backend/DB là dịch vụ dùng chung bên ngoài APK, không để `localhost` trong APK phát hành.
+- PostgreSQL + PostGIS, TypeORM migration thủ công; không `synchronize`.
+- Tất cả tiền `numeric`/`decimal`, không float; vị trí `geography(Point,4326)` có GiST.
+- Thu trước giá tạm tính rồi mới matching. Không tìm được thợ hoặc hủy trước khi sửa: hoàn 100%; sau khi bắt đầu sửa: Admin xét từng trường hợp. Thu/hoàn **thực** cần xác nhận ngân hàng/SePay, không tự giả định có escrow hoặc API hoàn tự động. Bản hiện tại chỉ sandbox, không nhận/chuyển tiền.
+- Provider online gửi REST GPS 30–60 giây; matching chỉ dùng vị trí trong 120 giây, bán kính mặc định 10 km. Khi có đơn có thể gửi GPS theo đơn vài giây/lần; socket đẩy tới người tham gia và REST là fallback.
+- UI Flutter do Cam Thu/Vy phụ trách; backend/DB chạy trên laptop khi demo không nằm trong APK. Không dùng `localhost` trong APK gửi người khác. Ưu tiên giải pháp không mất phí, nhưng miễn phí không đồng nghĩa uptime/băng thông không giới hạn.
+- `wallet_transactions.amount` dương; chiều cộng/trừ suy từ `type`. Không seed mật khẩu mẫu ra môi trường công khai.
 
-## Việc đã bỏ / không dùng nữa
+## Không dùng nữa / ghi chú vận hành
 
-- Thư mục `D:\mobile_app_motocare\motocare-backend` không dùng nữa; backend chính là `mobilecare_1/backend`.
-
-## Ghi chú vận hành
-
-- Chạy local theo `README.md` phần cách chạy backend.
-- `.env` không commit.
-- Đổi `JWT_SECRET` nếu secret hoặc access token từng lộ ra ngoài chat/ảnh.
+- `D:\mobile_app_motocare\motocare-backend` đã bỏ; backend chính là `mobilecare_1/backend`.
+- `.env` không commit. Đổi JWT secret/DB password nếu từng hiện trong chat/ảnh; chỉ sửa `.env` không đổi password role trong PostgreSQL volume.
+- Chạy local theo [README.md](../README.md); trước khi mở Funnel làm checklist trong [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md).
