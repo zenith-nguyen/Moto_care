@@ -26,7 +26,7 @@ docker exec motocare-postgres createdb -U motocare motocare_demo
 Copy-Item .env.example .env.demo
 ```
 
-Nếu `createdb` báo database đã tồn tại, **không xóa/ghi đè**; kiểm tra xem DB đó đã có dữ liệu/mật khẩu mẫu chưa, hoặc chọn tên DB demo mới. Mở `.env.demo` (file này được `.gitignore` bỏ qua), chỉnh `DATABASE_NAME=motocare_demo`, `DATABASE_PASSWORD` khớp role PostgreSQL, `DEMO_MODE=true`, `NODE_ENV=development`, ba `SEED_*_PASSWORD` riêng nhau (16+ ký tự) và một `JWT_SECRET` mới dài ít nhất 32 ký tự. Ghi các mật khẩu demo vào password manager riêng; không gửi chat. Trước khi public, vào `psql` trong container và dùng lệnh tương tác `\password motocare` để đổi mật khẩu **thực tế** của role DB, sau đó cập nhật cả `.env` và `.env.demo` nếu còn dùng DB local cũ. Không đặt mật khẩu vào lệnh PowerShell/SQL lưu lịch sử. Sao lưu DB trước khi đổi nếu đang có dữ liệu cần giữ.
+Nếu `createdb` báo database đã tồn tại, **không xóa/ghi đè**; kiểm tra xem DB đó đã có dữ liệu/mật khẩu mẫu chưa, hoặc chọn tên DB demo mới. Mở `.env.demo` (file này được `.gitignore` bỏ qua), chỉnh `DATABASE_NAME=motocare_demo`, `DATABASE_PASSWORD` khớp role PostgreSQL, `DEMO_MODE=true`, `NODE_ENV=development`, ba `SEED_*_PASSWORD` riêng nhau (16+ ký tự) và một `JWT_SECRET` mới dài ít nhất 32 ký tự. Ghi các mật khẩu demo vào password manager riêng; không gửi chat. Trước khi public, đổi mật khẩu **thực tế** của role DB bằng `docker exec -it motocare-postgres psql -U motocare -d motocare`, nhập `\password motocare` trong psql, làm theo hai prompt ẩn mật khẩu, rồi `\q`. Sau đó cập nhật cả `.env` và `.env.demo` nếu còn dùng DB local cũ. Không đặt mật khẩu vào lệnh PowerShell/SQL lưu lịch sử. Sao lưu DB trước khi đổi nếu đang có dữ liệu cần giữ.
 
 Mỗi PowerShell chạy backend/migration/seed cần chọn file config demo trước:
 
@@ -49,7 +49,7 @@ Flutter phải nhận API base URL ở lúc build, ví dụ `--dart-define=API_B
 
 ## Ba màn hình trên một laptop
 
-Có thể demo 3 vai trò cùng lúc **khi UI của cả ba đã có**: dùng 1 Android emulator hoặc điện thoại thật cho Khách, một thiết bị/emulator thứ hai cho Thợ và cửa sổ Flutter web/Windows cho Admin nếu UI hỗ trợ web/Windows. Nếu Admin chỉ có giao diện mobile, dùng emulator/điện thoại thứ ba. Máy 16 GB RAM có thể chậm với 3 emulator cùng Docker; nên thử trước, ưu tiên 1 emulator + 2 máy thật/trình duyệt nếu nhóm hỗ trợ. Ba phiên phải đăng nhập tài khoản **khác vai trò**; không dùng cùng JWT. Trình chiếu/mirror từng màn hình chỉ là vấn đề hiển thị, không thay đổi kiến trúc API.
+Có thể demo 3 vai trò cùng lúc **khi UI của cả ba đã có**: dùng 1 Android emulator hoặc điện thoại thật cho Khách, một thiết bị/emulator thứ hai cho Thợ và cửa sổ Flutter web/Windows cho Admin nếu UI hỗ trợ web/Windows. Hiện máy đã nhận Windows, Chrome, Edge và có 1 AVD `Medium_Phone` (chưa chạy); phương án thực tế là emulator + hai cửa sổ trình duyệt hoặc điện thoại, **chỉ nếu UI Flutter hỗ trợ web**. Có thể chạy emulator bằng `flutter emulators --launch Medium_Phone` và kiểm tra `flutter devices`. Nếu Admin chỉ có giao diện mobile, cần thiết bị/emulator khác. Máy 16 GB RAM có thể chậm với 3 emulator cùng Docker; nên thử trước. Ba phiên phải đăng nhập tài khoản **khác vai trò**; không dùng cùng JWT. Trình chiếu/mirror từng màn hình chỉ là vấn đề hiển thị, không thay đổi kiến trúc API.
 
 ## Hợp đồng API tối thiểu cho nhóm Flutter
 
