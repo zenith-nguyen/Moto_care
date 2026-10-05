@@ -1,13 +1,29 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule, JwtService } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { ScheduleModule } from '@nestjs/schedule';
 import { Test } from '@nestjs/testing';
-import * as argon2 from 'argon2';
-import 'dotenv/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
+import { AdminModule } from '../src/admin/admin.module';
+import { JwtStrategy } from '../src/auth/jwt.strategy';
+import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
+import { RolesGuard } from '../src/common/guards/roles.guard';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import { UserStatus } from '../src/common/enums/user-status.enum';
+import { HealthModule } from '../src/health/health.module';
 import { IncidentType } from '../src/incident-types/incident-type.entity';
+import { IncidentTypesModule } from '../src/incident-types/incident-types.module';
+import { OrdersModule } from '../src/orders/orders.module';
+import { PaymentsModule } from '../src/payments/payments.module';
+import { Provider } from '../src/providers/provider.entity';
+import { ProvidersModule } from '../src/providers/providers.module';
+import { ReviewsModule } from '../src/reviews/reviews.module';
 import { User } from '../src/users/user.entity';
+import { UsersModule } from '../src/users/users.module';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -22,27 +38,50 @@ type Session = {
 describe('Sandbox demo flow over HTTP', () => {
   let app: INestApplication;
   let database: DataSource;
+  let jwt: JwtService;
   let incident: IncidentType;
+  let admin: Session;
   const password = 'HttpTestOnly123!';
 
   beforeAll(async () => {
-    Object.assign(process.env, {
-      NODE_ENV: 'test',
-      DATABASE_NAME: testDatabase,
-      DEMO_MODE: 'true',
-      JWT_SECRET: 'http-test-only-jwt-secret-longer-than-32-characters',
-      JWT_EXPIRES_IN: '1d',
-      OFFER_TTL_SECONDS: '60',
-      PROVIDER_LOCATION_MAX_AGE_SECONDS: '120',
-      MATCH_RADIUS_KM: '10',
-    });
-
-    const { AppModule } = await import('../src/app.module');
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
+        ScheduleModule.forRoot(),
+        TypeOrmModule.forRoot({
+          type: 'postgres',
+          host: process.env.DATABASE_HOST,
+          port: Number(process.env.DATABASE_PORT ?? 5432),
+          username: process.env.DATABASE_USER,
+          password: process.env.DATABASE_PASSWORD,
+          database: testDatabase,
+          autoLoadEntities: true,
+          synchronize: false,
+        }),
+        PassportModule.register({ defaultStrategy: 'jwt' }),
+        JwtModule.register({ secret: process.env.JWT_SECRET, signOptions: { expiresIn: '1d' } }),
+        UsersModule,
+        HealthModule,
+        IncidentTypesModule,
+        OrdersModule,
+        PaymentsModule,
+        ProvidersModule,
+        ReviewsModule,
+        AdminModule,
+      ],
+      providers: [
+        JwtStrategy,
+        JwtAuthGuard,
+        RolesGuard,
+        { provide: APP_GUARD, useExisting: JwtAuthGuard },
+        { provide: APP_GUARD, useExisting: RolesGuard },
+      ],
+    }).compile();
     app = moduleRef.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     await app.init();
     database = app.get(DataSource);
+    jwt = app.get(JwtService);
   });
 
   beforeEach(async () => {
@@ -55,42 +94,30 @@ describe('Sandbox demo flow over HTTP', () => {
         isActive: true,
       }),
     );
-    await database.getRepository(User).save(
-      database.getRepository(User).create({
-        name: 'Demo Admin',
-        email: 'admin.http-test@motocare.test',
-        phone: null,
-        passwordHash: await argon2.hash(password),
-        role: UserRole.ADMIN,
-        status: UserStatus.ACTIVE,
-      }),
-    );
+    admin = await createActor('Demo Admin', 'admin.http-test@motocare.test', UserRole.ADMIN, UserStatus.ACTIVE);
   });
 
   afterAll(async () => {
     await app?.close();
   });
 
-  async function register(name: string, email: string, role: UserRole): Promise<Session> {
-    const response = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({ name, email, password, role })
-      .expect(201);
-    return { token: response.body.accessToken as string, userId: response.body.user.id as number };
-  }
-
-  async function loginAdmin(): Promise<Session> {
-    const response = await request(app.getHttpServer())
-      .post('/auth/login')
-      .send({ identity: 'admin.http-test@motocare.test', password })
-      .expect(200);
-    return { token: response.body.accessToken as string, userId: response.body.user.id as number };
+  async function createActor(name: string, email: string, role: UserRole, status: UserStatus): Promise<Session> {
+    const user = await database.getRepository(User).save(
+      database.getRepository(User).create({ name, email, phone: null, passwordHash: password, role, status }),
+    );
+    if (role === UserRole.PROVIDER) {
+      await database.getRepository(Provider).save(database.getRepository(Provider).create({ userId: user.id }));
+    }
+    return { token: await jwt.signAsync({ sub: user.id, role }), userId: user.id };
   }
 
   async function prepareActors() {
-    const customer = await register('HTTP Customer', 'customer.http-test@motocare.test', UserRole.CUSTOMER);
-    const provider = await register('HTTP Provider', 'provider.http-test@motocare.test', UserRole.PROVIDER);
-    const admin = await loginAdmin();
+    const customer = await createActor(
+      'HTTP Customer', 'customer.http-test@motocare.test', UserRole.CUSTOMER, UserStatus.ACTIVE,
+    );
+    const provider = await createActor(
+      'HTTP Provider', 'provider.http-test@motocare.test', UserRole.PROVIDER, UserStatus.PENDING_APPROVAL,
+    );
 
     const pending = await request(app.getHttpServer())
       .get('/admin/providers/pending')
