@@ -15,4 +15,6 @@ export const envValidationSchema = Joi.object({
   MATCH_RADIUS_KM: Joi.number().positive().max(100).default(10),
   OFFER_TTL_SECONDS: Joi.number().integer().positive().max(300).default(15),
   PROVIDER_LOCATION_MAX_AGE_SECONDS: Joi.number().integer().positive().max(3600).default(120),
+  CHAT_UPLOAD_DIR: Joi.string().trim().min(1).default('storage/chat'),
+  CHAT_IMAGE_MAX_BYTES: Joi.number().integer().min(1024).max(5_242_880).default(5_242_880),
 });
