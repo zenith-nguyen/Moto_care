@@ -13,7 +13,7 @@ Cập nhật: 2026-10-05. Tài liệu này là **hướng dẫn chuẩn bị**, 
 1. Dùng **database demo riêng**, không dùng DB `motocare` local từng seed bằng mật khẩu mẫu. Sao lưu DB nếu cần. Tạo DB mới, chạy migrations và seed với `DEMO_MODE=true` cùng ba biến `SEED_CUSTOMER_PASSWORD`, `SEED_PROVIDER_PASSWORD`, `SEED_ADMIN_PASSWORD`, mỗi giá trị khác nhau, dài tối thiểu 16 ký tự và không phải mật khẩu mẫu. Seed chỉ tạo user mới, không cập nhật mật khẩu user đã tồn tại; nếu đã seed DB đó bằng mật khẩu mẫu thì tạo DB demo mới, không chỉ chạy seed lại.
 2. Đổi `JWT_SECRET` và `DATABASE_PASSWORD` đã từng lộ trong chat/ảnh. Đổi mật khẩu PostgreSQL thực tế qua SQL an toàn rồi cập nhật `.env`; **chỉ sửa `.env` không đổi mật khẩu DB đã được khởi tạo trong Docker volume**. Không gửi giá trị mới vào chat/commit/APK. Chạy API bằng biến môi trường riêng cho demo; không commit `.env`.
 3. Bật `DEMO_MODE=true`, giữ `NODE_ENV=development` cho tính năng giả lập. **Đây là sandbox công khai, không có nghĩa là production an toàn**. Không chạy webhook/QR ngân hàng hoặc lấy tiền thật. Tắt Funnel ngay sau buổi demo. Không gửi URL cho người ngoài lớp.
-4. `DEMO_MODE=true` sẽ tắt Swagger `/docs`. Login/register có giới hạn 10 request/phút theo IP ở mức một NestJS process (không thay thế WAF); vẫn cần kiểm tra log không có token/secret, backup và phục hồi DB. Chưa hoàn tất các mục đó ở mốc này thì chỉ demo với nhóm tin cậy trong thời gian ngắn.
+4. `DEMO_MODE=true` sẽ tắt Swagger `/docs`. Login/register có giới hạn 10 request/phút theo IP ở mức một NestJS process (không thay thế WAF); vẫn cần kiểm tra log không có token/secret, backup và phục hồi DB. Nếu demo chat ảnh, backup cả DB lẫn `CHAT_UPLOAD_DIR` (mặc định `storage/chat`); file ảnh không nằm trong DB. Chưa hoàn tất các mục đó ở mốc này thì chỉ demo với nhóm tin cậy trong thời gian ngắn.
 
 ## Chuẩn bị DB demo và khởi động
 
@@ -59,7 +59,7 @@ Có thể demo 3 vai trò cùng lúc **khi UI của cả ba đã có**: dùng 1 
 | Khởi tạo | `GET /incident-types`, `POST /orders` | `PATCH /providers/me/location`, `PATCH /providers/me/status` | `GET /admin/providers/pending` |
 | Demo trả trước | `POST /payments/demo/orders/:id/confirm` | — | — |
 | Nhận đơn | `GET /orders`, `GET /orders/:id` | `GET /orders`, `GET /providers/me/offers/pending`, `POST /orders/:id/offers/:offerId/accept` hoặc `/reject` | `PATCH /admin/providers/:id/approval`, `GET /admin/orders` |
-| Theo dõi/chat | `GET /orders/:id`, `GET/POST /orders/:id/messages` | `PATCH /providers/me/orders/:id/location`, `GET/POST /orders/:id/messages` | — |
+| Theo dõi/chat | `GET /orders/:id`, `GET/POST /orders/:id/messages`, tải ảnh bằng URL có JWT | `PATCH /providers/me/orders/:id/location`, `GET/POST /orders/:id/messages`, tải ảnh bằng URL có JWT | — |
 | Tới nơi/bắt đầu | `GET /orders/:id/start-token` (hiện mã cho thợ quét/nhập) | `POST /orders/:id/arrive`, `POST /orders/:id/start` với token | — |
 | Hoàn tất/đánh giá | `GET/POST /orders/:id/reviews` | `POST /orders/:id/complete`, `GET /wallets/me`, `GET/POST /orders/:id/reviews` | — |
 | Hủy/hoàn giả lập | `POST /orders/:id/cancel` | — | `GET /admin/refunds/pending`, `POST /payments/demo/orders/:id/refund` |
@@ -73,7 +73,7 @@ Socket.IO handshake `auth: { token, orderId? }`, không để JWT trong URL. `pr
 - [ ] UI Khách/Thợ/Admin đã merge, nối hết API cần dùng, không còn Flutter counter starter.
 - [ ] Có DB demo riêng, mật khẩu/secret mạnh, không chứa tài khoản seed mật khẩu mẫu; chỉ dữ liệu thử.
 - [ ] API qua HTTPS/WSS từ 4G, không dùng localhost; mất mạng/reconnect/offer 15 giây được thử.
-- [ ] Đăng ký → duyệt thợ → cập nhật GPS → đặt đơn → giả lập thanh toán → offer → nhận đơn → GPS/chat → tới nơi → mã bắt đầu → hoàn tất giá gốc → ví demo/đánh giá; chạy thêm nhánh hủy/hoàn thử.
+- [ ] Đăng ký → duyệt thợ → cập nhật GPS → đặt đơn → giả lập thanh toán → offer → nhận đơn → GPS/chat chữ + ảnh → tới nơi → mã bắt đầu → hoàn tất giá gốc → ví demo/đánh giá; chạy thêm nhánh hủy/hoàn thử.
 - [ ] Các bước **chưa được code** (QR ngân hàng, giá thay đổi/thu bù/hoàn chênh lệch, rút tiền, tranh chấp sau sửa, tiền thật) không quảng cáo là đã chạy.
 - [ ] Cài APK release trên máy khác, thử khi laptop bật và khi laptop tắt; thông báo rõ phụ thuộc server.
 - [ ] Tắt Funnel sau demo và lưu bản backup DB.
