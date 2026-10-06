@@ -34,7 +34,7 @@ Provider mới đăng ký ở trạng thái chờ duyệt. Admin dùng `GET /adm
 2. `POST /orders` với loại sự cố và GPS khách. Đơn mới là `AWAITING_PREPAYMENT`.
 3. Trong sandbox, gọi `POST /payments/demo/orders/:id/confirm`. Sau đó backend mới matching.
 4. Theo dõi bằng `GET /orders/:id`; socket chỉ giúp cập nhật nhanh hơn, REST vẫn là nguồn snapshot khi reconnect.
-5. Khi thợ nhận đơn: xem marker từ `providerLocation`, chat qua `GET/POST /orders/:id/messages`.
+5. Khi thợ nhận đơn: xem marker từ `providerLocation`, chat chữ/ảnh qua `GET/POST /orders/:id/messages`.
 6. Khi trạng thái `ARRIVED`, gọi `GET /orders/:id/start-token` và hiển thị token dưới dạng QR hoặc chữ cho thợ. Đây không phải QR ngân hàng.
 7. Khi `COMPLETED`, gọi `GET/POST /orders/:id/reviews`.
 8. Trước khi bắt đầu sửa, khách có thể `POST /orders/:id/cancel`; đơn đã trả sandbox chuyển sang `REFUND_PENDING`.
@@ -71,6 +71,16 @@ Handshake Socket.IO:
 - Provider bật online sau khi socket đã kết nối cần reconnect để join provider room.
 - Sau mất mạng/reconnect, luôn tải lại order, pending offers và messages qua REST; event socket có thể đã bị bỏ lỡ.
 - Demo GPS foreground trước. Không hứa cập nhật liên tục khi Android khóa màn hình, tắt quyền vị trí hoặc dừng app.
+
+## Chat chữ và ảnh
+
+- Tin chữ: gửi JSON `{ "content": "..." }`.
+- Tin ảnh hoặc chữ + ảnh: gửi `multipart/form-data`, field `content` tùy chọn và file field `image`.
+- Chấp nhận một JPEG/PNG/WebP tối đa 5 MiB. Client nên nén ảnh trước khi gửi để demo qua mạng ổn định hơn.
+- Response và event `message.created` có `content` nullable và `image` nullable. `image.url` là đường dẫn API có bảo vệ; ghép với `API_BASE_URL` và tải bằng `Dio` có Bearer token, không dùng widget tải ảnh ẩn danh.
+- Chỉ gửi tin khi đơn active; người tham gia vẫn đọc lịch sử sau khi hoàn tất/hủy. Sau reconnect gọi lại `GET /orders/:id/messages`.
+
+Chi tiết payload, quyền và sơ đồ xử lý ở [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 
 ## Trạng thái đơn cần hiển thị
 

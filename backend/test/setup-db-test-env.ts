@@ -1,4 +1,6 @@
 import 'dotenv/config';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -14,4 +16,6 @@ Object.assign(process.env, {
   OFFER_TTL_SECONDS: '60',
   PROVIDER_LOCATION_MAX_AGE_SECONDS: '120',
   MATCH_RADIUS_KM: '10',
+  CHAT_UPLOAD_DIR: join(tmpdir(), `motocare-chat-http-test-${process.pid}`),
+  CHAT_IMAGE_MAX_BYTES: '5242880',
 });

@@ -30,11 +30,17 @@ export class Message {
   @JoinColumn({ name: 'sender_id' })
   sender!: User;
 
-  @Column({ type: 'text' })
-  content!: string;
+  @Column({ type: 'text', nullable: true })
+  content!: string | null;
 
-  @Column({ name: 'image_url', type: 'varchar', length: 500, nullable: true })
-  imageUrl!: string | null;
+  @Column({ name: 'image_storage_key', type: 'varchar', length: 100, nullable: true })
+  imageStorageKey!: string | null;
+
+  @Column({ name: 'image_mime_type', type: 'varchar', length: 50, nullable: true })
+  imageMimeType!: string | null;
+
+  @Column({ name: 'image_size_bytes', type: 'integer', nullable: true })
+  imageSizeBytes!: number | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

@@ -75,6 +75,6 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 
 ## 11. Còn mở (chưa chốt)
 
-- Chat có lưu DB lịch sử hay chỉ realtime.
+- Chat đã chốt lưu lịch sử DB, phát realtime và có ảnh lưu local được bảo vệ; xem `docs/CHAT_WORKFLOW.md`. Nếu triển khai server 24/7 sau đồ án mới chọn object storage/retention phù hợp.
 - Phí nền tảng (nếu có) trừ bao nhiêu khi cộng ví thợ.
 - Bán kính tìm thợ mặc định và quy tắc mở rộng.

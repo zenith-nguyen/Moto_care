@@ -18,6 +18,7 @@ import { OrderOffer } from '../src/orders/order-offer.entity';
 import { Order } from '../src/orders/order.entity';
 import { Message } from '../src/messages/message.entity';
 import { MessagesService } from '../src/messages/messages.service';
+import { ChatImageStorageService } from '../src/messages/chat-image-storage.service';
 import { RealtimeGateway } from '../src/realtime/realtime.gateway';
 import { Socket } from 'socket.io';
 import { PaymentStatus } from '../src/common/enums/payment-status.enum';
@@ -78,7 +79,9 @@ describe('Orders and matching on PostGIS', () => {
     orders = new OrdersService(database, matching, config);
     demoPayments = new DemoPaymentsService(database, config, matching);
     admin = new AdminService(database);
-    messages = new MessagesService(database, { messageCreated } as unknown as RealtimeGateway);
+    messages = new MessagesService(
+      database, { messageCreated } as unknown as RealtimeGateway, new ChatImageStorageService(config),
+    );
     providersService = new ProvidersService(
       database.getRepository(Provider),
       database.getRepository(OrderOffer),
@@ -255,6 +258,7 @@ describe('Orders and matching on PostGIS', () => {
       .rejects.toBeInstanceOf(NotFoundException);
     await orders.cancel(created.id, customer.id, 'Cancel before repair');
     await expect(messages.create(created.id, assigned.user.id, 'Still coming?')).rejects.toBeInstanceOf(NotFoundException);
+    expect((await messages.list(created.id, customer.id))[0].content).toBe('Please come soon');
   });
 
   it('requires arrival and a customer start token, then settles the demo order once', async () => {

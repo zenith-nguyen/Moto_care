@@ -6,6 +6,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { rm } from 'node:fs/promises';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AdminModule } from '../src/admin/admin.module';
@@ -42,6 +43,10 @@ describe('Sandbox demo flow over HTTP', () => {
   let incident: IncidentType;
   let admin: Session;
   const password = 'HttpTestOnly123!';
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  );
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -99,6 +104,7 @@ describe('Sandbox demo flow over HTTP', () => {
 
   afterAll(async () => {
     await app?.close();
+    if (process.env.CHAT_UPLOAD_DIR) await rm(process.env.CHAT_UPLOAD_DIR, { recursive: true, force: true });
   });
 
   async function createActor(name: string, email: string, role: UserRole, status: UserStatus): Promise<Session> {
@@ -206,6 +212,27 @@ describe('Sandbox demo flow over HTTP', () => {
       .set('Authorization', `Bearer ${provider.token}`)
       .expect(200);
     expect(messages.body[0].content).toBe('Anh đến cổng giúp em nhé.');
+    const imageMessage = await request(app.getHttpServer())
+      .post(`/orders/${orderId}/messages`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .field('content', 'Ảnh vị trí của em')
+      .attach('image', png, { filename: 'location.png', contentType: 'image/png' })
+      .expect(201);
+    expect(imageMessage.body).toMatchObject({
+      content: 'Ảnh vị trí của em', image: { mimeType: 'image/png', sizeBytes: png.length },
+    });
+    await request(app.getHttpServer())
+      .get(imageMessage.body.image.url)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect('Content-Type', /image\/png/)
+      .expect(200);
+    const outsider = await createActor(
+      'HTTP Outsider', 'outsider.http-test@motocare.test', UserRole.CUSTOMER, UserStatus.ACTIVE,
+    );
+    await request(app.getHttpServer())
+      .get(imageMessage.body.image.url)
+      .set('Authorization', `Bearer ${outsider.token}`)
+      .expect(404);
 
     await request(app.getHttpServer())
       .post(`/orders/${orderId}/arrive`)
@@ -243,6 +270,11 @@ describe('Sandbox demo flow over HTTP', () => {
       .set('Authorization', `Bearer ${provider.token}`)
       .send({ rating: 5 })
       .expect(201);
+    await request(app.getHttpServer())
+      .get(`/orders/${orderId}/messages`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toHaveLength(2));
 
     const details = await request(app.getHttpServer())
       .get(`/orders/${orderId}`)

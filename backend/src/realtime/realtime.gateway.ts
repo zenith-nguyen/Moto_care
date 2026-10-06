@@ -10,6 +10,7 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Order } from '../orders/order.entity';
 import { Provider } from '../providers/provider.entity';
 import { User } from '../users/user.entity';
+import type { MessageResponse } from '../messages/messages.service';
 
 function allowedOrigin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
   const origins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000').split(',').map((value) => value.trim());
@@ -66,7 +67,7 @@ export class RealtimeGateway implements OnGatewayConnection {
     });
   }
 
-  messageCreated(orderId: number, message: { id: number; senderId: number; content: string; createdAt: Date }): void {
+  messageCreated(orderId: number, message: MessageResponse): void {
     this.server.to(`order:${orderId}`).emit('message.created', { orderId, ...message });
   }
 
