@@ -1,34 +1,45 @@
-# MotoCare Backend — kế hoạch giá theo thời tiết
+# MotoCare Backend — giá theo thời tiết
 
-Cập nhật: 2026-10-06. Trạng thái: **mới chốt thiết kế, chưa áp dụng vào giá đơn hàng**.
+Cập nhật: 2026-10-06. Trạng thái: **đã triển khai trên nhánh `feat/zenith/weather-pricing`; mặc định tắt cho đến khi cấu hình demo bật rõ ràng**.
 
-Hiện `estimated_price` vẫn là snapshot `incident_types.base_price`. Không được mô tả bản hiện tại là đã tự động tăng giá khi mưa/gió.
+## Nguồn dữ liệu và phạm vi
 
-## Nguồn dữ liệu cho bản demo không thu phí
-
-Dự kiến backend gọi Open-Meteo theo vị trí khách. API có dữ liệu mưa, lượng mưa, mã thời tiết, tốc độ gió và gió giật. Gói miễn phí chỉ phù hợp mục đích phi thương mại/giáo dục, có giới hạn sử dụng, yêu cầu ghi nguồn và không cam kết uptime; nếu dự án chuyển sang thương mại phải đánh giá lại giấy phép/gói dịch vụ.
+Backend gọi Open-Meteo khi tạo đơn, không đưa khóa hoặc logic giá xuống Flutter. API có dữ liệu mưa, mã thời tiết, tốc độ gió và gió giật. Gói miễn phí chỉ phù hợp mục đích phi thương mại/giáo dục, có giới hạn sử dụng, yêu cầu ghi nguồn và không cam kết uptime; nếu dự án chuyển sang thương mại phải đánh giá lại giấy phép/gói dịch vụ.
 
 - Tài liệu biến thời tiết: <https://open-meteo.com/en/docs>
 - Điều khoản và giới hạn miễn phí: <https://open-meteo.com/en/terms>
 - Chính sách gói dịch vụ: <https://open-meteo.com/en/pricing>
 
-## Thiết kế dự kiến
+## Quy tắc đang dùng
 
-1. Chỉ backend gọi nhà cung cấp thời tiết; không nhúng khóa hay logic giá trong Flutter.
-2. Lấy thời tiết tại vị trí khách khi tạo đơn, có timeout ngắn. Nếu dịch vụ lỗi/chậm, dùng hệ số `1.00` để việc cứu hộ không bị chặn.
-3. Cache theo ô tọa độ làm tròn và khoảng thời gian ngắn để tránh gọi lặp; không gọi theo mỗi lần GPS di chuyển.
-4. Snapshot giá đúng một lần lúc tạo đơn. Thời tiết đổi sau đó không tự đổi số tiền khách đã thấy.
-5. Dự kiến ba mức dễ giải thích: bình thường `1.00`, mưa/gió vừa `1.10`, thời tiết nặng `1.20`; hệ số tối đa `1.20`. Ngưỡng kỹ thuật sẽ được chốt bằng test trước khi code.
-6. Lưu riêng `base_price`, hệ số/phụ thu thời tiết, loại thời tiết, thời điểm quan sát và nguồn. `estimated_price` là tổng snapshot; mọi cột tiền tiếp tục dùng `numeric`, không dùng float.
-7. API trả breakdown để UI hiển thị minh bạch trước khi khách thanh toán giả lập.
-8. Thời tiết nguy hiểm phải có cảnh báo an toàn; tăng giá không thay thế quyết định tạm ngừng dịch vụ.
+| Mức | Điều kiện chỉ cần thỏa một | Hệ số |
+| --- | --- | --- |
+| `SEVERE` | Mã mưa rất to/dông mạnh; lượng mưa `>= 7.5 mm/h`; gió `>= 40 km/h`; hoặc gió giật `>= 60 km/h` | `1.2000` |
+| `MODERATE` | Có mã mưa/tuyết/dông; mưa `>= 0.1 mm/h`; gió `>= 25 km/h`; hoặc gió giật `>= 40 km/h` | `1.1000` |
+| `NORMAL` | Không thuộc hai mức trên | `1.0000` |
+| `DISABLED` / `UNAVAILABLE` | Tính năng tắt, timeout, lỗi mạng hoặc response không hợp lệ | `1.0000` |
 
-## Thay đổi dự kiến trước khi triển khai
+Hệ số tối đa là `1.20`. Đây là quy tắc demo, không phải biểu giá thương mại đã được phê duyệt.
 
-- Migration thêm các cột snapshot thời tiết/giá vào `orders` hoặc bảng snapshot riêng; không sửa ngược dữ liệu đơn cũ.
-- `WeatherService` có adapter để mock trong test và có thể đổi nhà cung cấp.
-- `PricingService` thuần, nhận base price + snapshot thời tiết và trả breakdown decimal.
-- Test bắt buộc: từng ngưỡng, mức trần, làm tròn VND, timeout/fallback, cache, snapshot không đổi và không gọi API ngoài trong test.
-- Cập nhật Swagger, API catalog, Flutter handoff và màn hình xác nhận giá.
+## Tính nhất quán và an toàn
 
-Phần này nên làm ở PR riêng sau backup/restore. Không kết nối thanh toán thật hoặc tự động thu thêm dựa trên thời tiết trong giai đoạn demo.
+1. Tọa độ được làm tròn hai chữ số trước khi gửi nhà cung cấp, vừa giảm độ chính xác dữ liệu chia sẻ vừa tạo cache theo khu vực.
+2. Cache mặc định 300 giây, tối đa 500 ô; timeout mặc định 1.500 ms.
+3. Nếu dịch vụ lỗi/chậm, tạo đơn vẫn tiếp tục với phụ thu `0.00`.
+4. Snapshot đúng một lần khi tạo đơn. Thời tiết hoặc GPS đổi sau đó không làm đổi tiền.
+5. `base_price`, `weather_surcharge` và `estimated_price` là `numeric(12,2)`. Phép tính dùng cents `BigInt` và basis points, không dùng floating point cho tiền.
+6. Payment pending lấy đúng `estimated_price` snapshot; matching chỉ bắt đầu sau xác nhận sandbox như trước.
+7. `pricing` được trả ở create/details/order list/pending offer để cả khách và thợ nhìn cùng breakdown.
+8. Dữ liệu từ Open-Meteo trả `attribution`; UI phải hiển thị nguồn. Thời tiết nguy hiểm nên có cảnh báo an toàn, không chỉ tăng giá.
+
+## Cấu hình
+
+```dotenv
+WEATHER_PRICING_ENABLED=false
+WEATHER_REQUEST_TIMEOUT_MS=1500
+WEATHER_CACHE_TTL_SECONDS=300
+```
+
+Chỉ đổi `WEATHER_PRICING_ENABLED=true` trong `.env` demo riêng. Không cần API key. Không bật mặc định để test/local không phụ thuộc Internet và để nhóm chủ động xác nhận UI đã hiển thị breakdown.
+
+Migration `1760000000008-AddWeatherPricingSnapshot` backfill đơn cũ với `base_price = estimated_price`, category `DISABLED`, phụ thu `0`. Unit test kiểm tra phân loại, cache, fallback và số học tiền; database test kiểm tra snapshot severe và payment amount.

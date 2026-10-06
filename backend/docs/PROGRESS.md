@@ -16,8 +16,8 @@ Cập nhật lần cuối: 2026-10-06
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/demo-backup`: đã thêm kiểm tra dung lượng, snapshot PostgreSQL + ảnh chat + checksum và restore có chốt an toàn. Đã chạy thật: phát hiện DB local 6/8 migration, backup trước thay đổi, chạy đủ 8 migration, tạo snapshot mới, phục hồi độc lập và xác nhận 8 migrations / 6 users / 5 incident types; readiness `200`, DB restore thử đã xóa. Còn chạy quality gates và mở PR.
-2. Giá theo thời tiết: đã có thiết kế snapshot, fallback và mức trần trong [WEATHER_PRICING_PLAN.md](WEATHER_PRICING_PLAN.md), **chưa code/chưa thay đổi giá hiện tại**. Làm bằng PR riêng sau khi backup merge.
+1. PR #13 `feat/zenith/demo-backup` đang mở và toàn bộ Backend CI, Flutter CI, branch policy đã xanh: kiểm tra dung lượng, snapshot PostgreSQL + ảnh chat + checksum và restore có chốt an toàn. Đã phục hồi độc lập và xác nhận 8 migrations / 6 users / 5 incident types; readiness `200`, DB restore thử đã xóa. Chờ review/merge.
+2. Nhánh stacked `feat/zenith/weather-pricing`: đã code Open-Meteo adapter, cache/timeout/fallback, pricing `BigInt`, snapshot schema migration `0008`, Swagger/Flutter breakdown và test. Mặc định `WEATHER_PRICING_ENABLED=false`; local đã chạy 9 migrations, 24 unit tests và 29 PostgreSQL/PostGIS/HTTP tests. Chờ PR #13 backup merge rồi đổi base/mở PR weather vào `main`.
 3. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
 4. Cam Thu/Vy merge UI Flutter Khách/Thợ/Admin và nối API theo [FLUTTER_API_HANDOFF.md](FLUTTER_API_HANDOFF.md); `lib/main.dart` trên main hiện vẫn là counter starter. Chưa có APK MotoCare hoàn chỉnh để gửi thầy.
 5. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.

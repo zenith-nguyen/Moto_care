@@ -13,6 +13,7 @@ import { GeoPoint } from '../providers/provider.entity';
 import { User } from '../users/user.entity';
 import { IncidentType } from '../incident-types/incident-type.entity';
 import { Provider } from '../providers/provider.entity';
+import { WeatherCategory } from '../pricing/weather-category.enum';
 
 @Entity({ name: 'orders' })
 @Index('UQ_orders_code', ['code'], { unique: true })
@@ -60,6 +61,36 @@ export class Order {
 
   @Column({ name: 'estimated_price', type: 'numeric', precision: 12, scale: 2 })
   estimatedPrice!: string;
+
+  @Column({ name: 'base_price', type: 'numeric', precision: 12, scale: 2 })
+  basePrice!: string;
+
+  @Column({ name: 'weather_surcharge', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  weatherSurcharge!: string;
+
+  @Column({ name: 'weather_multiplier', type: 'numeric', precision: 5, scale: 4, default: 1 })
+  weatherMultiplier!: string;
+
+  @Column({ name: 'weather_category', type: 'varchar', length: 20, default: WeatherCategory.DISABLED })
+  weatherCategory!: WeatherCategory;
+
+  @Column({ name: 'weather_source', type: 'varchar', length: 30, default: 'FALLBACK' })
+  weatherSource!: 'OPEN_METEO' | 'FALLBACK';
+
+  @Column({ name: 'weather_observed_at', type: 'timestamptz', nullable: true })
+  weatherObservedAt!: Date | null;
+
+  @Column({ name: 'weather_code', type: 'smallint', nullable: true })
+  weatherCode!: number | null;
+
+  @Column({ name: 'weather_precipitation_mm', type: 'numeric', precision: 7, scale: 2, nullable: true })
+  weatherPrecipitationMm!: string | null;
+
+  @Column({ name: 'weather_wind_speed_kmh', type: 'numeric', precision: 7, scale: 2, nullable: true })
+  weatherWindSpeedKmh!: string | null;
+
+  @Column({ name: 'weather_wind_gust_kmh', type: 'numeric', precision: 7, scale: 2, nullable: true })
+  weatherWindGustKmh!: string | null;
 
   @Column({ name: 'extra_cost', type: 'numeric', precision: 12, scale: 2, default: 0 })
   extraCost!: string;

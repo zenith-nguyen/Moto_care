@@ -10,6 +10,7 @@ import { UserStatus } from '../common/enums/user-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { IncidentType } from '../incident-types/incident-type.entity';
 import { Provider } from '../providers/provider.entity';
+import { OrderPricingService } from '../pricing/order-pricing.service';
 import { Payment } from '../payments/payment.entity';
 import { Wallet } from '../payments/wallet.entity';
 import { WalletTransaction } from '../payments/wallet-transaction.entity';
@@ -27,29 +28,51 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     private readonly matching: MatchingService,
     private readonly config: ConfigService,
+    private readonly pricing: OrderPricingService,
     @Optional() private readonly realtime?: RealtimeGateway,
   ) {}
 
   async create(customerId: number, dto: CreateOrderDto) {
+    const [customer, incident] = await Promise.all([
+      this.dataSource.getRepository(User).findOneBy({ id: customerId }),
+      this.dataSource.getRepository(IncidentType).findOneBy({ id: dto.incident_type_id, isActive: true }),
+    ]);
+    if (!customer || customer.status !== UserStatus.ACTIVE) {
+      throw new ForbiddenException('Customer account is not active');
+    }
+    if (!incident) throw new NotFoundException('Active incident type not found');
+    const weather = await this.pricing.weatherAt(dto.customer_location.latitude, dto.customer_location.longitude);
+
     return this.dataSource.transaction(async (manager) => {
-      const customer = await manager.getRepository(User).findOneBy({ id: customerId });
-      if (!customer || customer.status !== UserStatus.ACTIVE) {
+      const currentCustomer = await manager.getRepository(User).findOneBy({ id: customerId });
+      if (!currentCustomer || currentCustomer.status !== UserStatus.ACTIVE) {
         throw new ForbiddenException('Customer account is not active');
       }
-      const incident = await manager.getRepository(IncidentType).findOneBy({ id: dto.incident_type_id, isActive: true });
-      if (!incident) throw new NotFoundException('Active incident type not found');
+      const currentIncident = await manager.getRepository(IncidentType).findOneBy({ id: dto.incident_type_id, isActive: true });
+      if (!currentIncident) throw new NotFoundException('Active incident type not found');
+      const quote = this.pricing.quote(currentIncident.basePrice, weather);
 
       const order = await manager.getRepository(Order).save(
         manager.getRepository(Order).create({
           code: `MC-${randomUUID().replaceAll('-', '').slice(0, 20)}`,
           customerId,
-          incidentTypeId: incident.id,
+          incidentTypeId: currentIncident.id,
           status: OrderStatus.AWAITING_PREPAYMENT,
           customerLocation: {
             type: 'Point',
             coordinates: [dto.customer_location.longitude, dto.customer_location.latitude],
           },
-          estimatedPrice: incident.basePrice,
+          basePrice: quote.basePrice,
+          estimatedPrice: quote.estimatedPrice,
+          weatherSurcharge: quote.weatherSurcharge,
+          weatherMultiplier: quote.weatherMultiplier,
+          weatherCategory: quote.weather.category,
+          weatherSource: quote.weather.source,
+          weatherObservedAt: quote.weather.observedAt,
+          weatherCode: quote.weather.weatherCode,
+          weatherPrecipitationMm: this.measurement(quote.weather.precipitationMm),
+          weatherWindSpeedKmh: this.measurement(quote.weather.windSpeedKmh),
+          weatherWindGustKmh: this.measurement(quote.weather.windGustKmh),
           extraCost: '0.00',
         }),
       );
@@ -97,6 +120,7 @@ export class OrdersService {
       incidentType: { id: order.incidentType.id, name: order.incidentType.name },
       customerLocation: order.customerLocation,
       estimatedPrice: order.estimatedPrice,
+      pricing: this.formatPricing(order),
       extraCost: order.extraCost,
       finalPrice: order.finalPrice,
       payment: payment ? { id: payment.id, amount: payment.amount, status: payment.status, isDemo: payment.isDemo } : null,
@@ -123,6 +147,7 @@ export class OrdersService {
       id: order.id, code: order.code, status: order.status, customerId: order.customerId,
       providerId: order.providerId, incidentTypeId: order.incidentTypeId,
       estimatedPrice: order.estimatedPrice, finalPrice: order.finalPrice, createdAt: order.createdAt,
+      pricing: this.formatPricing(order),
     }));
   }
 
@@ -344,11 +369,32 @@ export class OrdersService {
       code: order.code,
       status: order.status,
       estimatedPrice: order.estimatedPrice,
+      pricing: this.formatPricing(order),
       matched: offer !== null,
       offerExpiresAt: offer?.expiresAt ?? null,
       message: order.status === OrderStatus.AWAITING_PREPAYMENT
         ? 'Awaiting prepayment; no provider has been offered this order'
         : offer ? null : 'No provider found yet; retry matching later',
     };
+  }
+
+  private formatPricing(order: Order) {
+    return {
+      basePrice: order.basePrice,
+      weatherSurcharge: order.weatherSurcharge,
+      weatherMultiplier: order.weatherMultiplier,
+      weatherCategory: order.weatherCategory,
+      weatherSource: order.weatherSource,
+      weatherObservedAt: order.weatherObservedAt,
+      weatherCode: order.weatherCode,
+      precipitationMm: order.weatherPrecipitationMm,
+      windSpeedKmh: order.weatherWindSpeedKmh,
+      windGustKmh: order.weatherWindGustKmh,
+      attribution: order.weatherSource === 'OPEN_METEO' ? 'Weather data by Open-Meteo.com' : null,
+    };
+  }
+
+  private measurement(value: number | null): string | null {
+    return value === null ? null : value.toFixed(2);
   }
 }
