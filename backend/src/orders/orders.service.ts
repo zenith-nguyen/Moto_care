@@ -21,6 +21,10 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { MatchingService } from './matching.service';
 import { OrderOffer } from './order-offer.entity';
 import { Order } from './order.entity';
+import { PaymentAdjustment } from '../payments/payment-adjustment.entity';
+import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
+import { moneyToCents } from '../common/utils/money';
+import { OrderPriceProposal } from './order-price-proposal.entity';
 
 @Injectable()
 export class OrdersService {
@@ -108,7 +112,19 @@ export class OrdersService {
       where: { orderId },
       order: { id: 'ASC' },
     });
-    const location = order.providerId && [OrderStatus.ACCEPTED, OrderStatus.ARRIVED, OrderStatus.IN_PROGRESS].includes(order.status)
+    const [priceProposal, paymentAdjustment] = await Promise.all([
+      this.dataSource.getRepository(OrderPriceProposal).findOne({ where: { orderId }, order: { id: 'DESC' } }),
+      this.dataSource.getRepository(PaymentAdjustment).findOneBy({ orderId }),
+    ]);
+    const location = order.providerId && [
+      OrderStatus.ACCEPTED,
+      OrderStatus.ARRIVED,
+      OrderStatus.IN_PROGRESS,
+      OrderStatus.AWAITING_PRICE_APPROVAL,
+      OrderStatus.PRICE_DISPUTED,
+      OrderStatus.AWAITING_PAYMENT,
+      OrderStatus.PAID,
+    ].includes(order.status)
       ? (await this.dataSource.getRepository(Provider).findOneBy({ id: order.providerId }))?.currentLocation ?? null
       : null;
     return {
@@ -122,9 +138,12 @@ export class OrdersService {
       estimatedPrice: order.estimatedPrice,
       pricing: this.formatPricing(order),
       extraCost: order.extraCost,
+      discountAmount: order.discountAmount,
       finalPrice: order.finalPrice,
       payment: payment ? { id: payment.id, amount: payment.amount, status: payment.status, isDemo: payment.isDemo } : null,
       providerLocation: location,
+      priceProposal: priceProposal ? this.formatPriceProposal(priceProposal) : null,
+      paymentAdjustment: paymentAdjustment ? this.formatPaymentAdjustment(paymentAdjustment) : null,
       message: order.status === OrderStatus.AWAITING_PREPAYMENT
         ? 'Awaiting prepayment; demo confirmation is not a real bank transfer'
         : order.status === OrderStatus.PENDING_MATCH ? 'No provider found yet; retry matching later' : null,
@@ -146,7 +165,8 @@ export class OrdersService {
     return orders.map((order) => ({
       id: order.id, code: order.code, status: order.status, customerId: order.customerId,
       providerId: order.providerId, incidentTypeId: order.incidentTypeId,
-      estimatedPrice: order.estimatedPrice, finalPrice: order.finalPrice, createdAt: order.createdAt,
+      estimatedPrice: order.estimatedPrice, extraCost: order.extraCost, discountAmount: order.discountAmount,
+      finalPrice: order.finalPrice, createdAt: order.createdAt,
       pricing: this.formatPricing(order),
     }));
   }
@@ -215,7 +235,7 @@ export class OrdersService {
       }
       const busy = (await manager.query(
         `SELECT 1 FROM orders WHERE provider_id = $1
-         AND status IN ('ACCEPTED', 'ARRIVED', 'IN_PROGRESS', 'AWAITING_PAYMENT', 'PAID') LIMIT 1`,
+         AND status IN ('ACCEPTED', 'ARRIVED', 'IN_PROGRESS', 'AWAITING_PRICE_APPROVAL', 'PRICE_DISPUTED', 'AWAITING_PAYMENT', 'PAID') LIMIT 1`,
         [provider.id],
       )) as unknown[];
       if (busy.length > 0) throw new ConflictException('Provider is already handling an order');
@@ -302,24 +322,39 @@ export class OrdersService {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, providerUserId);
       if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
-      if (order.status !== OrderStatus.IN_PROGRESS) throw new ConflictException('Order is not in progress');
+      if (order.status !== OrderStatus.PAID || !order.finalPrice) {
+        throw new ConflictException('Final price and payment adjustment must be settled before completion');
+      }
       const payment = await manager.getRepository(Payment).findOne({
         where: { orderId }, lock: { mode: 'pessimistic_write' }, order: { id: 'ASC' },
       });
       if (!payment?.isDemo || payment.status !== PaymentStatus.PAID || payment.amount !== order.estimatedPrice) {
-        throw new ConflictException('Only an exactly prepaid demo order can be completed');
+        throw new ConflictException('Only a paid demo order can be completed');
+      }
+      const adjustment = await manager.getRepository(PaymentAdjustment).findOne({
+        where: { orderId }, lock: { mode: 'pessimistic_write' },
+      });
+      const prepaid = moneyToCents(payment.amount);
+      const expectedFinal = adjustment
+        ? adjustment.type === PaymentAdjustmentType.CHARGE
+          ? prepaid + moneyToCents(adjustment.amount)
+          : prepaid - moneyToCents(adjustment.amount)
+        : prepaid;
+      if (expectedFinal < 0n || moneyToCents(order.finalPrice) !== expectedFinal) {
+        throw new ConflictException('Final price does not reconcile with payment records');
+      }
+      if (adjustment && (!adjustment.isDemo || adjustment.status !== PaymentAdjustmentStatus.SETTLED)) {
+        throw new ConflictException('Payment adjustment is not settled');
       }
       await manager.query('INSERT INTO wallets (provider_id, balance) VALUES ($1, 0) ON CONFLICT (provider_id) DO NOTHING', [provider.id]);
       const wallet = await manager.getRepository(Wallet).findOne({
         where: { providerId: provider.id }, lock: { mode: 'pessimistic_write' },
       });
       if (!wallet) throw new ConflictException('Provider wallet unavailable');
-      await manager.query('UPDATE wallets SET balance = balance + $1::numeric WHERE id = $2', [payment.amount, wallet.id]);
+      await manager.query('UPDATE wallets SET balance = balance + $1::numeric WHERE id = $2', [order.finalPrice, wallet.id]);
       await manager.getRepository(WalletTransaction).save(manager.getRepository(WalletTransaction).create({
-        walletId: wallet.id, type: WalletTransactionType.CREDIT, amount: payment.amount, orderId,
+        walletId: wallet.id, type: WalletTransactionType.CREDIT, amount: order.finalPrice, orderId,
       }));
-      order.extraCost = '0.00';
-      order.finalPrice = payment.amount;
       order.status = OrderStatus.COMPLETED;
       await manager.getRepository(Order).save(order);
       return { orderId, status: order.status, finalPrice: order.finalPrice, settlement: 'DEMO_ONLY' };
@@ -396,5 +431,32 @@ export class OrdersService {
 
   private measurement(value: number | null): string | null {
     return value === null ? null : value.toFixed(2);
+  }
+
+  private formatPriceProposal(proposal: OrderPriceProposal) {
+    return {
+      id: proposal.id,
+      proposedFinalPrice: proposal.proposedFinalPrice,
+      reason: proposal.reason,
+      status: proposal.status,
+      customerReason: proposal.customerReason,
+      disputeReason: proposal.disputeReason,
+      resolutionReason: proposal.resolutionReason,
+      decidedById: proposal.decidedById,
+      decidedAt: proposal.decidedAt,
+      createdAt: proposal.createdAt,
+      updatedAt: proposal.updatedAt,
+    };
+  }
+
+  private formatPaymentAdjustment(adjustment: PaymentAdjustment) {
+    return {
+      id: adjustment.id,
+      type: adjustment.type,
+      amount: adjustment.amount,
+      status: adjustment.status,
+      isDemo: adjustment.isDemo,
+      settledAt: adjustment.settledAt,
+    };
   }
 }

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { centsToMoney, moneyToCents } from '../common/utils/money';
 import { WeatherCategory } from './weather-category.enum';
 import { WeatherService, WeatherSnapshot } from './weather.service';
 
@@ -27,28 +28,16 @@ export class OrderPricingService {
   }
 
   quote(basePrice: string, weather: WeatherSnapshot): OrderPriceQuote {
-    const baseCents = this.parseMoney(basePrice);
+    const baseCents = moneyToCents(basePrice);
     const basisPoints = multiplierBasisPoints[weather.category];
     const estimatedCents = (baseCents * basisPoints + 5_000n) / 10_000n;
     return {
-      basePrice: this.formatMoney(baseCents),
-      estimatedPrice: this.formatMoney(estimatedCents),
-      weatherSurcharge: this.formatMoney(estimatedCents - baseCents),
+      basePrice: centsToMoney(baseCents),
+      estimatedPrice: centsToMoney(estimatedCents),
+      weatherSurcharge: centsToMoney(estimatedCents - baseCents),
       weatherMultiplier: `${basisPoints / 10_000n}.${(basisPoints % 10_000n).toString().padStart(4, '0')}`,
       weather,
     };
   }
 
-  private parseMoney(value: string): bigint {
-    const match = /^(0|[1-9]\d*)(?:\.(\d{1,2}))?$/.exec(value);
-    if (!match) throw new Error('Invalid decimal money value');
-    const fraction = (match[2] ?? '').padEnd(2, '0');
-    return BigInt(match[1]) * 100n + BigInt(fraction);
-  }
-
-  private formatMoney(cents: bigint): string {
-    const whole = cents / 100n;
-    const fraction = (cents % 100n).toString().padStart(2, '0');
-    return `${whole}.${fraction}`;
-  }
 }

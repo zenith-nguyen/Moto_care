@@ -95,6 +95,9 @@ export class Order {
   @Column({ name: 'extra_cost', type: 'numeric', precision: 12, scale: 2, default: 0 })
   extraCost!: string;
 
+  @Column({ name: 'discount_amount', type: 'numeric', precision: 12, scale: 2, default: 0 })
+  discountAmount!: string;
+
   @Column({ name: 'final_price', type: 'numeric', precision: 12, scale: 2, nullable: true })
   finalPrice!: string | null;
 

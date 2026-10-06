@@ -14,12 +14,17 @@ import {
   RejectOfferResponseDto,
 } from './dto/order-response.dto';
 import { OrdersService } from './orders.service';
+import { CreatePriceProposalDto, PriceDecisionReasonDto } from './dto/price-proposal.dto';
+import { PriceAdjustmentsService } from './price-adjustments.service';
 
 @ApiTags('orders')
 @ApiBearerAuth()
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly orders: OrdersService) {}
+  constructor(
+    private readonly orders: OrdersService,
+    private readonly priceAdjustments: PriceAdjustmentsService,
+  ) {}
 
   @Get()
   @Roles(UserRole.CUSTOMER, UserRole.PROVIDER)
@@ -88,9 +93,58 @@ export class OrdersController {
   @Post(':orderId/complete')
   @Roles(UserRole.PROVIDER)
   @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ description: 'Complete an exactly prepaid demo order at its original price; simulated wallet credit only' })
+  @ApiOkResponse({ description: 'Complete after the approved final price is fully settled; credits the provider demo wallet exactly once' })
   complete(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
     return this.orders.complete(orderId, user.sub);
+  }
+
+  @Post(':orderId/price-proposals')
+  @Roles(UserRole.PROVIDER)
+  @ApiCreatedResponse({ description: 'Assigned provider proposes the final service price for customer approval' })
+  proposeFinalPrice(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CreatePriceProposalDto,
+  ) {
+    return this.priceAdjustments.propose(orderId, user.sub, dto);
+  }
+
+  @Post(':orderId/price-proposals/:proposalId/approve')
+  @Roles(UserRole.CUSTOMER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Customer approves the final price and creates a charge/refund adjustment when needed' })
+  approveFinalPrice(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Param('proposalId', ParseIntPipe) proposalId: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.priceAdjustments.approve(orderId, proposalId, user.sub);
+  }
+
+  @Post(':orderId/price-proposals/:proposalId/reject')
+  @Roles(UserRole.CUSTOMER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Customer rejects the proposed final price and returns the order to in-progress' })
+  rejectFinalPrice(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Param('proposalId', ParseIntPipe) proposalId: number,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PriceDecisionReasonDto,
+  ) {
+    return this.priceAdjustments.reject(orderId, proposalId, user.sub, dto.reason);
+  }
+
+  @Post(':orderId/price-proposals/:proposalId/dispute')
+  @Roles(UserRole.PROVIDER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'Provider escalates a rejected final-price proposal for Admin review' })
+  disputeFinalPrice(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Param('proposalId', ParseIntPipe) proposalId: number,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PriceDecisionReasonDto,
+  ) {
+    return this.priceAdjustments.dispute(orderId, proposalId, user.sub, dto.reason);
   }
 
   @Post(':orderId/offers/:offerId/accept')

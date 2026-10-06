@@ -8,7 +8,8 @@ import { ChatImageStorageService } from './chat-image-storage.service';
 import { Message } from './message.entity';
 
 const writableStatuses = [
-  OrderStatus.ACCEPTED, OrderStatus.ARRIVED, OrderStatus.IN_PROGRESS, OrderStatus.AWAITING_PAYMENT, OrderStatus.PAID,
+  OrderStatus.ACCEPTED, OrderStatus.ARRIVED, OrderStatus.IN_PROGRESS, OrderStatus.AWAITING_PRICE_APPROVAL,
+  OrderStatus.PRICE_DISPUTED, OrderStatus.AWAITING_PAYMENT, OrderStatus.PAID,
 ];
 
 export type MessageResponse = {

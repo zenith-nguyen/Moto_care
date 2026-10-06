@@ -3,6 +3,8 @@ import { OfferStatus } from '../../common/enums/offer-status.enum';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { PaymentStatus } from '../../common/enums/payment-status.enum';
 import { WeatherCategory } from '../../pricing/weather-category.enum';
+import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../../common/enums/payment-adjustment.enum';
+import { PriceProposalStatus } from '../../common/enums/price-proposal-status.enum';
 
 export class WeatherPricingResponseDto {
   @ApiProperty({ example: '100000.00', description: 'Incident base price snapshot' })
@@ -126,6 +128,9 @@ export class OrderDetailsResponseDto {
   @ApiProperty({ example: '0.00' })
   extraCost!: string;
 
+  @ApiProperty({ example: '0.00' })
+  discountAmount!: string;
+
   @ApiProperty({ type: String, nullable: true })
   finalPrice!: string | null;
 
@@ -137,6 +142,55 @@ export class OrderDetailsResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   message!: string | null;
+
+  @ApiProperty({ nullable: true, type: () => PriceProposalResponseDto })
+  priceProposal!: PriceProposalResponseDto | null;
+
+  @ApiProperty({ nullable: true, type: () => PaymentAdjustmentResponseDto })
+  paymentAdjustment!: PaymentAdjustmentResponseDto | null;
+}
+
+export class PriceProposalResponseDto {
+  @ApiProperty()
+  id!: number;
+
+  @ApiProperty({ example: '125000.00' })
+  proposedFinalPrice!: string;
+
+  @ApiProperty()
+  reason!: string;
+
+  @ApiProperty({ enum: PriceProposalStatus })
+  status!: PriceProposalStatus;
+
+  @ApiProperty({ nullable: true, type: String })
+  customerReason!: string | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  disputeReason!: string | null;
+
+  @ApiProperty({ nullable: true, type: String })
+  resolutionReason!: string | null;
+}
+
+export class PaymentAdjustmentResponseDto {
+  @ApiProperty()
+  id!: number;
+
+  @ApiProperty({ enum: PaymentAdjustmentType })
+  type!: PaymentAdjustmentType;
+
+  @ApiProperty({ example: '25000.00' })
+  amount!: string;
+
+  @ApiProperty({ enum: PaymentAdjustmentStatus })
+  status!: PaymentAdjustmentStatus;
+
+  @ApiProperty()
+  isDemo!: boolean;
+
+  @ApiProperty({ nullable: true, type: String, format: 'date-time' })
+  settledAt!: Date | null;
 }
 
 export class PendingOfferOrderDto {
