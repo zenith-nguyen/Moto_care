@@ -18,7 +18,13 @@ import { ChatImageStorageService } from '../messages/chat-image-storage.service'
     MulterModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        limits: { fileSize: Number(config.get('CHAT_IMAGE_MAX_BYTES') ?? 5_242_880), files: 1 },
+        limits: {
+          fileSize: Number(config.get('CHAT_IMAGE_MAX_BYTES') ?? 5_242_880),
+          files: 1,
+          fields: 2,
+          fieldSize: 8_192,
+          parts: 3,
+        },
       }),
     }),
     JwtModule.registerAsync({

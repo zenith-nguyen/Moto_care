@@ -1,7 +1,7 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiAcceptedResponse, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Public } from '../common/decorators/public.decorator';
+import { RateLimit } from '../common/decorators/rate-limit.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -11,7 +11,6 @@ import { PasswordRecoveryService } from './password-recovery.service';
 
 @ApiTags('auth')
 @Public()
-@UseGuards(ThrottlerGuard)
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -20,12 +19,14 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @RateLimit(5, 60_000)
   @ApiCreatedResponse({ description: 'Account registered successfully' })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
+  @RateLimit(10, 60_000)
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ description: 'Authenticated successfully' })
   login(@Body() dto: LoginDto) {
@@ -33,7 +34,7 @@ export class AuthController {
   }
 
   @Post('password/forgot')
-  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @RateLimit(3, 60_000)
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiAcceptedResponse({ description: 'Generic response; sends a six-digit code when the email is registered' })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
@@ -41,7 +42,7 @@ export class AuthController {
   }
 
   @Post('password/reset')
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @RateLimit(10, 60_000)
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ description: 'Password changed and all previous JWTs invalidated' })
   resetPassword(@Body() dto: ResetPasswordDto) {

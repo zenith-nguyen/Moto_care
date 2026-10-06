@@ -18,7 +18,11 @@ function allowedOrigin(origin: string | undefined, callback: (error: Error | nul
 }
 
 @Injectable()
-@WebSocketGateway({ cors: { origin: allowedOrigin } })
+@WebSocketGateway({
+  cors: { origin: allowedOrigin },
+  connectTimeout: 10_000,
+  maxHttpBufferSize: 100_000,
+})
 export class RealtimeGateway implements OnGatewayConnection {
   @WebSocketServer()
   private server!: Server;

@@ -21,7 +21,8 @@ export class PasswordRecoveryService {
     private readonly mail: MailService,
     config: ConfigService,
   ) {
-    this.hashSecret = config.getOrThrow<string>('JWT_SECRET');
+    this.hashSecret = config.get<string>('PASSWORD_RESET_HMAC_SECRET')
+      ?? config.getOrThrow<string>('JWT_SECRET');
   }
 
   async forgot(emailInput: string) {
@@ -55,9 +56,9 @@ export class PasswordRecoveryService {
       try {
         const sent = await this.mail.sendPasswordResetCode(prepared.email, prepared.code);
         if (!sent) await this.invalidate(prepared.recordId);
-      } catch (error) {
+      } catch {
         await this.invalidate(prepared.recordId);
-        this.logger.error('Password reset email delivery failed', error instanceof Error ? error.stack : undefined);
+        this.logger.error('Password reset email delivery failed');
       }
     }
     return genericForgotResponse;

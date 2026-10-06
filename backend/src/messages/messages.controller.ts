@@ -5,6 +5,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { RateLimit } from '../common/decorators/rate-limit.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
@@ -25,6 +26,7 @@ export class MessagesController {
   }
 
   @Post()
+  @RateLimit(20, 60_000)
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('application/json', 'multipart/form-data')
   @ApiBody({ schema: { type: 'object', properties: {

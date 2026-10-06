@@ -15,6 +15,12 @@ The API is available at `http://localhost:3000`; `/health` checks the Nest proce
 
 The `/docs` page is available only when NestJS is running with `DEMO_MODE=false` and outside production. It is disabled in public demo mode; use its **Authorize** button with an access token from `POST /auth/login` to try protected endpoints during local development.
 
+## Security baseline
+
+Every response includes `X-Request-ID`; API errors use a consistent safe body and never expose stack traces or SQL. Access logs exclude query strings, request bodies and authorization data. Helmet security headers, strict CORS and global REST throttling are enabled. Auth and chat-upload endpoints have tighter limits.
+
+Run `npm run security:check-files` before pushing. It rejects tracked environment files, private keys, keystores, runtime uploads and several common token formats without printing the secret value. For public/production use, configure separate random `JWT_SECRET`, `ORDER_START_HMAC_SECRET` and `PASSWORD_RESET_HMAC_SECRET`; local development may fall back to `JWT_SECRET` for the two HMAC uses. See [SECURITY.md](docs/SECURITY.md). Never put any of these values in Flutter or a `--dart-define`.
+
 ## Password recovery
 
 `POST /auth/password/forgot` accepts an email and always returns a generic response. For registered email accounts, it creates a six-digit, one-time code that expires after 10 minutes. `POST /auth/password/reset` accepts the email, code and a new password. A successful reset invalidates all JWTs issued before it. Five consecutive failed login attempts temporarily lock the account for 15 minutes.
