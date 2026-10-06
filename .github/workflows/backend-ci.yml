@@ -66,6 +66,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Reject tracked secrets and runtime files
+        run: npm run security:check-files
+
       - name: Lint
         run: npm run lint
 

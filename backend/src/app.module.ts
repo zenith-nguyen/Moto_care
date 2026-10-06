@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AdminModule } from './admin/admin.module';
@@ -23,6 +24,13 @@ import { UsersModule } from './users/users.module';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: envValidationSchema,
+    }),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => [{
+        ttl: configService.getOrThrow<number>('API_RATE_LIMIT_TTL_MS'),
+        limit: configService.getOrThrow<number>('API_RATE_LIMIT'),
+      }],
     }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
@@ -52,8 +60,10 @@ import { UsersModule } from './users/users.module';
     AdminModule,
   ],
   providers: [
+    ThrottlerGuard,
     JwtAuthGuard,
     RolesGuard,
+    { provide: APP_GUARD, useExisting: ThrottlerGuard },
     { provide: APP_GUARD, useExisting: JwtAuthGuard },
     { provide: APP_GUARD, useExisting: RolesGuard },
   ],

@@ -304,7 +304,9 @@ export class OrdersService {
   }
 
   private startSignature(orderId: number, customerId: number, expiresAt: number): string {
-    return createHmac('sha256', this.config.getOrThrow<string>('JWT_SECRET'))
+    const secret = this.config.get<string>('ORDER_START_HMAC_SECRET')
+      ?? this.config.getOrThrow<string>('JWT_SECRET');
+    return createHmac('sha256', secret)
       .update(`motocare:start:${orderId}:${customerId}:${expiresAt}`)
       .digest('hex');
   }
