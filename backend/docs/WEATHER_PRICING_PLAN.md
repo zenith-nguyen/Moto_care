@@ -1,6 +1,6 @@
 # MotoCare Backend — giá theo thời tiết
 
-Cập nhật: 2026-10-06. Trạng thái: **đã triển khai trên nhánh `feat/zenith/weather-pricing`; mặc định tắt cho đến khi cấu hình demo bật rõ ràng**.
+Cập nhật: 2026-10-07. Trạng thái: **đã triển khai trên nhánh sửa `feat/zenith/weather-pricing-main`; mặc định tắt cho đến khi cấu hình demo bật rõ ràng**. PR #14 trước đó bị merge nhầm vào nhánh `feat/zenith/demo-backup`, nên cần PR sửa này để tính năng thực sự vào `main`.
 
 ## Nguồn dữ liệu và phạm vi
 
