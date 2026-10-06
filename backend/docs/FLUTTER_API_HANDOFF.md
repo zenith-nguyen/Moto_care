@@ -39,13 +39,31 @@ Provider mới đăng ký ở trạng thái chờ duyệt. Admin dùng `GET /adm
 ## Luồng Khách
 
 1. `GET /incident-types` để hiển thị lựa chọn nhanh và giá cơ bản.
-2. `POST /orders` với loại sự cố và GPS khách. Đơn mới là `AWAITING_PREPAYMENT`.
+2. `POST /orders` với loại sự cố và GPS khách. Đơn mới là `AWAITING_PREPAYMENT`. Dùng `estimatedPrice` làm số tiền cần xác nhận và hiển thị `pricing.basePrice`, `pricing.weatherSurcharge`, `pricing.weatherMultiplier`, `pricing.weatherCategory`. Không tự tính lại ở Flutter.
 3. Trong sandbox, gọi `POST /payments/demo/orders/:id/confirm`. Sau đó backend mới matching.
 4. Theo dõi bằng `GET /orders/:id`; socket chỉ giúp cập nhật nhanh hơn, REST vẫn là nguồn snapshot khi reconnect.
 5. Khi thợ nhận đơn: xem marker từ `providerLocation`, chat chữ/ảnh qua `GET/POST /orders/:id/messages`.
 6. Khi trạng thái `ARRIVED`, gọi `GET /orders/:id/start-token` và hiển thị token dưới dạng QR hoặc chữ cho thợ. Đây không phải QR ngân hàng.
 7. Khi `COMPLETED`, gọi `GET/POST /orders/:id/reviews`.
 8. Trước khi bắt đầu sửa, khách có thể `POST /orders/:id/cancel`; đơn đã trả sandbox chuyển sang `REFUND_PENDING`.
+
+Ví dụ breakdown khi thời tiết mức vừa:
+
+```json
+{
+  "estimatedPrice": "110000.00",
+  "pricing": {
+    "basePrice": "100000.00",
+    "weatherSurcharge": "10000.00",
+    "weatherMultiplier": "1.1000",
+    "weatherCategory": "MODERATE",
+    "weatherSource": "OPEN_METEO",
+    "attribution": "Weather data by Open-Meteo.com"
+  }
+}
+```
+
+`DISABLED` hoặc `UNAVAILABLE` luôn có hệ số `1.0000` và phụ thu `0.00`. Khi có `attribution`, UI phải hiển thị nguồn. Đây là snapshot lúc tạo đơn; không thay đổi theo GPS hoặc lần refresh sau.
 
 ## Luồng Thợ
 
