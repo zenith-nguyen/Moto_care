@@ -80,6 +80,17 @@ After the test database exists, only the last three commands are needed for anot
 
 The GitHub Actions workflow runs these checks for pull requests and updates to `main` or `feat/**` branches. Changes must be proposed through a PR using Conventional Commits.
 
+## Demo backup and restore
+
+Database rows and chat images are separate, so a valid demo backup must include both. With Docker running, check capacity and create a timestamped snapshot with:
+
+```powershell
+npm run backup:check
+npm run backup:create
+```
+
+Snapshots are written under the ignored `backups/` directory and include a PostgreSQL custom dump, a chat-image archive and a SHA-256 manifest. They contain sensitive application data and are not encrypted. Do not commit or share them. Restore is deliberately limited to a new test/restore database; follow [BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md) and rehearse before an important demo.
+
 ## Database
 
 Local development uses `postgis/postgis:16-3.4`. TypeORM always uses migrations; `synchronize` is disabled.

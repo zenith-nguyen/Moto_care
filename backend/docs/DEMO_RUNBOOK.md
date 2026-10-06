@@ -73,7 +73,8 @@ Socket.IO handshake `auth: { token, orderId? }`, không để JWT trong URL. `pr
 - [ ] UI Khách/Thợ/Admin đã merge, nối hết API cần dùng, không còn Flutter counter starter.
 - [ ] Có DB demo riêng, mật khẩu/secret mạnh, không chứa tài khoản seed mật khẩu mẫu; chỉ dữ liệu thử.
 - [ ] API qua HTTPS/WSS từ 4G, không dùng localhost; mất mạng/reconnect/offer 15 giây được thử.
+- [ ] Chạy `npm run backup:check`, `npm run backup:create` và phục hồi thử theo [BACKUP_RESTORE.md](BACKUP_RESTORE.md); cất snapshot ngoài Git và không chia sẻ công khai.
 - [ ] Đăng ký → duyệt thợ → cập nhật GPS → đặt đơn → giả lập thanh toán → offer → nhận đơn → GPS/chat chữ + ảnh → tới nơi → mã bắt đầu → hoàn tất giá gốc → ví demo/đánh giá; chạy thêm nhánh hủy/hoàn thử.
 - [ ] Các bước **chưa được code** (QR ngân hàng, giá thay đổi/thu bù/hoàn chênh lệch, rút tiền, tranh chấp sau sửa, tiền thật) không quảng cáo là đã chạy.
 - [ ] Cài APK release trên máy khác, thử khi laptop bật và khi laptop tắt; thông báo rõ phụ thuộc server.
-- [ ] Tắt Funnel sau demo và lưu bản backup DB.
+- [ ] Tắt Funnel sau demo và lưu snapshot DB + ảnh chat ở nơi riêng tư.
