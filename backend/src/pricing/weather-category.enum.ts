@@ -1,0 +1,7 @@
+export enum WeatherCategory {
+  DISABLED = 'DISABLED',
+  UNAVAILABLE = 'UNAVAILABLE',
+  NORMAL = 'NORMAL',
+  MODERATE = 'MODERATE',
+  SEVERE = 'SEVERE',
+}

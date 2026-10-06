@@ -40,6 +40,8 @@ import { PasswordResetCode } from '../src/auth/password-reset-code.entity';
 import { PasswordRecoveryService } from '../src/auth/password-recovery.service';
 import { MailService } from '../src/auth/mail.service';
 import { JwtStrategy } from '../src/auth/jwt.strategy';
+import { OrderPricingService } from '../src/pricing/order-pricing.service';
+import { WeatherFetcher, WeatherService } from '../src/pricing/weather.service';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -83,7 +85,10 @@ describe('Orders and matching on PostGIS', () => {
       JWT_SECRET: 'test-only-order-start-secret-longer-than-32-characters',
     });
     matching = new MatchingService(database, config);
-    orders = new OrdersService(database, matching, config);
+    const weather = new WeatherService(config, (async () => {
+      throw new Error('Weather fetch is disabled in database tests');
+    }) satisfies WeatherFetcher);
+    orders = new OrdersService(database, matching, config, new OrderPricingService(weather));
     demoPayments = new DemoPaymentsService(database, config, matching);
     admin = new AdminService(database);
     messages = new MessagesService(
@@ -359,6 +364,48 @@ describe('Orders and matching on PostGIS', () => {
     expect(stored.estimatedPrice).toBe('100000.00');
   });
 
+  it('persists a severe-weather price snapshot and matching payment amount', async () => {
+    const weatherConfig = new ConfigService({
+      MATCH_RADIUS_KM: 10,
+      OFFER_TTL_SECONDS: 15,
+      PROVIDER_LOCATION_MAX_AGE_SECONDS: 120,
+      WEATHER_PRICING_ENABLED: true,
+      WEATHER_REQUEST_TIMEOUT_MS: 1000,
+      WEATHER_CACHE_TTL_SECONDS: 300,
+      NODE_ENV: 'test',
+      DEMO_MODE: true,
+      JWT_SECRET: 'test-only-order-start-secret-longer-than-32-characters',
+    });
+    const weatherFetcher: WeatherFetcher = async () => ({
+      ok: true,
+      json: async () => ({
+        current: {
+          time: '2026-10-06T08:00', weather_code: 95, precipitation: 8, rain: 8,
+          wind_speed_10m: 45, wind_gusts_10m: 65,
+        },
+      }),
+    });
+    const weatherOrders = new OrdersService(
+      database,
+      matching,
+      weatherConfig,
+      new OrderPricingService(new WeatherService(weatherConfig, weatherFetcher)),
+    );
+    const created = await weatherOrders.create(customer.id, {
+      incident_type_id: incident.id,
+      customer_location: { longitude: 106.7009, latitude: 10.7769 },
+    });
+    expect(created).toMatchObject({
+      estimatedPrice: '120000.00',
+      pricing: {
+        basePrice: '100000.00', weatherSurcharge: '20000.00', weatherMultiplier: '1.2000',
+        weatherCategory: 'SEVERE', weatherSource: 'OPEN_METEO',
+      },
+    });
+    const payment = await database.getRepository(Payment).findOneByOrFail({ orderId: created.id });
+    expect(payment.amount).toBe('120000.00');
+  });
+
   it('offers to the nearest available provider and excludes unavailable providers', async () => {
     const nearest = await makeProvider(106.7009, 10.7769, { approved: false });
     await makeProvider(106.701, 10.777, { online: false });
@@ -373,6 +420,7 @@ describe('Orders and matching on PostGIS', () => {
         incidentTypeId: incident.id,
         status: OrderStatus.ACCEPTED,
         customerLocation: { type: 'Point', coordinates: [106.7009, 10.7769] },
+        basePrice: '100000.00',
         estimatedPrice: '100000.00',
       }),
     );
