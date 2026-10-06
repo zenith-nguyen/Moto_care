@@ -172,6 +172,12 @@ describe('Sandbox demo flow over HTTP', () => {
     return created.body.id as number;
   }
 
+  function analyticsQuery(): string {
+    const from = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const to = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  }
+
   it('completes the customer, provider and admin sandbox lifecycle', async () => {
     const { customer, provider } = await prepareActors();
 
@@ -287,6 +293,57 @@ describe('Sandbox demo flow over HTTP', () => {
       finalPrice: '100000.00',
       payment: { amount: '100000.00', status: 'PAID', isDemo: true },
     });
+
+    await request(app.getHttpServer())
+      .get(`/admin/dashboard/summary?${analyticsQuery()}`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(403);
+    const summary = await request(app.getHttpServer())
+      .get(`/admin/dashboard/summary?${analyticsQuery()}`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200);
+    expect(summary.body).toMatchObject({
+      sandboxOnly: true,
+      users: { total: 4, customers: 2, providers: 1, admins: 1, createdInPeriod: 4 },
+      providers: { total: 1, approved: 1, online: 1, freshLocation: 1 },
+      orders: { total: 1, byStatus: { COMPLETED: 1 }, completionRate: 100 },
+      money: {
+        collectedInPeriod: '100000.00',
+        heldCurrent: '0.00',
+        settledToProvidersInPeriod: '100000.00',
+        refundPendingCurrent: '0.00',
+        refundedInPeriod: '0.00',
+        grossCompletedValueInPeriod: '100000.00',
+      },
+    });
+    const timeseries = await request(app.getHttpServer())
+      .get(`/admin/dashboard/timeseries?${analyticsQuery()}&bucket=day`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200);
+    expect(timeseries.body.data).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        ordersCreated: 1,
+        ordersCompleted: 1,
+        collected: '100000.00',
+        settledToProviders: '100000.00',
+      }),
+    ]));
+    const reconciliation = await request(app.getHttpServer())
+      .get(`/admin/reconciliation?${analyticsQuery()}&status=PAID&page=1&limit=10`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200);
+    expect(reconciliation.body).toMatchObject({
+      page: 1,
+      limit: 10,
+      total: 1,
+      totalPages: 1,
+      items: [{
+        order: { id: orderId, status: 'COMPLETED', finalPrice: '100000.00' },
+        payment: { status: 'PAID', amount: '100000.00', paymentCount: 1 },
+        settlement: { creditCount: 1, creditedAmount: '100000.00' },
+        flags: [],
+      }],
+    });
   });
 
   it('cancels before service and completes the full demo refund', async () => {
@@ -304,6 +361,13 @@ describe('Sandbox demo flow over HTTP', () => {
       .set('Authorization', `Bearer ${admin.token}`)
       .expect(200);
     expect(pending.body).toEqual([expect.objectContaining({ orderId, amount: '100000.00', isDemo: true })]);
+    await request(app.getHttpServer())
+      .get(`/admin/dashboard/summary?${analyticsQuery()}`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body.money).toMatchObject({
+        heldCurrent: '100000.00', refundPendingCurrent: '100000.00', refundedInPeriod: '0.00',
+      }));
 
     await request(app.getHttpServer())
       .post(`/payments/demo/orders/${orderId}/refund`)
@@ -315,5 +379,52 @@ describe('Sandbox demo flow over HTTP', () => {
       .set('Authorization', `Bearer ${customer.token}`)
       .expect(200)
       .expect(({ body }) => expect(body).toMatchObject({ status: 'REFUNDED', payment: { status: 'REFUNDED' } }));
+    await request(app.getHttpServer())
+      .get(`/admin/dashboard/summary?${analyticsQuery()}`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body.money).toMatchObject({
+        heldCurrent: '0.00', refundPendingCurrent: '0.00', refundedInPeriod: '100000.00',
+      }));
+    await request(app.getHttpServer())
+      .get(`/admin/reconciliation?${analyticsQuery()}&status=REFUNDED`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({
+        total: 1,
+        items: [{ order: { id: orderId, status: 'REFUNDED' }, payment: { status: 'REFUNDED' }, flags: [] }],
+      }));
+  });
+
+  it('flags a completed order that has no provider wallet credit', async () => {
+    const { admin, customer, provider } = await prepareActors();
+    const orderId = await createAndMatch(customer.token);
+    const offers = await request(app.getHttpServer())
+      .get('/providers/me/offers/pending')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/orders/${orderId}/offers/${offers.body[0].id}/accept`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect(200);
+    await database.query(`UPDATE orders SET status = 'COMPLETED', final_price = estimated_price WHERE id = $1`, [orderId]);
+
+    await request(app.getHttpServer())
+      .get(`/admin/reconciliation?${analyticsQuery()}`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body.items[0]).toMatchObject({
+        order: { id: orderId, status: 'COMPLETED' },
+        settlement: { creditCount: 0, creditedAmount: '0.00' },
+        flags: ['COMPLETED_WALLET_CREDIT_MISMATCH'],
+      }));
+    await request(app.getHttpServer())
+      .get('/admin/dashboard/summary?from=2026-10-06T12:00:00.000Z&to=2026-10-06T11:00:00.000Z')
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(400);
+    await request(app.getHttpServer())
+      .get(`/admin/reconciliation?${analyticsQuery()}&limit=101`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(400);
   });
 });
