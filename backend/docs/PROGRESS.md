@@ -10,12 +10,13 @@ Cập nhật lần cuối: 2026-10-06
 - PR #7 đã merge vào `main`: API admin duyệt thợ; demo trả trước/hoàn 100% giả lập; hủy trước khi bắt đầu; chat lưu DB; Socket.IO offer/trạng thái/GPS/chat; tới nơi/mã bắt đầu/hoàn tất đúng giá gốc; ví demo và đánh giá hai chiều; `/health/ready` kiểm tra DB; hướng dẫn demo một laptop. Migration local đã chạy đủ 6 bản; Docker/PostGIS và readiness đã kiểm tra OK ngày 2026-10-05. Đây vẫn là sandbox, không phải thanh toán thật.
 - PR #8 đã merge vào `main`: test HTTP xuyên suốt ba vai trò, PostGIS test trong CI và hợp đồng tích hợp Flutter. Mốc merge đã qua 25 database/HTTP tests, 5 unit tests, lint, build, audit và Flutter checks.
 - PR #9 đã merge vào `main`: chat nhận text/ảnh JPEG-PNG-WebP tối đa 5 MiB, lưu file local ngoài public web root, metadata trong DB, URL tải có JWT/quyền theo đơn, realtime payload có ảnh, và lịch sử đọc được sau khi đơn đóng. Đã thêm catalog API và backlog non-functional; migration upload là `0006`.
+- PR #10 đã merge vào `main`: quên/đặt lại mật khẩu bằng mã email dùng một lần, khóa tạm sau đăng nhập sai và vô hiệu JWT cũ cho REST/Socket sau reset; migration `0007`. CI Backend, Flutter và branch policy đều xanh.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/password-recovery`: mã email sáu số dùng một lần, hết hạn/giới hạn thử lại, khóa đăng nhập tạm thời và vô hiệu JWT cũ sau reset; migration `0007`. Đã rebase sau PR #9 và chạy sạch 8 migration trên database mới, 9 unit tests, 27 database/HTTP tests, lint, build và production dependency audit ngày 2026-10-06. Cần mở/review PR và chỉ cấu hình SMTP demo sau khi merge; secret không commit.
-2. Milestone Admin tiếp theo: API dashboard/đối soát có bộ lọc thời gian. Tách riêng tổng user/thợ/khách, số đơn theo trạng thái và các số tiền `collected`, `held`, `settled`, `refund_pending`, `refunded`; không gọi toàn bộ tiền vào là doanh thu. Trước mắt vẫn là số liệu sandbox.
-3. Tăng cường vận hành: request ID, log JSON có che secret, lỗi API thống nhất, giới hạn upload và backup/restore DB + thư mục ảnh.
+1. Nhánh `feat/zenith/admin-analytics`: ba API dashboard/biểu đồ/đối soát, bộ lọc thời gian, phân trang, decimal strings và cờ bất thường. Đã qua 9 unit tests, 28 database/HTTP tests, lint, build và kiểm tra `EXPLAIN` ngày 2026-10-06; không cần migration/index mới cho dữ liệu demo. Tài liệu đã cập nhật; bước còn lại là mở PR và chạy CI.
+2. Sau Admin analytics: request ID, log JSON có che secret, lỗi API thống nhất, giới hạn upload và backup/restore DB + thư mục ảnh.
+3. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
 4. Cam Thu/Vy merge UI Flutter Khách/Thợ/Admin và nối API theo [FLUTTER_API_HANDOFF.md](FLUTTER_API_HANDOFF.md); `lib/main.dart` trên main hiện vẫn là counter starter. Chưa có APK MotoCare hoàn chỉnh để gửi thầy.
 5. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
 6. Thiếu giá cuối **khác** giá tạm tính/thu bù/hoàn chênh lệch, rút tiền, webhook SePay thật, hoàn tiền thật và khiếu nại Admin sau khi bắt đầu sửa. Không quảng cáo sandbox là xử lý tiền thật.
