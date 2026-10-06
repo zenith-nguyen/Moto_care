@@ -91,12 +91,11 @@ Socket giúp cập nhật nhanh, không thay REST. Sau reconnect client phải g
 
 ## Non-functional hiện có và khoảng trống
 
-Đã có: DTO validation/whitelist, JWT + role guard, auth throttling, atomic transaction/row lock, unique/check constraints, `numeric` cho tiền, GiST cho location, upload size/type/signature checks, protected image access, readiness DB, migrations thủ công, CI + unit/HTTP/PostGIS tests, sandbox bị chặn trong production.
+Đã có: DTO validation/whitelist, JWT + role guard, global REST throttling và giới hạn riêng cho auth/upload, request ID, log JSON không ghi query/body/header, response lỗi an toàn thống nhất, Helmet, CORS không wildcard, atomic transaction/row lock, unique/check constraints, `numeric` cho tiền, GiST cho location, upload size/type/signature/part checks, protected image access, readiness DB, migrations thủ công, CI + unit/HTTP/PostGIS tests, kiểm tra file nhạy cảm và sandbox bị chặn trong production. Chi tiết: [SECURITY.md](SECURITY.md).
 
 Cần tăng cường theo thứ tự:
 
-1. Request ID + structured logging có che token/secret; exception response thống nhất.
-2. Rate limit theo nhóm endpoint nhạy cảm và upload; timeout/body-size rõ ràng.
-3. Backup/restore tự động cho DB + ảnh demo và kiểm tra dung lượng đĩa.
-4. Test tải nhẹ REST/WebSocket trên laptop demo; đo reconnect và upload chậm.
-5. Khi có nhu cầu 24/7: object storage, retention/cleanup file và server công khai ổn định. Đây chưa phải yêu cầu bản demo không phí.
+1. Backup/restore tự động cho DB + ảnh demo và kiểm tra dung lượng đĩa.
+2. Test tải nhẹ REST/WebSocket trên laptop demo; đo reconnect và upload chậm.
+3. Bổ sung rate limit WebSocket/phân tán nếu chuyển sang nhiều process hoặc public 24/7.
+4. Khi có nhu cầu 24/7: object storage, retention/cleanup file, secret manager và server công khai ổn định. Đây chưa phải yêu cầu bản demo không phí.

@@ -11,11 +11,12 @@ Cập nhật lần cuối: 2026-10-06
 - PR #8 đã merge vào `main`: test HTTP xuyên suốt ba vai trò, PostGIS test trong CI và hợp đồng tích hợp Flutter. Mốc merge đã qua 25 database/HTTP tests, 5 unit tests, lint, build, audit và Flutter checks.
 - PR #9 đã merge vào `main`: chat nhận text/ảnh JPEG-PNG-WebP tối đa 5 MiB, lưu file local ngoài public web root, metadata trong DB, URL tải có JWT/quyền theo đơn, realtime payload có ảnh, và lịch sử đọc được sau khi đơn đóng. Đã thêm catalog API và backlog non-functional; migration upload là `0006`.
 - PR #10 đã merge vào `main`: quên/đặt lại mật khẩu bằng mã email dùng một lần, khóa tạm sau đăng nhập sai và vô hiệu JWT cũ cho REST/Socket sau reset; migration `0007`. CI Backend, Flutter và branch policy đều xanh.
+- PR #11 đã merge vào `main`: dashboard Admin, chuỗi thời gian và đối soát order/payment/wallet; bộ lọc thời gian, phân trang, decimal strings và cờ bất thường. Mốc merge đã qua 9 unit tests, 28 database/HTTP tests, lint và build.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/admin-analytics`: ba API dashboard/biểu đồ/đối soát, bộ lọc thời gian, phân trang, decimal strings và cờ bất thường. Đã qua 9 unit tests, 28 database/HTTP tests, lint, build và kiểm tra `EXPLAIN` ngày 2026-10-06; không cần migration/index mới cho dữ liệu demo. Tài liệu đã cập nhật; bước còn lại là mở PR và chạy CI.
-2. Sau Admin analytics: request ID, log JSON có che secret, lỗi API thống nhất, giới hạn upload và backup/restore DB + thư mục ảnh.
+1. Nhánh `feat/zenith/api-hardening`: request ID, log JSON không chứa query/body/header, response lỗi an toàn, Helmet, CORS không wildcard, rate limit toàn API và riêng auth/upload, multipart limits, HMAC secret tách biệt ở môi trường public, CI chặn file/chuỗi secret phổ biến. Đã qua security check 127 file, production dependency audit 0 lỗ hổng, lint, build, 15 unit tests và 28 test PostgreSQL/PostGIS/HTTP; bước còn lại là mở PR và chạy CI.
+2. Sau hardening: backup/restore DB + thư mục ảnh, kiểm tra dung lượng đĩa và diễn tập phục hồi.
 3. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
 4. Cam Thu/Vy merge UI Flutter Khách/Thợ/Admin và nối API theo [FLUTTER_API_HANDOFF.md](FLUTTER_API_HANDOFF.md); `lib/main.dart` trên main hiện vẫn là counter starter. Chưa có APK MotoCare hoàn chỉnh để gửi thầy.
 5. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
@@ -30,6 +31,7 @@ Cập nhật lần cuối: 2026-10-06
 - UI Flutter do Cam Thu/Vy phụ trách; backend/DB chạy trên laptop khi demo không nằm trong APK. Không dùng `localhost` trong APK gửi người khác. Ưu tiên giải pháp không mất phí, nhưng miễn phí không đồng nghĩa uptime/băng thông không giới hạn.
 - `wallet_transactions.amount` dương; chiều cộng/trừ suy từ `type`. Không seed mật khẩu mẫu ra môi trường công khai.
 - Chat dùng PostgreSQL cho lịch sử/metadata, Socket.IO để báo realtime, REST để đồng bộ lại. Ảnh lưu local có URL bảo vệ; backup DB phải đi kèm backup thư mục ảnh.
+- Secret public/production tách theo mục đích: JWT, HMAC mã bắt đầu sửa và HMAC mã reset mật khẩu; không đưa vào Flutter. Webhook thanh toán thật phải xác thực chữ ký raw body, chống replay và idempotent trước khi được mở.
 
 ## Không dùng nữa / ghi chú vận hành
 
