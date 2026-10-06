@@ -25,6 +25,10 @@ const forbiddenPaths = [
     rule: "runtime upload",
     matches: (path) => /(^|\/)storage\//i.test(path),
   },
+  {
+    rule: "database or upload backup",
+    matches: (path) => /(^|\/)backups\//i.test(path),
+  },
 ];
 
 const secretSignatures = [

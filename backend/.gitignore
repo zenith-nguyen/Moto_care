@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 storage/
+backups/
 .env
 .env.*
 !.env.example

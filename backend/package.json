@@ -15,7 +15,9 @@
     "migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate",
     "seed": "ts-node src/database/seed.ts",
     "db:check-nearest-provider": "ts-node src/database/check-nearest-provider.ts",
-    "security:check-files": "node scripts/check-sensitive-files.mjs"
+    "security:check-files": "node scripts/check-sensitive-files.mjs",
+    "backup:check": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-demo-storage.ps1",
+    "backup:create": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup-demo.ps1"
   },
   "keywords": [],
   "author": "",
