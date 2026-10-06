@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { DataSource } from 'typeorm';
 import { AdminService } from '../src/admin/admin.service';
+import { AdminAnalyticsService } from '../src/admin/admin-analytics.service';
 import 'dotenv/config';
 import { ApprovalStatus } from '../src/common/enums/approval-status.enum';
 import { OfferStatus } from '../src/common/enums/offer-status.enum';
@@ -42,6 +43,12 @@ import { MailService } from '../src/auth/mail.service';
 import { JwtStrategy } from '../src/auth/jwt.strategy';
 import { OrderPricingService } from '../src/pricing/order-pricing.service';
 import { WeatherFetcher, WeatherService } from '../src/pricing/weather.service';
+import { OrderPriceProposal } from '../src/orders/order-price-proposal.entity';
+import { PaymentAdjustment } from '../src/payments/payment-adjustment.entity';
+import { PriceAdjustmentsService } from '../src/orders/price-adjustments.service';
+import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../src/common/enums/payment-adjustment.enum';
+import { PriceProposalStatus } from '../src/common/enums/price-proposal-status.enum';
+import { AdminPriceResolution } from '../src/orders/dto/price-proposal.dto';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -53,7 +60,9 @@ describe('Orders and matching on PostGIS', () => {
   let orders: OrdersService;
   let matching: MatchingService;
   let demoPayments: DemoPaymentsService;
+  let priceAdjustments: PriceAdjustmentsService;
   let admin: AdminService;
+  let analytics: AdminAnalyticsService;
   let messages: MessagesService;
   const messageCreated = jest.fn();
   const providerLocation = jest.fn();
@@ -71,7 +80,7 @@ describe('Orders and matching on PostGIS', () => {
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: testDatabase,
-      entities: [User, Provider, IncidentType, Order, OrderOffer, Payment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review, PasswordResetCode],
+      entities: [User, Provider, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review, PasswordResetCode],
       synchronize: false,
       logging: false,
     });
@@ -90,7 +99,9 @@ describe('Orders and matching on PostGIS', () => {
     }) satisfies WeatherFetcher);
     orders = new OrdersService(database, matching, config, new OrderPricingService(weather));
     demoPayments = new DemoPaymentsService(database, config, matching);
+    priceAdjustments = new PriceAdjustmentsService(database);
     admin = new AdminService(database);
+    analytics = new AdminAnalyticsService(database, config);
     messages = new MessagesService(
       database, { messageCreated } as unknown as RealtimeGateway, new ChatImageStorageService(config),
     );
@@ -296,6 +307,10 @@ describe('Orders and matching on PostGIS', () => {
     await expect(orders.start(created.id, assigned.user.id, token.slice(0, -1) + (token.endsWith('0') ? '1' : '0'))).rejects.toThrow();
     expect((await orders.start(created.id, assigned.user.id, token)).status).toBe(OrderStatus.IN_PROGRESS);
     await expect(orders.cancel(created.id, customer.id, 'Changed my mind')).rejects.toBeInstanceOf(ConflictException);
+    const proposal = await priceAdjustments.propose(created.id, assigned.user.id, {
+      final_price: '100000.00', reason: 'No additional parts were required',
+    });
+    expect((await priceAdjustments.approve(created.id, proposal.proposal.id, customer.id)).orderStatus).toBe(OrderStatus.PAID);
     expect((await orders.complete(created.id, assigned.user.id)).finalPrice).toBe('100000.00');
     expect((await database.getRepository(Wallet).findOneByOrFail({ providerId: assigned.provider.id })).balance).toBe('100000.00');
     expect(await database.getRepository(WalletTransaction).countBy({ orderId: created.id })).toBe(1);
@@ -319,12 +334,130 @@ describe('Orders and matching on PostGIS', () => {
     await orders.arrive(created.id, assigned.user.id);
     const token = (await orders.startToken(created.id, customer.id)).token;
     await orders.start(created.id, assigned.user.id, token);
+    const proposal = await priceAdjustments.propose(created.id, assigned.user.id, {
+      final_price: '100000.00', reason: 'No additional parts were required',
+    });
+    await priceAdjustments.approve(created.id, proposal.proposal.id, customer.id);
     const results = await Promise.allSettled([
       orders.complete(created.id, assigned.user.id), orders.complete(created.id, assigned.user.id),
     ]);
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
     expect(await database.getRepository(WalletTransaction).countBy({ orderId: created.id })).toBe(1);
     expect((await database.getRepository(Wallet).findOneByOrFail({ providerId: assigned.provider.id })).balance).toBe('100000.00');
+  });
+
+  it('settles an approved additional charge before crediting the final price', async () => {
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const created = await createOrder();
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    await orders.arrive(created.id, assigned.user.id);
+    const token = (await orders.startToken(created.id, customer.id)).token;
+    await orders.start(created.id, assigned.user.id, token);
+    const proposal = await priceAdjustments.propose(created.id, assigned.user.id, {
+      final_price: '125000.00', reason: 'Replace damaged inner tube and valve',
+    });
+    const approved = await priceAdjustments.approve(created.id, proposal.proposal.id, customer.id);
+    expect(approved).toMatchObject({
+      orderStatus: OrderStatus.AWAITING_PAYMENT,
+      paymentAdjustment: { type: PaymentAdjustmentType.CHARGE, amount: '25000.00', status: PaymentAdjustmentStatus.PENDING },
+    });
+    await expect(orders.complete(created.id, assigned.user.id)).rejects.toBeInstanceOf(ConflictException);
+    const settled = await demoPayments.confirmAdjustment(created.id, customer.id);
+    expect(settled).toMatchObject({ status: OrderStatus.PAID, paymentAdjustment: { status: PaymentAdjustmentStatus.SETTLED } });
+    expect((await orders.complete(created.id, assigned.user.id)).finalPrice).toBe('125000.00');
+    expect((await database.getRepository(Wallet).findOneByOrFail({ providerId: assigned.provider.id })).balance).toBe('125000.00');
+    expect((await analytics.summary({})).money).toMatchObject({
+      collectedInPeriod: '125000.00', heldCurrent: '0.00', settledToProvidersInPeriod: '125000.00',
+    });
+  });
+
+  it('settles a price reduction as a demo refund and records the discount', async () => {
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const created = await createOrder();
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    await orders.arrive(created.id, assigned.user.id);
+    await orders.start(created.id, assigned.user.id, (await orders.startToken(created.id, customer.id)).token);
+    const proposal = await priceAdjustments.propose(created.id, assigned.user.id, {
+      final_price: '80000.00', reason: 'Repair required fewer parts than estimated',
+    });
+    await priceAdjustments.approve(created.id, proposal.proposal.id, customer.id);
+    await expect(demoPayments.confirmAdjustment(created.id, customer.id)).rejects.toBeInstanceOf(ConflictException);
+    expect(await priceAdjustments.pendingRefundAdjustments()).toEqual([
+      expect.objectContaining({ amount: '20000.00', order: expect.objectContaining({ id: created.id }) }),
+    ]);
+    expect((await demoPayments.refundAdjustment(created.id)).paymentAdjustment).toMatchObject({
+      type: PaymentAdjustmentType.REFUND, amount: '20000.00', status: PaymentAdjustmentStatus.SETTLED,
+    });
+    const order = await database.getRepository(Order).findOneByOrFail({ id: created.id });
+    expect(order).toMatchObject({ extraCost: '0.00', discountAmount: '20000.00', finalPrice: '80000.00' });
+    expect((await analytics.summary({})).money).toMatchObject({
+      collectedInPeriod: '100000.00', heldCurrent: '80000.00', refundPendingCurrent: '0.00', refundedInPeriod: '20000.00',
+    });
+    expect(await priceAdjustments.pendingRefundAdjustments()).toHaveLength(0);
+  });
+
+  it('allows Admin to resolve a rejected price proposal and serializes customer decisions', async () => {
+    const adminUser = await makeUser(UserRole.ADMIN);
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const created = await createOrder();
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    await orders.arrive(created.id, assigned.user.id);
+    await orders.start(created.id, assigned.user.id, (await orders.startToken(created.id, customer.id)).token);
+    const proposal = await priceAdjustments.propose(created.id, assigned.user.id, {
+      final_price: '115000.00', reason: 'Emergency replacement part was required',
+    });
+    const decisions = await Promise.allSettled([
+      priceAdjustments.approve(created.id, proposal.proposal.id, customer.id),
+      priceAdjustments.reject(created.id, proposal.proposal.id, customer.id, 'Please provide evidence first'),
+    ]);
+    expect(decisions.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+
+    const stored = await database.getRepository(OrderPriceProposal).findOneByOrFail({ id: proposal.proposal.id });
+    if (stored.status === PriceProposalStatus.REJECTED) {
+      await priceAdjustments.dispute(created.id, stored.id, assigned.user.id, 'Photo and receipt were sent in chat');
+      expect(await priceAdjustments.pendingDisputes()).toHaveLength(1);
+      const resolved = await priceAdjustments.resolveDispute(
+        stored.id, adminUser.id, AdminPriceResolution.APPROVE, 'Receipt and chat history confirm the part',
+      );
+      expect(resolved).toMatchObject({
+        orderStatus: OrderStatus.AWAITING_PAYMENT,
+        proposal: { status: PriceProposalStatus.RESOLVED_APPROVED },
+      });
+    } else {
+      expect(stored.status).toBe(PriceProposalStatus.APPROVED);
+    }
+  });
+
+  it('resolves a deterministic final-price dispute through Admin review', async () => {
+    const adminUser = await makeUser(UserRole.ADMIN);
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const created = await createOrder();
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    await orders.arrive(created.id, assigned.user.id);
+    await orders.start(created.id, assigned.user.id, (await orders.startToken(created.id, customer.id)).token);
+    const proposal = await priceAdjustments.propose(created.id, assigned.user.id, {
+      final_price: '115000.00', reason: 'Emergency replacement part was required',
+    });
+    await priceAdjustments.reject(created.id, proposal.proposal.id, customer.id, 'Please provide evidence first');
+    await priceAdjustments.dispute(created.id, proposal.proposal.id, assigned.user.id, 'Receipt was uploaded in chat');
+    expect(await priceAdjustments.pendingDisputes()).toEqual([
+      expect.objectContaining({ id: proposal.proposal.id, status: PriceProposalStatus.DISPUTED }),
+    ]);
+    const resolved = await priceAdjustments.resolveDispute(
+      proposal.proposal.id,
+      adminUser.id,
+      AdminPriceResolution.REJECT,
+      'The receipt does not prove customer approval',
+    );
+    expect(resolved).toMatchObject({
+      orderStatus: OrderStatus.IN_PROGRESS,
+      proposal: { status: PriceProposalStatus.RESOLVED_REJECTED },
+      paymentAdjustment: null,
+    });
   });
 
   it('only joins a socket to a room after JWT and order participation checks', async () => {
