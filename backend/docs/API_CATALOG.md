@@ -33,7 +33,7 @@ Matching dùng PostGIS, vị trí tối đa 120 giây, bán kính mặc định 
 | Method | Path | Quyền | Trạng thái / mục đích |
 | --- | --- | --- | --- |
 | GET | `/orders` | Customer/Provider | 30 đơn gần nhất của chính mình |
-| POST | `/orders` | Customer | Tạo đơn và snapshot giá; chờ thanh toán sandbox |
+| POST | `/orders` | Customer | Tạo đơn, snapshot giá cơ bản + thời tiết; chờ thanh toán sandbox |
 | GET | `/orders/:orderId` | Người tham gia | Snapshot trạng thái/payment/GPS |
 | POST | `/orders/:orderId/retry-match` | Customer | Thử matching lại |
 | POST | `/orders/:orderId/cancel` | Customer | Hủy trước khi bắt đầu sửa |
@@ -98,4 +98,4 @@ Cần tăng cường theo thứ tự:
 1. Test tải nhẹ REST/WebSocket trên laptop demo; đo reconnect và upload chậm.
 2. Bổ sung rate limit WebSocket/phân tán nếu chuyển sang nhiều process hoặc public 24/7.
 3. Khi có nhu cầu 24/7: lịch backup tự động ra thiết bị khác, object storage, retention/cleanup file, secret manager và server công khai ổn định. Đây chưa phải yêu cầu bản demo không phí.
-4. Giá theo thời tiết mới ở mức thiết kế, chưa chạy trong API; xem [WEATHER_PRICING_PLAN.md](WEATHER_PRICING_PLAN.md).
+4. Giá theo thời tiết đã được triển khai nhưng mặc định tắt (`WEATHER_PRICING_ENABLED=false`); khi tắt hoặc dịch vụ ngoài lỗi, hệ số luôn là `1.0000`. Xem [WEATHER_PRICING_PLAN.md](WEATHER_PRICING_PLAN.md).
