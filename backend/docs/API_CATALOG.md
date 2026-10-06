@@ -33,7 +33,7 @@ Matching dùng PostGIS, vị trí tối đa 120 giây, bán kính mặc định 
 | Method | Path | Quyền | Trạng thái / mục đích |
 | --- | --- | --- | --- |
 | GET | `/orders` | Customer/Provider | 30 đơn gần nhất của chính mình |
-| POST | `/orders` | Customer | Tạo đơn và snapshot giá; chờ thanh toán sandbox |
+| POST | `/orders` | Customer | Tạo đơn, snapshot giá cơ bản + thời tiết; chờ thanh toán sandbox |
 | GET | `/orders/:orderId` | Người tham gia | Snapshot trạng thái/payment/GPS |
 | POST | `/orders/:orderId/retry-match` | Customer | Thử matching lại |
 | POST | `/orders/:orderId/cancel` | Customer | Hủy trước khi bắt đầu sửa |
