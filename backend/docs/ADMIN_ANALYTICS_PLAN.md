@@ -1,18 +1,18 @@
-# MotoCare — kế hoạch Admin dashboard và đối soát
+# MotoCare — Admin dashboard và đối soát
 
-Cập nhật: 2026-10-06. Đây là kế hoạch cho milestone kế tiếp, chưa phải API đã triển khai. Bản đầu chỉ tổng hợp dữ liệu sandbox hiện có; không trình bày là tiền ngân hàng thật.
+Cập nhật: 2026-10-06. API đã được triển khai trên nhánh `feat/zenith/admin-analytics` và đang chờ review/merge. Bản đầu chỉ tổng hợp dữ liệu sandbox hiện có; không trình bày là tiền ngân hàng thật.
 
 ## Mục tiêu
 
 Admin cần nhìn nhanh tình trạng người dùng, thợ, đơn cứu hộ và dòng tiền; đồng thời có bảng chi tiết để kiểm tra vì sao một con số được tính. Dashboard không tự cộng từ UI: backend trả số liệu đã định nghĩa nhất quán theo cùng khoảng thời gian.
 
-## API dự kiến
+## API
 
-- `GET /admin/dashboard/summary?from=<ISO>&to=<ISO>`: thẻ tổng quan trong khoảng thời gian.
+- `GET /admin/dashboard/summary?from=<ISO>&to=<ISO>`: thẻ tổng quan và snapshot hiện tại.
 - `GET /admin/dashboard/timeseries?from=<ISO>&to=<ISO>&bucket=day`: số đơn và số tiền theo ngày để vẽ biểu đồ.
 - `GET /admin/reconciliation?from=<ISO>&to=<ISO>&status=<...>&page=1&limit=50`: từng order/payment/wallet transaction để đối chiếu, có phân trang.
 
-Mặc định ngày được hiểu theo `Asia/Ho_Chi_Minh`; response luôn trả lại `from`, `to` và timezone thực tế. Khoảng thời gian bị giới hạn để tránh query quá nặng trên laptop demo.
+Mặc định ngày được hiểu theo `Asia/Ho_Chi_Minh`; response luôn trả lại `from`, `to` và timezone thực tế. Mặc định lấy 7 ngày, tối đa 366 ngày để tránh query quá nặng trên laptop demo. `from` là inclusive và `to` là exclusive.
 
 ## Nhóm chỉ số
 
@@ -31,12 +31,12 @@ Mặc định ngày được hiểu theo `Asia/Ho_Chi_Minh`; response luôn tr�
 
 Mọi số tiền là chuỗi decimal VND, tính bằng PostgreSQL `numeric`, không chuyển sang JavaScript `number`:
 
-- `collected`: tổng payment `PAID`/đã từng thu trong kỳ.
-- `held`: payment đã thu nhưng order chưa hoàn tất hoặc chưa hoàn; đây là tiền đang giữ, không phải doanh thu.
-- `settledToProviders`: tổng wallet transaction `CREDIT` gắn với order hoàn tất.
-- `refundPending`: tổng payment đang `REFUND_PENDING`.
-- `refunded`: tổng payment `REFUNDED` theo thời điểm hoàn.
-- `grossCompletedValue`: tổng `final_price` của order hoàn tất.
+- `collectedInPeriod`: tổng payment đã từng thu trong kỳ theo `paid_at`, kể cả khoản sau đó được hoàn.
+- `heldCurrent`: payment hiện đã thu nhưng order chưa hoàn tất hoặc chưa hoàn; đây là tiền đang giữ, không phải doanh thu.
+- `settledToProvidersInPeriod`: tổng wallet transaction `CREDIT` trong kỳ.
+- `refundPendingCurrent`: tổng payment hiện đang `REFUND_PENDING`.
+- `refundedInPeriod`: tổng payment đã hoàn trong kỳ theo `refunded_at`.
+- `grossCompletedValueInPeriod`: tổng `final_price` gắn với wallet credit trong kỳ.
 - Chưa có `platformRevenue` cho đến khi nhóm chốt phí nền tảng; không lấy `collected` làm doanh thu MotoCare.
 
 ## Đối soát
@@ -54,5 +54,5 @@ Mỗi dòng đối soát gồm order code/status, customer/provider, payment id/
 - Chỉ role `ADMIN`; DTO kiểm tra ISO date, `from < to`, limit và enum filter.
 - Aggregate bằng SQL/query builder; dùng `COALESCE` và ép kết quả tiền về string.
 - Thêm index theo thời gian/trạng thái chỉ khi `EXPLAIN` chứng minh cần; không tạo index trùng với index hiện có.
-- Test database cho ranh giới ngày theo múi giờ, từng trạng thái payment/order, số tiền decimal, phân trang và quyền truy cập.
-- Swagger và [API_CATALOG.md](API_CATALOG.md) chỉ được đánh dấu “đã có” sau khi test/CI qua.
+- Test database/HTTP kiểm tra quyền Admin, khoảng ngày, từng trạng thái payment/order, số tiền decimal, phân trang, dữ liệu sạch và cờ bất thường.
+- Swagger và [API_CATALOG.md](API_CATALOG.md) là hợp đồng cho Flutter; CI phải xanh trước khi merge.

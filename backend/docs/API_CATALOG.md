@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-06. Có 35 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth và Health là public. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production.
+Cập nhật: 2026-10-06. Có 38 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth và Health là public. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production.
 
 ## Auth, tài khoản và health
 
@@ -67,8 +67,13 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | GET | `/admin/refunds/pending` | Admin | Danh sách chờ hoàn sandbox |
 | GET | `/admin/providers/pending` | Admin | Hồ sơ thợ chờ duyệt |
 | PATCH | `/admin/providers/:providerId/approval` | Admin | Duyệt/từ chối hồ sơ một lần |
+| GET | `/admin/dashboard/summary` | Admin | Tổng user/thợ/đơn và các nhóm tiền sandbox |
+| GET | `/admin/dashboard/timeseries` | Admin | Số đơn, thu, hoàn, quyết toán theo ngày |
+| GET | `/admin/reconciliation` | Admin | Đối soát order/payment/wallet, phân trang và cờ bất thường |
 
 Không có QR ngân hàng, webhook SePay, chuyển/hoàn tiền thật, thu bù/hoàn chênh lệch, yêu cầu rút tiền hay xử lý tranh chấp sau khi sửa. Không trình bày các endpoint demo như thanh toán thật.
+
+Dashboard mặc định 7 ngày, tối đa 366 ngày và nhóm ngày theo `Asia/Ho_Chi_Minh`. Tiền luôn là chuỗi decimal. `collectedInPeriod`, `heldCurrent`, `settledToProvidersInPeriod`, `refundPendingCurrent` và `refundedInPeriod` là các khái niệm riêng; chưa có `platformRevenue` vì nhóm chưa chốt phí nền tảng. Chi tiết ở [ADMIN_ANALYTICS_PLAN.md](ADMIN_ANALYTICS_PLAN.md).
 
 ## Socket.IO
 

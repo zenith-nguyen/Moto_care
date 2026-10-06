@@ -63,10 +63,13 @@ Provider mới đăng ký ở trạng thái chờ duyệt. Admin dùng `GET /adm
 - Duyệt hồ sơ: `GET /admin/providers/pending`, `PATCH /admin/providers/:id/approval`.
 - Theo dõi đơn gần nhất: `GET /admin/orders`.
 - Xử lý hoàn sandbox: `GET /admin/refunds/pending`, sau đó `POST /payments/demo/orders/:id/refund`.
+- Thẻ tổng quan: `GET /admin/dashboard/summary?from=<ISO>&to=<ISO>`.
+- Biểu đồ theo ngày: `GET /admin/dashboard/timeseries?from=<ISO>&to=<ISO>&bucket=day`.
+- Bảng đối soát: `GET /admin/reconciliation?from=<ISO>&to=<ISO>&status=<PaymentStatus>&page=1&limit=50`.
 
 Không hiển thị các thao tác sandbox như giao dịch ngân hàng thật.
 
-Backend hiện chưa có API tổng hợp dashboard. UI chưa được tự cộng “doanh thu” từ danh sách đơn vì tiền đã thu, tiền đang giữ, tiền đã quyết toán vào ví, tiền chờ hoàn và tiền đã hoàn là các chỉ số khác nhau. Một API metrics/đối soát riêng sẽ được cung cấp ở milestone Admin tiếp theo.
+UI dùng trực tiếp các trường tiền do dashboard trả về và không tự cộng “doanh thu” từ danh sách đơn. `collectedInPeriod` là tiền đã thu trong kỳ, `heldCurrent` là tiền hiện đang giữ, `settledToProvidersInPeriod` là tiền cộng ví thợ, `refundPendingCurrent` là tiền chờ hoàn và `refundedInPeriod` là tiền đã hoàn trong kỳ. Chưa hiển thị doanh thu nền tảng vì chưa chốt phí MotoCare. Mọi số tiền là chuỗi decimal VND.
 
 ## Realtime và fallback
 
