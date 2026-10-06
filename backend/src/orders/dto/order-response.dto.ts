@@ -2,6 +2,42 @@ import { ApiProperty } from '@nestjs/swagger';
 import { OfferStatus } from '../../common/enums/offer-status.enum';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { PaymentStatus } from '../../common/enums/payment-status.enum';
+import { WeatherCategory } from '../../pricing/weather-category.enum';
+
+export class WeatherPricingResponseDto {
+  @ApiProperty({ example: '100000.00', description: 'Incident base price snapshot' })
+  basePrice!: string;
+
+  @ApiProperty({ example: '10000.00', description: 'Weather surcharge snapshot' })
+  weatherSurcharge!: string;
+
+  @ApiProperty({ example: '1.1000' })
+  weatherMultiplier!: string;
+
+  @ApiProperty({ enum: WeatherCategory })
+  weatherCategory!: WeatherCategory;
+
+  @ApiProperty({ enum: ['OPEN_METEO', 'FALLBACK'] })
+  weatherSource!: 'OPEN_METEO' | 'FALLBACK';
+
+  @ApiProperty({ type: String, format: 'date-time', nullable: true })
+  weatherObservedAt!: Date | null;
+
+  @ApiProperty({ type: Number, nullable: true })
+  weatherCode!: number | null;
+
+  @ApiProperty({ type: String, nullable: true, example: '1.20' })
+  precipitationMm!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, example: '12.00' })
+  windSpeedKmh!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, example: '20.00' })
+  windGustKmh!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, example: 'Weather data by Open-Meteo.com' })
+  attribution!: string | null;
+}
 
 export class OrderMatchResponseDto {
   @ApiProperty({ example: 1 })
@@ -15,6 +51,9 @@ export class OrderMatchResponseDto {
 
   @ApiProperty({ example: '100000.00', description: 'Decimal money value as a string' })
   estimatedPrice!: string;
+
+  @ApiProperty({ type: WeatherPricingResponseDto })
+  pricing!: WeatherPricingResponseDto;
 
   @ApiProperty()
   matched!: boolean;
@@ -81,6 +120,9 @@ export class OrderDetailsResponseDto {
   @ApiProperty({ example: '100000.00' })
   estimatedPrice!: string;
 
+  @ApiProperty({ type: WeatherPricingResponseDto })
+  pricing!: WeatherPricingResponseDto;
+
   @ApiProperty({ example: '0.00' })
   extraCost!: string;
 
@@ -106,6 +148,9 @@ export class PendingOfferOrderDto {
 
   @ApiProperty({ example: '100000.00' })
   estimatedPrice!: string;
+
+  @ApiProperty({ type: WeatherPricingResponseDto })
+  pricing!: WeatherPricingResponseDto;
 
   @ApiProperty({ type: GeoPointResponseDto })
   customerLocation!: GeoPointResponseDto;

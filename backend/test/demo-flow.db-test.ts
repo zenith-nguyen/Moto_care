@@ -162,7 +162,10 @@ describe('Sandbox demo flow over HTTP', () => {
         customer_location: { latitude: 10.7769, longitude: 106.7009 },
       })
       .expect(201);
-    expect(created.body).toMatchObject({ status: 'AWAITING_PREPAYMENT', estimatedPrice: '100000.00', matched: false });
+    expect(created.body).toMatchObject({
+      status: 'AWAITING_PREPAYMENT', estimatedPrice: '100000.00', matched: false,
+      pricing: { basePrice: '100000.00', weatherSurcharge: '0.00', weatherMultiplier: '1.0000', weatherCategory: 'DISABLED' },
+    });
 
     const confirmed = await request(app.getHttpServer())
       .post(`/payments/demo/orders/${created.body.id}/confirm`)
