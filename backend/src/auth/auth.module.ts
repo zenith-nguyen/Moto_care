@@ -3,14 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { MailService } from './mail.service';
+import { PasswordRecoveryService } from './password-recovery.service';
+import { PasswordResetCode } from './password-reset-code.entity';
 
 @Module({
   imports: [
     UsersModule,
+    TypeOrmModule.forFeature([PasswordResetCode]),
     PassportModule,
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 10 }]),
     JwtModule.registerAsync({
@@ -22,6 +27,6 @@ import { JwtStrategy } from './jwt.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, MailService, PasswordRecoveryService],
 })
 export class AuthModule {}

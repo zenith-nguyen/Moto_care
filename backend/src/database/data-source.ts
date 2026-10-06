@@ -11,6 +11,7 @@ import { WithdrawalRequest } from '../payments/withdrawal-request.entity';
 import { Provider } from '../providers/provider.entity';
 import { Review } from '../reviews/review.entity';
 import { User } from '../users/user.entity';
+import { PasswordResetCode } from '../auth/password-reset-code.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -31,6 +32,7 @@ export default new DataSource({
     Wallet,
     WalletTransaction,
     WithdrawalRequest,
+    PasswordResetCode,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   synchronize: false,

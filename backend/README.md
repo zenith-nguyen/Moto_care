@@ -15,6 +15,12 @@ The API is available at `http://localhost:3000`; `/health` checks the Nest proce
 
 The `/docs` page is available only when NestJS is running with `DEMO_MODE=false` and outside production. It is disabled in public demo mode; use its **Authorize** button with an access token from `POST /auth/login` to try protected endpoints during local development.
 
+## Password recovery
+
+`POST /auth/password/forgot` accepts an email and always returns a generic response. For registered email accounts, it creates a six-digit, one-time code that expires after 10 minutes. `POST /auth/password/reset` accepts the email, code and a new password. A successful reset invalidates all JWTs issued before it. Five consecutive failed login attempts temporarily lock the account for 15 minutes.
+
+Email delivery is disabled by default. To test with a dedicated Gmail demo account, enable two-step verification, create an App Password and set `EMAIL_ENABLED=true`, `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM` in the untracked `.env`. Never paste the App Password into chat, screenshots or committed files. Accounts registered only by phone cannot use email recovery. See [AUTH_SECURITY.md](docs/AUTH_SECURITY.md) for the complete flow and Flutter contract.
+
 ## Orders and provider availability
 
 The provider app calls `PATCH /providers/me/location` with `{ "latitude": 10.7769, "longitude": 106.7009 }` every 30–60 seconds while online, including when it has no order. It then calls `PATCH /providers/me/status` with `{ "isOnline": true }` to accept offers. Only an approved, active provider with a location updated in the last 120 seconds can go online. Matching also checks that freshness, approval, account status, current offers, and active orders. Seeded providers start online, but their location becomes stale after 120 seconds; update their location before testing matching later.
@@ -78,7 +84,7 @@ npm run migration:run
 npm run seed
 ```
 
-The migration sequence enables PostGIS, creates `users`, creates the core schema, adds partial unique indexes that prevent multiple pending offers for one order or provider and multiple active orders for one provider, adds demo payment states, prevents more than one provider wallet credit per order, and adds protected chat-image metadata. The enum-adding demo migration cannot be automatically reversed; take a backup before applying it to any important database.
+The migration sequence enables PostGIS, creates `users`, creates the core schema, adds partial unique indexes that prevent multiple pending offers for one order or provider and multiple active orders for one provider, adds demo payment states, prevents more than one provider wallet credit per order, adds protected chat-image metadata, and adds password-recovery/account-lock fields. The enum-adding demo migration cannot be automatically reversed; take a backup before applying it to any important database.
 
 The seed creates five selectable incident types, three approved online providers around Ho Chi Minh City, one development customer, one development admin, and a wallet for each seeded provider. By default all seeded accounts use the development-only password `MotoCareDev123!`; **never run this default seed against a publicly accessible or production database**. The script rejects `NODE_ENV=production`. For a separate demo database set `DEMO_MODE=true` and distinct `SEED_CUSTOMER_PASSWORD`, `SEED_PROVIDER_PASSWORD`, `SEED_ADMIN_PASSWORD` (each 16+ characters) before `npm run seed`. Existing users' passwords are not changed by reseeding. Never expose a database containing default-password accounts.
 
