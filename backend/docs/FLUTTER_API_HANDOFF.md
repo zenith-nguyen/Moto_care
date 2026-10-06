@@ -1,6 +1,6 @@
 # MotoCare API handoff cho Flutter
 
-Cập nhật: 2026-10-05. Đây là hợp đồng tích hợp cho UI Khách, Thợ và Admin. Backend hiện tại là **sandbox demo**: không nhận, chuyển hoặc hoàn tiền ngân hàng thật.
+Cập nhật: 2026-10-06. Đây là hợp đồng tích hợp cho UI Khách, Thợ và Admin. Backend hiện tại là **sandbox demo**: không nhận, chuyển hoặc hoàn tiền ngân hàng thật.
 
 ## Cấu hình ứng dụng
 
@@ -27,6 +27,14 @@ APK dùng ở mạng khác phải nhận URL HTTPS của môi trường demo.
 4. Khi API trả `401`, xóa phiên và đưa người dùng về đăng nhập. Khi `403`, giữ phiên nhưng báo không đủ quyền hoặc trạng thái tài khoản chưa hợp lệ.
 
 Provider mới đăng ký ở trạng thái chờ duyệt. Admin dùng `GET /admin/providers/pending` và `PATCH /admin/providers/:id/approval`. Provider chỉ bật online sau khi được duyệt và đã gửi vị trí mới.
+
+### Quên mật khẩu
+
+1. Màn hình quên mật khẩu gửi `{ "email": "..." }` tới `POST /auth/password/forgot`.
+2. Luôn hiển thị thông báo trung tính kiểu “Nếu email đã đăng ký, mã khôi phục sẽ được gửi”; không tiết lộ email có tồn tại hay không.
+3. Màn hình nhập mã gửi `{ "email": "...", "code": "123456", "newPassword": "..." }` tới `POST /auth/password/reset`.
+4. Mã có sáu chữ số, hết hạn sau 10 phút và dùng một lần. Sau khi thành công, xóa JWT đang lưu và đưa người dùng về màn hình đăng nhập.
+5. Tài khoản chỉ có số điện thoại chưa thể nhận mã email; UI nên giải thích rõ và khuyến khích đăng ký email trong bản demo.
 
 ## Luồng Khách
 
@@ -58,6 +66,8 @@ Provider mới đăng ký ở trạng thái chờ duyệt. Admin dùng `GET /adm
 
 Không hiển thị các thao tác sandbox như giao dịch ngân hàng thật.
 
+Backend hiện chưa có API tổng hợp dashboard. UI chưa được tự cộng “doanh thu” từ danh sách đơn vì tiền đã thu, tiền đang giữ, tiền đã quyết toán vào ví, tiền chờ hoàn và tiền đã hoàn là các chỉ số khác nhau. Một API metrics/đối soát riêng sẽ được cung cấp ở milestone Admin tiếp theo.
+
 ## Realtime và fallback
 
 Handshake Socket.IO:
@@ -84,18 +94,18 @@ Chi tiết payload, quyền và sơ đồ xử lý ở [CHAT_WORKFLOW.md](CHAT_W
 
 ## Trạng thái đơn cần hiển thị
 
-| Trạng thái | Ý nghĩa UI |
-| --- | --- |
-| `AWAITING_PREPAYMENT` | Chờ xác nhận thanh toán sandbox |
-| `PENDING_MATCH` | Chưa tìm được thợ; cho phép thử matching lại |
-| `OFFERED` | Đang chờ một thợ phản hồi |
-| `ACCEPTED` | Thợ đã nhận và đang tới |
-| `ARRIVED` | Thợ đã đến; khách hiển thị mã bắt đầu |
-| `IN_PROGRESS` | Đang sửa, không cho khách tự hủy |
-| `COMPLETED` | Hoàn tất, cho phép đánh giá |
-| `CANCELLED` | Hủy khi chưa có khoản cần hoàn |
-| `REFUND_PENDING` | Admin cần hoàn sandbox |
-| `REFUNDED` | Đã hoàn sandbox |
+| Trạng thái            | Ý nghĩa UI                                   |
+| --------------------- | -------------------------------------------- |
+| `AWAITING_PREPAYMENT` | Chờ xác nhận thanh toán sandbox              |
+| `PENDING_MATCH`       | Chưa tìm được thợ; cho phép thử matching lại |
+| `OFFERED`             | Đang chờ một thợ phản hồi                    |
+| `ACCEPTED`            | Thợ đã nhận và đang tới                      |
+| `ARRIVED`             | Thợ đã đến; khách hiển thị mã bắt đầu        |
+| `IN_PROGRESS`         | Đang sửa, không cho khách tự hủy             |
+| `COMPLETED`           | Hoàn tất, cho phép đánh giá                  |
+| `CANCELLED`           | Hủy khi chưa có khoản cần hoàn               |
+| `REFUND_PENDING`      | Admin cần hoàn sandbox                       |
+| `REFUNDED`            | Đã hoàn sandbox                              |
 
 UI không tự suy diễn trạng thái mới; dùng response mới nhất từ server.
 

@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-05. Có 33 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth và Health là public. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production.
+Cập nhật: 2026-10-06. Có 35 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth và Health là public. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production.
 
 ## Auth, tài khoản và health
 
@@ -8,11 +8,13 @@ Cập nhật: 2026-10-05. Có 33 REST endpoints và 5 Socket.IO events. Mặc đ
 | --- | --- | --- | --- |
 | POST | `/auth/register` | Public, rate-limit | Đăng ký Customer/Provider; Provider chờ Admin duyệt |
 | POST | `/auth/login` | Public, rate-limit | Đăng nhập bằng email/phone và trả JWT |
+| POST | `/auth/password/forgot` | Public, 3 lần/phút | Nếu email tồn tại, gửi mã sáu số dùng một lần; response luôn chung chung |
+| POST | `/auth/password/reset` | Public, 10 lần/phút | Đổi mật khẩu bằng email + mã + mật khẩu mới; vô hiệu mọi JWT cũ |
 | GET | `/users/me` | Đã đăng nhập | Hồ sơ tài khoản hiện tại |
 | GET | `/health` | Public | NestJS process đang phản hồi |
 | GET | `/health/ready` | Public | API gọi được PostgreSQL |
 
-Chưa có quên/đặt lại mật khẩu, refresh token, xác minh email và đăng xuất server-side. Đây là nhóm hardening kế tiếp.
+Mã đặt lại mật khẩu hết hạn sau 10 phút, giới hạn năm lần nhập sai và chỉ gửi lại sau 60 giây. Sau năm lần đăng nhập sai liên tiếp, tài khoản tạm khóa 15 phút. Chưa có refresh token, xác minh email và đăng xuất server-side.
 
 ## Danh mục sự cố và thợ
 
@@ -88,9 +90,8 @@ Socket giúp cập nhật nhanh, không thay REST. Sau reconnect client phải g
 
 Cần tăng cường theo thứ tự:
 
-1. Reset password/email OTP, giới hạn thử lại và vô hiệu JWT cũ.
-2. Request ID + structured logging có che token/secret; exception response thống nhất.
-3. Rate limit theo nhóm endpoint nhạy cảm và upload; timeout/body-size rõ ràng.
-4. Backup/restore tự động cho DB + ảnh demo và kiểm tra dung lượng đĩa.
-5. Test tải nhẹ REST/WebSocket trên laptop demo; đo reconnect và upload chậm.
-6. Khi có nhu cầu 24/7: object storage, retention/cleanup file và server công khai ổn định. Đây chưa phải yêu cầu bản demo không phí.
+1. Request ID + structured logging có che token/secret; exception response thống nhất.
+2. Rate limit theo nhóm endpoint nhạy cảm và upload; timeout/body-size rõ ràng.
+3. Backup/restore tự động cho DB + ảnh demo và kiểm tra dung lượng đĩa.
+4. Test tải nhẹ REST/WebSocket trên laptop demo; đo reconnect và upload chậm.
+5. Khi có nhu cầu 24/7: object storage, retention/cleanup file và server công khai ổn định. Đây chưa phải yêu cầu bản demo không phí.
