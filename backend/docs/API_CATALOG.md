@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-06. Có 38 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth và Health là public. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production.
+Cập nhật: 2026-10-07. Có 47 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth và Health là public. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production.
 
 ## Auth, tài khoản và health
 
@@ -42,7 +42,11 @@ Matching dùng PostGIS, vị trí tối đa 120 giây, bán kính mặc định 
 | POST | `/orders/:orderId/arrive` | Provider được gán | Báo đã đến nơi |
 | GET | `/orders/:orderId/start-token` | Customer | Mã HMAC 5 phút để xác nhận bắt đầu; không phải QR ngân hàng |
 | POST | `/orders/:orderId/start` | Provider được gán | Bắt đầu sửa bằng token của khách |
-| POST | `/orders/:orderId/complete` | Provider được gán | Hoàn tất đúng giá gốc và cộng ví demo một lần |
+| POST | `/orders/:orderId/price-proposals` | Provider được gán | Đề xuất giá cuối và lý do khi đang sửa |
+| POST | `/orders/:orderId/price-proposals/:proposalId/approve` | Customer của đơn | Duyệt giá; tạo charge/refund adjustment nếu lệch khoản trả trước |
+| POST | `/orders/:orderId/price-proposals/:proposalId/reject` | Customer của đơn | Từ chối giá và trả đơn về đang sửa |
+| POST | `/orders/:orderId/price-proposals/:proposalId/dispute` | Provider được gán | Escalate proposal bị từ chối cho Admin |
+| POST | `/orders/:orderId/complete` | Provider được gán | Đối chiếu giá cuối/ledger rồi cộng ví demo đúng một lần |
 
 ## Chat và đánh giá
 
@@ -62,6 +66,8 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | --- | --- | --- | --- |
 | POST | `/payments/demo/orders/:orderId/confirm` | Customer | Giả lập trả đúng giá tạm tính rồi matching |
 | POST | `/payments/demo/orders/:orderId/refund` | Admin | Giả lập hoàn 100% |
+| POST | `/payments/demo/orders/:orderId/adjustment/confirm` | Customer | Giả lập thanh toán phần thu thêm đã duyệt |
+| POST | `/payments/demo/orders/:orderId/adjustment/refund` | Admin | Giả lập hoàn phần chênh lệch đã duyệt |
 | GET | `/wallets/me` | Provider | Số dư/giao dịch demo, không rút tiền thật |
 | GET | `/admin/orders` | Admin | 50 đơn gần nhất |
 | GET | `/admin/refunds/pending` | Admin | Danh sách chờ hoàn sandbox |
@@ -70,8 +76,11 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | GET | `/admin/dashboard/summary` | Admin | Tổng user/thợ/đơn và các nhóm tiền sandbox |
 | GET | `/admin/dashboard/timeseries` | Admin | Số đơn, thu, hoàn, quyết toán theo ngày |
 | GET | `/admin/reconciliation` | Admin | Đối soát order/payment/wallet, phân trang và cờ bất thường |
+| GET | `/admin/price-disputes/pending` | Admin | Proposal giá cuối đang tranh chấp |
+| PATCH | `/admin/price-disputes/:proposalId/resolve` | Admin | Duyệt hoặc bác tranh chấp một lần |
+| GET | `/admin/payment-adjustments/pending-refunds` | Admin | Danh sách hoàn chênh đang chờ |
 
-Không có QR ngân hàng, webhook SePay, chuyển/hoàn tiền thật, thu bù/hoàn chênh lệch, yêu cầu rút tiền hay xử lý tranh chấp sau khi sửa. Không trình bày các endpoint demo như thanh toán thật.
+Đã có thu bù/hoàn chênh lệch và tranh chấp **sandbox**. Chưa có QR ngân hàng, webhook SePay, chuyển/hoàn tiền thật hoặc yêu cầu rút tiền. Không trình bày các endpoint demo như thanh toán thật. Xem [FINAL_PRICE_WORKFLOW.md](FINAL_PRICE_WORKFLOW.md).
 
 Dashboard mặc định 7 ngày, tối đa 366 ngày và nhóm ngày theo `Asia/Ho_Chi_Minh`. Tiền luôn là chuỗi decimal. `collectedInPeriod`, `heldCurrent`, `settledToProvidersInPeriod`, `refundPendingCurrent` và `refundedInPeriod` là các khái niệm riêng; chưa có `platformRevenue` vì nhóm chưa chốt phí nền tảng. Chi tiết ở [ADMIN_ANALYTICS_PLAN.md](ADMIN_ANALYTICS_PLAN.md).
 
