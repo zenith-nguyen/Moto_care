@@ -6,6 +6,7 @@ import { OrderStatus } from '../common/enums/order-status.enum';
 import { OrderOffer } from './order-offer.entity';
 import { Order } from './order.entity';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { canTransitionOrder } from './domain/order-transition.policy';
 
 interface CandidateRow {
   id: number;
@@ -20,7 +21,7 @@ export class MatchingService {
   ) {}
 
   async matchLockedOrder(manager: EntityManager, order: Order): Promise<OrderOffer | null> {
-    if (order.status !== OrderStatus.PENDING_MATCH) {
+    if (!canTransitionOrder(order.status, OrderStatus.OFFERED)) {
       throw new ConflictException('Order is not waiting for matching');
     }
     const [longitude, latitude] = order.customerLocation.coordinates;
@@ -132,7 +133,7 @@ export class MatchingService {
       if (!expired) return null;
       offer.status = OfferStatus.EXPIRED;
       await manager.getRepository(OrderOffer).save(offer);
-      if (order.status === OrderStatus.OFFERED) {
+      if (canTransitionOrder(order.status, OrderStatus.PENDING_MATCH)) {
         order.status = OrderStatus.PENDING_MATCH;
         await manager.getRepository(Order).save(order);
         const nextOffer = await this.matchLockedOrder(manager, order);

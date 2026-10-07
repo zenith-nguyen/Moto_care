@@ -1,5 +1,5 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from '@nestjs/common';
-import { DataSource, EntityManager, MoreThan } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { ApprovalStatus } from '../common/enums/approval-status.enum';
@@ -7,7 +7,6 @@ import { OfferStatus } from '../common/enums/offer-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { PaymentStatus } from '../common/enums/payment-status.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
-import { UserRole } from '../common/enums/user-role.enum';
 import { IncidentType } from '../incident-types/incident-type.entity';
 import { Provider } from '../providers/provider.entity';
 import { OrderPricingService } from '../pricing/order-pricing.service';
@@ -24,7 +23,8 @@ import { Order } from './order.entity';
 import { PaymentAdjustment } from '../payments/payment-adjustment.entity';
 import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
 import { moneyToCents } from '../common/utils/money';
-import { OrderPriceProposal } from './order-price-proposal.entity';
+import { canTransitionOrder } from './domain/order-transition.policy';
+import { presentOrderMatch } from './presentation/order.presenter';
 
 @Injectable()
 export class OrdersService {
@@ -88,100 +88,23 @@ export class OrdersService {
           isDemo: false,
         }),
       );
-      return this.formatMatchResult(order, null);
+      return presentOrderMatch(order, null);
     });
-  }
-
-  async getById(orderId: number, userId: number) {
-    const order = await this.dataSource.getRepository(Order).findOne({
-      where: { id: orderId },
-      relations: { incidentType: true },
-    });
-    if (!order) throw new NotFoundException('Order not found');
-    if (order.customerId !== userId) {
-      const provider = await this.dataSource.getRepository(Provider).findOneBy({ userId });
-      if (!provider) throw new NotFoundException('Order not found');
-      const pendingOffer = await this.dataSource.getRepository(OrderOffer).findOne({
-        where: { orderId, providerId: provider.id, status: OfferStatus.PENDING, expiresAt: MoreThan(new Date()) },
-      });
-      if (order.providerId !== provider.id && !pendingOffer) {
-        throw new NotFoundException('Order not found');
-      }
-    }
-    const payment = await this.dataSource.getRepository(Payment).findOne({
-      where: { orderId },
-      order: { id: 'ASC' },
-    });
-    const [priceProposal, paymentAdjustment] = await Promise.all([
-      this.dataSource.getRepository(OrderPriceProposal).findOne({ where: { orderId }, order: { id: 'DESC' } }),
-      this.dataSource.getRepository(PaymentAdjustment).findOneBy({ orderId }),
-    ]);
-    const location = order.providerId && [
-      OrderStatus.ACCEPTED,
-      OrderStatus.ARRIVED,
-      OrderStatus.IN_PROGRESS,
-      OrderStatus.AWAITING_PRICE_APPROVAL,
-      OrderStatus.PRICE_DISPUTED,
-      OrderStatus.AWAITING_PAYMENT,
-      OrderStatus.PAID,
-    ].includes(order.status)
-      ? (await this.dataSource.getRepository(Provider).findOneBy({ id: order.providerId }))?.currentLocation ?? null
-      : null;
-    return {
-      id: order.id,
-      code: order.code,
-      status: order.status,
-      customerId: order.customerId,
-      providerId: order.providerId,
-      incidentType: { id: order.incidentType.id, name: order.incidentType.name },
-      customerLocation: order.customerLocation,
-      estimatedPrice: order.estimatedPrice,
-      pricing: this.formatPricing(order),
-      extraCost: order.extraCost,
-      discountAmount: order.discountAmount,
-      finalPrice: order.finalPrice,
-      payment: payment ? { id: payment.id, amount: payment.amount, status: payment.status, isDemo: payment.isDemo } : null,
-      providerLocation: location,
-      priceProposal: priceProposal ? this.formatPriceProposal(priceProposal) : null,
-      paymentAdjustment: paymentAdjustment ? this.formatPaymentAdjustment(paymentAdjustment) : null,
-      message: order.status === OrderStatus.AWAITING_PREPAYMENT
-        ? 'Awaiting prepayment; demo confirmation is not a real bank transfer'
-        : order.status === OrderStatus.PENDING_MATCH ? 'No provider found yet; retry matching later' : null,
-    };
-  }
-
-  async listMine(userId: number, role: UserRole) {
-    let where: { customerId: number } | { providerId: number };
-    if (role === UserRole.CUSTOMER) {
-      where = { customerId: userId };
-    } else {
-      const provider = await this.dataSource.getRepository(Provider).findOneBy({ userId });
-      if (!provider) throw new NotFoundException('Provider profile not found');
-      where = { providerId: provider.id };
-    }
-    const orders = await this.dataSource.getRepository(Order).find({
-      where, order: { createdAt: 'DESC', id: 'DESC' }, take: 30,
-    });
-    return orders.map((order) => ({
-      id: order.id, code: order.code, status: order.status, customerId: order.customerId,
-      providerId: order.providerId, incidentTypeId: order.incidentTypeId,
-      estimatedPrice: order.estimatedPrice, extraCost: order.extraCost, discountAmount: order.discountAmount,
-      finalPrice: order.finalPrice, createdAt: order.createdAt,
-      pricing: this.formatPricing(order),
-    }));
   }
 
   async cancel(orderId: number, customerId: number, reason: string) {
     const result = await this.dataSource.transaction(async (manager) => {
       const order = await this.lockOrder(manager, orderId);
       if (order.customerId !== customerId) throw new NotFoundException('Order not found');
-      if (![OrderStatus.AWAITING_PREPAYMENT, OrderStatus.PENDING_MATCH, OrderStatus.OFFERED,
-        OrderStatus.ACCEPTED, OrderStatus.ARRIVED].includes(order.status)) {
-        throw new ConflictException('Order requires admin review or is already closed');
-      }
       const payment = await manager.getRepository(Payment).findOne({
         where: { orderId }, lock: { mode: 'pessimistic_write' }, order: { id: 'ASC' },
       });
+      const targetStatus = payment?.status === PaymentStatus.PAID
+        ? OrderStatus.REFUND_PENDING
+        : OrderStatus.CANCELLED;
+      if (!canTransitionOrder(order.status, targetStatus)) {
+        throw new ConflictException('Order requires admin review or is already closed');
+      }
       if (order.status === OrderStatus.OFFERED) {
         await manager.getRepository(OrderOffer).update(
           { orderId, status: OfferStatus.PENDING }, { status: OfferStatus.EXPIRED },
@@ -191,14 +114,14 @@ export class OrdersService {
       order.cancelledById = customerId;
       if (payment?.status === PaymentStatus.PAID) {
         payment.status = PaymentStatus.REFUND_PENDING;
-        order.status = OrderStatus.REFUND_PENDING;
+        order.status = targetStatus;
         await manager.getRepository(Payment).save(payment);
       } else {
         if (payment) {
           payment.status = PaymentStatus.CANCELLED;
           await manager.getRepository(Payment).save(payment);
         }
-        order.status = OrderStatus.CANCELLED;
+        order.status = targetStatus;
       }
       await manager.getRepository(Order).save(order);
       return { orderId: order.id, status: order.status, refundAmount: payment?.status === PaymentStatus.REFUND_PENDING ? payment.amount : null };
@@ -210,7 +133,7 @@ export class OrdersService {
   async retry(orderId: number, customerId: number) {
     const { order, offer } = await this.matching.retry(orderId, customerId);
     if (offer) this.realtime?.offerCreated(offer.providerId, order.id, offer.id, offer.expiresAt);
-    return this.formatMatchResult(order, offer);
+    return presentOrderMatch(order, offer);
   }
 
   async accept(orderId: number, offerId: number, userId: number) {
@@ -218,7 +141,7 @@ export class OrdersService {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, userId);
       const offer = await this.lockOffer(manager, orderId, offerId, provider.id);
-      if (order.status !== OrderStatus.OFFERED || offer.status !== OfferStatus.PENDING) {
+      if (!canTransitionOrder(order.status, OrderStatus.ACCEPTED) || offer.status !== OfferStatus.PENDING) {
         throw new ConflictException('Offer is no longer available');
       }
       const [{ valid }] = (await manager.query(
@@ -256,7 +179,7 @@ export class OrdersService {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, userId);
       const offer = await this.lockOffer(manager, orderId, offerId, provider.id);
-      if (order.status !== OrderStatus.OFFERED || offer.status !== OfferStatus.PENDING) {
+      if (!canTransitionOrder(order.status, OrderStatus.PENDING_MATCH) || offer.status !== OfferStatus.PENDING) {
         throw new ConflictException('Offer is no longer available');
       }
       offer.status = OfferStatus.REJECTED;
@@ -264,7 +187,7 @@ export class OrdersService {
       order.status = OrderStatus.PENDING_MATCH;
       await manager.getRepository(Order).save(order);
       const nextOffer = await this.matching.matchLockedOrder(manager, order);
-      return { response: { orderId: order.id, offerStatus: offer.status, ...this.formatMatchResult(order, nextOffer) }, nextOffer };
+      return { response: { orderId: order.id, offerStatus: offer.status, ...presentOrderMatch(order, nextOffer) }, nextOffer };
     });
     this.realtime?.orderStatusChanged(orderId, response.status);
     if (nextOffer) this.realtime?.offerCreated(nextOffer.providerId, orderId, nextOffer.id, nextOffer.expiresAt);
@@ -276,7 +199,9 @@ export class OrdersService {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, providerUserId);
       if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
-      if (order.status !== OrderStatus.ACCEPTED) throw new ConflictException('Order is not awaiting arrival');
+      if (!canTransitionOrder(order.status, OrderStatus.ARRIVED)) {
+        throw new ConflictException('Order is not awaiting arrival');
+      }
       order.status = OrderStatus.ARRIVED;
       await manager.getRepository(Order).save(order);
       return { orderId, status: order.status };
@@ -299,7 +224,9 @@ export class OrdersService {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, providerUserId);
       if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
-      if (order.status !== OrderStatus.ARRIVED) throw new ConflictException('Order cannot start now');
+      if (!canTransitionOrder(order.status, OrderStatus.IN_PROGRESS)) {
+        throw new ConflictException('Order cannot start now');
+      }
       const [expiryText, signature, extra] = token.split('.');
       const expiresAt = Number(expiryText);
       if (extra || !Number.isSafeInteger(expiresAt) || expiresAt <= Date.now() || !/^[0-9a-f]{64}$/.test(signature ?? '')) {
@@ -322,7 +249,7 @@ export class OrdersService {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, providerUserId);
       if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
-      if (order.status !== OrderStatus.PAID || !order.finalPrice) {
+      if (!canTransitionOrder(order.status, OrderStatus.COMPLETED) || !order.finalPrice) {
         throw new ConflictException('Final price and payment adjustment must be settled before completion');
       }
       const payment = await manager.getRepository(Payment).findOne({
@@ -398,65 +325,8 @@ export class OrdersService {
     return offer;
   }
 
-  private formatMatchResult(order: Order, offer: OrderOffer | null) {
-    return {
-      id: order.id,
-      code: order.code,
-      status: order.status,
-      estimatedPrice: order.estimatedPrice,
-      pricing: this.formatPricing(order),
-      matched: offer !== null,
-      offerExpiresAt: offer?.expiresAt ?? null,
-      message: order.status === OrderStatus.AWAITING_PREPAYMENT
-        ? 'Awaiting prepayment; no provider has been offered this order'
-        : offer ? null : 'No provider found yet; retry matching later',
-    };
-  }
-
-  private formatPricing(order: Order) {
-    return {
-      basePrice: order.basePrice,
-      weatherSurcharge: order.weatherSurcharge,
-      weatherMultiplier: order.weatherMultiplier,
-      weatherCategory: order.weatherCategory,
-      weatherSource: order.weatherSource,
-      weatherObservedAt: order.weatherObservedAt,
-      weatherCode: order.weatherCode,
-      precipitationMm: order.weatherPrecipitationMm,
-      windSpeedKmh: order.weatherWindSpeedKmh,
-      windGustKmh: order.weatherWindGustKmh,
-      attribution: order.weatherSource === 'OPEN_METEO' ? 'Weather data by Open-Meteo.com' : null,
-    };
-  }
-
   private measurement(value: number | null): string | null {
     return value === null ? null : value.toFixed(2);
   }
 
-  private formatPriceProposal(proposal: OrderPriceProposal) {
-    return {
-      id: proposal.id,
-      proposedFinalPrice: proposal.proposedFinalPrice,
-      reason: proposal.reason,
-      status: proposal.status,
-      customerReason: proposal.customerReason,
-      disputeReason: proposal.disputeReason,
-      resolutionReason: proposal.resolutionReason,
-      decidedById: proposal.decidedById,
-      decidedAt: proposal.decidedAt,
-      createdAt: proposal.createdAt,
-      updatedAt: proposal.updatedAt,
-    };
-  }
-
-  private formatPaymentAdjustment(adjustment: PaymentAdjustment) {
-    return {
-      id: adjustment.id,
-      type: adjustment.type,
-      amount: adjustment.amount,
-      status: adjustment.status,
-      isDemo: adjustment.isDemo,
-      settledAt: adjustment.settledAt,
-    };
-  }
 }

@@ -2,6 +2,8 @@
 
 NestJS API for the MotoCare motorbike roadside-assistance application. The Flutter mobile app is in the repository root; this directory contains the backend.
 
+The backend is a modular monolith. Module ownership, dependency direction, current technical debt and the incremental refactor path are documented in [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ## Local development
 
 1. Copy `.env.example` to `.env` and replace `JWT_SECRET` with a unique value of at least 32 characters.

@@ -12,6 +12,7 @@ import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { AdminPriceResolution, CreatePriceProposalDto } from './dto/price-proposal.dto';
 import { OrderPriceProposal } from './order-price-proposal.entity';
 import { Order } from './order.entity';
+import { canTransitionOrder } from './domain/order-transition.policy';
 
 @Injectable()
 export class PriceAdjustmentsService {
@@ -25,7 +26,7 @@ export class PriceAdjustmentsService {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockProvider(manager, providerUserId);
       if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
-      if (order.status !== OrderStatus.IN_PROGRESS) {
+      if (!canTransitionOrder(order.status, OrderStatus.AWAITING_PRICE_APPROVAL)) {
         throw new ConflictException('Final price can only be proposed while service is in progress');
       }
       moneyToCents(dto.final_price);
@@ -72,7 +73,9 @@ export class PriceAdjustmentsService {
       const order = await this.lockOrder(manager, orderId);
       if (order.customerId !== customerId) throw new NotFoundException('Order not found');
       const proposal = await this.lockProposal(manager, orderId, proposalId);
-      if (order.status !== OrderStatus.AWAITING_PRICE_APPROVAL || proposal.status !== PriceProposalStatus.PENDING) {
+      if (order.status !== OrderStatus.AWAITING_PRICE_APPROVAL
+        || !canTransitionOrder(order.status, OrderStatus.IN_PROGRESS)
+        || proposal.status !== PriceProposalStatus.PENDING) {
         throw new ConflictException('Price proposal is no longer awaiting a decision');
       }
       proposal.status = PriceProposalStatus.REJECTED;
@@ -94,7 +97,9 @@ export class PriceAdjustmentsService {
       const provider = await this.lockProvider(manager, providerUserId);
       if (order.providerId !== provider.id) throw new NotFoundException('Order not found');
       const proposal = await this.lockProposal(manager, orderId, proposalId);
-      if (proposal.providerId !== provider.id || proposal.status !== PriceProposalStatus.REJECTED || order.status !== OrderStatus.IN_PROGRESS) {
+      if (proposal.providerId !== provider.id || proposal.status !== PriceProposalStatus.REJECTED
+        || order.status !== OrderStatus.IN_PROGRESS
+        || !canTransitionOrder(order.status, OrderStatus.PRICE_DISPUTED)) {
         throw new ConflictException('Rejected proposal cannot be disputed now');
       }
       proposal.status = PriceProposalStatus.DISPUTED;
@@ -147,7 +152,9 @@ export class PriceAdjustmentsService {
       if (proposal.status === PriceProposalStatus.RESOLVED_APPROVED || proposal.status === PriceProposalStatus.RESOLVED_REJECTED) {
         return { response: await this.response(manager, order, proposal), changed: false };
       }
-      if (proposal.status !== PriceProposalStatus.DISPUTED || order.status !== OrderStatus.PRICE_DISPUTED) {
+      if (proposal.status !== PriceProposalStatus.DISPUTED
+        || order.status !== OrderStatus.PRICE_DISPUTED
+        || !canTransitionOrder(order.status, OrderStatus.IN_PROGRESS)) {
         throw new ConflictException('Price proposal is not awaiting admin resolution');
       }
       proposal.resolutionReason = reason.trim();
@@ -182,8 +189,12 @@ export class PriceAdjustmentsService {
     order.finalPrice = centsToMoney(finalPrice);
     order.extraCost = centsToMoney(finalPrice > prepaid ? finalPrice - prepaid : 0n);
     order.discountAmount = centsToMoney(finalPrice < prepaid ? prepaid - finalPrice : 0n);
-    if (finalPrice === prepaid) {
-      order.status = OrderStatus.PAID;
+    const targetStatus = finalPrice === prepaid ? OrderStatus.PAID : OrderStatus.AWAITING_PAYMENT;
+    if (!canTransitionOrder(order.status, targetStatus)) {
+      throw new ConflictException('Order cannot apply the approved final price now');
+    }
+    if (targetStatus === OrderStatus.PAID) {
+      order.status = targetStatus;
     } else {
       await manager.getRepository(PaymentAdjustment).save(
         manager.getRepository(PaymentAdjustment).create({
@@ -195,7 +206,7 @@ export class PriceAdjustmentsService {
           isDemo: false,
         }),
       );
-      order.status = OrderStatus.AWAITING_PAYMENT;
+      order.status = targetStatus;
     }
     await manager.getRepository(OrderPriceProposal).save(proposal);
     await manager.getRepository(Order).save(order);

@@ -17,11 +17,12 @@ Cập nhật lần cuối: 2026-10-07
 - PR #15 đã merge vào `main`: weather pricing snapshot với Open-Meteo cache/timeout/fallback, tính tiền bằng `BigInt`, migration `0008`, breakdown cho Swagger/Flutter; mặc định tắt.
 - PR #16 đã merge vào `main`: proposal giá cuối, khách duyệt/từ chối, tranh chấp Admin, charge/refund adjustment sandbox, đối soát và wallet credit theo giá cuối; migration `0009–0010`, CI xanh.
 - PR #17 đã merge vào `main`: rút tiền sandbox atomic, `lockedBalance`/`availableBalance`, một yêu cầu chờ mỗi ví, Admin duyệt/từ chối và debit duy nhất; migration `0011`, CI xanh.
+- PR #18 đã merge vào `main`: test bảo mật/room/event Socket.IO, smoke-load REST chỉ đọc và checklist reconnect/REST fallback/ba màn hình; 28 unit, 35 PostgreSQL/PostGIS/HTTP tests và CI xanh.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `test/zenith/system-verification`: khóa ổn định API bằng test security/room/event của Socket.IO, smoke-load REST chỉ đọc và checklist reconnect/REST fallback/ba màn hình. Đã đạt lint, build, security scan, 28 unit tests, 35 PostgreSQL/PostGIS/HTTP tests và smoke-load local 40/40 (p95 83,7 ms). Không thêm nghiệp vụ mới.
-2. Sau vòng xác minh: chỉ thiết kế SePay webhook/QR thật ở chế độ tắt mặc định; chưa nối tiền thật khi chưa có sandbox/tài khoản ngân hàng và quy trình đối soát được duyệt.
+1. Nhánh `refactor/zenith/order-architecture`: giữ nguyên 51 Swagger operation/schema nhưng tập trung state transition, tách Orders query/presenter khỏi command service và ghi kiến trúc modular monolith. `OrdersService` giảm từ 462 còn 332 dòng; đã đạt lint, build, security scan, 47 unit tests, 35 PostgreSQL/PostGIS/HTTP tests, readiness và smoke-load 40/40. Sau đó tách realtime publisher và payment settlement boundary bằng các PR riêng.
+2. Sau refactor có mục tiêu: thiết kế SePay webhook/QR thật ở chế độ tắt mặc định; chưa nối tiền thật khi chưa có sandbox/tài khoản ngân hàng và quy trình đối soát được duyệt.
 3. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
 4. Cam Thu/Vy merge UI Flutter Khách/Thợ/Admin và nối API theo [FLUTTER_API_HANDOFF.md](FLUTTER_API_HANDOFF.md); `lib/main.dart` trên main hiện vẫn là counter starter. Chưa có APK MotoCare hoàn chỉnh để gửi thầy.
 5. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
