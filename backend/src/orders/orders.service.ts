@@ -14,7 +14,7 @@ import { Payment } from '../payments/payment.entity';
 import { Wallet } from '../payments/wallet.entity';
 import { WalletTransaction } from '../payments/wallet-transaction.entity';
 import { WalletTransactionType } from '../common/enums/wallet-transaction-type.enum';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { User } from '../users/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MatchingService } from './matching.service';
@@ -33,7 +33,7 @@ export class OrdersService {
     private readonly matching: MatchingService,
     private readonly config: ConfigService,
     private readonly pricing: OrderPricingService,
-    @Optional() private readonly realtime?: RealtimeGateway,
+    @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
 
   async create(customerId: number, dto: CreateOrderDto) {

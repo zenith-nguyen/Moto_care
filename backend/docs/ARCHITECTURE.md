@@ -65,6 +65,8 @@ controller -> application -> domain
 
 PostgreSQL constraint/transaction là nguồn bảo vệ cuối cùng cho tiền, offer và trạng thái. Event Socket.IO hiện được phát sau khi transaction hoàn tất. Gateway chỉ là adapter giao hàng nhanh; client luôn dùng REST fallback sau reconnect.
 
+Application service phụ thuộc `RealtimePublisher`, không phụ thuộc `RealtimeGateway` hay Socket.IO. `RealtimeModule` ánh xạ port tới gateway bằng `useExisting`, vì vậy chỉ có một adapter runtime và không phát event trùng. Port sở hữu contract event; gateway chịu trách nhiệm room/transport. Việc thay transport không được làm đổi event/payload nếu chưa có PR contract riêng.
+
 Hiện chưa có transactional outbox. Nếu chạy nhiều NestJS instance, cần thiết kế outbox/adapter phân tán, Socket.IO adapter dùng chung và khóa scheduler trước; không giả định room hoặc cron trong bộ nhớ có thể scale ngang.
 
 ## Những gì cố ý chưa làm
@@ -77,9 +79,9 @@ Hiện chưa có transactional outbox. Nếu chạy nhiều NestJS instance, c�
 
 ## Lộ trình refactor
 
-1. Tập trung state transition; tách Orders query/presenter khỏi command service.
-2. Đưa realtime qua `RealtimePublisher` port để use case không gọi gateway trực tiếp.
-3. Chuyển settlement/payment/wallet ra khỏi Orders bằng port thuộc Payments.
+1. Đã tập trung state transition; tách Orders query/presenter khỏi command service.
+2. Đã đưa realtime qua `RealtimePublisher` port để use case không gọi gateway trực tiếp.
+3. Tiếp theo: chuyển settlement/payment/wallet ra khỏi Orders bằng port thuộc Payments.
 4. Tách Admin dashboard và reconciliation query khi cần sửa nghiệp vụ báo cáo.
 5. Thêm adapter SePay tắt mặc định, webhook idempotent và audit trước khi cấu hình tiền thật.
 

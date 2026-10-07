@@ -6,7 +6,7 @@ import { PaymentStatus } from '../common/enums/payment-status.enum';
 import { MatchingService } from '../orders/matching.service';
 import { Order } from '../orders/order.entity';
 import { Payment } from './payment.entity';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
 import { PaymentAdjustment } from './payment-adjustment.entity';
 import { canTransitionOrder } from '../orders/domain/order-transition.policy';
@@ -17,7 +17,7 @@ export class DemoPaymentsService {
     private readonly database: DataSource,
     private readonly config: ConfigService,
     private readonly matching: MatchingService,
-    @Optional() private readonly realtime?: RealtimeGateway,
+    @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
 
   private assertEnabled(): void {

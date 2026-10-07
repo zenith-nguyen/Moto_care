@@ -8,7 +8,7 @@ import { UserStatus } from '../common/enums/user-status.enum';
 import { OrderOffer } from '../orders/order-offer.entity';
 import { Order } from '../orders/order.entity';
 import { OrderStatus } from '../common/enums/order-status.enum';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { User } from '../users/user.entity';
 import { Provider } from './provider.entity';
 import { UpdateLocationDto } from './dto/update-location.dto';
@@ -21,7 +21,7 @@ export class ProvidersService {
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly config: ConfigService,
     @Optional() @InjectRepository(Order) private readonly orders?: Repository<Order>,
-    @Optional() private readonly realtime?: RealtimeGateway,
+    @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
 
   private async ownProvider(userId: number): Promise<Provider> {
