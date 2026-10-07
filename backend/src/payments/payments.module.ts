@@ -9,9 +9,10 @@ import { DemoPaymentsController } from './demo-payments.controller';
 import { DemoPaymentsService } from './demo-payments.service';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { WalletsController } from './wallets.controller';
+import { PaymentAdjustment } from './payment-adjustment.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Payment, Wallet, WalletTransaction, WithdrawalRequest]), OrdersModule, RealtimeModule],
+  imports: [TypeOrmModule.forFeature([Payment, PaymentAdjustment, Wallet, WalletTransaction, WithdrawalRequest]), OrdersModule, RealtimeModule],
   controllers: [DemoPaymentsController, WalletsController],
   providers: [DemoPaymentsService],
 })

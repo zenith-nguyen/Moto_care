@@ -42,16 +42,16 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 
 ## 6. Mô hình dữ liệu
 
-`users` (id, role, phone/email, password_hash, name, status) | `providers` (user_id, is_online, approval_status, current_location geography Point, last_seen_at, giấy tờ/hồ sơ) | vehicles của khách (tùy chọn) | `incident_types` (code, tên, giá cơ bản) | `orders` (id, code, customer_id, provider_id, incident_type_id, status, customer_location geography, estimated_price, extra_cost, final_price, cancel_reason, cancelled_by, timestamps) | `order_offers` (order_id, provider_id, status, offered_at, expires_at) | `messages` (order_id, sender_id, content, image_url) | `reviews` (order_id, reviewer_id, reviewee_id, rating, comment) | `payments` (order_id, amount, sepay_transaction_id UNIQUE, status, paid_at) | `wallets` (provider_id, balance) | `wallet_transactions` (wallet_id, type, amount, order_id/withdrawal_id, created_at) | `withdrawal_requests` (provider_id, amount, status PENDING/APPROVED/REJECTED, processed_by, processed_at).
+`users` | `providers` | `incident_types` | `orders` | `order_offers` | `order_price_proposals` | `messages` | `reviews` | `payments` | `payment_adjustments` | `wallets` | `wallet_transactions` | `withdrawal_requests`. `orders` giữ snapshot giá cơ bản/thời tiết, giá tạm tính, chi phí thêm, giảm giá và giá cuối. `payments` giữ nguyên khoản trả trước gốc; `payment_adjustments` giữ khoản `CHARGE`/`REFUND` dương để không sửa mất lịch sử.
 
 ## 7. Quy tắc nghiệp vụ cốt lõi
 
 - Matching: query PostGIS thợ online + rảnh + đã duyệt trong bán kính X km, gần nhất trước. Gửi đơn cho một thợ tại một thời điểm (bản ghi `order_offers`), chờ 15s. Từ chối/hết giờ -> thợ kế tiếp. Hết thợ -> báo khách. Việc thợ nhận đơn phải atomic (`UPDATE` có điều kiện trạng thái đơn).
-- Trạng thái mục tiêu: `AWAITING_PREPAYMENT -> PENDING_MATCH -> OFFERED -> ACCEPTED -> ARRIVED -> IN_PROGRESS -> COMPLETED`; nhánh `CANCELLED`/`REFUND_PENDING`/`REFUNDED`. **Hiện chỉ code đến ACCEPTED, hủy trước khi sửa và hoàn giả lập**; các trạng thái còn lại là thiết kế, không được quảng cáo là đã chạy.
+- Trạng thái đã chạy trong sandbox: `AWAITING_PREPAYMENT -> PENDING_MATCH -> OFFERED -> ACCEPTED -> ARRIVED -> IN_PROGRESS -> AWAITING_PRICE_APPROVAL -> AWAITING_PAYMENT/PAID -> COMPLETED`; nhánh `PRICE_DISPUTED`, `CANCELLED`, `REFUND_PENDING`, `REFUNDED`.
 - Realtime: thợ gửi GPS mỗi 3-5s khi có đơn active qua WebSocket; server đẩy cho khách của đơn đó. Không lưu lịch sử tọa độ, chỉ giữ vị trí hiện tại. Socket phải xác thực JWT và kiểm tra quyền theo đơn.
 - QR xác nhận bắt đầu dịch vụ: payload = `orderId + timestamp + HMAC` do server ký; app chỉ hiển thị/quét, thợ gửi lên server verify. Secret HMAC chỉ ở server.
 - Quyết định đã chốt: thu giá tạm tính **trước** matching. Nếu không tìm được thợ hoặc hủy trước khi bắt đầu sửa thì hoàn 100%; sau khi bắt đầu, Admin xét từng trường hợp. Khoản tiền thật (khi tích hợp) vào tài khoản MotoCare, **không phải escrow ngân hàng**. SePay webhook đối chiếu mã đơn, số tiền, giao dịch duy nhất; không cộng ví thợ tại lúc nhận tiền, chỉ quyết toán khi hoàn tất và xử lý chênh lệch/tranh chấp.
-- Nhánh demo hiện dùng `POST /payments/demo/.../confirm` và `/refund` giả lập, không nhận/hoàn tiền thật và không tạo QR ngân hàng. SePay, chuyển khoản/hoàn thật, giá cuối/chênh lệch, ví và rút tiền còn phải code và kiểm chứng riêng. Không chạy seed mật khẩu mẫu khi mở API công khai. Xem `docs/PROGRESS.md` và `docs/DEMO_RUNBOOK.md` để biết phần nào đã xong.
+- Nhánh demo có trả trước, giá cuối, thu thêm/hoàn chênh, ví và tranh chấp giả lập; không nhận/hoàn tiền thật và không tạo QR ngân hàng. SePay, chuyển khoản/hoàn thật và rút tiền còn phải code, cấu hình và kiểm chứng riêng. Không chạy seed mật khẩu mẫu khi mở API công khai. Xem `docs/PROGRESS.md`, `docs/FINAL_PRICE_WORKFLOW.md` và `docs/DEMO_RUNBOOK.md`.
 
 ## 8. Bảo mật
 

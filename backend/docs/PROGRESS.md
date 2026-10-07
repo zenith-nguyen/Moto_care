@@ -14,16 +14,16 @@ Cập nhật lần cuối: 2026-10-07
 - PR #11 đã merge vào `main`: dashboard Admin, chuỗi thời gian và đối soát order/payment/wallet; bộ lọc thời gian, phân trang, decimal strings và cờ bất thường. Mốc merge đã qua 9 unit tests, 28 database/HTTP tests, lint và build.
 - PR #12 đã merge vào `main`: request ID, log JSON không chứa query/body/header, response lỗi an toàn, Helmet, CORS không wildcard, rate limit REST/auth/upload, giới hạn multipart/socket, secret HMAC tách biệt và CI chặn file/chuỗi nhạy cảm. Mốc merge đã qua 15 unit tests, 28 database/HTTP tests, lint, build và production audit không có lỗ hổng đã biết.
 - PR #13 đã merge vào `main`: kiểm tra dung lượng, snapshot PostgreSQL + ảnh chat + checksum và restore có chốt an toàn. Đã phục hồi độc lập và xác nhận 8 migrations / 6 users / 5 incident types; readiness `200`, DB restore thử đã xóa.
+- PR #15 đã merge vào `main`: weather pricing snapshot với Open-Meteo cache/timeout/fallback, tính tiền bằng `BigInt`, migration `0008`, breakdown cho Swagger/Flutter; mặc định tắt.
 
 ## Đang làm / Tiếp theo
 
-1. PR #14 đã bị merge nhầm vào `feat/zenith/demo-backup`, không phải `main`; vì PR #13 đã merge trước đó nên weather pricing chưa có trên `main`. Nhánh sửa sạch `feat/zenith/weather-pricing-main` được tạo trực tiếp từ `origin/main` và chỉ mang hai commit weather để mở PR đúng vào `main`.
-2. Weather pricing đã có Open-Meteo adapter, cache/timeout/fallback, pricing `BigInt`, snapshot schema migration `0008`, Swagger/Flutter breakdown và test. Mặc định `WEATHER_PRICING_ENABLED=false`. Kiểm chứng local ngày 2026-10-07: PostgreSQL/PostGIS healthy, không còn migration chờ, 24 unit tests và 29 PostgreSQL/PostGIS/HTTP tests đạt; lint, build, sensitive-file check, production audit và nearest-provider check đều đạt; health/readiness/Swagger đều HTTP `200`.
-3. Sau weather pricing: hoàn thiện giá cuối khác giá tạm tính, khách xác nhận chi phí phát sinh, thu bù/hoàn chênh lệch sandbox và quy trình khiếu nại Admin. Giữ thanh toán thật/SePay tắt cho tới khi có tài khoản, webhook secret và kiểm chứng sandbox riêng.
-4. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
-5. Cam Thu/Vy merge UI Flutter Khách/Thợ/Admin và nối API theo [FLUTTER_API_HANDOFF.md](FLUTTER_API_HANDOFF.md); `lib/main.dart` trên main hiện vẫn là counter starter. Chưa có APK MotoCare hoàn chỉnh để gửi thầy.
-6. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
-7. Còn thiếu rút tiền, webhook SePay thật, hoàn tiền thật và đối soát ngân hàng. Không quảng cáo sandbox là xử lý tiền thật.
+1. Nhánh `feat/zenith/final-price-adjustments`: proposal giá cuối, khách approve/reject, tranh chấp Admin, charge/refund adjustment sandbox, ledger đối soát và wallet credit theo giá cuối. Migration `0009–0010`; đã dựng DB trắng và chạy thành công đủ 11 migration, 24 unit tests và 33 PostgreSQL/PostGIS/HTTP tests. Lint/build, kiểm tra file nhạy cảm, production audit, PostGIS nearest-provider, backup capacity, health/readiness và Swagger 47 operation đều đạt.
+2. Sau khi merge: triển khai yêu cầu rút tiền sandbox + Admin duyệt, giữ số dư có thể rút và khóa tiền atomic; sau đó mới thiết kế SePay webhook/QR thật ở chế độ tắt mặc định.
+3. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
+4. Cam Thu/Vy merge UI Flutter Khách/Thợ/Admin và nối API theo [FLUTTER_API_HANDOFF.md](FLUTTER_API_HANDOFF.md); `lib/main.dart` trên main hiện vẫn là counter starter. Chưa có APK MotoCare hoàn chỉnh để gửi thầy.
+5. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
+6. Thanh toán thật còn thiếu webhook SePay, hoàn tiền thật và đối soát ngân hàng. Không quảng cáo sandbox là xử lý tiền thật.
 
 ## Quyết định đã chốt
 

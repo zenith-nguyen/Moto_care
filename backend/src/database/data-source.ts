@@ -12,6 +12,8 @@ import { Provider } from '../providers/provider.entity';
 import { Review } from '../reviews/review.entity';
 import { User } from '../users/user.entity';
 import { PasswordResetCode } from '../auth/password-reset-code.entity';
+import { OrderPriceProposal } from '../orders/order-price-proposal.entity';
+import { PaymentAdjustment } from '../payments/payment-adjustment.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -33,7 +35,10 @@ export default new DataSource({
     WalletTransaction,
     WithdrawalRequest,
     PasswordResetCode,
+    OrderPriceProposal,
+    PaymentAdjustment,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
+  migrationsTransactionMode: 'each',
   synchronize: false,
 });

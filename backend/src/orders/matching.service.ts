@@ -54,7 +54,7 @@ export class MatchingService {
           AND NOT EXISTS (
             SELECT 1 FROM orders active_order
             WHERE active_order.provider_id = p.id
-              AND active_order.status IN ('ACCEPTED', 'ARRIVED', 'IN_PROGRESS', 'AWAITING_PAYMENT', 'PAID')
+              AND active_order.status IN ('ACCEPTED', 'ARRIVED', 'IN_PROGRESS', 'AWAITING_PRICE_APPROVAL', 'PRICE_DISPUTED', 'AWAITING_PAYMENT', 'PAID')
           )
           AND NOT (p.id = ANY($6::int[]))
         ORDER BY ST_Distance(
@@ -78,7 +78,7 @@ export class MatchingService {
           SELECT 1 FROM order_offers WHERE provider_id = $1 AND status = 'PENDING'
         ) OR EXISTS (
           SELECT 1 FROM orders WHERE provider_id = $1
-            AND status IN ('ACCEPTED', 'ARRIVED', 'IN_PROGRESS', 'AWAITING_PAYMENT', 'PAID')
+            AND status IN ('ACCEPTED', 'ARRIVED', 'IN_PROGRESS', 'AWAITING_PRICE_APPROVAL', 'PRICE_DISPUTED', 'AWAITING_PAYMENT', 'PAID')
         ) AS busy`,
         [providerId],
       )) as Array<{ busy: boolean }>;

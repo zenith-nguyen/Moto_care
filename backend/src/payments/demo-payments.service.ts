@@ -7,6 +7,8 @@ import { MatchingService } from '../orders/matching.service';
 import { Order } from '../orders/order.entity';
 import { Payment } from './payment.entity';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
+import { PaymentAdjustment } from './payment-adjustment.entity';
 
 @Injectable()
 export class DemoPaymentsService {
@@ -85,5 +87,63 @@ export class DemoPaymentsService {
     });
     this.realtime?.orderStatusChanged(orderId, result.status);
     return result;
+  }
+
+  async confirmAdjustment(orderId: number, customerId: number) {
+    return this.settleAdjustment(orderId, PaymentAdjustmentType.CHARGE, customerId);
+  }
+
+  async refundAdjustment(orderId: number) {
+    return this.settleAdjustment(orderId, PaymentAdjustmentType.REFUND);
+  }
+
+  private async settleAdjustment(orderId: number, type: PaymentAdjustmentType, customerId?: number) {
+    this.assertEnabled();
+    const result = await this.database.transaction(async (manager) => {
+      const order = await manager.getRepository(Order).findOne({
+        where: { id: orderId }, lock: { mode: 'pessimistic_write' },
+      });
+      if (!order || (customerId !== undefined && order.customerId !== customerId)) {
+        throw new NotFoundException('Order not found');
+      }
+      const adjustment = await manager.getRepository(PaymentAdjustment).findOne({
+        where: { orderId }, lock: { mode: 'pessimistic_write' },
+      });
+      if (!adjustment || adjustment.type !== type) {
+        throw new ConflictException(`Order has no pending ${type.toLowerCase()} adjustment`);
+      }
+      if (adjustment.status === PaymentAdjustmentStatus.SETTLED && order.status === OrderStatus.PAID) {
+        return { orderId, status: order.status, adjustment, changed: false };
+      }
+      if (order.status !== OrderStatus.AWAITING_PAYMENT || adjustment.status !== PaymentAdjustmentStatus.PENDING) {
+        throw new ConflictException('Payment adjustment is no longer pending');
+      }
+      const payment = await manager.getRepository(Payment).findOne({
+        where: { id: adjustment.paymentId }, lock: { mode: 'pessimistic_write' },
+      });
+      if (!payment?.isDemo || payment.status !== PaymentStatus.PAID) {
+        throw new ConflictException('Only a paid demo prepayment can be adjusted here');
+      }
+      adjustment.status = PaymentAdjustmentStatus.SETTLED;
+      adjustment.isDemo = true;
+      adjustment.settledAt = new Date();
+      order.status = OrderStatus.PAID;
+      await manager.getRepository(PaymentAdjustment).save(adjustment);
+      await manager.getRepository(Order).save(order);
+      return { orderId, status: order.status, adjustment, changed: true };
+    });
+    if (result.changed) this.realtime?.orderStatusChanged(orderId, result.status);
+    return {
+      orderId,
+      status: result.status,
+      paymentAdjustment: {
+        id: result.adjustment.id,
+        type: result.adjustment.type,
+        amount: result.adjustment.amount,
+        status: result.adjustment.status,
+        isDemo: result.adjustment.isDemo,
+        settledAt: result.adjustment.settledAt,
+      },
+    };
   }
 }

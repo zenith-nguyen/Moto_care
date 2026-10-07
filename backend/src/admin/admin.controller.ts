@@ -18,6 +18,10 @@ import {
 } from './dto/admin-period-query.dto';
 import { ApproveProviderDto } from './dto/approve-provider.dto';
 import { ReconciliationQueryDto } from './dto/reconciliation-query.dto';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import { PriceAdjustmentsService } from '../orders/price-adjustments.service';
+import { ResolvePriceDisputeDto } from '../orders/dto/price-proposal.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -27,6 +31,7 @@ export class AdminController {
   constructor(
     private readonly admin: AdminService,
     private readonly analytics: AdminAnalyticsService,
+    private readonly priceAdjustments: PriceAdjustmentsService,
   ) {}
 
   @Get('dashboard/summary')
@@ -53,6 +58,28 @@ export class AdminController {
   })
   reconciliation(@Query() query: ReconciliationQueryDto) {
     return this.analytics.reconciliation(query);
+  }
+
+  @Get('price-disputes/pending')
+  @ApiOkResponse({ description: 'Up to 50 final-price disputes awaiting Admin review' })
+  pendingPriceDisputes() {
+    return this.priceAdjustments.pendingDisputes();
+  }
+
+  @Get('payment-adjustments/pending-refunds')
+  @ApiOkResponse({ description: 'Up to 50 approved price reductions awaiting a demo refund' })
+  pendingRefundAdjustments() {
+    return this.priceAdjustments.pendingRefundAdjustments();
+  }
+
+  @Patch('price-disputes/:proposalId/resolve')
+  @ApiOkResponse({ description: 'Admin approves or rejects a disputed final-price proposal once' })
+  resolvePriceDispute(
+    @Param('proposalId', ParseIntPipe) proposalId: number,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ResolvePriceDisputeDto,
+  ) {
+    return this.priceAdjustments.resolveDispute(proposalId, user.sub, dto.decision, dto.reason);
   }
 
   @Get('orders')

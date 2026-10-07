@@ -73,7 +73,7 @@ Ví dụ breakdown khi thời tiết mức vừa:
 4. Nhận/từ chối tại `POST /orders/:id/offers/:offerId/accept|reject`.
 5. Khi đang tới khách, gửi `PATCH /providers/me/orders/:id/location` khoảng 3–5 giây/lần trong foreground.
 6. Tại nơi: `POST /orders/:id/arrive`; nhập/quét token khách rồi `POST /orders/:id/start`.
-7. Hoàn tất sandbox bằng `POST /orders/:id/complete`; xem số dư giả lập ở `GET /wallets/me`.
+7. Provider đề xuất giá cuối qua `POST /orders/:id/price-proposals`; Customer approve/reject. Nếu có chênh lệch, Customer xác nhận charge hoặc Admin xác nhận refund sandbox. Khi order thành `PAID`, Provider gọi `/complete`; xem số dư giả lập ở `GET /wallets/me`. Chi tiết: [FINAL_PRICE_WORKFLOW.md](FINAL_PRICE_WORKFLOW.md).
 8. Khi không nhận đơn nữa, gửi `PATCH /providers/me/status` với `isOnline=false`.
 
 ## Luồng Admin

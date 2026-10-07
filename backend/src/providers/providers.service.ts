@@ -43,7 +43,15 @@ export class ProvidersService {
   async updateOrderLocation(userId: number, orderId: number, location: UpdateLocationDto) {
     const provider = await this.ownProvider(userId);
     const order = await this.orders?.findOneBy({ id: orderId, providerId: provider.id });
-    if (!order || ![OrderStatus.ACCEPTED, OrderStatus.ARRIVED, OrderStatus.IN_PROGRESS].includes(order.status)) {
+    if (!order || ![
+      OrderStatus.ACCEPTED,
+      OrderStatus.ARRIVED,
+      OrderStatus.IN_PROGRESS,
+      OrderStatus.AWAITING_PRICE_APPROVAL,
+      OrderStatus.PRICE_DISPUTED,
+      OrderStatus.AWAITING_PAYMENT,
+      OrderStatus.PAID,
+    ].includes(order.status)) {
       throw new NotFoundException('Active order not found for provider');
     }
     const result = await this.updateLocation(userId, location);

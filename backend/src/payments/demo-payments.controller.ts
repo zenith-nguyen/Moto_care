@@ -27,4 +27,20 @@ export class DemoPaymentsController {
   refund(@Param('orderId', ParseIntPipe) orderId: number) {
     return this.payments.refund(orderId);
   }
+
+  @Post(':orderId/adjustment/confirm')
+  @Roles(UserRole.CUSTOMER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'DEMO ONLY: simulate payment of an approved additional charge.' })
+  confirmAdjustment(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
+    return this.payments.confirmAdjustment(orderId, user.sub);
+  }
+
+  @Post(':orderId/adjustment/refund')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({ description: 'DEMO ONLY: simulate refund of an approved final-price reduction.' })
+  refundAdjustment(@Param('orderId', ParseIntPipe) orderId: number) {
+    return this.payments.refundAdjustment(orderId);
+  }
 }

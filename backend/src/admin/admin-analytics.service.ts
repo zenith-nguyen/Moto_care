@@ -5,6 +5,7 @@ import { ApprovalStatus } from '../common/enums/approval-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { PaymentStatus } from '../common/enums/payment-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
 import {
   AdminPeriodQueryDto,
   AdminTimeseriesQueryDto,
@@ -51,6 +52,12 @@ type ReconciliationRow = {
   paidAt: Date | null;
   refundedAt: Date | null;
   isDemo: boolean | null;
+  adjustmentId: number | null;
+  adjustmentType: PaymentAdjustmentType | null;
+  adjustmentStatus: PaymentAdjustmentStatus | null;
+  adjustmentAmount: string | null;
+  adjustmentIsDemo: boolean | null;
+  adjustmentSettledAt: Date | null;
   paymentCount: number;
   creditCount: number;
   creditedAmount: string;
@@ -60,6 +67,7 @@ type ReconciliationRow = {
   refundStatusMismatch: boolean;
   refundedWithCredit: boolean;
   multiplePayments: boolean;
+  adjustmentStatusMismatch: boolean;
 };
 
 @Injectable()
@@ -115,15 +123,23 @@ export class AdminAnalyticsService {
         `
         SELECT
           (
-            SELECT COALESCE(SUM(amount), 0)::numeric(18,2)::text
-            FROM payments
-            WHERE paid_at >= $1 AND paid_at < $2
-              AND status IN ('${PaymentStatus.PAID}', '${PaymentStatus.REFUND_PENDING}', '${PaymentStatus.REFUNDED}')
-          ) AS "collectedInPeriod",
+            (SELECT COALESCE(SUM(amount), 0) FROM payments
+             WHERE paid_at >= $1 AND paid_at < $2
+               AND status IN ('${PaymentStatus.PAID}', '${PaymentStatus.REFUND_PENDING}', '${PaymentStatus.REFUNDED}'))
+            +
+            (SELECT COALESCE(SUM(amount), 0) FROM payment_adjustments
+             WHERE type = '${PaymentAdjustmentType.CHARGE}' AND status = '${PaymentAdjustmentStatus.SETTLED}'
+               AND settled_at >= $1 AND settled_at < $2)
+          )::numeric(18,2)::text AS "collectedInPeriod",
           (
-            SELECT COALESCE(SUM(p.amount), 0)::numeric(18,2)::text
+            SELECT COALESCE(SUM(
+              p.amount
+              + CASE WHEN pa.type = '${PaymentAdjustmentType.CHARGE}' AND pa.status = '${PaymentAdjustmentStatus.SETTLED}' THEN pa.amount ELSE 0 END
+              - CASE WHEN pa.type = '${PaymentAdjustmentType.REFUND}' AND pa.status = '${PaymentAdjustmentStatus.SETTLED}' THEN pa.amount ELSE 0 END
+            ), 0)::numeric(18,2)::text
             FROM payments p
             JOIN orders o ON o.id = p.order_id
+            LEFT JOIN payment_adjustments pa ON pa.order_id = o.id
             WHERE p.paid_at IS NOT NULL
               AND p.status IN ('${PaymentStatus.PAID}', '${PaymentStatus.REFUND_PENDING}')
               AND o.status NOT IN ('${OrderStatus.COMPLETED}', '${OrderStatus.REFUNDED}')
@@ -134,14 +150,19 @@ export class AdminAnalyticsService {
             WHERE type = 'CREDIT' AND created_at >= $1 AND created_at < $2
           ) AS "settledToProvidersInPeriod",
           (
-            SELECT COALESCE(SUM(amount), 0)::numeric(18,2)::text
-            FROM payments WHERE status = '${PaymentStatus.REFUND_PENDING}'
-          ) AS "refundPendingCurrent",
+            (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = '${PaymentStatus.REFUND_PENDING}')
+            +
+            (SELECT COALESCE(SUM(amount), 0) FROM payment_adjustments
+             WHERE type = '${PaymentAdjustmentType.REFUND}' AND status = '${PaymentAdjustmentStatus.PENDING}')
+          )::numeric(18,2)::text AS "refundPendingCurrent",
           (
-            SELECT COALESCE(SUM(amount), 0)::numeric(18,2)::text
-            FROM payments
-            WHERE status = '${PaymentStatus.REFUNDED}' AND refunded_at >= $1 AND refunded_at < $2
-          ) AS "refundedInPeriod",
+            (SELECT COALESCE(SUM(amount), 0) FROM payments
+             WHERE status = '${PaymentStatus.REFUNDED}' AND refunded_at >= $1 AND refunded_at < $2)
+            +
+            (SELECT COALESCE(SUM(amount), 0) FROM payment_adjustments
+             WHERE type = '${PaymentAdjustmentType.REFUND}' AND status = '${PaymentAdjustmentStatus.SETTLED}'
+               AND settled_at >= $1 AND settled_at < $2)
+          )::numeric(18,2)::text AS "refundedInPeriod",
           (
             SELECT COALESCE(SUM(o.final_price), 0)::numeric(18,2)::text
             FROM wallet_transactions wt
@@ -194,16 +215,30 @@ export class AdminAnalyticsService {
         SELECT timezone('${timezone}', created_at)::date AS day, COUNT(*)::int AS count
         FROM orders WHERE created_at >= $1 AND created_at < $2 GROUP BY 1
       ), paid_daily AS (
-        SELECT timezone('${timezone}', paid_at)::date AS day, SUM(amount)::numeric(18,2) AS amount
-        FROM payments
-        WHERE paid_at >= $1 AND paid_at < $2
-          AND status IN ('${PaymentStatus.PAID}', '${PaymentStatus.REFUND_PENDING}', '${PaymentStatus.REFUNDED}')
-        GROUP BY 1
+        SELECT day, SUM(amount)::numeric(18,2) AS amount
+        FROM (
+          SELECT timezone('${timezone}', paid_at)::date AS day, amount
+          FROM payments
+          WHERE paid_at >= $1 AND paid_at < $2
+            AND status IN ('${PaymentStatus.PAID}', '${PaymentStatus.REFUND_PENDING}', '${PaymentStatus.REFUNDED}')
+          UNION ALL
+          SELECT timezone('${timezone}', settled_at)::date AS day, amount
+          FROM payment_adjustments
+          WHERE type = '${PaymentAdjustmentType.CHARGE}' AND status = '${PaymentAdjustmentStatus.SETTLED}'
+            AND settled_at >= $1 AND settled_at < $2
+        ) collected GROUP BY day
       ), refunded_daily AS (
-        SELECT timezone('${timezone}', refunded_at)::date AS day, SUM(amount)::numeric(18,2) AS amount
-        FROM payments
-        WHERE status = '${PaymentStatus.REFUNDED}' AND refunded_at >= $1 AND refunded_at < $2
-        GROUP BY 1
+        SELECT day, SUM(amount)::numeric(18,2) AS amount
+        FROM (
+          SELECT timezone('${timezone}', refunded_at)::date AS day, amount
+          FROM payments
+          WHERE status = '${PaymentStatus.REFUNDED}' AND refunded_at >= $1 AND refunded_at < $2
+          UNION ALL
+          SELECT timezone('${timezone}', settled_at)::date AS day, amount
+          FROM payment_adjustments
+          WHERE type = '${PaymentAdjustmentType.REFUND}' AND status = '${PaymentAdjustmentStatus.SETTLED}'
+            AND settled_at >= $1 AND settled_at < $2
+        ) refunds GROUP BY day
       ), settled_daily AS (
         SELECT
           timezone('${timezone}', created_at)::date AS day,
@@ -321,27 +356,41 @@ export class AdminAnalyticsService {
         provider.id AS "providerId", provider_user.name AS "providerName",
         p.id AS "paymentId", p.status AS "paymentStatus", p.amount::text AS "paymentAmount",
         p.paid_at AS "paidAt", p.refunded_at AS "refundedAt", p.is_demo AS "isDemo",
+        pa.id AS "adjustmentId", pa.type AS "adjustmentType", pa.status AS "adjustmentStatus",
+        pa.amount::text AS "adjustmentAmount", pa.is_demo AS "adjustmentIsDemo",
+        pa.settled_at AS "adjustmentSettledAt",
         COALESCE(pr.payment_count, 0)::int AS "paymentCount",
         COALESCE(cr.credit_count, 0)::int AS "creditCount",
         COALESCE(cr.credited_amount, 0)::numeric(18,2)::text AS "creditedAmount",
         (o.status = '${OrderStatus.COMPLETED}' AND (p.id IS NULL OR p.status <> '${PaymentStatus.PAID}'))
           AS "completedMissingPaidPayment",
-        (p.paid_at IS NOT NULL AND o.final_price IS NOT NULL AND p.amount <> o.final_price)
+        (o.status IN ('${OrderStatus.PAID}', '${OrderStatus.COMPLETED}')
+          AND p.paid_at IS NOT NULL AND o.final_price IS NOT NULL
+          AND (
+            p.amount
+            + CASE WHEN pa.type = '${PaymentAdjustmentType.CHARGE}' AND pa.status = '${PaymentAdjustmentStatus.SETTLED}' THEN pa.amount ELSE 0 END
+            - CASE WHEN pa.type = '${PaymentAdjustmentType.REFUND}' AND pa.status = '${PaymentAdjustmentStatus.SETTLED}' THEN pa.amount ELSE 0 END
+          ) <> o.final_price)
           AS "paymentFinalPriceMismatch",
-        (o.status = '${OrderStatus.COMPLETED}' AND COALESCE(cr.credit_count, 0) <> 1)
+        (o.status = '${OrderStatus.COMPLETED}' AND (
+          COALESCE(cr.credit_count, 0) <> 1 OR COALESCE(cr.credited_amount, 0) <> o.final_price
+        ))
           AS "completedWalletCreditMismatch",
         (COALESCE(p.status = '${PaymentStatus.REFUND_PENDING}', false)
           IS DISTINCT FROM (o.status = '${OrderStatus.REFUND_PENDING}'))
           AS "refundStatusMismatch",
         (p.status = '${PaymentStatus.REFUNDED}' AND COALESCE(cr.credit_count, 0) > 0)
           AS "refundedWithCredit",
-        (COALESCE(pr.payment_count, 0) > 1) AS "multiplePayments"
+        (COALESCE(pr.payment_count, 0) > 1) AS "multiplePayments",
+        ((o.status = '${OrderStatus.AWAITING_PAYMENT}') IS DISTINCT FROM
+          COALESCE(pa.status = '${PaymentAdjustmentStatus.PENDING}', false)) AS "adjustmentStatusMismatch"
       FROM orders o
       JOIN users customer ON customer.id = o.customer_id
       LEFT JOIN providers provider ON provider.id = o.provider_id
       LEFT JOIN users provider_user ON provider_user.id = provider.user_id
       LEFT JOIN payment_rollup pr ON pr.order_id = o.id
       LEFT JOIN payments p ON p.id = pr.first_payment_id
+      LEFT JOIN payment_adjustments pa ON pa.order_id = o.id
       LEFT JOIN credit_rollup cr ON cr.order_id = o.id
       WHERE o.created_at >= $1 AND o.created_at < $2
         AND ($3::payment_status_enum IS NULL OR p.status = $3::payment_status_enum)
@@ -366,6 +415,7 @@ export class AdminAnalyticsService {
       row.refundStatusMismatch && 'REFUND_STATUS_MISMATCH',
       row.refundedWithCredit && 'REFUNDED_WITH_WALLET_CREDIT',
       row.multiplePayments && 'MULTIPLE_PAYMENTS',
+      row.adjustmentStatusMismatch && 'ADJUSTMENT_STATUS_MISMATCH',
     ].filter((flag): flag is string => Boolean(flag));
     return {
       order: {
@@ -393,6 +443,16 @@ export class AdminAnalyticsService {
       settlement: {
         creditCount: row.creditCount,
         creditedAmount: row.creditedAmount,
+        adjustment: row.adjustmentId
+          ? {
+              id: row.adjustmentId,
+              type: row.adjustmentType,
+              status: row.adjustmentStatus,
+              amount: row.adjustmentAmount,
+              isDemo: row.adjustmentIsDemo,
+              settledAt: row.adjustmentSettledAt,
+            }
+          : null,
       },
       flags,
     };

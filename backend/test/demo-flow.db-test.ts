@@ -258,6 +258,16 @@ describe('Sandbox demo flow over HTTP', () => {
       .send({ token: startToken.body.token })
       .expect(200)
       .expect(({ body }) => expect(body.status).toBe('IN_PROGRESS'));
+    const priceProposal = await request(app.getHttpServer())
+      .post(`/orders/${orderId}/price-proposals`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ final_price: '100000.00', reason: 'No additional parts were required' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/orders/${orderId}/price-proposals/${priceProposal.body.proposal.id}/approve`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body.orderStatus).toBe('PAID'));
     await request(app.getHttpServer())
       .post(`/orders/${orderId}/complete`)
       .set('Authorization', `Bearer ${provider.token}`)
