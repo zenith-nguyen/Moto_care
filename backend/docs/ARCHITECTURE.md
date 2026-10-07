@@ -26,7 +26,7 @@ Thứ tự ưu tiên:
 | `admin` | Use case quản trị và read model dashboard/đối soát |
 | `pricing` | Tạo báo giá từ giá cơ bản và snapshot thời tiết |
 
-Một module không được sửa dữ liệu thuộc module khác tùy ý. Trong giai đoạn chuyển tiếp vẫn còn Orders truy cập payment/wallet trực tiếp; đây là technical debt đã ghi nhận và sẽ được thay bằng application port trước khi tích hợp SePay.
+Một module không được sửa dữ liệu thuộc module khác tùy ý. Orders chỉ truy cập payment/wallet qua port do Payments sở hữu; TypeORM entity và quy tắc ledger không còn nằm trong command/query service của Orders.
 
 ## Cấu trúc feature phức tạp
 
@@ -69,6 +69,15 @@ Application service phụ thuộc `RealtimePublisher`, không phụ thuộc `Rea
 
 Hiện chưa có transactional outbox. Nếu chạy nhiều NestJS instance, cần thiết kế outbox/adapter phân tán, Socket.IO adapter dùng chung và khóa scheduler trước; không giả định room hoặc cron trong bộ nhớ có thể scale ngang.
 
+## Ranh giới payment và settlement
+
+- `PaymentSettlementPort` sở hữu các thao tác ghi: tạo prepayment, chuyển cancel/refund, tạo adjustment giá cuối và credit ví thợ.
+- `PaymentQueryPort` trả snapshot chỉ đọc cho order detail và danh sách refund; không làm lộ TypeORM entity sang Orders.
+- `TypeOrmPaymentAccountingAdapter` là adapter duy nhất cho cả hai port. Nest dùng `useExisting` để không tạo hai instance.
+- `PaymentAccountingModule` không import `OrdersModule`, nhờ vậy dependency module không bị vòng dù `PaymentsModule` vẫn cần matching của Orders cho demo prepayment.
+- Port ghi nhận `EntityManager` của transaction hiện tại. Đây là lựa chọn thực dụng cho modular monolith TypeORM: order lock, payment lock, adjustment và wallet ledger commit/rollback cùng nhau; không tạo transaction lồng nhau hoặc abstraction Unit of Work hình thức.
+- Unique index mỗi order chỉ có một wallet credit vẫn là hàng rào cuối cùng; `wallet_transactions.amount` luôn dương và chiều số dư suy từ `type`.
+
 ## Những gì cố ý chưa làm
 
 - Không microservice và không event bus phân tán.
@@ -81,8 +90,9 @@ Hiện chưa có transactional outbox. Nếu chạy nhiều NestJS instance, c�
 
 1. Đã tập trung state transition; tách Orders query/presenter khỏi command service.
 2. Đã đưa realtime qua `RealtimePublisher` port để use case không gọi gateway trực tiếp.
-3. Tiếp theo: chuyển settlement/payment/wallet ra khỏi Orders bằng port thuộc Payments.
-4. Tách Admin dashboard và reconciliation query khi cần sửa nghiệp vụ báo cáo.
-5. Thêm adapter SePay tắt mặc định, webhook idempotent và audit trước khi cấu hình tiền thật.
+3. Đã chuyển settlement/payment/wallet ra khỏi Orders qua `PaymentSettlementPort` và `PaymentQueryPort` do Payments sở hữu.
+4. Tiếp theo: chuẩn hóa strict typecheck và sửa typing debt trong test/mocks mà không làm yếu compiler.
+5. Tách Admin dashboard và reconciliation query khi cần sửa nghiệp vụ báo cáo.
+6. Thêm adapter SePay tắt mặc định, webhook idempotent và audit trước khi cấu hình tiền thật.
 
 Mỗi bước phải giữ nguyên API hiện tại, chạy unit + PostgreSQL/PostGIS/HTTP tests và được merge riêng qua PR.

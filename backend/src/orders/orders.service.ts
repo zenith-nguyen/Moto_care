@@ -5,24 +5,17 @@ import { ConfigService } from '@nestjs/config';
 import { ApprovalStatus } from '../common/enums/approval-status.enum';
 import { OfferStatus } from '../common/enums/offer-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
-import { PaymentStatus } from '../common/enums/payment-status.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { IncidentType } from '../incident-types/incident-type.entity';
 import { Provider } from '../providers/provider.entity';
 import { OrderPricingService } from '../pricing/order-pricing.service';
-import { Payment } from '../payments/payment.entity';
-import { Wallet } from '../payments/wallet.entity';
-import { WalletTransaction } from '../payments/wallet-transaction.entity';
-import { WalletTransactionType } from '../common/enums/wallet-transaction-type.enum';
+import { PaymentSettlementPort } from '../payments/application/payment-settlement.port';
 import { RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { User } from '../users/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { MatchingService } from './matching.service';
 import { OrderOffer } from './order-offer.entity';
 import { Order } from './order.entity';
-import { PaymentAdjustment } from '../payments/payment-adjustment.entity';
-import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
-import { moneyToCents } from '../common/utils/money';
 import { canTransitionOrder } from './domain/order-transition.policy';
 import { presentOrderMatch } from './presentation/order.presenter';
 
@@ -33,6 +26,7 @@ export class OrdersService {
     private readonly matching: MatchingService,
     private readonly config: ConfigService,
     private readonly pricing: OrderPricingService,
+    private readonly payments: PaymentSettlementPort,
     @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
 
@@ -80,14 +74,7 @@ export class OrdersService {
           extraCost: '0.00',
         }),
       );
-      await manager.getRepository(Payment).save(
-        manager.getRepository(Payment).create({
-          orderId: order.id,
-          amount: order.estimatedPrice,
-          status: PaymentStatus.PENDING,
-          isDemo: false,
-        }),
-      );
+      await this.payments.createPrepayment(manager, { orderId: order.id, amount: order.estimatedPrice });
       return presentOrderMatch(order, null);
     });
   }
@@ -96,10 +83,8 @@ export class OrdersService {
     const result = await this.dataSource.transaction(async (manager) => {
       const order = await this.lockOrder(manager, orderId);
       if (order.customerId !== customerId) throw new NotFoundException('Order not found');
-      const payment = await manager.getRepository(Payment).findOne({
-        where: { orderId }, lock: { mode: 'pessimistic_write' }, order: { id: 'ASC' },
-      });
-      const targetStatus = payment?.status === PaymentStatus.PAID
+      const cancellation = await this.payments.cancelBeforeService(manager, orderId);
+      const targetStatus = cancellation.requiresRefund
         ? OrderStatus.REFUND_PENDING
         : OrderStatus.CANCELLED;
       if (!canTransitionOrder(order.status, targetStatus)) {
@@ -112,19 +97,9 @@ export class OrdersService {
       }
       order.cancelReason = reason;
       order.cancelledById = customerId;
-      if (payment?.status === PaymentStatus.PAID) {
-        payment.status = PaymentStatus.REFUND_PENDING;
-        order.status = targetStatus;
-        await manager.getRepository(Payment).save(payment);
-      } else {
-        if (payment) {
-          payment.status = PaymentStatus.CANCELLED;
-          await manager.getRepository(Payment).save(payment);
-        }
-        order.status = targetStatus;
-      }
+      order.status = targetStatus;
       await manager.getRepository(Order).save(order);
-      return { orderId: order.id, status: order.status, refundAmount: payment?.status === PaymentStatus.REFUND_PENDING ? payment.amount : null };
+      return { orderId: order.id, status: order.status, refundAmount: cancellation.refundAmount };
     });
     this.realtime?.orderStatusChanged(orderId, result.status);
     return result;
@@ -252,36 +227,12 @@ export class OrdersService {
       if (!canTransitionOrder(order.status, OrderStatus.COMPLETED) || !order.finalPrice) {
         throw new ConflictException('Final price and payment adjustment must be settled before completion');
       }
-      const payment = await manager.getRepository(Payment).findOne({
-        where: { orderId }, lock: { mode: 'pessimistic_write' }, order: { id: 'ASC' },
+      await this.payments.settleProviderEarnings(manager, {
+        orderId,
+        providerId: provider.id,
+        estimatedPrice: order.estimatedPrice,
+        finalPrice: order.finalPrice,
       });
-      if (!payment?.isDemo || payment.status !== PaymentStatus.PAID || payment.amount !== order.estimatedPrice) {
-        throw new ConflictException('Only a paid demo order can be completed');
-      }
-      const adjustment = await manager.getRepository(PaymentAdjustment).findOne({
-        where: { orderId }, lock: { mode: 'pessimistic_write' },
-      });
-      const prepaid = moneyToCents(payment.amount);
-      const expectedFinal = adjustment
-        ? adjustment.type === PaymentAdjustmentType.CHARGE
-          ? prepaid + moneyToCents(adjustment.amount)
-          : prepaid - moneyToCents(adjustment.amount)
-        : prepaid;
-      if (expectedFinal < 0n || moneyToCents(order.finalPrice) !== expectedFinal) {
-        throw new ConflictException('Final price does not reconcile with payment records');
-      }
-      if (adjustment && (!adjustment.isDemo || adjustment.status !== PaymentAdjustmentStatus.SETTLED)) {
-        throw new ConflictException('Payment adjustment is not settled');
-      }
-      await manager.query('INSERT INTO wallets (provider_id, balance) VALUES ($1, 0) ON CONFLICT (provider_id) DO NOTHING', [provider.id]);
-      const wallet = await manager.getRepository(Wallet).findOne({
-        where: { providerId: provider.id }, lock: { mode: 'pessimistic_write' },
-      });
-      if (!wallet) throw new ConflictException('Provider wallet unavailable');
-      await manager.query('UPDATE wallets SET balance = balance + $1::numeric WHERE id = $2', [order.finalPrice, wallet.id]);
-      await manager.getRepository(WalletTransaction).save(manager.getRepository(WalletTransaction).create({
-        walletId: wallet.id, type: WalletTransactionType.CREDIT, amount: order.finalPrice, orderId,
-      }));
       order.status = OrderStatus.COMPLETED;
       await manager.getRepository(Order).save(order);
       return { orderId, status: order.status, finalPrice: order.finalPrice, settlement: 'DEMO_ONLY' };
