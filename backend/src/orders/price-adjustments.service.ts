@@ -1,12 +1,10 @@
 import { ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { OrderStatus } from '../common/enums/order-status.enum';
-import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
-import { PaymentStatus } from '../common/enums/payment-status.enum';
 import { PriceProposalStatus } from '../common/enums/price-proposal-status.enum';
-import { centsToMoney, moneyToCents } from '../common/utils/money';
-import { PaymentAdjustment } from '../payments/payment-adjustment.entity';
-import { Payment } from '../payments/payment.entity';
+import { moneyToCents } from '../common/utils/money';
+import { PaymentAdjustmentSnapshot, PaymentQueryPort } from '../payments/application/payment-query.port';
+import { PaymentSettlementPort } from '../payments/application/payment-settlement.port';
 import { Provider } from '../providers/provider.entity';
 import { RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { AdminPriceResolution, CreatePriceProposalDto } from './dto/price-proposal.dto';
@@ -18,6 +16,8 @@ import { canTransitionOrder } from './domain/order-transition.policy';
 export class PriceAdjustmentsService {
   constructor(
     private readonly database: DataSource,
+    private readonly paymentSettlement: PaymentSettlementPort,
+    private readonly paymentQueries: PaymentQueryPort,
     @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
 
@@ -124,22 +124,10 @@ export class PriceAdjustmentsService {
   }
 
   async pendingRefundAdjustments() {
-    const adjustments = await this.database.getRepository(PaymentAdjustment).find({
-      where: { type: PaymentAdjustmentType.REFUND, status: PaymentAdjustmentStatus.PENDING },
-      relations: { order: true },
-      order: { createdAt: 'ASC', id: 'ASC' },
-      take: 50,
-    });
+    const adjustments = await this.paymentQueries.listPendingRefundAdjustments(50);
     return adjustments.map((adjustment) => ({
       ...this.formatAdjustment(adjustment),
-      order: {
-        id: adjustment.order.id,
-        code: adjustment.order.code,
-        customerId: adjustment.order.customerId,
-        providerId: adjustment.order.providerId,
-        estimatedPrice: adjustment.order.estimatedPrice,
-        finalPrice: adjustment.order.finalPrice,
-      },
+      order: adjustment.order,
     }));
   }
 
@@ -176,44 +164,24 @@ export class PriceAdjustmentsService {
   }
 
   private async applyApprovedPrice(manager: EntityManager, order: Order, proposal: OrderPriceProposal): Promise<void> {
-    const payment = await manager.getRepository(Payment).findOne({
-      where: { orderId: order.id },
-      lock: { mode: 'pessimistic_write' },
-      order: { id: 'ASC' },
+    const plan = await this.paymentSettlement.prepareFinalPrice(manager, {
+      orderId: order.id,
+      finalPrice: proposal.proposedFinalPrice,
     });
-    if (!payment || payment.status !== PaymentStatus.PAID) {
-      throw new ConflictException('Prepayment must be paid before final-price approval');
-    }
-    const prepaid = moneyToCents(payment.amount);
-    const finalPrice = moneyToCents(proposal.proposedFinalPrice);
-    order.finalPrice = centsToMoney(finalPrice);
-    order.extraCost = centsToMoney(finalPrice > prepaid ? finalPrice - prepaid : 0n);
-    order.discountAmount = centsToMoney(finalPrice < prepaid ? prepaid - finalPrice : 0n);
-    const targetStatus = finalPrice === prepaid ? OrderStatus.PAID : OrderStatus.AWAITING_PAYMENT;
+    order.finalPrice = plan.finalPrice;
+    order.extraCost = plan.extraCost;
+    order.discountAmount = plan.discountAmount;
+    const targetStatus = plan.requiresAdjustment ? OrderStatus.AWAITING_PAYMENT : OrderStatus.PAID;
     if (!canTransitionOrder(order.status, targetStatus)) {
       throw new ConflictException('Order cannot apply the approved final price now');
     }
-    if (targetStatus === OrderStatus.PAID) {
-      order.status = targetStatus;
-    } else {
-      await manager.getRepository(PaymentAdjustment).save(
-        manager.getRepository(PaymentAdjustment).create({
-          orderId: order.id,
-          paymentId: payment.id,
-          type: finalPrice > prepaid ? PaymentAdjustmentType.CHARGE : PaymentAdjustmentType.REFUND,
-          amount: centsToMoney(finalPrice > prepaid ? finalPrice - prepaid : prepaid - finalPrice),
-          status: PaymentAdjustmentStatus.PENDING,
-          isDemo: false,
-        }),
-      );
-      order.status = targetStatus;
-    }
+    order.status = targetStatus;
     await manager.getRepository(OrderPriceProposal).save(proposal);
     await manager.getRepository(Order).save(order);
   }
 
   private async response(manager: EntityManager, order: Order, proposal: OrderPriceProposal) {
-    const adjustment = await manager.getRepository(PaymentAdjustment).findOneBy({ orderId: order.id });
+    const adjustment = await this.paymentQueries.getAdjustment(manager, order.id);
     return {
       orderId: order.id,
       orderStatus: order.status,
@@ -241,7 +209,7 @@ export class PriceAdjustmentsService {
     };
   }
 
-  private formatAdjustment(adjustment: PaymentAdjustment) {
+  private formatAdjustment(adjustment: PaymentAdjustmentSnapshot) {
     return {
       id: adjustment.id,
       type: adjustment.type,

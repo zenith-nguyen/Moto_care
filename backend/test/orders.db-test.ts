@@ -54,6 +54,7 @@ import { AdminPriceResolution } from '../src/orders/dto/price-proposal.dto';
 import { WithdrawalsService } from '../src/payments/withdrawals.service';
 import { WithdrawalDecision } from '../src/payments/dto/withdrawal.dto';
 import { WithdrawalStatus } from '../src/common/enums/withdrawal-status.enum';
+import { TypeOrmPaymentAccountingAdapter } from '../src/payments/infrastructure/typeorm-payment-accounting.adapter';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -104,10 +105,11 @@ describe('Orders and matching on PostGIS', () => {
     const weather = new WeatherService(config, (async () => {
       throw new Error('Weather fetch is disabled in database tests');
     }) satisfies WeatherFetcher);
-    orders = new OrdersService(database, matching, config, new OrderPricingService(weather));
-    orderQueries = new OrdersQueryService(database);
+    const paymentAccounting = new TypeOrmPaymentAccountingAdapter(database);
+    orders = new OrdersService(database, matching, config, new OrderPricingService(weather), paymentAccounting);
+    orderQueries = new OrdersQueryService(database, paymentAccounting);
     demoPayments = new DemoPaymentsService(database, config, matching);
-    priceAdjustments = new PriceAdjustmentsService(database);
+    priceAdjustments = new PriceAdjustmentsService(database, paymentAccounting, paymentAccounting);
     admin = new AdminService(database);
     analytics = new AdminAnalyticsService(database, config);
     withdrawals = new WithdrawalsService(database);
@@ -592,6 +594,7 @@ describe('Orders and matching on PostGIS', () => {
       matching,
       weatherConfig,
       new OrderPricingService(new WeatherService(weatherConfig, weatherFetcher)),
+      new TypeOrmPaymentAccountingAdapter(database),
     );
     const created = await weatherOrders.create(customer.id, {
       incident_type_id: incident.id,

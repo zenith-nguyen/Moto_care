@@ -3,8 +3,7 @@ import { DataSource, MoreThan } from 'typeorm';
 import { OfferStatus } from '../../common/enums/offer-status.enum';
 import { OrderStatus } from '../../common/enums/order-status.enum';
 import { UserRole } from '../../common/enums/user-role.enum';
-import { PaymentAdjustment } from '../../payments/payment-adjustment.entity';
-import { Payment } from '../../payments/payment.entity';
+import { PaymentQueryPort } from '../../payments/application/payment-query.port';
 import { Provider } from '../../providers/provider.entity';
 import { OrderOffer } from '../order-offer.entity';
 import { OrderPriceProposal } from '../order-price-proposal.entity';
@@ -23,7 +22,10 @@ const providerLocationStatuses = new Set([
 
 @Injectable()
 export class OrdersQueryService {
-  constructor(private readonly database: DataSource) {}
+  constructor(
+    private readonly database: DataSource,
+    private readonly payments: PaymentQueryPort,
+  ) {}
 
   async getById(orderId: number, userId: number) {
     const order = await this.database.getRepository(Order).findOne({
@@ -33,10 +35,9 @@ export class OrdersQueryService {
     if (!order) throw new NotFoundException('Order not found');
     await this.assertCanView(order, userId);
 
-    const [payment, priceProposal, paymentAdjustment, providerLocation] = await Promise.all([
-      this.database.getRepository(Payment).findOne({ where: { orderId }, order: { id: 'ASC' } }),
+    const [financials, priceProposal, providerLocation] = await Promise.all([
+      this.payments.getOrderFinancials(orderId),
       this.database.getRepository(OrderPriceProposal).findOne({ where: { orderId }, order: { id: 'DESC' } }),
-      this.database.getRepository(PaymentAdjustment).findOneBy({ orderId }),
       this.providerLocation(order),
     ]);
 
@@ -53,10 +54,10 @@ export class OrdersQueryService {
       extraCost: order.extraCost,
       discountAmount: order.discountAmount,
       finalPrice: order.finalPrice,
-      payment: payment ? { id: payment.id, amount: payment.amount, status: payment.status, isDemo: payment.isDemo } : null,
+      payment: financials.payment,
       providerLocation,
       priceProposal: priceProposal ? presentPriceProposal(priceProposal) : null,
-      paymentAdjustment: paymentAdjustment ? presentPaymentAdjustment(paymentAdjustment) : null,
+      paymentAdjustment: financials.adjustment ? presentPaymentAdjustment(financials.adjustment) : null,
       message: order.status === OrderStatus.AWAITING_PREPAYMENT
         ? 'Awaiting prepayment; demo confirmation is not a real bank transfer'
         : order.status === OrderStatus.PENDING_MATCH ? 'No provider found yet; retry matching later' : null,
