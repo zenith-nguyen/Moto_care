@@ -16,6 +16,7 @@ import {
 import { OrdersService } from './orders.service';
 import { CreatePriceProposalDto, PriceDecisionReasonDto } from './dto/price-proposal.dto';
 import { PriceAdjustmentsService } from './price-adjustments.service';
+import { OrdersQueryService } from './application/orders-query.service';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -23,6 +24,7 @@ import { PriceAdjustmentsService } from './price-adjustments.service';
 export class OrdersController {
   constructor(
     private readonly orders: OrdersService,
+    private readonly orderQueries: OrdersQueryService,
     private readonly priceAdjustments: PriceAdjustmentsService,
   ) {}
 
@@ -30,7 +32,7 @@ export class OrdersController {
   @Roles(UserRole.CUSTOMER, UserRole.PROVIDER)
   @ApiOkResponse({ description: 'Latest 30 own orders; providers have a separate pending-offers endpoint' })
   listMine(@CurrentUser() user: JwtPayload) {
-    return this.orders.listMine(user.sub, user.role);
+    return this.orderQueries.listMine(user.sub, user.role);
   }
 
   @Post()
@@ -44,7 +46,7 @@ export class OrdersController {
   @Roles(UserRole.CUSTOMER, UserRole.PROVIDER)
   @ApiOkResponse({ description: 'Order details for customer or related provider', type: OrderDetailsResponseDto })
   get(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
-    return this.orders.getById(orderId, user.sub);
+    return this.orderQueries.getById(orderId, user.sub);
   }
 
   @Post(':orderId/retry-match')

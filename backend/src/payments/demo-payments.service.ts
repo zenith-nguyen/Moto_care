@@ -9,6 +9,7 @@ import { Payment } from './payment.entity';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
 import { PaymentAdjustment } from './payment-adjustment.entity';
+import { canTransitionOrder } from '../orders/domain/order-transition.policy';
 
 @Injectable()
 export class DemoPaymentsService {
@@ -39,7 +40,7 @@ export class DemoPaymentsService {
       if (payment.isDemo && payment.status === PaymentStatus.PAID) {
         return { orderId, status: order.status, paymentStatus: payment.status, matched: order.status === OrderStatus.OFFERED, offer: null, changed: false };
       }
-      if (order.status !== OrderStatus.AWAITING_PREPAYMENT || payment.status !== PaymentStatus.PENDING) {
+      if (!canTransitionOrder(order.status, OrderStatus.PENDING_MATCH) || payment.status !== PaymentStatus.PENDING) {
         throw new ConflictException('Order is not awaiting a demo payment');
       }
       if (payment.amount !== order.estimatedPrice) {
@@ -75,7 +76,7 @@ export class DemoPaymentsService {
       if (payment.status === PaymentStatus.REFUNDED && order.status === OrderStatus.REFUNDED) {
         return { orderId, status: order.status, paymentStatus: payment.status, amount: payment.amount };
       }
-      if (order.status !== OrderStatus.REFUND_PENDING || payment.status !== PaymentStatus.REFUND_PENDING) {
+      if (!canTransitionOrder(order.status, OrderStatus.REFUNDED) || payment.status !== PaymentStatus.REFUND_PENDING) {
         throw new ConflictException('Order is not awaiting a demo refund');
       }
       payment.status = PaymentStatus.REFUNDED;
@@ -115,7 +116,9 @@ export class DemoPaymentsService {
       if (adjustment.status === PaymentAdjustmentStatus.SETTLED && order.status === OrderStatus.PAID) {
         return { orderId, status: order.status, adjustment, changed: false };
       }
-      if (order.status !== OrderStatus.AWAITING_PAYMENT || adjustment.status !== PaymentAdjustmentStatus.PENDING) {
+      if (order.status !== OrderStatus.AWAITING_PAYMENT
+        || !canTransitionOrder(order.status, OrderStatus.PAID)
+        || adjustment.status !== PaymentAdjustmentStatus.PENDING) {
         throw new ConflictException('Payment adjustment is no longer pending');
       }
       const payment = await manager.getRepository(Payment).findOne({

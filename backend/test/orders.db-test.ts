@@ -33,6 +33,7 @@ import { WalletsController } from '../src/payments/wallets.controller';
 import { Review } from '../src/reviews/review.entity';
 import { ReviewsService } from '../src/reviews/reviews.service';
 import { OrdersService } from '../src/orders/orders.service';
+import { OrdersQueryService } from '../src/orders/application/orders-query.service';
 import { Provider } from '../src/providers/provider.entity';
 import { ProvidersService } from '../src/providers/providers.service';
 import { User } from '../src/users/user.entity';
@@ -61,6 +62,7 @@ if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
 describe('Orders and matching on PostGIS', () => {
   let database: DataSource;
   let orders: OrdersService;
+  let orderQueries: OrdersQueryService;
   let matching: MatchingService;
   let demoPayments: DemoPaymentsService;
   let priceAdjustments: PriceAdjustmentsService;
@@ -102,6 +104,7 @@ describe('Orders and matching on PostGIS', () => {
       throw new Error('Weather fetch is disabled in database tests');
     }) satisfies WeatherFetcher);
     orders = new OrdersService(database, matching, config, new OrderPricingService(weather));
+    orderQueries = new OrdersQueryService(database);
     demoPayments = new DemoPaymentsService(database, config, matching);
     priceAdjustments = new PriceAdjustmentsService(database);
     admin = new AdminService(database);
@@ -277,8 +280,8 @@ describe('Orders and matching on PostGIS', () => {
     const created = await createOrder();
     const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
     await orders.accept(created.id, offer.id, assigned.user.id);
-    expect((await orders.listMine(customer.id, UserRole.CUSTOMER))[0].id).toBe(created.id);
-    expect((await orders.listMine(assigned.user.id, UserRole.PROVIDER))[0].id).toBe(created.id);
+    expect((await orderQueries.listMine(customer.id, UserRole.CUSTOMER))[0].id).toBe(created.id);
+    expect((await orderQueries.listMine(assigned.user.id, UserRole.PROVIDER))[0].id).toBe(created.id);
     expect((await admin.recentOrders())[0].id).toBe(created.id);
     const sent = await messages.create(created.id, customer.id, 'Please come soon');
     expect((await messages.list(created.id, assigned.user.id))[0].content).toBe('Please come soon');
@@ -647,7 +650,7 @@ describe('Orders and matching on PostGIS', () => {
     await database.getRepository(IncidentType).save(incident);
     const result = await createOrder();
     const stranger = await makeUser(UserRole.CUSTOMER);
-    await expect(orders.getById(result.id, stranger.id)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(orderQueries.getById(result.id, stranger.id)).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('rejects an offer and immediately picks the next provider', async () => {
