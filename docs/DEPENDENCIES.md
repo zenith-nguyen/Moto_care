@@ -14,6 +14,12 @@ Treat the application and bundle IDs as permanent after the first store release.
 | --- | --- | --- |
 | `flutter_riverpod` | Application state and dependency injection | A screen needs shared, asynchronous, or testable state. |
 | `go_router` | Navigation, deep links, and auth redirects | The application has more than one screen or an authentication flow. |
+| `url_launcher` | Open system applications through URL schemes | Opening the phone app with a `tel:` URI or a map through a Google Maps URL from rescue features. |
+| `image_picker` | Select images from the device photo library | Changing the profile avatar; keep local bytes in session state until an upload API exists. |
+| `local_auth` | Device biometric authentication | Verifying Face ID / fingerprint before editing profile information when the option is enabled. |
+| `font_awesome_flutter` | Font Awesome icons | Displaying icons, including password visibility controls. |
+| `flutter_native_splash` | Generate native Android and iOS splash screens (development only). | Regenerating launch resources after a logo or splash configuration change. |
+| `image` | Crop the source JPG (or PNG when JPG is absent) and export splash PNGs (development only). | Running `dart run tool/generate_splash.dart`. |
 | `intl` and `flutter_localizations` | Locale-aware dates, currency, and translated UI | Presenting dates, VND amounts, or more than one language. |
 | `dio` | HTTP client | Calling the Moto Care backend. Configure timeouts and interceptors in one client. |
 | `flutter_secure_storage` | Encrypted device storage | Persisting credentials, access tokens, or refresh tokens. Never use it for non-sensitive UI preferences. |
