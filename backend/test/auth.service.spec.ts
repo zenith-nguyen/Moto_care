@@ -6,17 +6,42 @@ import * as argon2 from 'argon2';
 import { AuthService } from '../src/auth/auth.service';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import { UserStatus } from '../src/common/enums/user-status.enum';
+import { User } from '../src/users/user.entity';
 import { CreateUserInput, UsersService } from '../src/users/users.service';
 
 describe('AuthService', () => {
-  const usersService = {
-    create: jest.fn(),
-    findByIdentityWithPassword: jest.fn(),
-    recordFailedLogin: jest.fn(),
-    clearLoginFailures: jest.fn(),
+  const usersService: {
+    create: jest.MockedFunction<UsersService['create']>;
+    findByIdentityWithPassword: jest.MockedFunction<UsersService['findByIdentityWithPassword']>;
+    recordFailedLogin: jest.MockedFunction<UsersService['recordFailedLogin']>;
+    clearLoginFailures: jest.MockedFunction<UsersService['clearLoginFailures']>;
+  } = {
+    create: jest.fn<UsersService['create']>(),
+    findByIdentityWithPassword: jest.fn<UsersService['findByIdentityWithPassword']>(),
+    recordFailedLogin: jest.fn<UsersService['recordFailedLogin']>(),
+    clearLoginFailures: jest.fn<UsersService['clearLoginFailures']>(),
   };
   const jwtService = { sign: jest.fn().mockReturnValue('signed-access-token') };
   let authService: AuthService;
+
+  function userFixture(overrides: Partial<User> = {}): User {
+    const timestamp = new Date('2026-10-08T00:00:00.000Z');
+    return {
+      id: 1,
+      name: 'Customer',
+      email: 'customer@example.com',
+      phone: null,
+      passwordHash: 'password-hash',
+      role: UserRole.CUSTOMER,
+      status: UserStatus.ACTIVE,
+      authVersion: 0,
+      failedLoginAttempts: 0,
+      lockedUntil: null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      ...overrides,
+    };
+  }
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -32,7 +57,7 @@ describe('AuthService', () => {
   });
 
   it('registers a provider in pending approval status', async () => {
-    usersService.create.mockImplementation(async (input: CreateUserInput) => ({ id: 7, ...input }));
+    usersService.create.mockImplementation(async (input: CreateUserInput) => userFixture({ id: 7, ...input }));
 
     const result = await authService.register({
       name: 'Provider One',
@@ -62,12 +87,12 @@ describe('AuthService', () => {
 
   it('rejects an invalid password', async () => {
     const passwordHash = await argon2.hash('correct-password');
-    usersService.findByIdentityWithPassword.mockResolvedValue({
+    usersService.findByIdentityWithPassword.mockResolvedValue(userFixture({
       id: 1,
       role: UserRole.CUSTOMER,
       status: UserStatus.ACTIVE,
       passwordHash,
-    });
+    }));
 
     await expect(authService.login({ identity: 'customer@example.com', password: 'wrong-password' })).rejects.toBeInstanceOf(
       UnauthorizedException,
@@ -76,12 +101,12 @@ describe('AuthService', () => {
   });
 
   it('rejects login while the account is temporarily locked', async () => {
-    usersService.findByIdentityWithPassword.mockResolvedValue({
+    usersService.findByIdentityWithPassword.mockResolvedValue(userFixture({
       id: 1,
       role: UserRole.CUSTOMER,
       status: UserStatus.ACTIVE,
       lockedUntil: new Date(Date.now() + 60_000),
-    });
+    }));
     await expect(authService.login({ identity: 'customer@example.com', password: 'safe-password' }))
       .rejects.toBeInstanceOf(UnauthorizedException);
     expect(usersService.recordFailedLogin).not.toHaveBeenCalled();
