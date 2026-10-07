@@ -49,6 +49,9 @@ import { PriceAdjustmentsService } from '../src/orders/price-adjustments.service
 import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../src/common/enums/payment-adjustment.enum';
 import { PriceProposalStatus } from '../src/common/enums/price-proposal-status.enum';
 import { AdminPriceResolution } from '../src/orders/dto/price-proposal.dto';
+import { WithdrawalsService } from '../src/payments/withdrawals.service';
+import { WithdrawalDecision } from '../src/payments/dto/withdrawal.dto';
+import { WithdrawalStatus } from '../src/common/enums/withdrawal-status.enum';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -63,6 +66,7 @@ describe('Orders and matching on PostGIS', () => {
   let priceAdjustments: PriceAdjustmentsService;
   let admin: AdminService;
   let analytics: AdminAnalyticsService;
+  let withdrawals: WithdrawalsService;
   let messages: MessagesService;
   const messageCreated = jest.fn();
   const providerLocation = jest.fn();
@@ -102,6 +106,7 @@ describe('Orders and matching on PostGIS', () => {
     priceAdjustments = new PriceAdjustmentsService(database);
     admin = new AdminService(database);
     analytics = new AdminAnalyticsService(database, config);
+    withdrawals = new WithdrawalsService(database);
     messages = new MessagesService(
       database, { messageCreated } as unknown as RealtimeGateway, new ChatImageStorageService(config),
     );
@@ -344,6 +349,66 @@ describe('Orders and matching on PostGIS', () => {
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
     expect(await database.getRepository(WalletTransaction).countBy({ orderId: created.id })).toBe(1);
     expect((await database.getRepository(Wallet).findOneByOrFail({ providerId: assigned.provider.id })).balance).toBe('100000.00');
+  });
+
+  it('reserves available balance atomically and creates one debit when approved', async () => {
+    const assigned = await makeProvider(106.7009, 10.7769);
+    const wallet = await database.getRepository(Wallet).save(
+      database.getRepository(Wallet).create({
+        providerId: assigned.provider.id,
+        balance: '100000.00',
+        lockedBalance: '0.00',
+      }),
+    );
+    const requests = await Promise.allSettled([
+      withdrawals.create(assigned.user.id, { amount: '70000.00' }),
+      withdrawals.create(assigned.user.id, { amount: '70000.00' }),
+    ]);
+    expect(requests.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(requests.filter((result) => result.status === 'rejected')).toHaveLength(1);
+    const pending = await database.getRepository(WithdrawalRequest).findOneByOrFail({
+      providerId: assigned.provider.id,
+      status: WithdrawalStatus.PENDING,
+    });
+    expect(await withdrawals.mine(assigned.user.id)).toMatchObject({
+      wallet: { balance: '100000.00', lockedBalance: '70000.00', availableBalance: '30000.00' },
+      items: [expect.objectContaining({ id: pending.id, status: WithdrawalStatus.PENDING })],
+    });
+    expect(await withdrawals.pending()).toEqual([
+      expect.objectContaining({ id: pending.id, provider: expect.objectContaining({ id: assigned.provider.id }) }),
+    ]);
+    const resolutions = await Promise.all([
+      withdrawals.resolve(pending.id, customer.id, WithdrawalDecision.APPROVE),
+      withdrawals.resolve(pending.id, customer.id, WithdrawalDecision.APPROVE),
+    ]);
+    expect(resolutions).toEqual([
+      expect.objectContaining({ withdrawal: expect.objectContaining({ status: WithdrawalStatus.APPROVED }) }),
+      expect.objectContaining({ withdrawal: expect.objectContaining({ status: WithdrawalStatus.APPROVED }) }),
+    ]);
+    expect(await database.getRepository(WalletTransaction).countBy({ withdrawalId: pending.id })).toBe(1);
+    expect(await database.getRepository(Wallet).findOneByOrFail({ id: wallet.id })).toMatchObject({
+      balance: '30000.00', lockedBalance: '0.00',
+    });
+    await expect(withdrawals.resolve(pending.id, customer.id, WithdrawalDecision.REJECT, 'Too late'))
+      .rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('releases reserved balance when Admin rejects a withdrawal', async () => {
+    const assigned = await makeProvider(106.7009, 10.7769);
+    await database.getRepository(Wallet).save(database.getRepository(Wallet).create({
+      providerId: assigned.provider.id, balance: '90000.00', lockedBalance: '0.00',
+    }));
+    const created = await withdrawals.create(assigned.user.id, { amount: '40000.00' });
+    await expect(withdrawals.resolve(created.withdrawal.id, customer.id, WithdrawalDecision.REJECT))
+      .rejects.toBeInstanceOf(ConflictException);
+    const rejected = await withdrawals.resolve(
+      created.withdrawal.id, customer.id, WithdrawalDecision.REJECT, 'Sandbox verification failed',
+    );
+    expect(rejected).toMatchObject({
+      withdrawal: { status: WithdrawalStatus.REJECTED, decisionReason: 'Sandbox verification failed' },
+      wallet: { balance: '90000.00', lockedBalance: '0.00', availableBalance: '90000.00' },
+    });
+    expect(await database.getRepository(WalletTransaction).countBy({ withdrawalId: created.withdrawal.id })).toBe(0);
   });
 
   it('settles an approved additional charge before crediting the final price', async () => {
