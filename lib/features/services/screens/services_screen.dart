@@ -2,32 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/main_navigation.dart';
-import '../../activity/models/rescue_order.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/theme/home_theme.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
 import '../../home/widgets/home_service_grid.dart';
-import '../../home/widgets/home_sheets.dart';
 
 class ServicesScreen extends StatelessWidget {
   const ServicesScreen({super.key});
 
-  Future<void> _request(BuildContext context, HomeService service) async {
-    final order = await showHomeSheet<RescueOrder>(
-      context,
-      HomeRescueConfirmationSheet(service: service),
-    );
-    if (!context.mounted || order == null) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã lưu yêu cầu thử nghiệm ${order.orderCode}'),
-        action: SnackBarAction(
-          label: 'Hoạt động',
-          onPressed: () => navigateMainTab(context, HomeDestination.activity),
-        ),
-      ),
-    );
-  }
+  void _openService(BuildContext context, HomeService service) =>
+      context.push(service.partnerRoute);
 
   @override
   Widget build(BuildContext context) => Theme(
@@ -67,7 +51,7 @@ class ServicesScreen extends StatelessWidget {
                           label: label,
                           icon: service.icon,
                           color: service.color,
-                          onTap: () => _request(context, service),
+                          onTap: () => _openService(context, service),
                         ),
                     ],
                   ),
@@ -81,30 +65,30 @@ class ServicesScreen extends StatelessWidget {
                   _ServiceGrid(
                     columns: 4,
                     children: [
-                      ServiceTile(
-                        key: const ValueKey('service-maintenance'),
-                        label: 'Đặt lịch\nbảo dưỡng',
-                        icon: Icons.build_rounded,
-                        color: HomeColors.text,
-                        onTap: () => _request(context, HomeService.maintenance),
-                      ),
-                      for (final (id, label, icon, route) in const [
-                        (
-                          'places',
-                          'Trạm sạc &\nTiệm gần nhất',
-                          Icons.ev_station_rounded,
-                          '/tram-sac-tiem-sua',
+                      for (final service in const [
+                        HomeService.maintenance,
+                        HomeService.charging,
+                      ])
+                        ServiceTile(
+                          key: ValueKey('service-${service.name}'),
+                          label: service.label,
+                          icon: service.icon,
+                          color: service.color,
+                          onTap: () => _openService(context, service),
                         ),
+                      for (final (id, label, icon, color, route) in const [
                         (
                           'prices',
                           'Bảng giá\nphụ tùng',
                           Icons.receipt_long_rounded,
+                          Color(0xFF2563EB),
                           '/bang-gia',
                         ),
                         (
                           'tips',
                           'Mẹo tự xử lý\nsự cố',
                           Icons.lightbulb_outline_rounded,
+                          Color(0xFFF9A825),
                           '/meo-xu-ly',
                         ),
                       ])
@@ -112,6 +96,7 @@ class ServicesScreen extends StatelessWidget {
                           key: ValueKey('service-$id'),
                           label: label,
                           icon: icon,
+                          color: color,
                           onTap: () => context.push(route),
                         ),
                     ],

@@ -15,13 +15,20 @@ import 'package:moto_care/features/home/models/rescue_location.dart';
 import 'package:moto_care/features/home/providers/home_provider.dart';
 import 'package:moto_care/features/home/theme/home_theme.dart';
 import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
+import 'package:moto_care/features/home/widgets/home_service_grid.dart';
+import 'package:moto_care/features/location/services/device_location_service.dart';
+import 'package:moto_care/features/partner/models/marketplace_catalog.dart';
+import 'package:moto_care/features/partner/screens/partner_detail_screen.dart';
+import 'package:moto_care/features/partner/screens/partner_list_screen.dart';
 import 'package:moto_care/features/profile/models/user_profile.dart';
 import 'package:moto_care/features/profile/providers/profile_provider.dart';
 import 'package:moto_care/features/profile/screens/profile_screen.dart';
+import 'package:moto_care/features/rescue/screens/checkout_screen.dart';
 import 'package:moto_care/features/vehicle/models/vehicle.dart';
 import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
 
 import 'fixtures/user_profile_fixture.dart';
+import 'fixtures/marketplace_router_fixture.dart';
 
 const _vehicle = Vehicle(
   id: 'vision',
@@ -57,6 +64,9 @@ Future<GoRouter> _open(
           hasLocation ? _location : null,
         ),
         initialRescueOrdersProvider.overrideWithValue(orders),
+        deviceLocationProvider.overrideWithValue(
+          () async => throw const LocationLookupException('GPS chưa khả dụng.'),
+        ),
       ],
       child: MaterialApp.router(
         theme: AppTheme.light,
@@ -64,6 +74,7 @@ Future<GoRouter> _open(
         supportedLocales: const [Locale('vi')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         routerConfig: router,
+        builder: freezeMarketplaceMotion,
       ),
     ),
   );
@@ -92,6 +103,19 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
   await tester.pumpAndSettle();
   await tester.tap(target);
   await tester.pumpAndSettle();
+}
+
+Future<void> _nightCheckout(WidgetTester tester) async {
+  await _tap(tester, find.byKey(const ValueKey('service-night')));
+  await _tap(tester, find.byKey(const ValueKey('choose-station-dealer')));
+  await _tap(
+    tester,
+    find.descendant(
+      of: find.byKey(const ValueKey('package-night')),
+      matching: find.byTooltip('Thêm'),
+    ),
+  );
+  await _tap(tester, find.byKey(const ValueKey('marketplace-continue')));
 }
 
 void main() {
@@ -171,42 +195,98 @@ void main() {
   });
 
   testWidgets(
-    'SOS catalog confirms each service and night request retains selected GPS and vehicle',
+    'Shared services open the same filtered marketplace from home and catalog',
     (tester) async {
-      await _open(tester, '/dich-vu');
-      for (final (id, label) in [
-        ('tire', 'Vá xe'),
-        ('battery', 'Kích bình điện'),
-        ('fuel', 'Cứu hộ Hết xăng'),
-        ('flood', 'Sửa ngập nước'),
-        ('towing', 'Xe cẩu kéo'),
-        ('night', 'Cứu hộ đêm 24/7'),
+      final router = await _open(tester, '/trang-chu');
+      for (final service in [
+        HomeService.tire,
+        HomeService.battery,
+        HomeService.fuel,
+        HomeService.flood,
+        HomeService.towing,
+        HomeService.maintenance,
+        HomeService.charging,
       ]) {
-        await _tap(tester, find.byKey(ValueKey('service-$id')));
-        expect(find.text(label), findsWidgets);
-        expect(find.text('Honda Vision (59-A1 123.45)'), findsOneWidget);
-        expect(find.text('GPS: 10.757000, 106.668000'), findsOneWidget);
-        if (id == 'night') {
-          await _tap(tester, find.text('Xác nhận tạo yêu cầu'));
-        } else {
-          await _tap(tester, find.byTooltip('Đóng'));
-          expect(_state(tester).read(activityProvider).orders, isEmpty);
+        router.go('/trang-chu');
+        await tester.pumpAndSettle();
+        await _tap(
+          tester,
+          find.byKey(ValueKey('home-service-${service.name}')),
+        );
+        final homeLocation = router.state.uri;
+        expect(homeLocation.path, '/partners');
+        expect(homeLocation.queryParameters['service'], service.title);
+
+        router.go('/dich-vu');
+        await tester.pumpAndSettle();
+        await _tap(tester, find.byKey(ValueKey('service-${service.name}')));
+        expect(router.state.uri, homeLocation);
+        expect(
+          tester
+              .widget<PartnerListScreen>(find.byType(PartnerListScreen))
+              .serviceType,
+          service.title,
+        );
+        expect(_state(tester).read(activityProvider).orders, isEmpty);
+        await _tap(tester, find.byKey(const ValueKey('choose-station-dealer')));
+        expect(
+          tester
+              .widget<PartnerDetailScreen>(find.byType(PartnerDetailScreen))
+              .serviceType,
+          service.title,
+        );
+        final type = MarketplaceCatalog.typeFor(service.title);
+        expect(type, isNotNull);
+        final firstPackage = MarketplaceCatalog.packages.firstWhere(
+          (package) => package.serviceType == type,
+        );
+        await tester.scrollUntilVisible(
+          find.byKey(ValueKey('package-${firstPackage.id}')),
+          100,
+          scrollable: find.byType(Scrollable).last,
+        );
+        for (final package in MarketplaceCatalog.packages) {
+          expect(
+            find.byKey(ValueKey('package-${package.id}')),
+            package.serviceType == type ? findsOneWidget : findsNothing,
+          );
         }
+        router.pop();
+        router.pop();
+        await tester.pumpAndSettle();
+        expect(router.state.uri.path, '/dich-vu');
+        expect(_state(tester).read(activityProvider).orders, isEmpty);
       }
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'Night rescue booking from the catalog retains selected GPS and vehicle',
+    (tester) async {
+      final router = await _open(tester, '/dich-vu');
+      await _nightCheckout(tester);
+      expect(find.byType(CheckoutScreen), findsOneWidget);
+      expect(find.text('GPS: 10.757000, 106.668000'), findsOneWidget);
+      expect(_state(tester).read(activityProvider).orders, isEmpty);
+      await _tap(tester, find.byKey(const ValueKey('marketplace-place-order')));
+      expect(router.state.uri.path, '/order-tracking');
       final order = _state(tester).read(activityProvider).activeOrders.single;
       expect(order.serviceType, RescueServiceType.nightRescue);
       expect(order.locationLatitude, _location.latitude);
       expect(order.locationLongitude, _location.longitude);
       expect(order.userVehicle, 'Honda Vision (59-A1 123.45)');
+      expect(order.items.single.packageId, 'night');
+      expect(order.partnerId, 'station-dealer');
+      expect(tester.takeException(), isNull);
     },
   );
 
   testWidgets(
-    'Care services route to places, prices, tips and maintenance confirmation',
+    'Care utility links open prices, tips and the rescue station list',
     (tester) async {
       final router = await _open(tester, '/dich-vu');
       for (final (id, route) in [
-        ('places', '/tram-sac-tiem-sua'),
         ('prices', '/bang-gia'),
         ('tips', '/meo-xu-ly'),
       ]) {
@@ -215,29 +295,28 @@ void main() {
         router.pop();
         await tester.pumpAndSettle();
       }
-      await _tap(tester, find.byKey(const ValueKey('service-maintenance')));
-      expect(find.text('Xác nhận yêu cầu bảo dưỡng'), findsOneWidget);
-      await _tap(tester, find.byTooltip('Đóng'));
       await _tap(tester, find.text('Tìm trạm cứu hộ'));
       expect(router.state.uri.path, '/tram-cuu-ho');
       expect(tester.takeException(), isNull);
     },
   );
 
-  testWidgets('Missing emergency context prevents creation from catalog', (
+  testWidgets('Missing emergency context allows browsing but blocks checkout', (
     tester,
   ) async {
     await _open(tester, '/dich-vu', hasVehicle: false, hasLocation: false);
-    await _tap(tester, find.byKey(const ValueKey('service-night')));
+    await _nightCheckout(tester);
+    expect(find.byType(CheckoutScreen), findsOneWidget);
     expect(
       tester
           .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'Xác nhận tạo yêu cầu'),
+            find.byKey(const ValueKey('marketplace-place-order')),
           )
           .onPressed,
       isNull,
     );
     expect(_state(tester).read(activityProvider).orders, isEmpty);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Activity filters categories and groups sorted orders by month', (
@@ -333,6 +412,7 @@ void main() {
       expect(tester.takeException(), isNull);
       if (path == '/dich-vu') {
         await _tap(tester, find.byKey(const ValueKey('service-maintenance')));
+        expect(find.byType(PartnerListScreen), findsOneWidget);
         expect(tester.takeException(), isNull);
       } else if (path == '/tai-khoan') {
         await _tap(tester, find.byKey(const ValueKey('account-settings')));

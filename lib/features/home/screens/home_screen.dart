@@ -125,7 +125,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _selectService(BuildContext context, HomeService service) =>
-      context.push('/partners?service=${Uri.encodeComponent(service.title)}');
+      context.push(service.partnerRoute);
 
   void _showStation(BuildContext context, RescueStation station) {
     showHomeSheet<void>(

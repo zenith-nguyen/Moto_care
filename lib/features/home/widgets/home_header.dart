@@ -35,12 +35,12 @@ class HomeHeader extends StatelessWidget {
       child: Stack(
         children: [
           SizedBox(
-            height: headerHeight + boxHeight * 0.3,
+            height: headerHeight + boxHeight,
             width: double.infinity,
             child: const BrandBackdrop(
               colors: [
-                HomeColors.surface,
-                HomeColors.background,
+                Color(0xFFF09A9E),
+                Color(0xFFF8CFD1),
                 HomeColors.background,
               ],
               child: SizedBox.expand(),
