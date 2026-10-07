@@ -3,6 +3,7 @@ import { jest } from '@jest/globals';
 import { Socket } from 'socket.io';
 import { DataSource, EntityTarget } from 'typeorm';
 import { ApprovalStatus } from '../src/common/enums/approval-status.enum';
+import { JwtPayload } from '../src/common/interfaces/jwt-payload.interface';
 import { OrderStatus } from '../src/common/enums/order-status.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import { UserStatus } from '../src/common/enums/user-status.enum';
@@ -17,10 +18,20 @@ type SocketDouble = Socket & {
 };
 
 describe('RealtimeGateway', () => {
-  const jwt = { verifyAsync: jest.fn() };
-  const userRepository = { findOneBy: jest.fn() };
-  const providerRepository = { findOneBy: jest.fn() };
-  const orderRepository = { findOneBy: jest.fn() };
+  type SocketUser = Pick<User, 'id' | 'role' | 'status' | 'authVersion'>;
+  type SocketProvider = Pick<Provider, 'id' | 'userId' | 'isOnline' | 'approvalStatus'>;
+  type SocketOrder = Pick<Order, 'id' | 'customerId' | 'providerId'>;
+
+  const jwt = { verifyAsync: jest.fn<(token: string) => Promise<JwtPayload>>() };
+  const userRepository = {
+    findOneBy: jest.fn<(where: { id: number }) => Promise<SocketUser | null>>(),
+  };
+  const providerRepository = {
+    findOneBy: jest.fn<(where: { userId: number }) => Promise<SocketProvider | null>>(),
+  };
+  const orderRepository = {
+    findOneBy: jest.fn<(where: { id: number }) => Promise<SocketOrder | null>>(),
+  };
   const database = {
     getRepository: jest.fn((entity: EntityTarget<unknown>) => {
       if (entity === User) return userRepository;

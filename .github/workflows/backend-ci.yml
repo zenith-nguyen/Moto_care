@@ -87,6 +87,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck source and tests
+        run: npm run typecheck
+
       - name: Test
         run: npm test
 

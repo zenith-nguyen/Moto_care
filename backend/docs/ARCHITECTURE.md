@@ -86,12 +86,19 @@ Hiện chưa có transactional outbox. Nếu chạy nhiều NestJS instance, c�
 - Không đổi ORM hoặc schema trong refactor kiến trúc.
 - Không tích hợp tiền thật trước khi ranh giới payment, idempotency và webhook verification hoàn tất.
 
+## Type safety
+
+- `tsconfig.json` bật `strict` cho cả `src/**` và `test/**`.
+- `npm run build` chỉ kiểm tra phần source dùng để phát hành; `npm run typecheck` chạy `tsc --noEmit` trên cả source và test để bắt lỗi mock/fixture trước CI.
+- `skipLibCheck` chỉ bỏ qua khai báo `.d.ts` của dependency ngoài; không loại file source/test nội bộ khỏi typecheck.
+- Test double phải khai báo function signature hoặc fixture có kiểu cụ thể; không dùng `any` để làm mất giá trị của strict mode.
+
 ## Lộ trình refactor
 
 1. Đã tập trung state transition; tách Orders query/presenter khỏi command service.
 2. Đã đưa realtime qua `RealtimePublisher` port để use case không gọi gateway trực tiếp.
 3. Đã chuyển settlement/payment/wallet ra khỏi Orders qua `PaymentSettlementPort` và `PaymentQueryPort` do Payments sở hữu.
-4. Tiếp theo: chuẩn hóa strict typecheck và sửa typing debt trong test/mocks mà không làm yếu compiler.
+4. Đã thêm strict typecheck riêng cho source + test, sửa Jest mock typing và đưa check vào Backend CI.
 5. Tách Admin dashboard và reconciliation query khi cần sửa nghiệp vụ báo cáo.
 6. Thêm adapter SePay tắt mặc định, webhook idempotent và audit trước khi cấu hình tiền thật.
 
