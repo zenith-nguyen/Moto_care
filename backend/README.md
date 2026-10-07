@@ -68,6 +68,8 @@ npm test
 npm run build
 ```
 
+With the API and PostGIS running, `npm run test:smoke-load` sends a small read-only load to `/health` and `/health/ready` and reports p50/p95 latency. It is intended for the demo laptop, not as a production benchmark. The full automated/manual acceptance matrix is in [SYSTEM_VERIFICATION.md](docs/SYSTEM_VERIFICATION.md).
+
 The database integration suite uses a dedicated test database and truncates its application tables between tests. Do not point it at the development database. Create and migrate it once from a normal PowerShell window, in `backend/`:
 
 ```powershell

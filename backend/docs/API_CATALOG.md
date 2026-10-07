@@ -108,7 +108,7 @@ Socket giúp cập nhật nhanh, không thay REST. Sau reconnect client phải g
 
 Cần tăng cường theo thứ tự:
 
-1. Test tải nhẹ REST/WebSocket trên laptop demo; đo reconnect và upload chậm.
+1. Smoke-load REST đọc-only đã có qua `npm run test:smoke-load`; gateway có test quyền room và định tuyến event. Reconnect WebSocket, upload chậm và Android background GPS vẫn phải nghiệm thu trên thiết bị theo [SYSTEM_VERIFICATION.md](SYSTEM_VERIFICATION.md).
 2. Bổ sung rate limit WebSocket/phân tán nếu chuyển sang nhiều process hoặc public 24/7.
 3. Khi có nhu cầu 24/7: lịch backup tự động ra thiết bị khác, object storage, retention/cleanup file, secret manager và server công khai ổn định. Đây chưa phải yêu cầu bản demo không phí.
 4. Giá theo thời tiết đã được triển khai nhưng mặc định tắt (`WEATHER_PRICING_ENABLED=false`); khi tắt hoặc dịch vụ ngoài lỗi, hệ số luôn là `1.0000`. Xem [WEATHER_PRICING_PLAN.md](WEATHER_PRICING_PLAN.md).
