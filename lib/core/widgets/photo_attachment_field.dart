@@ -7,21 +7,28 @@ import 'package:image_picker/image_picker.dart';
 import 'service_scaffold.dart';
 
 final attachmentPickerProvider = Provider<Future<Uint8List?> Function()>((ref) {
-  return () async {
-    final photo = await ImagePicker().pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 1600,
-      maxHeight: 1600,
-      imageQuality: 85,
-      requestFullMetadata: false,
-    );
-    if (photo == null) return null;
-    if (await photo.length() > 5 * 1024 * 1024) {
-      throw StateError('Vui lòng chọn ảnh nhỏ hơn 5 MB.');
-    }
-    return photo.readAsBytes();
-  };
+  return () => _pickAttachment(ImageSource.gallery);
 });
+
+final cameraAttachmentPickerProvider = Provider<Future<Uint8List?> Function()>(
+  (ref) =>
+      () => _pickAttachment(ImageSource.camera),
+);
+
+Future<Uint8List?> _pickAttachment(ImageSource source) async {
+  final photo = await ImagePicker().pickImage(
+    source: source,
+    maxWidth: 1600,
+    maxHeight: 1600,
+    imageQuality: 85,
+    requestFullMetadata: false,
+  );
+  if (photo == null) return null;
+  if (await photo.length() > 5 * 1024 * 1024) {
+    throw StateError('Vui lòng chọn ảnh nhỏ hơn 5 MB.');
+  }
+  return photo.readAsBytes();
+}
 
 class PhotoAttachmentField extends ConsumerStatefulWidget {
   const PhotoAttachmentField({
@@ -29,11 +36,13 @@ class PhotoAttachmentField extends ConsumerStatefulWidget {
     required this.label,
     required this.onChanged,
     this.requiredPhoto = false,
+    this.useCamera = false,
   });
 
   final String label;
   final ValueChanged<Uint8List?> onChanged;
   final bool requiredPhoto;
+  final bool useCamera;
 
   @override
   ConsumerState<PhotoAttachmentField> createState() =>
@@ -44,9 +53,13 @@ class _PhotoAttachmentFieldState extends ConsumerState<PhotoAttachmentField> {
   bool _picking = false;
 
   Future<void> _pick(FormFieldState<Uint8List> field) async {
+    if (_picking) return;
     setState(() => _picking = true);
     try {
-      final photo = await ref.read(attachmentPickerProvider)();
+      final picker = widget.useCamera
+          ? ref.read(cameraAttachmentPickerProvider)
+          : ref.read(attachmentPickerProvider);
+      final photo = await picker();
       if (!mounted || photo == null) return;
       field.didChange(photo);
       widget.onChanged(photo);
@@ -56,6 +69,8 @@ class _PhotoAttachmentFieldState extends ConsumerState<PhotoAttachmentField> {
           context,
           error is StateError
               ? error.message.toString()
+              : widget.useCamera
+              ? 'Không thể mở camera. Vui lòng kiểm tra quyền truy cập.'
               : 'Không thể mở thư viện ảnh. Vui lòng kiểm tra quyền truy cập.',
         );
       }
@@ -72,15 +87,45 @@ class _PhotoAttachmentFieldState extends ConsumerState<PhotoAttachmentField> {
     builder: (field) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        OutlinedButton.icon(
-          onPressed: _picking ? null : () => _pick(field),
-          icon: Icon(
-            field.value == null
-                ? Icons.add_photo_alternate_outlined
-                : Icons.check_circle_outline,
+        if (widget.useCamera)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.all(20),
+                backgroundColor: Theme.of(context).colorScheme.surface,
+                side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: _picking ? null : () => _pick(field),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.camera_alt_outlined,
+                    size: 36,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _picking ? 'Đang mở camera…' : widget.label,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: _picking ? null : () => _pick(field),
+            icon: Icon(
+              field.value == null
+                  ? Icons.add_photo_alternate_outlined
+                  : Icons.check_circle_outline,
+            ),
+            label: Text(_picking ? 'Đang chọn ảnh…' : widget.label),
           ),
-          label: Text(_picking ? 'Đang chọn ảnh…' : widget.label),
-        ),
         if (field.value != null) ...[
           const SizedBox(height: 8),
           ClipRRect(

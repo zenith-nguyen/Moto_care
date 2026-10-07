@@ -99,7 +99,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     height: logoHeight,
                     child: Center(
                       child: Image.asset(
-                        'assets/images/logo-motocare.png',
+                        'assets/images/Logo_motocare.png',
                         width: 112,
                         height: 112,
                         fit: BoxFit.contain,
@@ -161,7 +161,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           FilledButton(
                             style: FilledButton.styleFrom(
                               backgroundColor: AppTheme.link,
-                              disabledBackgroundColor: HomeColors.selected,
+                              disabledBackgroundColor: HomeColors.redSelected,
                               disabledForegroundColor: AppTheme.mutedText,
                             ),
                             onPressed: _validateEmail(_email) == null

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/service_scaffold.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/models/home_user.dart';
+import '../../home/theme/home_theme.dart';
 import '../../profile/providers/profile_provider.dart';
 
 class TichDiemScreen extends ConsumerWidget {
@@ -33,12 +34,12 @@ class TichDiemScreen extends ConsumerWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFFFFE4D5),
-                  Color(0xFFFFF0E6),
-                  Color(0xFFFFF8F2),
+                  HomeColors.tintStrong,
+                  HomeColors.selected,
+                  HomeColors.tint,
                 ],
               ),
-              border: Border.all(color: const Color(0xFFFFD6C2)),
+              border: Border.all(color: HomeColors.accentBorder),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

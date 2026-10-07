@@ -23,7 +23,7 @@ void main() {
     await tester.pump();
     expect(find.byType(LoginScreen), findsOneWidget);
     final loginLogo = find.image(
-      const AssetImage('assets/images/logo-motocare.png'),
+      const AssetImage('assets/images/Logo_motocare.png'),
     );
     expect(loginLogo, findsOneWidget);
     expect(
@@ -36,7 +36,7 @@ void main() {
     expect(find.text('Đăng nhập'), findsOneWidget);
     expect(find.text('Quên mật khẩu?'), findsOneWidget);
     expect(find.text('Đăng ký'), findsOneWidget);
-    expect(find.text('[DEV] Vào nhanh Trang chủ'), findsOneWidget);
+    expect(find.text('[DEV] Vào nhanh Trang chủ'), findsNothing);
     expect(
       GoRouter.of(tester.element(find.byType(LoginScreen))).canPop(),
       false,
@@ -126,27 +126,6 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('DEV shortcut below registration opens home immediately', (
-    tester,
-  ) async {
-    await openLogin(tester);
-    final shortcut = find.widgetWithText(
-      TextButton,
-      '[DEV] Vào nhanh Trang chủ',
-    );
-    await tester.ensureVisible(shortcut);
-    expect(
-      tester.getTopLeft(shortcut).dy,
-      greaterThanOrEqualTo(tester.getBottomLeft(find.text('Đăng ký')).dy),
-    );
-    await tester.tap(shortcut);
-    await tester.pumpAndSettle();
-    expect(find.byType(TrangChu), findsOneWidget);
-    expect(find.byType(LoginScreen), findsNothing);
-    expect(GoRouter.of(tester.element(find.byType(TrangChu))).canPop(), false);
-    expect(tester.takeException(), isNull);
-  });
-
   testWidgets('Keyboard submit also uses the temporary login bypass', (
     tester,
   ) async {
@@ -226,8 +205,8 @@ void main() {
 
     await tester.tap(find.byTooltip('Quay lại'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('[DEV] Vào nhanh Trang chủ'));
-    await tester.tap(find.text('[DEV] Vào nhanh Trang chủ'));
+    await tester.ensureVisible(find.text('Đăng nhập'));
+    await tester.tap(find.text('Đăng nhập'));
     await tester.pumpAndSettle();
     expect(find.byType(TrangChu), findsOneWidget);
     expect(tester.takeException(), isNull);

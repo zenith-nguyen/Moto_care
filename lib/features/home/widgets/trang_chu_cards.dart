@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-const _red = Color(0xFFFF251E);
+import '../theme/home_theme.dart';
+
+const _red = HomeColors.red;
 const _ink = Color(0xFF111111);
 const _cardShape = RoundedRectangleBorder(
   borderRadius: BorderRadius.all(Radius.circular(18)),
@@ -56,7 +58,7 @@ class MemberCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Image.asset(
-                        'assets/images/logo-motocare.png',
+                        'assets/images/Logo_motocare.png',
                         width: 60,
                         height: 46,
                         fit: BoxFit.contain,
@@ -217,7 +219,7 @@ class VoucherCard extends StatelessWidget {
     final action = FilledButton(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
         foregroundColor: _red,
         minimumSize: const Size(0, 40),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -233,9 +235,7 @@ class VoucherCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFED0000), Color(0xFFFF6028)],
-        ),
+        color: HomeColors.primary,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -259,7 +259,7 @@ class VoucherCard extends StatelessWidget {
                       child: Text(
                         'Kho ưu đãi',
                         style: TextStyle(
-                          color: Colors.black,
+                          color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           height: 1.3,

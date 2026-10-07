@@ -56,7 +56,7 @@ Future<GoRouter> _open(
         attachmentPickerProvider.overrideWithValue(
           picker ??
               () async =>
-                  (await rootBundle.load('assets/images/logo-motocare.png'))
+                  (await rootBundle.load('assets/images/Logo_motocare.png'))
                       .buffer
                       .asUint8List(),
         ),

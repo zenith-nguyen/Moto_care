@@ -41,7 +41,7 @@ class _Device extends ProfileDeviceService {
     if (error != null) throw ProfileDeviceException(error!);
     return cancelPhoto
         ? null
-        : (await rootBundle.load('assets/images/logo-motocare.png')).buffer
+        : (await rootBundle.load('assets/images/Logo_motocare.png')).buffer
               .asUint8List();
   }
 

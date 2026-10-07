@@ -1,6 +1,7 @@
 import '../../home/models/rescue_location.dart';
 
-typedef IncidentPlace = ({String name, RescueLocation location});
+export '../models/incident_place.dart';
+import '../models/incident_place.dart';
 
 const mockCurrentIncidentLocation = RescueLocation(
   address: '180/9a Bùi Văn Ba, Tân Thuận, Q.7',

@@ -23,6 +23,31 @@ final voucherProvider = NotifierProvider<VoucherController, List<VoucherOffer>>(
 );
 
 class VoucherController extends Notifier<List<VoucherOffer>> {
+  bool markUsed(String code) {
+    final now = ref.read(voucherClockProvider)();
+    final available = state.any(
+      (offer) =>
+          offer.code == code &&
+          offer.usedAt == null &&
+          offer.expiresAt.isAfter(now),
+    );
+    if (!available) return false;
+    state = List.unmodifiable([
+      for (final offer in state)
+        if (offer.code == code)
+          VoucherOffer(
+            code: offer.code,
+            title: offer.title,
+            expiresAt: offer.expiresAt,
+            minimumOrder: offer.minimumOrder,
+            usedAt: now,
+          )
+        else
+          offer,
+    ]);
+    return true;
+  }
+
   @override
   List<VoucherOffer> build() {
     final now = ref.read(voucherClockProvider)();

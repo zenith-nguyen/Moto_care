@@ -175,7 +175,7 @@ void main() {
     (tester) async {
       await _open(tester, '/dich-vu');
       for (final (id, label) in [
-        ('tire', 'Vá xe / Săm'),
+        ('tire', 'Vá xe'),
         ('battery', 'Kích bình điện'),
         ('fuel', 'Cứu hộ Hết xăng'),
         ('flood', 'Sửa ngập nước'),

@@ -13,8 +13,10 @@ This folder is the single source of truth for technical guides, collaboration ru
 
 ## Contents
 
+- [`MARKETPLACE.md`](MARKETPLACE.md): partner discovery, package cart, GPS, checkout, vouchers and rescue tracking.
+- [`ORDER_TRACKING.md`](ORDER_TRACKING.md): order status, map markers, simulated mechanic movement, contacts and cancellation.
 - [`HOME.md`](HOME.md): light home design, emergency selection, rescue requests and session boundaries.
-- [`LOCATION.md`](LOCATION.md): incident address search, mock map confirmation and rescue request details.
+- [`LOCATION.md`](LOCATION.md): Places autocomplete, geocoding, Google Maps confirmation and rescue request details.
 - [`VEHICLES_AND_RESCUE_STATIONS.md`](VEHICLES_AND_RESCUE_STATIONS.md): vehicle management, station discovery, native actions and bottom tab routing.
 - [`SERVICE_SCREENS.md`](SERVICE_SCREENS.md): membership, places, vouchers, pricing, partner forms, policies, FAQ and emergency tips.
 - [`ACTIVITY.md`](ACTIVITY.md): Activity module models, routes, state and demo boundaries.

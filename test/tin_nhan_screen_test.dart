@@ -84,7 +84,7 @@ void main() {
     final completed = tester.widget<Chip>(
       find.widgetWithText(Chip, 'Đã hoàn tất').first,
     );
-    expect(arriving.backgroundColor, const Color(0xFFFF6B35));
+    expect(arriving.backgroundColor, HomeColors.red);
     expect(completed.backgroundColor, const Color(0xFF218653));
     expect(tester.takeException(), isNull);
   });

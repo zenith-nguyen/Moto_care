@@ -10,6 +10,7 @@ class HomeBottomNavigation extends StatelessWidget {
     required this.onSelected,
     this.backgroundColor = HomeColors.surface,
     this.selectedIconColor = HomeColors.primary,
+    this.selectedBackgroundColor = HomeColors.selected,
     this.unselectedIconColor = HomeColors.secondary,
     this.light = true,
   });
@@ -18,6 +19,7 @@ class HomeBottomNavigation extends StatelessWidget {
   final ValueChanged<HomeDestination> onSelected;
   final Color backgroundColor;
   final Color selectedIconColor;
+  final Color selectedBackgroundColor;
   final Color unselectedIconColor;
   final bool light;
 
@@ -58,14 +60,14 @@ class HomeBottomNavigation extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 color:
                                     light && destination == selectedDestination
-                                    ? HomeColors.selected
+                                    ? selectedBackgroundColor
                                     : Colors.transparent,
                               ),
                               child: Icon(
                                 destination.icon,
                                 color: light
                                     ? destination == selectedDestination
-                                          ? HomeColors.primary
+                                          ? selectedIconColor
                                           : HomeColors.secondary
                                     : destination == selectedDestination
                                     ? selectedIconColor

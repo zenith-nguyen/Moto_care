@@ -194,7 +194,7 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: destructive
-                    ? const Color(0xFFD92D20)
+                    ? ProfileTheme.red
                     : ProfileTheme.orange,
                 foregroundColor: Colors.white,
               ),

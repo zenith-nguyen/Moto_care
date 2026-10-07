@@ -12,7 +12,6 @@ class HomeHeader extends StatelessWidget {
     required this.vehicle,
     required this.onLocation,
     required this.onVehicle,
-    required this.onSearch,
   });
 
   final String name;
@@ -21,13 +20,15 @@ class HomeHeader extends StatelessWidget {
   final String vehicle;
   final VoidCallback onLocation;
   final VoidCallback onVehicle;
-  final VoidCallback onSearch;
 
   @override
   Widget build(BuildContext context) {
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final topInset = MediaQuery.paddingOf(context).top;
-    final headerHeight = topInset + 146 + (scale - 1) * 70;
+    final visibleTier = tier.trim();
+    final hasTier =
+        visibleTier.isNotEmpty && visibleTier.toLowerCase() != 'chưa có hạng';
+    final headerHeight = topInset + (hasTier ? 146 : 110) + (scale - 1) * 70;
     final boxHeight = 132 + (scale - 1) * 54;
     return SizedBox(
       height: headerHeight + boxHeight,
@@ -36,12 +37,19 @@ class HomeHeader extends StatelessWidget {
           SizedBox(
             height: headerHeight + boxHeight * 0.3,
             width: double.infinity,
-            child: const BrandBackdrop(child: SizedBox.expand()),
+            child: const BrandBackdrop(
+              colors: [
+                HomeColors.surface,
+                HomeColors.background,
+                HomeColors.background,
+              ],
+              child: SizedBox.expand(),
+            ),
           ),
           Positioned(
             top: topInset + 40,
             left: 20,
-            right: 12,
+            right: 20,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -60,49 +68,43 @@ class HomeHeader extends StatelessWidget {
                           height: 1.25,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.65),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              color: HomeColors.primary,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 5),
-                            Flexible(
-                              child: Text(
-                                tier,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: HomeColors.text,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
+                      if (hasTier) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star_rounded,
+                                color: HomeColors.red,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  visibleTier,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: HomeColors.text,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Tìm kiếm',
-                  onPressed: onSearch,
-                  icon: const Icon(
-                    Icons.search_rounded,
-                    color: HomeColors.text,
                   ),
                 ),
               ],
@@ -171,7 +173,7 @@ class HomeHeader extends StatelessWidget {
                             children: [
                               const Icon(
                                 Icons.two_wheeler_rounded,
-                                color: HomeColors.primary,
+                                color: HomeColors.red,
                                 size: 26,
                               ),
                               const SizedBox(width: 10),

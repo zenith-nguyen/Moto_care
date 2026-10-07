@@ -326,7 +326,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: AppTheme.link,
-                disabledBackgroundColor: HomeColors.selected,
+                disabledBackgroundColor: HomeColors.redSelected,
                 disabledForegroundColor: const Color(0xFF909090),
               ),
               onPressed: _canSubmit ? _submit : null,
@@ -392,7 +392,7 @@ class _RegisterLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Image.asset(
-        'assets/images/logo-motocare.png',
+        'assets/images/Logo_motocare.png',
         width: 112,
         height: 112,
         fit: BoxFit.contain,

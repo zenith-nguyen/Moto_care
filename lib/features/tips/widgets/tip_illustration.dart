@@ -51,10 +51,7 @@ class _TipPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFFFFEFE5),
-    );
+    canvas.drawRect(Offset.zero & size, Paint()..color = ServiceColors.navy);
     canvas.save();
     canvas.scale(size.width / 200, size.height / 140);
     canvas.drawRect(

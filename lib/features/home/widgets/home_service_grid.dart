@@ -5,9 +5,9 @@ import '../theme/home_theme.dart';
 
 enum HomeService {
   tire(
-    'Vá xe /\nSăm',
+    'Vá xe',
     Icons.tire_repair_rounded,
-    HomeColors.text,
+    HomeColors.red,
     RescueServiceType.flatTire,
   ),
   battery(
@@ -19,7 +19,7 @@ enum HomeService {
   fuel(
     'Cứu hộ\nHết xăng',
     Icons.local_gas_station_rounded,
-    HomeColors.primary,
+    HomeColors.red,
     RescueServiceType.outOfFuel,
   ),
   flood(
@@ -28,20 +28,20 @@ enum HomeService {
     HomeColors.red,
     RescueServiceType.floodedEngine,
   ),
-  charging('Trạm sạc\ngần nhất', Icons.bolt_rounded, HomeColors.primary, null),
+  charging('Trạm sạc\ngần nhất', Icons.bolt_rounded, HomeColors.red, null),
   towing(
     'Xe cẩu\nkéo',
     Icons.local_shipping_rounded,
-    HomeColors.primary,
+    HomeColors.red,
     RescueServiceType.towing,
   ),
   maintenance(
     'Đặt lịch\nbảo dưỡng',
     Icons.build_rounded,
-    HomeColors.text,
+    HomeColors.red,
     RescueServiceType.maintenance,
   ),
-  all('Tất cả\ndịch vụ', Icons.grid_view_rounded, HomeColors.primary, null),
+  all('Tất cả\ndịch vụ', Icons.grid_view_rounded, HomeColors.red, null),
   night(
     'Cứu hộ đêm\n24/7',
     Icons.nights_stay_rounded,
@@ -103,7 +103,7 @@ class ServiceTile extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onTap,
-    this.color = HomeColors.primary,
+    this.color = HomeColors.red,
   });
   final String label;
   final IconData icon;

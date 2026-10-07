@@ -9,8 +9,8 @@ import '../router/main_navigation.dart';
 
 abstract final class ServiceColors {
   static const orange = HomeColors.primary;
-  static const gold = Color(0xFFA66B00);
-  static const goldBackground = Color(0xFFFFF3D6);
+  static const gold = HomeColors.primary;
+  static const goldBackground = HomeColors.selected;
   static const surface = HomeColors.surface;
   static const muted = HomeColors.secondary;
   static const navy = HomeColors.selected;

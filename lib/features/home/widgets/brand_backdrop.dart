@@ -2,19 +2,28 @@ import 'package:flutter/material.dart';
 
 import '../theme/home_theme.dart';
 
-/// Soft orange curves shared by the home and account headers.
+/// Soft curves shared by the home and account headers.
 class BrandBackdrop extends StatelessWidget {
-  const BrandBackdrop({super.key, required this.child});
+  const BrandBackdrop({
+    super.key,
+    required this.child,
+    this.colors = const [
+      HomeColors.surface,
+      HomeColors.background,
+      HomeColors.background,
+    ],
+  });
   final Widget child;
+  final List<Color> colors;
 
   @override
   Widget build(BuildContext context) => ClipRect(
     child: DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFFFD6C2), Color(0xFFFFEEE6), HomeColors.background],
+          colors: colors,
         ),
       ),
       child: Stack(

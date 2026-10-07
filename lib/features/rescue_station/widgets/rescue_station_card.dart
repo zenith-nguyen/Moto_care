@@ -100,7 +100,7 @@ class RescueStationCard extends ConsumerWidget {
                 style: TextStyle(
                   color: station.isOpen
                       ? const Color(0xFF218653)
-                      : const Color(0xFFC53935),
+                      : ServiceColors.orange,
                 ),
               ),
             ],

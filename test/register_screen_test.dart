@@ -22,7 +22,7 @@ void main() {
 
       expect(find.text('Đăng ký tài khoản MotoCare'), findsOneWidget);
       expect(
-        find.image(const AssetImage('assets/images/logo-motocare.png')),
+        find.image(const AssetImage('assets/images/Logo_motocare.png')),
         findsOneWidget,
       );
       expect(find.text('+84'), findsOneWidget);

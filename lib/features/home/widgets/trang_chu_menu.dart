@@ -70,9 +70,7 @@ class TrangChuMenu extends StatelessWidget {
                               children: [
                                 Icon(
                                   destination.icon,
-                                  color: light
-                                      ? HomeColors.primary
-                                      : const Color(0xFFFF251E),
+                                  color: HomeColors.primary,
                                   size: 25,
                                 ),
                                 const SizedBox(width: 16),
@@ -141,7 +139,7 @@ class _CloseIconPainter extends CustomPainter {
     canvas.drawLine(
       Offset(2, size.height - 2),
       Offset(size.width - 2, 2),
-      paint..color = light ? HomeColors.primary : const Color(0xFFFF251E),
+      paint..color = HomeColors.primary,
     );
   }
 

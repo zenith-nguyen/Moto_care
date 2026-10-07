@@ -15,6 +15,13 @@ import 'package:moto_care/features/home/theme/home_theme.dart';
 import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
 import 'package:moto_care/features/location/data/mock_incident_places.dart';
 import 'package:moto_care/features/location/providers/incident_location_provider.dart';
+import 'package:moto_care/features/location/models/place_suggestion.dart';
+import 'package:moto_care/features/location/services/device_location_service.dart';
+import 'package:moto_care/features/location/services/places_service.dart';
+import 'package:moto_care/features/location/widgets/incident_google_map.dart';
+
+import 'fixtures/location_fixture.dart';
+
 import 'package:moto_care/features/location/screens/incident_location_search_screen.dart';
 import 'package:moto_care/features/location/screens/incident_map_picker_screen.dart';
 import 'package:moto_care/features/profile/models/user_profile.dart';
@@ -48,12 +55,35 @@ Future<GoRouter> _open(
   bool active = false,
 }) async {
   final router = createAppRouter();
+  final map = TestIncidentMap();
+  final places = TestPlacesService(
+    search: (query) async => query == 'dao duy tu'
+        ? [
+            PlaceSuggestion(
+              id: 'ueh',
+              title: mockRecentIncidentPlaces[1].name,
+              address: mockRecentIncidentPlaces[1].location.address,
+            ),
+          ]
+        : [],
+    lookup: (id) async => RescueLocation(
+      address: mockRecentIncidentPlaces[1].location.address,
+      latitude: 10.762,
+      longitude: 106.666,
+    ),
+  );
   addTearDown(router.dispose);
   await tester.pumpWidget(
     ProviderScope(
       key: UniqueKey(),
       overrides: [
         initialRescueLocationProvider.overrideWithValue(saved),
+        recentIncidentPlacesProvider.overrideWithValue(
+          mockRecentIncidentPlaces,
+        ),
+        deviceLocationProvider.overrideWithValue(() async => current),
+        placesServiceProvider.overrideWithValue(places),
+        incidentMapBuilderProvider.overrideWithValue(map.build),
         incidentCurrentLocationProvider.overrideWithValue(current),
         initialVehiclesProvider.overrideWithValue(hasVehicle ? [_vehicle] : []),
         initialRescueOrdersProvider.overrideWithValue(
@@ -92,16 +122,35 @@ Finder get _submit => find.byKey(const ValueKey('incident-request-submit'));
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
   if (finder.evaluate().isEmpty) {
+    final searchScroll = find.descendant(
+      of: find.byKey(const ValueKey('incident-search-scroll')),
+      matching: find.byType(Scrollable),
+    );
+    if (searchScroll.evaluate().isNotEmpty) {
+      tester.state<ScrollableState>(searchScroll.first).position.jumpTo(0);
+      await tester.pump();
+    }
     await tester.scrollUntilVisible(
       finder,
       100,
-      scrollable: find
-          .byWidgetPredicate(
-            (widget) =>
-                widget is Scrollable &&
-                widget.axisDirection == AxisDirection.down,
-          )
-          .last,
+      scrollable:
+          find
+              .byKey(const ValueKey('incident-search-scroll'))
+              .evaluate()
+              .isNotEmpty
+          ? find
+                .descendant(
+                  of: find.byKey(const ValueKey('incident-search-scroll')),
+                  matching: find.byType(Scrollable),
+                )
+                .first
+          : find
+                .byWidgetPredicate(
+                  (widget) =>
+                      widget is Scrollable &&
+                      widget.axisDirection == AxisDirection.down,
+                )
+                .last,
     );
   }
   await tester.ensureVisible(finder);
@@ -113,7 +162,7 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 
 void main() {
   testWidgets(
-    'Search shows Be-style fields, shortcuts, sample history and light tabs',
+    'Search shows fields, shortcuts, injected history and light tabs',
     (tester) async {
       await _open(tester);
       expect(find.byType(IncidentLocationSearchScreen), findsOneWidget);
@@ -144,10 +193,11 @@ void main() {
   );
 
   testWidgets(
-    'Search filters Vietnamese names without accents and opens the selected result',
+    'Search sends an accentless query to Places and opens the resolved result',
     (tester) async {
       final router = await _open(tester);
       await tester.enterText(_address, 'dao duy tu');
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('Đại học Kinh tế UEH – Cổng Đào Duy Từ'),
@@ -241,7 +291,7 @@ void main() {
   );
 
   testWidgets(
-    'Panning updates the sample address while the SOS pin stays fixed; GPS restores the injected location',
+    'Camera panning geocodes the address while the SOS pin stays fixed; GPS restores real coordinates',
     (tester) async {
       await _open(tester, path: '/incident-map-picker', current: _saved);
       final pin = find.byKey(const ValueKey('incident-sos-pin'));
@@ -249,7 +299,7 @@ void main() {
       await tester.dragFrom(const Offset(400, 140), const Offset(150, 120));
       await tester.pumpAndSettle();
       expect(tester.getCenter(pin), before);
-      expect(find.text(mockNearbyIncidentLocations[1].address), findsOneWidget);
+      expect(find.text(testPannedAddress), findsOneWidget);
       expect(_state(tester).read(rescueLocationProvider), isNull);
       await _tap(tester, find.byKey(const ValueKey('incident-map-gps')));
       expect(find.text(_saved.address), findsOneWidget);
@@ -320,6 +370,8 @@ void main() {
         find.byKey(const ValueKey('incident-request-service')),
       );
       await _tap(tester, find.text('Hết xăng').last);
+      expect(find.text('Giao 2 Lít A95 (45k)'), findsOneWidget);
+      await _tap(tester, find.text('Giao 4 Lít A95 (85k)'));
       final description = find.byKey(
         const ValueKey('incident-request-description'),
       );
@@ -331,6 +383,8 @@ void main() {
       expect(orders, hasLength(1));
       final order = orders.single;
       expect(order.serviceType, RescueServiceType.outOfFuel);
+      expect(order.serviceOption, 'Giao 4 Lít A95 (85k)');
+      expect(order.totalPrice, 85000);
       expect(order.userVehicle, 'Honda Vision (59-A1 123.45)');
       expect(order.locationAddress, '118 Bùi Văn Ba, Tân Thuận, Q.7');
       expect(order.locationLandmark, 'Cạnh cổng trường');

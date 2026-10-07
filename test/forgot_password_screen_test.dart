@@ -27,7 +27,7 @@ void main() {
     expect(find.text('Quên mật khẩu'), findsOneWidget);
     expect(find.text('Quên mật khẩu?'), findsOneWidget);
     expect(
-      find.image(const AssetImage('assets/images/logo-motocare.png')),
+      find.image(const AssetImage('assets/images/Logo_motocare.png')),
       findsOneWidget,
     );
     expect(

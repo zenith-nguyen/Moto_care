@@ -10,8 +10,13 @@ import 'package:moto_care/features/home/models/home_user.dart';
 import 'package:moto_care/features/home/screens/home_screen.dart';
 import 'package:moto_care/features/home/screens/trang_chu.dart';
 import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
+import 'package:moto_care/features/home/widgets/home_header.dart';
 import 'package:moto_care/features/home/widgets/home_service_grid.dart';
+import 'package:moto_care/features/home/widgets/promo_banner_slider.dart';
 import 'package:moto_care/features/services/screens/services_screen.dart';
+import 'package:moto_care/features/partner/screens/partner_list_screen.dart';
+
+import 'fixtures/marketplace_router_fixture.dart';
 
 const _user = HomeUser(displayName: 'Nguyễn Văn An', memberId: '15335206');
 
@@ -20,14 +25,18 @@ Future<void> _openHome(
   HomeUser? user = _user,
   ValueChanged<HomeDestination>? onSelected,
 }) async {
+  final router = marketplaceTestRouter(
+    TrangChu(user: user, onDestinationSelected: onSelected),
+  );
+  addTearDown(router.dispose);
   await tester.pumpWidget(
     ProviderScope(
-      child: MaterialApp(
+      child: MaterialApp.router(
         theme: AppTheme.light,
         locale: const Locale('vi'),
         supportedLocales: const [Locale('vi')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        home: TrangChu(user: user, onDestinationSelected: onSelected),
+        routerConfig: router,
       ),
     ),
   );
@@ -42,6 +51,26 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  testWidgets('Home promo banners only display and swipe without navigation', (
+    tester,
+  ) async {
+    final selections = <HomeDestination>[];
+    await _openHome(tester, onSelected: selections.add);
+    final slider = find.byType(PromoBannerSlider);
+    await tester.ensureVisible(slider);
+    await tester.tap(find.image(const AssetImage('assets/images/Banner1.png')));
+    await tester.pumpAndSettle();
+    await tester.drag(slider, const Offset(-500, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.image(const AssetImage('assets/images/Banner2.png')));
+    await tester.pumpAndSettle();
+
+    expect(selections, isEmpty);
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(SnackBar), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Home route uses the new screen and receives account data', (
     tester,
   ) async {
@@ -78,17 +107,19 @@ void main() {
   ) async {
     await _openHome(tester, user: null);
     expect(find.text('Chào bạn'), findsOneWidget);
-    expect(find.text('Chưa có hạng'), findsOneWidget);
+    expect(find.text('Chưa có hạng'), findsNothing);
     expect(find.text('Chọn xe cần cứu hộ'), findsOneWidget);
     expect(find.text('Vị trí sự cố: Chưa chọn vị trí'), findsOneWidget);
     await tester.ensureVisible(find.text('0 xu'));
     expect(find.text('0 xu'), findsOneWidget);
   });
 
-  testWidgets('Home removes the menu button and drawer', (tester) async {
+  testWidgets('Home removes menu, drawer and search actions', (tester) async {
     await _openHome(tester);
     expect(find.byTooltip('Mở menu'), findsNothing);
     expect(find.byIcon(Icons.menu_rounded), findsNothing);
+    expect(find.byTooltip('Tìm kiếm'), findsNothing);
+    expect(find.byIcon(Icons.search_rounded), findsNothing);
     expect(tester.widget<Scaffold>(find.byType(Scaffold)).endDrawer, isNull);
   });
 
@@ -123,7 +154,7 @@ void main() {
   );
 
   testWidgets(
-    'Club, offers, tips and charging dispatch their existing features',
+    'Club, offers and tips dispatch features while charging opens the partner list',
     (tester) async {
       final selections = <HomeDestination>[];
       await _openHome(tester, onSelected: selections.add);
@@ -135,42 +166,44 @@ void main() {
         HomeDestination.membership,
         HomeDestination.vouchers,
         HomeDestination.emergencyTips,
-        HomeDestination.nearbyServices,
       ]);
-    },
-  );
-
-  testWidgets(
-    'Search starts empty and only finds services, including unaccented input',
-    (tester) async {
-      final selections = <HomeDestination>[];
-      await _openHome(tester, onSelected: selections.add);
-      await _tap(tester, find.byTooltip('Tìm kiếm'));
-      expect(find.text('Nhập tên dịch vụ bạn cần tìm.'), findsOneWidget);
-      expect(find.byType(ListTile), findsNothing);
-      await tester.enterText(find.byType(TextField), 'tram sac');
-      await tester.pumpAndSettle();
       expect(find.text('Trạm sạc gần nhất'), findsOneWidget);
-      expect(find.text('Thông tin cá nhân'), findsNothing);
-      expect(find.text('Tích điểm & Hạng thành viên'), findsNothing);
-      expect(find.text('Kho ưu đãi'), findsNothing);
-      await _tap(tester, find.text('Trạm sạc gần nhất'));
-      expect(selections, [HomeDestination.nearbyServices]);
-      expect(find.byType(TextField), findsNothing);
+      expect(find.byType(PartnerListScreen), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
     },
   );
 
-  testWidgets('Search shows an empty result and resets after clearing', (
+  testWidgets('Home hides the placeholder membership badge', (tester) async {
+    await _openHome(tester);
+    expect(find.text('Chưa có hạng'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(HomeHeader),
+        matching: find.byIcon(Icons.star_rounded),
+      ),
+      findsNothing,
+    );
+    expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('An empty membership label does not leave an empty badge', (
     tester,
   ) async {
-    await _openHome(tester);
-    await _tap(tester, find.byTooltip('Tìm kiếm'));
-    await tester.enterText(find.byType(TextField), 'thông tin cá nhân');
-    await tester.pumpAndSettle();
-    expect(find.text('Không tìm thấy dịch vụ phù hợp.'), findsOneWidget);
-    await _tap(tester, find.byTooltip('Xóa tìm kiếm'));
-    expect(find.text('Nhập tên dịch vụ bạn cần tìm.'), findsOneWidget);
-    expect(find.byType(ListTile), findsNothing);
+    await _openHome(
+      tester,
+      user: const HomeUser(displayName: 'Nguyễn An', membershipLabel: ''),
+    );
+    expect(
+      find.descendant(
+        of: find.byType(HomeHeader),
+        matching: find.byIcon(Icons.star_rounded),
+      ),
+      findsNothing,
+    );
+    expect(find.text('Chào Nguyễn An'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Services tab opens the service catalog', (tester) async {
@@ -189,7 +222,7 @@ void main() {
   });
 
   testWidgets(
-    'Small screen supports large text, services, carousel and search',
+    'Small screen supports large text, services and carousel without search',
     (tester) async {
       tester.view.physicalSize = const Size(320, 568);
       tester.view.devicePixelRatio = 1;
@@ -227,11 +260,15 @@ void main() {
           .position
           .jumpTo(0);
       await tester.pumpAndSettle();
-      await _tap(tester, find.byTooltip('Tìm kiếm'));
-      await tester.enterText(find.byType(TextField), 'bao duong');
-      await tester.pumpAndSettle();
+      expect(find.byTooltip('Tìm kiếm'), findsNothing);
+      await _tap(
+        tester,
+        find.byKey(const ValueKey('home-service-maintenance')),
+      );
       expect(find.text('Đặt lịch bảo dưỡng'), findsOneWidget);
-      await _tap(tester, find.byTooltip('Quay lại'));
+      expect(find.byType(PartnerListScreen), findsOneWidget);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     },
   );

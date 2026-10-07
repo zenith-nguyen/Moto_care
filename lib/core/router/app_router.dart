@@ -11,12 +11,18 @@ import '../../features/chat/screens/chat_detail_screen.dart';
 import '../../features/chat/screens/tin_nhan_screen.dart';
 import '../../features/home/models/home_user.dart';
 import '../../features/home/models/rescue_location.dart';
-import '../../features/location/screens/incident_location_search_screen.dart';
-import '../../features/location/screens/incident_map_picker_screen.dart';
+import '../../features/location/screens/select_location_screen.dart';
+import '../../features/location/screens/incident_location_screen.dart';
 import '../../features/home/screens/trang_chu.dart';
 import '../../features/help/screens/faq_screen.dart';
 import '../../features/membership/screens/tich_diem_screen.dart';
 import '../../features/partner/screens/dang_ky_tho_screen.dart';
+import '../../features/partner/screens/partner_list_screen.dart';
+import '../../features/partner/screens/partner_detail_screen.dart';
+import '../../features/rescue/models/marketplace_booking.dart';
+import '../../features/rescue/screens/checkout_screen.dart';
+import '../../features/rescue/screens/rescue_tracking_screen.dart';
+import '../../features/rescue/screens/order_tracking_screen.dart';
 import '../../features/places/screens/tram_sac_tiem_sua_screen.dart';
 import '../../features/policy/screens/cam_ket_dich_vu_screen.dart';
 import '../../features/pricing/screens/bang_gia_screen.dart';
@@ -32,6 +38,37 @@ GoRouter createAppRouter() {
   return GoRouter(
     initialLocation: '/',
     routes: [
+      GoRoute(
+        path: '/partners',
+        builder: (context, state) => PartnerListScreen(
+          serviceType: state.uri.queryParameters['service'] ?? 'Tất cả dịch vụ',
+        ),
+      ),
+      GoRoute(
+        path: '/partners/:partnerId',
+        builder: (context, state) => PartnerDetailScreen(
+          partnerId: state.pathParameters['partnerId']!,
+          serviceType: state.uri.queryParameters['service'] ?? 'Tất cả dịch vụ',
+        ),
+      ),
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) => CheckoutScreen(
+          booking: state.extra is MarketplaceBooking
+              ? state.extra as MarketplaceBooking
+              : null,
+        ),
+      ),
+      GoRoute(
+        path: '/order-tracking',
+        builder: (context, state) =>
+            OrderTrackingScreen(orderId: state.uri.queryParameters['id']),
+      ),
+      GoRoute(
+        path: '/rescue-tracking',
+        builder: (context, state) =>
+            RescueTrackingScreen(orderId: state.uri.queryParameters['id']),
+      ),
       GoRoute(path: '/', redirect: (context, state) => '/login'),
       GoRoute(
         path: '/login',
@@ -133,7 +170,8 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/incident-location',
-        builder: (context, state) => IncidentLocationSearchScreen(
+        builder: (context, state) => SelectLocationScreen(
+          returnSelection: state.uri.queryParameters['pick'] == '1',
           initialLocation: state.extra is RescueLocation
               ? state.extra as RescueLocation
               : null,
@@ -141,7 +179,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/incident-map-picker',
-        builder: (context, state) => IncidentMapPickerScreen(
+        builder: (context, state) => IncidentLocationScreen(
           initialLocation: state.extra is RescueLocation
               ? state.extra as RescueLocation
               : null,

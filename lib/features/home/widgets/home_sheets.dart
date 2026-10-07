@@ -9,18 +9,20 @@ import '../providers/home_provider.dart';
 import '../theme/home_theme.dart';
 import 'home_service_grid.dart';
 
-Future<T?> showHomeSheet<T>(BuildContext context, Widget child) =>
-    showModalBottomSheet<T>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: HomeColors.surface,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.9,
-      ),
-      builder: (context) => Theme(data: HomeTheme.light, child: child),
-    );
+Future<T?> showHomeSheet<T>(BuildContext context, Widget child) {
+  final theme = Theme.of(context);
+  return showModalBottomSheet<T>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    backgroundColor: HomeColors.surface,
+    constraints: BoxConstraints(
+      maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+    ),
+    builder: (_) => Theme(data: theme, child: child),
+  );
+}
 
 class HomeSheetContent extends StatelessWidget {
   const HomeSheetContent({
@@ -92,9 +94,9 @@ class HomeVehicleSheet extends ConsumerWidget {
         for (final vehicle in vehicles)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(
+            leading: Icon(
               Icons.two_wheeler_rounded,
-              color: HomeColors.primary,
+              color: Theme.of(context).colorScheme.primary,
             ),
             title: Text(
               vehicle.name,
@@ -106,7 +108,7 @@ class HomeVehicleSheet extends ConsumerWidget {
                   ? Icons.check_circle_rounded
                   : Icons.radio_button_unchecked_rounded,
               color: vehicle.isDefault
-                  ? HomeColors.primary
+                  ? Theme.of(context).colorScheme.primary
                   : HomeColors.secondary,
             ),
             onTap: () => Navigator.pop(context, vehicle.id),
@@ -247,14 +249,14 @@ class _HomeRescueConfirmationSheetState
           const SizedBox(height: 16),
           Text(
             _error ?? 'Bạn đang có đơn cứu hộ. Hãy kiểm tra trong Hoạt động trước khi tạo đơn mới.',
-            style: const TextStyle(color: HomeColors.primary),
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ],
         if (vehicle == null || location == null) ...[
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Vui lòng chọn xe và vị trí ở Trang chủ trước khi xác nhận.',
-            style: TextStyle(color: HomeColors.primary),
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ],
         const SizedBox(height: 24),
@@ -281,7 +283,7 @@ class _ConfirmationInfo extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Icon(icon, color: HomeColors.primary),
+      Icon(icon, color: Theme.of(context).colorScheme.primary),
       const SizedBox(width: 12),
       Expanded(
         child: Column(

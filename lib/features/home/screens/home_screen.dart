@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/widgets/service_scaffold.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../profile/models/user_profile.dart';
 import '../../profile/providers/profile_provider.dart';
@@ -18,6 +17,7 @@ import '../widgets/home_header.dart';
 import '../widgets/home_sections.dart';
 import '../widgets/home_service_grid.dart';
 import '../widgets/home_sheets.dart';
+import '../widgets/promo_banner_slider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, this.user, this.onDestinationSelected});
@@ -97,16 +97,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Future<void> _search(BuildContext context) async {
-    final service = await showSearch<HomeService>(
-      context: context,
-      delegate: _HomeSearchDelegate(),
-    );
-    if (context.mounted && service != null) {
-      await _selectService(context, service);
-    }
-  }
-
   Future<void> _changeVehicle(BuildContext context) async {
     final id = await showHomeSheet<String>(context, const HomeVehicleSheet());
     if (!mounted || id == null) return;
@@ -134,22 +124,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Future<void> _selectService(BuildContext context, HomeService service) async {
-    if (service == HomeService.charging) {
-      _selectDestination(HomeDestination.nearbyServices);
-      return;
-    }
-    if (service == HomeService.all) {
-      _selectDestination(HomeDestination.services);
-      return;
-    }
-    final order = await showHomeSheet<RescueOrder>(
-      context,
-      HomeRescueConfirmationSheet(service: service),
-    );
-    if (!context.mounted || order == null) return;
-    _showOrderNotice(context, order);
-  }
+  void _selectService(BuildContext context, HomeService service) =>
+      context.push('/partners?service=${Uri.encodeComponent(service.title)}');
 
   void _showStation(BuildContext context, RescueStation station) {
     showHomeSheet<void>(
@@ -204,7 +180,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: Theme(
-        data: HomeTheme.light,
+        data: HomeTheme.red,
         child: Builder(
           builder: (context) => Scaffold(
             backgroundColor: HomeColors.background,
@@ -217,26 +193,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     HomeHeader(
                       name: name == null || name.isEmpty ? 'bạn' : name,
-                      tier: user?.membershipLabel ?? 'Chưa có hạng',
+                      tier: user?.membershipLabel ?? '',
                       address: location?.address ?? 'Chưa chọn vị trí',
                       vehicle: vehicle == null
                           ? 'Chọn xe cần cứu hộ'
                           : '${vehicle.name} (${vehicle.licensePlate})',
                       onLocation: () => _changeLocation(context),
                       onVehicle: () => _changeVehicle(context),
-                      onSearch: () => _search(context),
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 22, 16, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          const PromoBannerSlider(),
+                          const SizedBox(height: 20),
                           HomeServiceGrid(
                             onSelected: (service) =>
                                 _selectService(context, service),
                           ),
                           const SizedBox(height: 22),
                           HomeClubCard(
+                            accentColor: HomeColors.red,
+                            gradientColors: const [
+                              HomeColors.tint,
+                              HomeColors.selected,
+                            ],
                             points: user?.rewardPoints ?? 0,
                             onPressed: () =>
                                 _selectDestination(HomeDestination.membership),
@@ -268,74 +250,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             bottomNavigationBar: HomeBottomNavigation(
               light: true,
+              selectedIconColor: HomeColors.red,
+              selectedBackgroundColor: HomeColors.redSelected,
               selectedDestination: HomeDestination.home,
               onSelected: _selectDestination,
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-class _HomeSearchDelegate extends SearchDelegate<HomeService> {
-  _HomeSearchDelegate() : super(searchFieldLabel: 'Tìm dịch vụ MotoCare');
-
-  @override
-  ThemeData appBarTheme(BuildContext context) => HomeTheme.light;
-
-  @override
-  List<Widget> buildActions(BuildContext context) => [
-    IconButton(
-      tooltip: 'Xóa tìm kiếm',
-      onPressed: () => query = '',
-      icon: const Icon(Icons.clear_rounded),
-    ),
-  ];
-
-  @override
-  Widget buildLeading(BuildContext context) => IconButton(
-    tooltip: 'Quay lại',
-    onPressed: () => Navigator.pop(context),
-    icon: const Icon(Icons.arrow_back_rounded),
-  );
-
-  @override
-  Widget buildResults(BuildContext context) => _matches(context);
-
-  @override
-  Widget buildSuggestions(BuildContext context) => _matches(context);
-
-  Widget _matches(BuildContext context) {
-    final keyword = normalizeServiceSearch(query);
-    if (keyword.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            'Nhập tên dịch vụ bạn cần tìm.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: HomeColors.secondary),
-          ),
-        ),
-      );
-    }
-    final matches = HomeService.values
-        .where((item) => normalizeServiceSearch(item.title).contains(keyword))
-        .toList();
-    if (matches.isEmpty) {
-      return const Center(child: Text('Không tìm thấy dịch vụ phù hợp.'));
-    }
-    return ListView.builder(
-      itemCount: matches.length,
-      itemBuilder: (context, index) {
-        final item = matches[index];
-        return ListTile(
-          leading: Icon(item.icon, color: HomeColors.primary),
-          title: Text(item.title),
-          onTap: () => close(context, item),
-        );
-      },
     );
   }
 }

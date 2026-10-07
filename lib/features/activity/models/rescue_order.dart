@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import 'rescue_order_item.dart';
+export 'rescue_order_item.dart';
+
 enum RescueOrderStatus {
   pending('pending', 'Đã gửi yêu cầu'),
   enRoute('en_route', 'Đang đến'),
@@ -64,7 +67,15 @@ class RescueOrder {
     this.locationLongitude,
     this.locationLandmark = '',
     this.incidentDescription = '',
-  }) {
+    this.serviceOption = '',
+    this.vehicleType = '',
+    this.incidentPhotoBytes,
+    this.partnerId,
+    this.partnerName,
+    this.paymentMethod = RescuePaymentMethod.cash,
+    this.voucherCode = '',
+    List<RescueOrderItem> items = const [],
+  }) : items = List.unmodifiable(items) {
     if (basePrice < 0 ||
         extraPartPrice < 0 ||
         discount < 0 ||
@@ -72,6 +83,11 @@ class RescueOrder {
         travelFee < 0 ||
         travelFee > basePrice) {
       throw ArgumentError('Invalid order prices');
+    }
+    if (items.isNotEmpty &&
+        basePrice !=
+            items.fold<int>(0, (sum, item) => sum + item.total) + travelFee) {
+      throw ArgumentError('Order items do not match the subtotal');
     }
     if (rating != null && (!rating!.isFinite || rating! < 0 || rating! > 5)) {
       throw ArgumentError.value(rating, 'rating', 'Must be between 0 and 5');
@@ -98,6 +114,15 @@ class RescueOrder {
   final String locationAddress;
   final String locationLandmark;
   final String incidentDescription;
+  final String serviceOption;
+  final String vehicleType;
+  final String? partnerId;
+  final String? partnerName;
+  final RescuePaymentMethod paymentMethod;
+  final String voucherCode;
+  final List<RescueOrderItem> items;
+  // Incident photos stay in memory for the current session.
+  final Uint8List? incidentPhotoBytes;
   final String? providerName;
   final String? providerPhone;
   final String? providerPlate;
@@ -133,6 +158,14 @@ class RescueOrder {
         locationAddress: locationAddress,
         locationLandmark: locationLandmark,
         incidentDescription: incidentDescription,
+        serviceOption: serviceOption,
+        vehicleType: vehicleType,
+        partnerId: partnerId,
+        partnerName: partnerName,
+        paymentMethod: paymentMethod,
+        voucherCode: voucherCode,
+        items: items,
+        incidentPhotoBytes: incidentPhotoBytes,
         providerName: providerName,
         providerPhone: providerPhone,
         providerPlate: providerPlate,
@@ -157,6 +190,20 @@ class RescueOrder {
     locationAddress: json['locationAddress'] as String,
     locationLandmark: json['locationLandmark'] as String? ?? '',
     incidentDescription: json['incidentDescription'] as String? ?? '',
+    serviceOption: json['serviceOption'] as String? ?? '',
+    vehicleType: json['vehicleType'] as String? ?? '',
+    partnerId: json['partnerId'] as String?,
+    partnerName: json['partnerName'] as String?,
+    paymentMethod: RescuePaymentMethod.fromValue(
+      json['paymentMethod'] as String? ?? 'cash',
+    ),
+    voucherCode: json['voucherCode'] as String? ?? '',
+    items: (json['items'] as List<dynamic>? ?? const [])
+        .map(
+          (item) =>
+              RescueOrderItem.fromJson(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList(),
     providerName: json['providerName'] as String?,
     providerPhone: json['providerPhone'] as String?,
     providerPlate: json['providerPlate'] as String?,
@@ -181,6 +228,13 @@ class RescueOrder {
     'locationAddress': locationAddress,
     'locationLandmark': locationLandmark,
     'incidentDescription': incidentDescription,
+    'serviceOption': serviceOption,
+    'vehicleType': vehicleType,
+    'partnerId': partnerId,
+    'partnerName': partnerName,
+    'paymentMethod': paymentMethod.value,
+    'voucherCode': voucherCode,
+    'items': items.map((item) => item.toJson()).toList(),
     'providerName': providerName,
     'providerPhone': providerPhone,
     'providerPlate': providerPlate,

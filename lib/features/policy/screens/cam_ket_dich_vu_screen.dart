@@ -80,9 +80,7 @@ class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
       bottomBar: SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFFE74C3C),
-          ),
+          style: FilledButton.styleFrom(backgroundColor: ServiceColors.orange),
           onPressed: _submitted || recent.isEmpty ? null : _submit,
           icon: const Icon(Icons.send_outlined),
           label: Text(

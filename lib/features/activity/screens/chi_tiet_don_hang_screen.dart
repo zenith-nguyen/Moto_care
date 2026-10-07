@@ -39,6 +39,16 @@ class ChiTietDonHangScreen extends ConsumerWidget {
             icon: const Icon(Icons.arrow_back_rounded),
           ),
           title: const Text('Chi tiết đơn hàng'),
+          actions: [
+            if (order?.status.isActive == true)
+              IconButton(
+                tooltip: 'Theo dõi lộ trình thợ',
+                onPressed: () => context.push(
+                  '/order-tracking?id=${Uri.encodeComponent(order!.id)}',
+                ),
+                icon: const Icon(Icons.route_rounded, color: ActivityTheme.red),
+              ),
+          ],
         ),
         body: SafeArea(
           child: Center(
@@ -172,6 +182,18 @@ class _OrderInvoice extends StatelessWidget {
             ),
             const Divider(height: 32, color: Color(0xFFDDDDDD)),
             Text('Dịch vụ: ${order.serviceType.label}'),
+            if (order.partnerName != null) ...[
+              const SizedBox(height: 8),
+              Text('Tiệm: ${order.partnerName}'),
+              const SizedBox(height: 8),
+              Text('Thanh toán: ${order.paymentMethod.label}'),
+              for (final item in order.items) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${item.name} × ${item.quantity} • ${formatOrderPrice(item.total)}',
+                ),
+              ],
+            ],
             const SizedBox(height: 8),
             Text('Xe: ${order.userVehicle}'),
             const SizedBox(height: 8),
@@ -192,7 +214,7 @@ class _OrderInvoice extends StatelessWidget {
               value: formatOrderPrice(order.travelFee),
             ),
             _CostLine(
-              label: 'Phí công sửa',
+              label: order.items.isEmpty ? 'Phí công sửa' : 'Tiền dịch vụ',
               value: formatOrderPrice(order.laborFee),
             ),
             _CostLine(

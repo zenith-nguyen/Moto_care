@@ -89,6 +89,17 @@ class ActivityController extends Notifier<ActivityState> {
     double? locationLongitude,
     String locationLandmark = '',
     String incidentDescription = '',
+    String serviceOption = '',
+    String vehicleType = '',
+    Uint8List? incidentPhotoBytes,
+    int? basePrice,
+    int? travelFee,
+    int discount = 0,
+    String? partnerId,
+    String? partnerName,
+    RescuePaymentMethod paymentMethod = RescuePaymentMethod.cash,
+    String voucherCode = '',
+    List<RescueOrderItem> items = const [],
   }) {
     if (state.activeOrders.isNotEmpty) {
       throw StateError('An active rescue order already exists');
@@ -97,6 +108,7 @@ class ActivityController extends Notifier<ActivityState> {
       throw ArgumentError('Vehicle and location are required');
     }
     final now = DateTime.now();
+    final price = basePrice ?? mockBasePrice(serviceType);
     final sequence = (++_sequence).toString().padLeft(3, '0');
     final order = RescueOrder(
       id: 'order-${now.microsecondsSinceEpoch}-$sequence',
@@ -109,10 +121,20 @@ class ActivityController extends Notifier<ActivityState> {
       locationAddress: locationAddress.trim(),
       locationLandmark: locationLandmark.trim(),
       incidentDescription: incidentDescription.trim(),
-      basePrice: mockBasePrice(serviceType),
-      travelFee: 30000,
+      serviceOption: serviceOption.trim(),
+      vehicleType: vehicleType.trim(),
+      incidentPhotoBytes: incidentPhotoBytes == null
+          ? null
+          : Uint8List.fromList(incidentPhotoBytes).asUnmodifiableView(),
+      basePrice: price,
+      travelFee: travelFee ?? (price < 30000 ? price : 30000),
       extraPartPrice: 0,
-      discount: 0,
+      discount: discount,
+      partnerId: partnerId,
+      partnerName: partnerName,
+      paymentMethod: paymentMethod,
+      voucherCode: voucherCode,
+      items: items,
       createdAt: now,
       locationLatitude: locationLatitude,
       locationLongitude: locationLongitude,

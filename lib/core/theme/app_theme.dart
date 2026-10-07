@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 import '../../features/home/theme/home_theme.dart';
 
 abstract final class AppTheme {
-  static const primary = HomeColors.primary;
-  static const link = HomeColors.primary;
+  static const primary = HomeColors.red;
+  static const link = HomeColors.red;
   static const mutedText = HomeColors.secondary;
 
-  static final light = HomeTheme.light.copyWith(
+  static final light = HomeTheme.red.copyWith(
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: HomeColors.surface,
-      hintStyle: const TextStyle(color: Color(0xFF707070), fontSize: 18),
+      hintStyle: const TextStyle(color: HomeColors.secondary, fontSize: 18),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -41,7 +41,7 @@ abstract final class AppTheme {
         foregroundColor: Colors.white,
         minimumSize: const Size.fromHeight(48),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         textStyle: const TextStyle(
           fontFamily: 'Roboto',
           fontSize: 18,

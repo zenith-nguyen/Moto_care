@@ -198,7 +198,7 @@ class _PlaceCard extends ConsumerWidget {
                 style: TextStyle(
                   color: place.isOpen
                       ? const Color(0xFF69D49B)
-                      : const Color(0xFFFF9292),
+                      : ServiceColors.orange,
                 ),
               ),
               Row(

@@ -1,14 +1,36 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../home/models/rescue_location.dart';
-import '../data/mock_incident_places.dart';
+import '../../home/providers/home_provider.dart';
+import '../models/incident_place.dart';
+export '../models/incident_place.dart';
 
-/// Replace with a device location result when GPS and geocoding are connected.
-/// Demo addresses deliberately have no fabricated GPS coordinates.
+/// Seed an address draft without inventing device coordinates.
 final incidentCurrentLocationProvider = Provider<RescueLocation>(
-  (ref) => mockCurrentIncidentLocation,
+  (ref) =>
+      ref.watch(rescueLocationProvider) ?? const RescueLocation(address: ''),
+);
+final initialIncidentHistoryProvider = Provider<List<IncidentPlace>>(
+  (ref) => [],
+);
+final incidentHistoryProvider =
+    NotifierProvider<IncidentHistoryController, List<IncidentPlace>>(
+      IncidentHistoryController.new,
+    );
+final recentIncidentPlacesProvider = Provider<List<IncidentPlace>>(
+  (ref) => ref.watch(incidentHistoryProvider),
 );
 
-final recentIncidentPlacesProvider = Provider<List<IncidentPlace>>(
-  (ref) => mockRecentIncidentPlaces,
-);
+class IncidentHistoryController extends Notifier<List<IncidentPlace>> {
+  @override
+  List<IncidentPlace> build() =>
+      List.unmodifiable(ref.read(initialIncidentHistoryProvider));
+  void remember(RescueLocation location) {
+    state = List.unmodifiable(
+      [
+        (name: location.address, location: location),
+        ...state.where((place) => place.location.address != location.address),
+      ].take(6),
+    );
+  }
+}

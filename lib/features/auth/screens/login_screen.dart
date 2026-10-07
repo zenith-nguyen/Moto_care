@@ -33,8 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
             final horizontalPadding = constraints.maxWidth > 576
                 ? (constraints.maxWidth - 480) / 2
                 : (constraints.maxWidth * 0.09).clamp(24.0, 48.0);
-            final headerHeight = (MediaQuery.sizeOf(context).height * 0.25)
-                .clamp(180.0, 240.0);
             return SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: ConstrainedBox(
@@ -42,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(
                     horizontalPadding,
-                    28,
+                    0,
                     horizontalPadding,
                     64,
                   ),
@@ -53,39 +51,29 @@ class _LoginScreenState extends State<LoginScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          _LoginHeader(height: headerHeight),
+                          const SizedBox(height: 40),
+                          const _LoginHeader(),
+                          const SizedBox(height: 32),
                           _buildForm(),
                         ],
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 48),
-                        child: Column(
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 2,
                           children: [
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 2,
-                              children: [
-                                const Text(
-                                  'Chưa có tài khoản?',
-                                  style: TextStyle(
-                                    color: AppTheme.mutedText,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => context.push('/register'),
-                                  child: const Text('Đăng ký'),
-                                ),
-                              ],
+                            const Text(
+                              'Chưa có tài khoản?',
+                              style: TextStyle(
+                                color: AppTheme.mutedText,
+                                fontSize: 16,
+                              ),
                             ),
                             TextButton(
-                              onPressed: _submit,
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppTheme.mutedText,
-                                textStyle: const TextStyle(fontSize: 12),
-                              ),
-                              child: const Text('[DEV] Vào nhanh Trang chủ'),
+                              onPressed: () => context.push('/register'),
+                              child: const Text('Đăng ký'),
                             ),
                           ],
                         ),
@@ -183,26 +171,17 @@ class _LoginScreenState extends State<LoginScreen> {
 }
 
 class _LoginHeader extends StatelessWidget {
-  const _LoginHeader({required this.height});
-
-  final double height;
+  const _LoginHeader();
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 48),
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Image.asset(
-            'assets/images/logo-motocare.png',
-            width: 112,
-            height: 112,
-            fit: BoxFit.contain,
-            semanticLabel: 'Logo Moto Care',
-          ),
-        ),
+    return Center(
+      child: Image.asset(
+        'assets/images/Logo_motocare.png',
+        width: 150,
+        height: 150,
+        fit: BoxFit.contain,
+        semanticLabel: 'Logo Moto Care',
       ),
     );
   }

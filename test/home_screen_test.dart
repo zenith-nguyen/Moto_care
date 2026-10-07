@@ -16,6 +16,13 @@ import 'package:moto_care/features/home/widgets/home_service_grid.dart';
 import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
 import 'package:moto_care/features/profile/models/user_profile.dart';
 import 'package:moto_care/features/profile/providers/profile_provider.dart';
+import 'package:moto_care/features/partner/screens/partner_list_screen.dart';
+import 'package:moto_care/features/partner/models/marketplace_catalog.dart';
+import 'package:moto_care/features/rescue/screens/checkout_screen.dart';
+import 'package:moto_care/features/location/services/device_location_service.dart';
+
+import 'fixtures/marketplace_router_fixture.dart';
+
 import 'package:moto_care/features/rescue_station/providers/rescue_station_provider.dart';
 import 'package:moto_care/features/vehicle/models/vehicle.dart';
 import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
@@ -53,8 +60,15 @@ Future<ProviderContainer> _open(
   bool routed = false,
   ValueChanged<HomeDestination>? onSelected,
 }) async {
-  final router = routed ? createAppRouter() : null;
-  if (router != null) addTearDown(router.dispose);
+  final router = routed
+      ? createAppRouter()
+      : marketplaceTestRouter(
+          HomeScreen(
+            user: const HomeUser(displayName: 'Tên cũ', memberId: 'api-user'),
+            onDestinationSelected: onSelected,
+          ),
+        );
+  addTearDown(router.dispose);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -71,31 +85,21 @@ Future<ProviderContainer> _open(
           hasLocation ? _location : null,
         ),
         if (!active) initialRescueOrdersProvider.overrideWithValue([]),
+        deviceLocationProvider.overrideWithValue(
+          () async => throw const LocationLookupException('GPS không khả dụng'),
+        ),
       ],
-      child: router != null
-          ? MaterialApp.router(
-              theme: AppTheme.light,
-              locale: const Locale('vi'),
-              supportedLocales: const [Locale('vi')],
-              localizationsDelegates: GlobalMaterialLocalizations.delegates,
-              routerConfig: router,
-            )
-          : MaterialApp(
-              theme: AppTheme.light,
-              locale: const Locale('vi'),
-              supportedLocales: const [Locale('vi')],
-              localizationsDelegates: GlobalMaterialLocalizations.delegates,
-              home: HomeScreen(
-                user: const HomeUser(
-                  displayName: 'Tên cũ',
-                  memberId: 'api-user',
-                ),
-                onDestinationSelected: onSelected,
-              ),
-            ),
+      child: MaterialApp.router(
+        theme: AppTheme.light,
+        locale: const Locale('vi'),
+        supportedLocales: const [Locale('vi')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        routerConfig: router,
+        builder: freezeMarketplaceMotion,
+      ),
     ),
   );
-  router?.go('/trang-chu');
+  router.go('/trang-chu');
   await tester.pumpAndSettle();
   return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
 }
@@ -120,25 +124,26 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _homeTop(WidgetTester tester) async {
-  tester
-      .state<ScrollableState>(
-        find
-            .descendant(
-              of: find.byKey(const ValueKey('home-scroll')),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      )
-      .position
-      .jumpTo(0);
-  await tester.pumpAndSettle();
-}
-
 Finder _service(HomeService service) =>
     find.byKey(ValueKey('home-service-${service.name}'));
-Finder get _confirm =>
-    find.widgetWithText(FilledButton, 'Xác nhận tạo yêu cầu');
+Finder get _confirm => find.byKey(const ValueKey('marketplace-place-order'));
+
+Future<void> _checkout(WidgetTester tester, HomeService service) async {
+  await _tap(tester, _service(service));
+  await _tap(tester, find.byKey(const ValueKey('choose-station-dealer')));
+  final type = MarketplaceCatalog.typeFor(service.title);
+  final package = MarketplaceCatalog.packages.firstWhere(
+    (item) => type == null || item.serviceType == type,
+  );
+  await _tap(
+    tester,
+    find.descendant(
+      of: find.byKey(ValueKey('package-${package.id}')),
+      matching: find.byTooltip('Thêm'),
+    ),
+  );
+  await _tap(tester, find.byKey(const ValueKey('marketplace-continue')));
+}
 
 void main() {
   testWidgets('Home watches the shared profile and default vehicle', (
@@ -234,77 +239,76 @@ void main() {
   );
 
   testWidgets(
-    'Confirmation keeps selected vehicle and GPS, stores once and blocks another order',
+    'Marketplace saves selected vehicle and GPS and blocks another order',
     (tester) async {
       final container = await _open(tester);
       container.read(vehicleProvider.notifier).setDefault('feliz');
       await tester.pumpAndSettle();
-      await _tap(tester, _service(HomeService.battery));
+      await _checkout(tester, HomeService.battery);
+      expect(find.byType(CheckoutScreen), findsOneWidget);
       expect(find.text('GPS: 10.757000, 106.668000'), findsOneWidget);
-      expect(find.text('VinFast Feliz (59-B1 678.90)'), findsOneWidget);
       await _tap(tester, _confirm);
-      final orders = container.read(activityProvider).orders;
-      expect(orders, hasLength(1));
-      final order = orders.single;
+      final order = container.read(activityProvider).orders.single;
       expect(order.serviceType, RescueServiceType.batteryJump);
       expect(order.userVehicle, 'VinFast Feliz (59-B1 678.90)');
       expect(order.locationAddress, _location.address);
       expect(order.locationLatitude, _location.latitude);
       expect(order.locationLongitude, _location.longitude);
-      await _tap(tester, _service(HomeService.fuel));
+      expect(order.partnerId, isNotNull);
+      expect(order.items.single.name, 'Kích bình ắc quy');
+      for (var step = 0; step < 3; step++) {
+        await _tap(tester, find.byType(BackButton));
+      }
+      await _checkout(tester, HomeService.fuel);
       expect(tester.widget<FilledButton>(_confirm).onPressed, isNull);
-      await _tap(tester, find.byTooltip('Đóng'));
       expect(container.read(activityProvider).orders, hasLength(1));
     },
   );
 
   testWidgets(
-    'Every rescue service opens its own confirmation and cancel creates no order',
+    'All eight home services open the partner list and back creates no order',
     (tester) async {
       final selected = <HomeDestination>[];
       final container = await _open(tester, onSelected: selected.add);
-      for (final service in HomeService.homeItems.where(
-        (service) => service.orderType != null,
-      )) {
+      for (final service in HomeService.homeItems) {
         await _tap(tester, _service(service));
-        expect(find.text(service.title), findsOneWidget);
-        expect(tester.widget<FilledButton>(_confirm).onPressed, isNotNull);
-        await _tap(tester, find.byTooltip('Đóng'));
+        expect(
+          tester
+              .widget<PartnerListScreen>(find.byType(PartnerListScreen))
+              .serviceType,
+          service.title,
+        );
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
       }
       expect(container.read(activityProvider).orders, isEmpty);
-      await _tap(tester, _service(HomeService.all));
-      expect(selected, [HomeDestination.services]);
+      expect(selected, isEmpty);
     },
   );
 
   for (final missingVehicle in [true, false]) {
     testWidgets(
-      'Missing ${missingVehicle ? 'vehicle' : 'location'} disables confirmation',
+      'Missing ${missingVehicle ? 'vehicle' : 'location'} disables marketplace checkout',
       (tester) async {
         final container = await _open(
           tester,
           hasVehicle: !missingVehicle,
           hasLocation: missingVehicle,
         );
-        await _tap(tester, _service(HomeService.tire));
+        await _checkout(tester, HomeService.tire);
         expect(tester.widget<FilledButton>(_confirm).onPressed, isNull);
         expect(container.read(activityProvider).orders, isEmpty);
-        await _tap(tester, find.byTooltip('Đóng'));
-        if (missingVehicle) {
-          await _homeTop(tester);
-          await _tap(tester, find.text('Chọn xe cần cứu hộ'));
-          expect(find.text('Thêm xe của tôi'), findsOneWidget);
-        }
       },
     );
   }
 
-  testWidgets('Existing active order disables creation', (tester) async {
+  testWidgets('Existing active order disables marketplace booking', (
+    tester,
+  ) async {
     final container = await _open(tester, active: true);
     final count = container.read(activityProvider).orders.length;
-    await _tap(tester, _service(HomeService.tire));
+    await _checkout(tester, HomeService.tire);
     expect(tester.widget<FilledButton>(_confirm).onPressed, isNull);
-    expect(find.textContaining('Bạn đang có đơn cứu hộ.'), findsOneWidget);
     expect(container.read(activityProvider).orders, hasLength(count));
   });
 
@@ -363,7 +367,7 @@ void main() {
       );
       await _tap(tester, find.byTooltip('Đóng'));
       await _tap(tester, find.text('Trang chủ'));
-      await _tap(tester, _service(HomeService.tire));
+      await _checkout(tester, HomeService.tire);
       await tester.ensureVisible(_confirm);
       expect(tester.takeException(), isNull);
     },

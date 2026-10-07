@@ -5,16 +5,14 @@ import '../../home/theme/home_theme.dart';
 abstract final class ProfileTheme {
   static const background = HomeColors.background;
   static const surface = HomeColors.surface;
-  static const red = Color(0xFFFF251E);
+  static const red = HomeColors.red;
   static const orange = HomeColors.primary;
-  static const gold = Color(0xFFA66B00);
+  static const gold = HomeColors.primary;
   static const muted = HomeColors.secondary;
 
   static final light = HomeTheme.light.copyWith(
     scaffoldBackgroundColor: background,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: orange,
-      brightness: Brightness.light,
+    colorScheme: HomeTheme.light.colorScheme.copyWith(
       primary: orange,
       onPrimary: Colors.white,
       surface: surface,

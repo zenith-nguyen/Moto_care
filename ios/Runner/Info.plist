@@ -24,12 +24,18 @@
 		<string>????</string>
 		<key>CFBundleVersion</key>
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
+		<key>GoogleMapsApiKey</key>
+		<string>$(GOOGLE_MAPS_IOS_API_KEY)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>MotoCare sử dụng thư viện ảnh để bạn chọn ảnh đại diện.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>MotoCare sử dụng camera để bạn chụp ảnh hiện trường cần cứu hộ.</string>
 		<key>NSFaceIDUsageDescription</key>
 		<string>MotoCare sử dụng Face ID để xác thực khi bạn chỉnh sửa thông tin cá nhân.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>MotoCare sử dụng vị trí khi bạn đặt cứu hộ để xác định địa chỉ sự cố và tiệm gần bạn.</string>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

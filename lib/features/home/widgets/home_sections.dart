@@ -12,20 +12,22 @@ class HomeClubCard extends StatelessWidget {
     required this.onPressed,
     this.tier = 'Quyền lợi ưu tiên cứu hộ đêm',
     this.actionLabel = 'Quyền lợi ›',
+    this.accentColor = HomeColors.primary,
+    this.gradientColors = const [HomeColors.tint, HomeColors.selected],
   });
   final int points;
   final VoidCallback onPressed;
   final String tier;
   final String actionLabel;
+  final Color accentColor;
+  final List<Color> gradientColors;
 
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [Color(0xFFFFF8F5), Color(0xFFFFEEDF)],
-      ),
+      gradient: LinearGradient(colors: gradientColors),
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: HomeColors.primary.withValues(alpha: 0.18)),
+      border: Border.all(color: accentColor.withValues(alpha: 0.18)),
     ),
     child: Material(
       color: Colors.transparent,
@@ -53,11 +55,7 @@ class HomeClubCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.stars_rounded,
-                        size: 18,
-                        color: HomeColors.primary,
-                      ),
+                      Icon(Icons.stars_rounded, size: 18, color: accentColor),
                       const SizedBox(width: 5),
                       Text(
                         '$points xu',
@@ -82,8 +80,8 @@ class HomeClubCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     actionLabel,
-                    style: const TextStyle(
-                      color: HomeColors.primary,
+                    style: TextStyle(
+                      color: accentColor,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -181,19 +179,19 @@ class HomeNearbySection extends StatelessWidget {
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: HomeColors.selected,
+                                    color: HomeColors.redSelected,
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(
                                     Icons.home_repair_service_rounded,
                                     size: 24,
-                                    color: HomeColors.primary,
+                                    color: HomeColors.red,
                                   ),
                                 ),
                                 const Spacer(),
                                 const Icon(
                                   Icons.star_rounded,
-                                  color: HomeColors.primary,
+                                  color: HomeColors.red,
                                   size: 16,
                                 ),
                                 Text(
@@ -237,7 +235,7 @@ class HomeNearbySection extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: station.isOpen
-                                    ? HomeColors.primary
+                                    ? HomeColors.red
                                     : HomeColors.secondary,
                               ),
                             ),
@@ -289,8 +287,8 @@ class HomeOffersSection extends StatelessWidget {
                 title: 'Giảm 30k\ncứu hộ đêm',
                 caption: 'Ưu đãi mẫu • Xem điều kiện',
                 icon: Icons.nights_stay_rounded,
-                colors: const [Color(0xFFFFE5D6), Color(0xFFFFF4E9)],
-                iconColor: HomeColors.primary,
+                colors: const [HomeColors.tintStrong, HomeColors.tint],
+                iconColor: HomeColors.red,
                 height: 146 + (scale - 1) * 70,
                 onPressed: onVouchers,
               ),
@@ -299,7 +297,7 @@ class HomeOffersSection extends StatelessWidget {
                 title: 'Xe chết máy\nmùa mưa?',
                 caption: 'Mẹo xử lý an toàn',
                 icon: Icons.umbrella_rounded,
-                colors: const [Color(0xFFFFE5E3), Color(0xFFFFF5F4)],
+                colors: const [HomeColors.tintStrong, HomeColors.tint],
                 iconColor: HomeColors.red,
                 height: 146 + (scale - 1) * 70,
                 onPressed: onTips,

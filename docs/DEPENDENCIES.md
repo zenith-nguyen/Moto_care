@@ -15,7 +15,11 @@ Treat the application and bundle IDs as permanent after the first store release.
 | `flutter_riverpod` | Application state and dependency injection | A screen needs shared, asynchronous, or testable state. |
 | `go_router` | Navigation, deep links, and auth redirects | The application has more than one screen or an authentication flow. |
 | `url_launcher` | Open system applications through URL schemes | Opening the phone app with a `tel:` URI or a map through a Google Maps URL from rescue features. |
-| `image_picker` | Select images from the device photo library | Changing the profile avatar; keep local bytes in session state until an upload API exists. |
+| `geolocator` | Foreground GPS and permission handling | Acquiring the current incident location during marketplace checkout. |
+| `geocoding` | Native reverse geocoding | Resolving device coordinates into an incident address when supported. |
+| `google_maps_flutter` | Native Google Maps and camera control | Selecting incident coordinates and animating to a Places result. |
+| `google_maps_flutter_ios_sdk9` | iOS 15 / Swift Package Manager Maps implementation | Replacing the legacy default iOS adapter in this SwiftPM project. |
+| `image_picker` | Select images from the device photo library or capture with the camera | Changing the profile avatar or photographing a rescue incident; keep local bytes in session state until an upload API exists. |
 | `local_auth` | Device biometric authentication | Verifying Face ID / fingerprint before editing profile information when the option is enabled. |
 | `font_awesome_flutter` | Font Awesome icons | Displaying icons, including password visibility controls. |
 | `flutter_native_splash` | Generate native Android and iOS splash screens (development only). | Regenerating launch resources after a logo or splash configuration change. |

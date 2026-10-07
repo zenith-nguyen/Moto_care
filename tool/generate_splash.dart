@@ -8,10 +8,10 @@ Future<void> main() async {
   final jpgSource = File('assets/images/logo-motocare.jpg');
   final sourceFile = jpgSource.existsSync()
       ? jpgSource
-      : File('assets/images/logo-motocare.png');
+      : File('assets/images/Logo_motocare.png');
   if (!sourceFile.existsSync()) {
     throw StateError(
-      'Add assets/images/logo-motocare.jpg or assets/images/logo-motocare.png '
+      'Add assets/images/logo-motocare.jpg or assets/images/Logo_motocare.png '
       'before generating the splash.',
     );
   }

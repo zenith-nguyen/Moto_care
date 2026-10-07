@@ -10,17 +10,25 @@ void main() {
       final legacy = mockRescueOrders.first.toJson()
         ..remove('locationLandmark')
         ..remove('incidentDescription');
+      legacy.remove('serviceOption');
+      legacy.remove('vehicleType');
       final original = RescueOrder.fromJson(legacy);
       expect(original.locationLandmark, isEmpty);
       expect(original.incidentDescription, isEmpty);
+      expect(original.serviceOption, isEmpty);
+      expect(original.vehicleType, isEmpty);
       final saved = RescueOrder.fromJson({
         ...legacy,
         'locationLandmark': 'Cổng trường bên phải',
         'incidentDescription': 'Xe không đề được',
+        'serviceOption': 'Thay bình ắc quy mới (280k)',
+        'vehicleType': 'Xe số',
       });
       final updated = saved.copyWith(status: RescueOrderStatus.repairing);
       expect(updated.locationLandmark, saved.locationLandmark);
       expect(updated.incidentDescription, saved.incidentDescription);
+      expect(updated.serviceOption, saved.serviceOption);
+      expect(updated.vehicleType, saved.vehicleType);
       expect(RescueOrder.fromJson(updated.toJson()).toJson(), updated.toJson());
     },
   );
