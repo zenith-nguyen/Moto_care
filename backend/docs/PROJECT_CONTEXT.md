@@ -51,7 +51,7 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 - Realtime: thợ gửi GPS mỗi 3-5s khi có đơn active qua WebSocket; server đẩy cho khách của đơn đó. Không lưu lịch sử tọa độ, chỉ giữ vị trí hiện tại. Socket phải xác thực JWT và kiểm tra quyền theo đơn.
 - QR xác nhận bắt đầu dịch vụ: payload = `orderId + timestamp + HMAC` do server ký; app chỉ hiển thị/quét, thợ gửi lên server verify. Secret HMAC chỉ ở server.
 - Quyết định đã chốt: thu giá tạm tính **trước** matching. Nếu không tìm được thợ hoặc hủy trước khi bắt đầu sửa thì hoàn 100%; sau khi bắt đầu, Admin xét từng trường hợp. Khoản tiền thật (khi tích hợp) vào tài khoản MotoCare, **không phải escrow ngân hàng**. SePay webhook đối chiếu mã đơn, số tiền, giao dịch duy nhất; không cộng ví thợ tại lúc nhận tiền, chỉ quyết toán khi hoàn tất và xử lý chênh lệch/tranh chấp.
-- Nhánh demo có trả trước, giá cuối, thu thêm/hoàn chênh, ví và tranh chấp giả lập; không nhận/hoàn tiền thật và không tạo QR ngân hàng. SePay, chuyển khoản/hoàn thật và rút tiền còn phải code, cấu hình và kiểm chứng riêng. Không chạy seed mật khẩu mẫu khi mở API công khai. Xem `docs/PROGRESS.md`, `docs/FINAL_PRICE_WORKFLOW.md` và `docs/DEMO_RUNBOOK.md`.
+- Nhánh demo có trả trước, giá cuối, thu thêm/hoàn chênh, ví, tranh chấp và duyệt rút giả lập; không nhận/chuyển/hoàn tiền thật và không tạo QR ngân hàng. SePay cùng giao dịch ngân hàng thật còn phải code, cấu hình và kiểm chứng riêng. Không chạy seed mật khẩu mẫu khi mở API công khai. Xem `docs/PROGRESS.md`, `docs/FINAL_PRICE_WORKFLOW.md`, `docs/UI_WORKFLOW_CONTRACT.md` và `docs/DEMO_RUNBOOK.md`.
 
 ## 8. Bảo mật
 
