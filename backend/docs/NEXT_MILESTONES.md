@@ -45,4 +45,4 @@ Thu trước matching và hoàn 100% trước khi bắt đầu sửa đã đư�
 1. Hoàn thiện test HTTP/CI và bàn giao API Flutter; migration/test trên DB riêng. Bản không phí chạy trên laptop với Tailscale Funnel theo `DEMO_RUNBOOK.md`, không có uptime khi laptop tắt. Không dùng môi trường này cho tiền thật.
 2. Cam Thu/Vy merge UI và nối API contract; trải nghiệm đầu tiên dùng REST polling, sau đó realtime Socket.IO, GPS/marker Flutter. Bản đồ ưu tiên nguồn không cần billing nhưng vẫn tuân thủ chính sách tile.
 3. Test APK release ở 4G và ba vai trò đồng thời; kiểm tra mất mạng/kết nối lại, từ chối GPS, offer hết hạn, laptop ngủ/tắt, backup và phục hồi.
-4. Sau demo: giá cuối khác giá tạm tính, thu bù/hoàn chênh lệch, khiếu nại sau bắt đầu, rút tiền và QR/webhook/hoàn ngân hàng **thật** là milestone riêng, không được xem là đã xong vì sandbox chạy.
+4. Sau demo: thay ledger sandbox bằng QR/webhook/thu bù/hoàn/rút ngân hàng **thật** là milestone riêng, không được xem là đã xong chỉ vì giá cuối, tranh chấp và withdrawal sandbox chạy.

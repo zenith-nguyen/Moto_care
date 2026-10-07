@@ -1,6 +1,6 @@
 # MotoCare API handoff cho Flutter
 
-Cập nhật: 2026-10-06. Đây là hợp đồng tích hợp cho UI Khách, Thợ và Admin. Backend hiện tại là **sandbox demo**: không nhận, chuyển hoặc hoàn tiền ngân hàng thật.
+Cập nhật: 2026-10-07. Đây là hợp đồng tích hợp cho UI Khách, Thợ và Admin. Backend hiện tại là **sandbox demo**: không nhận, chuyển hoặc hoàn tiền ngân hàng thật. Bảng màn hình/nút theo trạng thái nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
 
 ## Cấu hình ứng dụng
 
@@ -74,7 +74,8 @@ Ví dụ breakdown khi thời tiết mức vừa:
 5. Khi đang tới khách, gửi `PATCH /providers/me/orders/:id/location` khoảng 3–5 giây/lần trong foreground.
 6. Tại nơi: `POST /orders/:id/arrive`; nhập/quét token khách rồi `POST /orders/:id/start`.
 7. Provider đề xuất giá cuối qua `POST /orders/:id/price-proposals`; Customer approve/reject. Nếu có chênh lệch, Customer xác nhận charge hoặc Admin xác nhận refund sandbox. Khi order thành `PAID`, Provider gọi `/complete`; xem số dư giả lập ở `GET /wallets/me`. Chi tiết: [FINAL_PRICE_WORKFLOW.md](FINAL_PRICE_WORKFLOW.md).
-8. Khi không nhận đơn nữa, gửi `PATCH /providers/me/status` với `isOnline=false`.
+8. Ví trả `balance`, `lockedBalance`, `availableBalance`. Tạo rút sandbox bằng `POST /withdrawals`, xem lịch sử bằng `GET /withdrawals/me`; không hiển thị như chuyển khoản ngân hàng thật. Xem [WITHDRAWAL_WORKFLOW.md](WITHDRAWAL_WORKFLOW.md).
+9. Khi không nhận đơn nữa, gửi `PATCH /providers/me/status` với `isOnline=false`.
 
 ## Luồng Admin
 
@@ -84,6 +85,7 @@ Ví dụ breakdown khi thời tiết mức vừa:
 - Thẻ tổng quan: `GET /admin/dashboard/summary?from=<ISO>&to=<ISO>`.
 - Biểu đồ theo ngày: `GET /admin/dashboard/timeseries?from=<ISO>&to=<ISO>&bucket=day`.
 - Bảng đối soát: `GET /admin/reconciliation?from=<ISO>&to=<ISO>&status=<PaymentStatus>&page=1&limit=50`.
+- Duyệt rút sandbox: `GET /admin/withdrawals/pending`, `PATCH /admin/withdrawals/:id/resolve`. Từ chối bắt buộc có `reason`.
 
 Không hiển thị các thao tác sandbox như giao dịch ngân hàng thật.
 
@@ -123,6 +125,10 @@ Chi tiết payload, quyền và sơ đồ xử lý ở [CHAT_WORKFLOW.md](CHAT_W
 | `ACCEPTED`            | Thợ đã nhận và đang tới                      |
 | `ARRIVED`             | Thợ đã đến; khách hiển thị mã bắt đầu        |
 | `IN_PROGRESS`         | Đang sửa, không cho khách tự hủy             |
+| `AWAITING_PRICE_APPROVAL` | Chờ khách duyệt/từ chối giá cuối          |
+| `PRICE_DISPUTED`      | Chờ Admin xử lý tranh chấp giá                |
+| `AWAITING_PAYMENT`    | Chờ thu thêm hoặc hoàn chênh sandbox           |
+| `PAID`                | Giá cuối đã quyết toán; thợ có thể hoàn tất    |
 | `COMPLETED`           | Hoàn tất, cho phép đánh giá                  |
 | `CANCELLED`           | Hủy khi chưa có khoản cần hoàn               |
 | `REFUND_PENDING`      | Admin cần hoàn sandbox                       |

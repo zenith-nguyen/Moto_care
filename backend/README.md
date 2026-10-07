@@ -60,6 +60,8 @@ History and admin lists: `GET /orders` returns the latest 30 own orders for a cu
 
 Admin analytics are available through `GET /admin/dashboard/summary`, `GET /admin/dashboard/timeseries`, and `GET /admin/reconciliation`. They accept an optional ISO `from`/`to` period (seven days by default, 366 days maximum), group daily data in `Asia/Ho_Chi_Minh`, return money as decimal strings, and distinguish collected, currently held, provider-settled, pending-refund, and refunded amounts. These are sandbox accounting metrics, not proof of bank transactions or platform revenue. See [ADMIN_ANALYTICS_PLAN.md](docs/ADMIN_ANALYTICS_PLAN.md).
 
+Provider withdrawals are also sandbox-only. `POST /withdrawals` atomically reserves available wallet funds; Admin approves or rejects through `/admin/withdrawals/*`. Approval creates one `DEBIT`, while rejection releases the reservation. No bank account details are stored and no transfer occurs. UI integration starts at [UI_WORKFLOW_CONTRACT.md](docs/UI_WORKFLOW_CONTRACT.md).
+
 ```bash
 npm run lint
 npm test

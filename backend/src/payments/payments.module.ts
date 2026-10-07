@@ -10,10 +10,13 @@ import { DemoPaymentsService } from './demo-payments.service';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { WalletsController } from './wallets.controller';
 import { PaymentAdjustment } from './payment-adjustment.entity';
+import { WithdrawalsController } from './withdrawals.controller';
+import { WithdrawalsService } from './withdrawals.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Payment, PaymentAdjustment, Wallet, WalletTransaction, WithdrawalRequest]), OrdersModule, RealtimeModule],
-  controllers: [DemoPaymentsController, WalletsController],
-  providers: [DemoPaymentsService],
+  controllers: [DemoPaymentsController, WalletsController, WithdrawalsController],
+  providers: [DemoPaymentsService, WithdrawalsService],
+  exports: [WithdrawalsService],
 })
 export class PaymentsModule {}

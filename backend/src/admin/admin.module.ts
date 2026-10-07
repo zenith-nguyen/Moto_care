@@ -3,9 +3,10 @@ import { AdminAnalyticsService } from './admin-analytics.service';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { OrdersModule } from '../orders/orders.module';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
-  imports: [OrdersModule],
+  imports: [OrdersModule, PaymentsModule],
   controllers: [AdminController],
   providers: [AdminService, AdminAnalyticsService],
 })

@@ -1,6 +1,6 @@
 # MotoCare — Admin dashboard và đối soát
 
-Cập nhật: 2026-10-06. API đã được triển khai trên nhánh `feat/zenith/admin-analytics` và đang chờ review/merge. Bản đầu chỉ tổng hợp dữ liệu sandbox hiện có; không trình bày là tiền ngân hàng thật.
+Cập nhật: 2026-10-07. API dashboard/đối soát đã có trên `main`; nhánh withdrawal bổ sung snapshot ví và rút tiền sandbox. Không trình bày các số này là tiền ngân hàng thật.
 
 ## Mục tiêu
 
@@ -37,7 +37,14 @@ Mọi số tiền là chuỗi decimal VND, tính bằng PostgreSQL `numeric`, kh
 - `refundPendingCurrent`: tổng payment hiện đang `REFUND_PENDING`.
 - `refundedInPeriod`: tổng payment đã hoàn trong kỳ theo `refunded_at`.
 - `grossCompletedValueInPeriod`: tổng `final_price` gắn với wallet credit trong kỳ.
+- `providerWalletBalanceCurrent`: tổng số dư ví demo hiện tại sau các debit đã duyệt.
+- `providerWalletLockedCurrent`: tổng số đang giữ cho withdrawal `PENDING`.
+- `providerWalletAvailableCurrent`: tổng phần có thể yêu cầu rút (`balance - lockedBalance`), do backend tính.
+- `pendingWithdrawalAmountCurrent`: tổng yêu cầu rút đang chờ; phải khớp tổng locked nếu dữ liệu không bất thường.
+- `providerWithdrawnInPeriod`: tổng wallet transaction `DEBIT` theo yêu cầu rút được duyệt trong kỳ.
 - Chưa có `platformRevenue` cho đến khi nhóm chốt phí nền tảng; không lấy `collected` làm doanh thu MotoCare.
+
+Timeseries có thêm `providerWithdrawn`; `settledToProviders` vẫn là tổng credit vào ví, không phải tiền đã chuyển ngân hàng.
 
 ## Đối soát
 

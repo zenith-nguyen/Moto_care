@@ -278,7 +278,53 @@ describe('Sandbox demo flow over HTTP', () => {
       .get('/wallets/me')
       .set('Authorization', `Bearer ${provider.token}`)
       .expect(200);
-    expect(wallet.body).toMatchObject({ balance: '100000.00', currency: 'VND', demoOnly: true });
+    expect(wallet.body).toMatchObject({
+      balance: '100000.00', lockedBalance: '0.00', availableBalance: '100000.00', currency: 'VND', demoOnly: true,
+    });
+    await request(app.getHttpServer())
+      .post('/withdrawals')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({ amount: '40000.00' })
+      .expect(403);
+    await request(app.getHttpServer())
+      .post('/withdrawals')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ amount: '0.00' })
+      .expect(400);
+    const withdrawal = await request(app.getHttpServer())
+      .post('/withdrawals')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ amount: '40000.00' })
+      .expect(201);
+    expect(withdrawal.body).toMatchObject({
+      withdrawal: { amount: '40000.00', status: 'PENDING' },
+      wallet: { balance: '100000.00', lockedBalance: '40000.00', availableBalance: '60000.00' },
+      sandboxOnly: true,
+    });
+    await request(app.getHttpServer())
+      .get('/admin/withdrawals/pending')
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toEqual([
+        expect.objectContaining({ id: withdrawal.body.withdrawal.id, provider: expect.objectContaining({ name: 'HTTP Provider' }) }),
+      ]));
+    await request(app.getHttpServer())
+      .patch(`/admin/withdrawals/${withdrawal.body.withdrawal.id}/resolve`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .send({ decision: 'APPROVE', reason: 'Sandbox payout reviewed' })
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({
+        withdrawal: { status: 'APPROVED' },
+        wallet: { balance: '60000.00', lockedBalance: '0.00', availableBalance: '60000.00' },
+      }));
+    await request(app.getHttpServer())
+      .get('/withdrawals/me')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({
+        wallet: { balance: '60000.00', lockedBalance: '0.00', availableBalance: '60000.00' },
+        items: [expect.objectContaining({ status: 'APPROVED', amount: '40000.00' })],
+      }));
     await request(app.getHttpServer())
       .post(`/orders/${orderId}/reviews`)
       .set('Authorization', `Bearer ${customer.token}`)
@@ -327,6 +373,11 @@ describe('Sandbox demo flow over HTTP', () => {
         refundPendingCurrent: '0.00',
         refundedInPeriod: '0.00',
         grossCompletedValueInPeriod: '100000.00',
+        providerWalletBalanceCurrent: '60000.00',
+        providerWalletLockedCurrent: '0.00',
+        providerWalletAvailableCurrent: '60000.00',
+        pendingWithdrawalAmountCurrent: '0.00',
+        providerWithdrawnInPeriod: '40000.00',
       },
     });
     const timeseries = await request(app.getHttpServer())
@@ -339,6 +390,7 @@ describe('Sandbox demo flow over HTTP', () => {
         ordersCompleted: 1,
         collected: '100000.00',
         settledToProviders: '100000.00',
+        providerWithdrawn: '40000.00',
       }),
     ]));
     const reconciliation = await request(app.getHttpServer())

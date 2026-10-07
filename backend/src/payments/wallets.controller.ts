@@ -8,6 +8,7 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Provider } from '../providers/provider.entity';
 import { Wallet } from './wallet.entity';
 import { WalletTransaction } from './wallet-transaction.entity';
+import { centsToMoney, moneyToCents } from '../common/utils/money';
 
 @ApiTags('wallets')
 @ApiBearerAuth()
@@ -25,12 +26,23 @@ export class WalletsController {
     const transactions = wallet ? await this.database.getRepository(WalletTransaction).find({
       where: { walletId: wallet.id }, order: { createdAt: 'DESC', id: 'DESC' }, take: 20,
     }) : [];
+    const balance = moneyToCents(wallet?.balance ?? '0.00');
+    const lockedBalance = moneyToCents(wallet?.lockedBalance ?? '0.00');
     return {
       providerId: provider.id,
-      balance: wallet?.balance ?? '0.00',
+      balance: centsToMoney(balance),
+      lockedBalance: centsToMoney(lockedBalance),
+      availableBalance: centsToMoney(balance - lockedBalance),
       currency: 'VND',
       demoOnly: true,
-      transactions: transactions.map((tx) => ({ id: tx.id, type: tx.type, amount: tx.amount, orderId: tx.orderId, createdAt: tx.createdAt })),
+      transactions: transactions.map((tx) => ({
+        id: tx.id,
+        type: tx.type,
+        amount: tx.amount,
+        orderId: tx.orderId,
+        withdrawalId: tx.withdrawalId,
+        createdAt: tx.createdAt,
+      })),
     };
   }
 }

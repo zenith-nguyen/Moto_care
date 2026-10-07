@@ -22,6 +22,8 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { PriceAdjustmentsService } from '../orders/price-adjustments.service';
 import { ResolvePriceDisputeDto } from '../orders/dto/price-proposal.dto';
+import { ResolveWithdrawalDto } from '../payments/dto/withdrawal.dto';
+import { WithdrawalsService } from '../payments/withdrawals.service';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -32,6 +34,7 @@ export class AdminController {
     private readonly admin: AdminService,
     private readonly analytics: AdminAnalyticsService,
     private readonly priceAdjustments: PriceAdjustmentsService,
+    private readonly withdrawals: WithdrawalsService,
   ) {}
 
   @Get('dashboard/summary')
@@ -80,6 +83,22 @@ export class AdminController {
     @Body() dto: ResolvePriceDisputeDto,
   ) {
     return this.priceAdjustments.resolveDispute(proposalId, user.sub, dto.decision, dto.reason);
+  }
+
+  @Get('withdrawals/pending')
+  @ApiOkResponse({ description: 'Up to 50 pending sandbox withdrawal requests in FIFO order' })
+  pendingWithdrawals() {
+    return this.withdrawals.pending();
+  }
+
+  @Patch('withdrawals/:requestId/resolve')
+  @ApiOkResponse({ description: 'Approve or reject one sandbox withdrawal atomically and idempotently' })
+  resolveWithdrawal(
+    @Param('requestId', ParseIntPipe) requestId: number,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ResolveWithdrawalDto,
+  ) {
+    return this.withdrawals.resolve(requestId, user.sub, dto.decision, dto.reason);
   }
 
   @Get('orders')

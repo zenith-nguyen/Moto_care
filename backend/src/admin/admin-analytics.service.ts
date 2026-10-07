@@ -6,6 +6,8 @@ import { OrderStatus } from '../common/enums/order-status.enum';
 import { PaymentStatus } from '../common/enums/payment-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../common/enums/payment-adjustment.enum';
+import { WalletTransactionType } from '../common/enums/wallet-transaction-type.enum';
+import { WithdrawalStatus } from '../common/enums/withdrawal-status.enum';
 import {
   AdminPeriodQueryDto,
   AdminTimeseriesQueryDto,
@@ -26,6 +28,11 @@ type MoneyRow = {
   refundPendingCurrent: string;
   refundedInPeriod: string;
   grossCompletedValueInPeriod: string;
+  providerWalletBalanceCurrent: string;
+  providerWalletLockedCurrent: string;
+  providerWalletAvailableCurrent: string;
+  pendingWithdrawalAmountCurrent: string;
+  providerWithdrawnInPeriod: string;
 };
 type TimeseriesRow = {
   day: string;
@@ -34,6 +41,7 @@ type TimeseriesRow = {
   collected: string;
   settledToProviders: string;
   refunded: string;
+  providerWithdrawn: string;
 };
 type ReconciliationRow = {
   totalCount: number;
@@ -167,8 +175,19 @@ export class AdminAnalyticsService {
             SELECT COALESCE(SUM(o.final_price), 0)::numeric(18,2)::text
             FROM wallet_transactions wt
             JOIN orders o ON o.id = wt.order_id
-            WHERE wt.type = 'CREDIT' AND wt.created_at >= $1 AND wt.created_at < $2
-          ) AS "grossCompletedValueInPeriod"
+            WHERE wt.type = '${WalletTransactionType.CREDIT}' AND wt.created_at >= $1 AND wt.created_at < $2
+          ) AS "grossCompletedValueInPeriod",
+          (SELECT COALESCE(SUM(balance), 0)::numeric(18,2)::text FROM wallets)
+            AS "providerWalletBalanceCurrent",
+          (SELECT COALESCE(SUM(locked_balance), 0)::numeric(18,2)::text FROM wallets)
+            AS "providerWalletLockedCurrent",
+          (SELECT COALESCE(SUM(balance - locked_balance), 0)::numeric(18,2)::text FROM wallets)
+            AS "providerWalletAvailableCurrent",
+          (SELECT COALESCE(SUM(amount), 0)::numeric(18,2)::text FROM withdrawal_requests
+            WHERE status = '${WithdrawalStatus.PENDING}') AS "pendingWithdrawalAmountCurrent",
+          (SELECT COALESCE(SUM(amount), 0)::numeric(18,2)::text FROM wallet_transactions
+            WHERE type = '${WalletTransactionType.DEBIT}' AND created_at >= $1 AND created_at < $2)
+            AS "providerWithdrawnInPeriod"
       `,
         [period.from, period.to],
       ),
@@ -245,7 +264,12 @@ export class AdminAnalyticsService {
           COUNT(DISTINCT order_id)::int AS orders,
           SUM(amount)::numeric(18,2) AS amount
         FROM wallet_transactions
-        WHERE type = 'CREDIT' AND created_at >= $1 AND created_at < $2
+        WHERE type = '${WalletTransactionType.CREDIT}' AND created_at >= $1 AND created_at < $2
+        GROUP BY 1
+      ), withdrawn_daily AS (
+        SELECT timezone('${timezone}', created_at)::date AS day, SUM(amount)::numeric(18,2) AS amount
+        FROM wallet_transactions
+        WHERE type = '${WalletTransactionType.DEBIT}' AND created_at >= $1 AND created_at < $2
         GROUP BY 1
       )
       SELECT
@@ -254,12 +278,14 @@ export class AdminAnalyticsService {
         COALESCE(s.orders, 0)::int AS "ordersCompleted",
         COALESCE(p.amount, 0)::numeric(18,2)::text AS "collected",
         COALESCE(s.amount, 0)::numeric(18,2)::text AS "settledToProviders",
-        COALESCE(r.amount, 0)::numeric(18,2)::text AS "refunded"
+        COALESCE(r.amount, 0)::numeric(18,2)::text AS "refunded",
+        COALESCE(w.amount, 0)::numeric(18,2)::text AS "providerWithdrawn"
       FROM days d
       LEFT JOIN order_daily o USING (day)
       LEFT JOIN paid_daily p USING (day)
       LEFT JOIN refunded_daily r USING (day)
       LEFT JOIN settled_daily s USING (day)
+      LEFT JOIN withdrawn_daily w USING (day)
       ORDER BY d.day
     `,
       [period.from, period.to],
