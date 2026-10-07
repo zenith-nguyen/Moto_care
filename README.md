@@ -4,6 +4,10 @@
 
 ## Cách chạy
 
+This repository is the MotoCare monorepo. The Flutter mobile application lives at the repository root, and the NestJS API lives in `backend/`.
+
+The backend uses PostgreSQL + PostGIS locally through Docker Compose. See [`backend/README.md`](backend/README.md) for backend setup and database commands.
+
 Thư mục này chỉ chứa `lib/`, `pubspec.yaml` và `assets/`. Tạo phần native (android/ios) rồi chạy:
 
 ```bash
