@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-07. Có 51 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth và Health là public. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
+Cập nhật: 2026-10-08. Có 53 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
 
 ## Auth, tài khoản và health
 
@@ -68,6 +68,8 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | POST | `/payments/demo/orders/:orderId/refund` | Admin | Giả lập hoàn 100% |
 | POST | `/payments/demo/orders/:orderId/adjustment/confirm` | Customer | Giả lập thanh toán phần thu thêm đã duyệt |
 | POST | `/payments/demo/orders/:orderId/adjustment/refund` | Admin | Giả lập hoàn phần chênh lệch đã duyệt |
+| GET | `/payments/orders/:orderId/instructions` | Customer sở hữu đơn | Chỉ khi bật adapter: VietQR mô phỏng đúng payment, VA giả `SBSEPAY...`, `simulationOnly=true` |
+| POST | `/payments/webhooks/sepay` | Public khỏi JWT, bắt buộc HMAC | Nhận giao dịch SePay Test mode; idempotent theo transaction ID |
 | GET | `/wallets/me` | Provider | Số dư/giao dịch demo, không rút tiền thật |
 | POST | `/withdrawals` | Provider | Khóa số dư khả dụng và tạo yêu cầu rút sandbox |
 | GET | `/withdrawals/me` | Provider | Lịch sử yêu cầu và tổng/khóa/khả dụng của ví |
@@ -84,7 +86,7 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | GET | `/admin/withdrawals/pending` | Admin | Yêu cầu rút sandbox đang chờ, cũ trước |
 | PATCH | `/admin/withdrawals/:requestId/resolve` | Admin | Duyệt/từ chối atomic; duyệt tạo một debit, từ chối nhả tiền khóa |
 
-Đã có thu bù/hoàn chênh lệch, tranh chấp và yêu cầu rút **sandbox**. Chưa có QR ngân hàng, webhook SePay hoặc chuyển/hoàn/rút tiền thật. Không trình bày các endpoint demo như giao dịch ngân hàng thật. Xem [FINAL_PRICE_WORKFLOW.md](FINAL_PRICE_WORKFLOW.md) và [WITHDRAWAL_WORKFLOW.md](WITHDRAWAL_WORKFLOW.md).
+Đã có thu bù/hoàn chênh lệch, tranh chấp và yêu cầu rút **sandbox**. Adapter QR/webhook SePay chỉ hỗ trợ Test mode, mặc định tắt, chưa có chuyển/hoàn/rút tiền thật. Không trình bày endpoint demo hay Test mode như giao dịch ngân hàng thật. Xem [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md), [FINAL_PRICE_WORKFLOW.md](FINAL_PRICE_WORKFLOW.md) và [WITHDRAWAL_WORKFLOW.md](WITHDRAWAL_WORKFLOW.md).
 
 Dashboard mặc định 7 ngày, tối đa 366 ngày và nhóm ngày theo `Asia/Ho_Chi_Minh`. Tiền luôn là chuỗi decimal. Các trường thu/giữ/quyết toán/hoàn tách biệt; nhóm `providerWallet*`, `pendingWithdrawalAmountCurrent` và `providerWithdrawnInPeriod` mô tả ví/rút sandbox. Chưa có `platformRevenue` vì nhóm chưa chốt phí nền tảng. Chi tiết ở [ADMIN_ANALYTICS_PLAN.md](ADMIN_ANALYTICS_PLAN.md).
 

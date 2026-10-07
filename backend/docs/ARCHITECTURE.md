@@ -1,6 +1,6 @@
 # Kiến trúc backend MotoCare
 
-Cập nhật: 2026-10-07
+Cập nhật: 2026-10-08
 
 ## Quyết định
 
@@ -77,6 +77,8 @@ Hiện chưa có transactional outbox. Nếu chạy nhiều NestJS instance, c�
 - `PaymentAccountingModule` không import `OrdersModule`, nhờ vậy dependency module không bị vòng dù `PaymentsModule` vẫn cần matching của Orders cho demo prepayment.
 - Port ghi nhận `EntityManager` của transaction hiện tại. Đây là lựa chọn thực dụng cho modular monolith TypeORM: order lock, payment lock, adjustment và wallet ledger commit/rollback cùng nhau; không tạo transaction lồng nhau hoặc abstraction Unit of Work hình thức.
 - Unique index mỗi order chỉ có một wallet credit vẫn là hàng rào cuối cùng; `wallet_transactions.amount` luôn dương và chiều số dư suy từ `type`.
+- `BankTransferGateway` tách use case nhận tiền khỏi chi tiết SePay/VietQR. `SepayBankTransferAdapter` hiện chỉ tạo chỉ dẫn mô phỏng cho VA giả `SBSEPAY...` và xác thực HMAC Test mode; không gọi Orders từ adapter.
+- `SepayPaymentsService` điều phối transaction payment/order/matching. PostgreSQL advisory transaction lock theo SePay transaction ID, unique audit và `payments.sepay_transaction_id` là ba hàng rào idempotency; raw webhook không được lưu.
 
 ## Những gì cố ý chưa làm
 
@@ -100,6 +102,6 @@ Hiện chưa có transactional outbox. Nếu chạy nhiều NestJS instance, c�
 3. Đã chuyển settlement/payment/wallet ra khỏi Orders qua `PaymentSettlementPort` và `PaymentQueryPort` do Payments sở hữu.
 4. Đã thêm strict typecheck riêng cho source + test, sửa Jest mock typing và đưa check vào Backend CI.
 5. Tách Admin dashboard và reconciliation query khi cần sửa nghiệp vụ báo cáo.
-6. Thêm adapter SePay tắt mặc định, webhook idempotent và audit trước khi cấu hình tiền thật.
+6. Đã thêm adapter SePay Test mode tắt mặc định, webhook HMAC raw-body/idempotent và audit tối thiểu; Live vẫn bị khóa bằng cấu hình.
 
 Mỗi bước phải giữ nguyên API hiện tại, chạy unit + PostgreSQL/PostGIS/HTTP tests và được merge riêng qua PR.

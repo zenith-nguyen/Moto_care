@@ -1,6 +1,6 @@
 # MotoCare — hợp đồng nghiệp vụ cho UI
 
-Cập nhật: 2026-10-07. Tài liệu này là điểm bắt đầu cho Cam Thu/Vy khi nối Flutter. Swagger là hợp đồng payload thực tế; tài liệu này giải thích **khi nào** hiển thị màn hình/nút nào. Backend hiện là sandbox demo, không chuyển tiền ngân hàng thật.
+Cập nhật: 2026-10-08. Tài liệu này là điểm bắt đầu cho Cam Thu/Vy khi nối Flutter. Swagger là hợp đồng payload thực tế; tài liệu này giải thích **khi nào** hiển thị màn hình/nút nào. Backend hiện là sandbox demo, không chuyển tiền ngân hàng thật.
 
 ## Nguyên tắc tích hợp
 
@@ -31,7 +31,8 @@ Cập nhật: 2026-10-07. Tài liệu này là điểm bắt đầu cho Cam Thu/
 | Admin | Dashboard/đối soát | `/admin/dashboard/*`, `/admin/reconciliation` | Poll/refresh | SANDBOX |
 | Admin | Hoàn tiền/giá tranh chấp | `/admin/refunds/*`, `/admin/price-disputes/*` | Poll | SANDBOX |
 | Admin | Duyệt rút tiền | `/admin/withdrawals/*` | Poll | SANDBOX |
-| Mọi vai trò | QR ngân hàng/SePay/chuyển khoản thật | Chưa có | Không | FUTURE |
+| Khách | QR mô phỏng + webhook SePay Test mode | `GET /payments/orders/:id/instructions`; chỉ VA giả `SBSEPAY...`, response `simulationOnly=true`; webhook do SePay gọi | Có, khi backend bật Test mode | OPTIONAL_TEST |
+| Mọi vai trò | SePay Live/chuyển-hoàn-rút ngân hàng thật | Chưa có | Không | FUTURE |
 
 ## State machine đơn hàng và hành động UI
 

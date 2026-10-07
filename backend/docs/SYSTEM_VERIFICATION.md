@@ -16,7 +16,7 @@ npm run build
 npm run security:check-files
 ```
 
-Test HTTP/DB hiện chứng minh vòng đời khách–thợ–admin, matching PostGIS, accept đồng thời, hết hạn offer, chat ảnh có quyền, GPS, giá cuối, hoàn tiền, ví/rút sandbox và đối soát. Test gateway chứng minh JWT đã bị vô hiệu không thể nối lại, chỉ thợ đã duyệt + online vào room riêng, người ngoài không vào room đơn và từng event đi đúng room.
+Test HTTP/DB hiện chứng minh vòng đời khách–thợ–admin, matching PostGIS, accept đồng thời, hết hạn offer, chat ảnh có quyền, GPS, giá cuối, hoàn tiền, ví/rút sandbox, đối soát và SePay Test mode đúng amount/idempotent. Unit test SePay kiểm tra raw-body HMAC, payload bị sửa và timestamp replay. Test gateway chứng minh JWT đã bị vô hiệu không thể nối lại, chỉ thợ đã duyệt + online vào room riêng, người ngoài không vào room đơn và từng event đi đúng room.
 
 ## Smoke-load laptop demo
 

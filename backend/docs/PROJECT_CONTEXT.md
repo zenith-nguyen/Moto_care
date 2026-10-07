@@ -32,7 +32,7 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 - Mobile: Flutter/Dart (do 2 thành viên FE làm, không thuộc phạm vi backend).
 - Backend: NestJS (TypeScript), REST + WebSocket (Socket.io), JWT.
 - DB: PostgreSQL + PostGIS. ORM TypeORM + migrations; query địa lý bằng SQL thô (`ST_DWithin`, `ST_Distance`, chỉ mục GiST); không dùng Prisma.
-- Push: chưa tích hợp FCM; bản demo ưu tiên Socket.IO + REST polling. Bản đồ Flutter ưu tiên `flutter_map` với nguồn tile tuân thủ chính sách OSM vì yêu cầu không phát sinh phí; Google Maps cần billing nên không tự đưa vào. Thanh toán SePay thật chưa tích hợp, hiện chỉ sandbox.
+- Push: chưa tích hợp FCM; bản demo ưu tiên Socket.IO + REST polling. Bản đồ Flutter ưu tiên `flutter_map` với nguồn tile tuân thủ chính sách OSM vì yêu cầu không phát sinh phí; Google Maps cần billing nên không tự đưa vào. Đã có adapter QR/webhook SePay Test mode mặc định tắt; thanh toán Live chưa tích hợp.
 - Admin: API đã có duyệt thợ, danh sách đơn/refund; UI do Cam Thu/Vy làm.
 - Demo không phí: NestJS + Docker/PostGIS trên laptop, HTTPS/WSS công khai tạm qua Tailscale Funnel (cần máy luôn bật). Không dùng Railway/Render trả phí ở mốc này; chưa có server 24/7. Xem `docs/DEMO_RUNBOOK.md`.
 
@@ -51,7 +51,7 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 - Realtime: thợ gửi GPS mỗi 3-5s khi có đơn active qua WebSocket; server đẩy cho khách của đơn đó. Không lưu lịch sử tọa độ, chỉ giữ vị trí hiện tại. Socket phải xác thực JWT và kiểm tra quyền theo đơn.
 - QR xác nhận bắt đầu dịch vụ: payload = `orderId + timestamp + HMAC` do server ký; app chỉ hiển thị/quét, thợ gửi lên server verify. Secret HMAC chỉ ở server.
 - Quyết định đã chốt: thu giá tạm tính **trước** matching. Nếu không tìm được thợ hoặc hủy trước khi bắt đầu sửa thì hoàn 100%; sau khi bắt đầu, Admin xét từng trường hợp. Khoản tiền thật (khi tích hợp) vào tài khoản MotoCare, **không phải escrow ngân hàng**. SePay webhook đối chiếu mã đơn, số tiền, giao dịch duy nhất; không cộng ví thợ tại lúc nhận tiền, chỉ quyết toán khi hoàn tất và xử lý chênh lệch/tranh chấp.
-- Nhánh demo có trả trước, giá cuối, thu thêm/hoàn chênh, ví, tranh chấp và duyệt rút giả lập; không nhận/chuyển/hoàn tiền thật và không tạo QR ngân hàng. SePay cùng giao dịch ngân hàng thật còn phải code, cấu hình và kiểm chứng riêng. Không chạy seed mật khẩu mẫu khi mở API công khai. Xem `docs/PROGRESS.md`, `docs/FINAL_PRICE_WORKFLOW.md`, `docs/UI_WORKFLOW_CONTRACT.md` và `docs/DEMO_RUNBOOK.md`.
+- Nhánh demo có trả trước, giá cuối, thu thêm/hoàn chênh, ví, tranh chấp và duyệt rút giả lập; không nhận/chuyển/hoàn tiền thật. Adapter SePay Test mode chỉ tạo VietQR mô phỏng cho VA giả `SBSEPAY...` và nhận giao dịch mô phỏng khi được bật chủ động; Live, hoàn/rút ngân hàng và đối soát merchant còn phải review riêng. Không chạy seed mật khẩu mẫu khi mở API công khai. Xem `docs/PROGRESS.md`, `docs/SEPAY_TEST_MODE.md`, `docs/FINAL_PRICE_WORKFLOW.md`, `docs/UI_WORKFLOW_CONTRACT.md` và `docs/DEMO_RUNBOOK.md`.
 
 ## 8. Bảo mật
 
