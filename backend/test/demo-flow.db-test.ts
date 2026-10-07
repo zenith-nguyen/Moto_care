@@ -6,6 +6,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ScheduleModule } from '@nestjs/schedule';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { createHmac } from 'node:crypto';
 import { rm } from 'node:fs/promises';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
@@ -82,7 +83,7 @@ describe('Sandbox demo flow over HTTP', () => {
         { provide: APP_GUARD, useExisting: RolesGuard },
       ],
     }).compile();
-    app = moduleRef.createNestApplication();
+    app = moduleRef.createNestApplication({ rawBody: true });
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     await app.init();
     database = app.get(DataSource);
@@ -180,6 +181,133 @@ describe('Sandbox demo flow over HTTP', () => {
     const to = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
   }
+
+  function signedSepayPayload(payload: object) {
+    const rawBody = JSON.stringify(payload);
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = `sha256=${createHmac('sha256', process.env.SEPAY_WEBHOOK_SECRET!)
+      .update(timestamp)
+      .update('.')
+      .update(rawBody)
+      .digest('hex')}`;
+    return { rawBody, timestamp, signature };
+  }
+
+  it('confirms an exact SePay Test mode prepayment once and starts matching', async () => {
+    const { customer } = await prepareActors();
+    const created = await request(app.getHttpServer())
+      .post('/orders')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({
+        incident_type_id: incident.id,
+        customer_location: { latitude: 10.7769, longitude: 106.7009 },
+      })
+      .expect(201);
+    const instructions = await request(app.getHttpServer())
+      .get(`/payments/orders/${created.body.id}/instructions`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200);
+    expect(instructions.body).toMatchObject({
+      provider: 'SEPAY',
+      mode: 'test',
+      simulationOnly: true,
+      amount: '100000.00',
+      bank: 'MBBank',
+      accountNumber: 'SBSEPAYX9KA2B7MN4QR',
+    });
+
+    const payload = {
+      id: 900001,
+      gateway: 'MBBank',
+      transactionDate: '2026-10-08 10:30:00',
+      accountNumber: 'TEST-ACCOUNT-001',
+      subAccount: 'SBSEPAYX9KA2B7MN4QR',
+      code: instructions.body.paymentCode,
+      content: `${instructions.body.paymentCode} thanh toan`,
+      transferType: 'in',
+      description: 'TEST MODE transaction',
+      transferAmount: 100000,
+      accumulated: 500000,
+      referenceCode: 'SBTEST900001',
+    };
+    const signed = signedSepayPayload(payload);
+    const sendWebhook = () =>
+      request(app.getHttpServer())
+        .post('/payments/webhooks/sepay')
+        .set('Content-Type', 'application/json')
+        .set('X-SePay-Timestamp', signed.timestamp)
+        .set('X-SePay-Signature', signed.signature)
+        .send(signed.rawBody);
+
+    await request(app.getHttpServer())
+      .post('/payments/webhooks/sepay')
+      .set('Content-Type', 'application/json')
+      .set('X-SePay-Timestamp', signed.timestamp)
+      .set('X-SePay-Signature', `sha256=${'0'.repeat(64)}`)
+      .send(signed.rawBody)
+      .expect(401);
+    await sendWebhook().expect(200, { success: true });
+    await sendWebhook().expect(200, { success: true });
+    await request(app.getHttpServer())
+      .get(`/orders/${created.body.id}`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) =>
+        expect(body).toMatchObject({
+          status: 'OFFERED',
+          payment: { status: 'PAID', isDemo: false },
+        }),
+      );
+
+    const [audit] = (await database.query(
+      'SELECT outcome, external_transaction_id FROM sepay_webhook_events WHERE external_transaction_id = $1',
+      [String(payload.id)],
+    )) as Array<{ outcome: string; external_transaction_id: string }>;
+    expect(audit).toEqual({ outcome: 'APPLIED', external_transaction_id: String(payload.id) });
+
+    const secondOrder = await request(app.getHttpServer())
+      .post('/orders')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({
+        incident_type_id: incident.id,
+        customer_location: { latitude: 10.7769, longitude: 106.7009 },
+      })
+      .expect(201);
+    const secondInstructions = await request(app.getHttpServer())
+      .get(`/payments/orders/${secondOrder.body.id}/instructions`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200);
+    const wrongAmount = signedSepayPayload({
+      ...payload,
+      id: 900002,
+      code: secondInstructions.body.paymentCode,
+      content: `${secondInstructions.body.paymentCode} wrong amount`,
+      transferAmount: 99999,
+      referenceCode: 'SBTEST900002',
+    });
+    await request(app.getHttpServer())
+      .post('/payments/webhooks/sepay')
+      .set('Content-Type', 'application/json')
+      .set('X-SePay-Timestamp', wrongAmount.timestamp)
+      .set('X-SePay-Signature', wrongAmount.signature)
+      .send(wrongAmount.rawBody)
+      .expect(200, { success: true });
+    await request(app.getHttpServer())
+      .get(`/orders/${secondOrder.body.id}`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) =>
+        expect(body).toMatchObject({
+          status: 'AWAITING_PREPAYMENT',
+          payment: { status: 'PENDING' },
+        }),
+      );
+    const [mismatch] = (await database.query(
+      'SELECT outcome FROM sepay_webhook_events WHERE external_transaction_id = $1',
+      ['900002'],
+    )) as Array<{ outcome: string }>;
+    expect(mismatch.outcome).toBe('AMOUNT_MISMATCH');
+  });
 
   it('completes the customer, provider and admin sandbox lifecycle', async () => {
     const { customer, provider } = await prepareActors();
