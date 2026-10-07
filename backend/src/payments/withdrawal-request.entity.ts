@@ -42,6 +42,9 @@ export class WithdrawalRequest {
   @Column({ name: 'processed_at', type: 'timestamptz', nullable: true })
   processedAt!: Date | null;
 
+  @Column({ name: 'decision_reason', type: 'text', nullable: true })
+  decisionReason!: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 

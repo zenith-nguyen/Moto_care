@@ -17,6 +17,9 @@ export class Wallet {
   @Column({ type: 'numeric', precision: 14, scale: 2, default: 0 })
   balance!: string;
 
+  @Column({ name: 'locked_balance', type: 'numeric', precision: 14, scale: 2, default: 0 })
+  lockedBalance!: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
