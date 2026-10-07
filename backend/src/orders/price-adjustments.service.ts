@@ -8,7 +8,7 @@ import { centsToMoney, moneyToCents } from '../common/utils/money';
 import { PaymentAdjustment } from '../payments/payment-adjustment.entity';
 import { Payment } from '../payments/payment.entity';
 import { Provider } from '../providers/provider.entity';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { AdminPriceResolution, CreatePriceProposalDto } from './dto/price-proposal.dto';
 import { OrderPriceProposal } from './order-price-proposal.entity';
 import { Order } from './order.entity';
@@ -18,7 +18,7 @@ import { canTransitionOrder } from './domain/order-transition.policy';
 export class PriceAdjustmentsService {
   constructor(
     private readonly database: DataSource,
-    @Optional() private readonly realtime?: RealtimeGateway,
+    @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
 
   async propose(orderId: number, providerUserId: number, dto: CreatePriceProposalDto) {

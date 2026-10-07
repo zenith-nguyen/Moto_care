@@ -3,7 +3,7 @@ import { DataSource, In } from 'typeorm';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { Order } from '../orders/order.entity';
 import { Provider } from '../providers/provider.entity';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { RealtimeMessagePayload, RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { ChatImageStorageService } from './chat-image-storage.service';
 import { Message } from './message.entity';
 
@@ -12,19 +12,13 @@ const writableStatuses = [
   OrderStatus.PRICE_DISPUTED, OrderStatus.AWAITING_PAYMENT, OrderStatus.PAID,
 ];
 
-export type MessageResponse = {
-  id: number;
-  senderId: number;
-  content: string | null;
-  image: { url: string; mimeType: string; sizeBytes: number } | null;
-  createdAt: Date;
-};
+export type MessageResponse = RealtimeMessagePayload;
 
 @Injectable()
 export class MessagesService {
   constructor(
     private readonly database: DataSource,
-    private readonly realtime: RealtimeGateway,
+    private readonly realtime: RealtimePublisher,
     private readonly imageStorage: ChatImageStorageService,
   ) {}
 

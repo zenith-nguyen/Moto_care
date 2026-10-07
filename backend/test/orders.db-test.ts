@@ -22,6 +22,7 @@ import { Message } from '../src/messages/message.entity';
 import { MessagesService } from '../src/messages/messages.service';
 import { ChatImageStorageService } from '../src/messages/chat-image-storage.service';
 import { RealtimeGateway } from '../src/realtime/realtime.gateway';
+import { RealtimePublisher } from '../src/realtime/realtime-publisher.port';
 import { Socket } from 'socket.io';
 import { PaymentStatus } from '../src/common/enums/payment-status.enum';
 import { DemoPaymentsService } from '../src/payments/demo-payments.service';
@@ -111,7 +112,7 @@ describe('Orders and matching on PostGIS', () => {
     analytics = new AdminAnalyticsService(database, config);
     withdrawals = new WithdrawalsService(database);
     messages = new MessagesService(
-      database, { messageCreated } as unknown as RealtimeGateway, new ChatImageStorageService(config),
+      database, { messageCreated } as unknown as RealtimePublisher, new ChatImageStorageService(config),
     );
     providersService = new ProvidersService(
       database.getRepository(Provider),
@@ -290,7 +291,7 @@ describe('Orders and matching on PostGIS', () => {
     const providerService = new ProvidersService(
       database.getRepository(Provider), database.getRepository(OrderOffer), database.getRepository(User),
       new ConfigService({ PROVIDER_LOCATION_MAX_AGE_SECONDS: 120 }), database.getRepository(Order),
-      { providerLocation } as unknown as RealtimeGateway,
+      { providerLocation } as unknown as RealtimePublisher,
     );
     await providerService.updateOrderLocation(assigned.user.id, created.id, { latitude: 10.778, longitude: 106.702 });
     expect(providerLocation).toHaveBeenCalledWith(created.id, assigned.provider.id, 10.778, 106.702, expect.any(Date));

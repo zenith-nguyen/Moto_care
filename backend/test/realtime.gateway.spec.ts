@@ -3,6 +3,7 @@ import { jest } from '@jest/globals';
 import { Socket } from 'socket.io';
 import { DataSource, EntityTarget } from 'typeorm';
 import { ApprovalStatus } from '../src/common/enums/approval-status.enum';
+import { OrderStatus } from '../src/common/enums/order-status.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import { UserStatus } from '../src/common/enums/user-status.enum';
 import { Order } from '../src/orders/order.entity';
@@ -116,7 +117,7 @@ describe('RealtimeGateway', () => {
     expect(to).toHaveBeenLastCalledWith('provider:12');
     expect(emit).toHaveBeenLastCalledWith('offer.expired', { orderId: 55, offerId: 91 });
 
-    gateway.orderStatusChanged(55, 'ACCEPTED');
+    gateway.orderStatusChanged(55, OrderStatus.ACCEPTED);
     expect(to).toHaveBeenLastCalledWith('order:55');
     expect(emit).toHaveBeenLastCalledWith('order.status_changed', { orderId: 55, status: 'ACCEPTED' });
 

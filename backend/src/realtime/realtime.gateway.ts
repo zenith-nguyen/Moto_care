@@ -6,11 +6,12 @@ import { DataSource } from 'typeorm';
 import { ApprovalStatus } from '../common/enums/approval-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
+import { OrderStatus } from '../common/enums/order-status.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Order } from '../orders/order.entity';
 import { Provider } from '../providers/provider.entity';
 import { User } from '../users/user.entity';
-import type { MessageResponse } from '../messages/messages.service';
+import { RealtimeMessagePayload, RealtimePublisher } from './realtime-publisher.port';
 
 function allowedOrigin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
   const origins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000').split(',').map((value) => value.trim());
@@ -23,7 +24,7 @@ function allowedOrigin(origin: string | undefined, callback: (error: Error | nul
   connectTimeout: 10_000,
   maxHttpBufferSize: 100_000,
 })
-export class RealtimeGateway implements OnGatewayConnection {
+export class RealtimeGateway implements OnGatewayConnection, RealtimePublisher {
   @WebSocketServer()
   private server!: Server;
 
@@ -73,7 +74,7 @@ export class RealtimeGateway implements OnGatewayConnection {
     });
   }
 
-  messageCreated(orderId: number, message: MessageResponse): void {
+  messageCreated(orderId: number, message: RealtimeMessagePayload): void {
     this.server.to(`order:${orderId}`).emit('message.created', { orderId, ...message });
   }
 
@@ -85,7 +86,7 @@ export class RealtimeGateway implements OnGatewayConnection {
     this.server.to(`provider:${providerId}`).emit('offer.expired', { orderId, offerId });
   }
 
-  orderStatusChanged(orderId: number, status: string): void {
+  orderStatusChanged(orderId: number, status: OrderStatus): void {
     this.server.to(`order:${orderId}`).emit('order.status_changed', { orderId, status });
   }
 }

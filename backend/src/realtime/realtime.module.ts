@@ -11,6 +11,7 @@ import { RealtimeGateway } from './realtime.gateway';
 import { MessagesController } from '../messages/messages.controller';
 import { MessagesService } from '../messages/messages.service';
 import { ChatImageStorageService } from '../messages/chat-image-storage.service';
+import { RealtimePublisher } from './realtime-publisher.port';
 
 @Module({
   imports: [
@@ -33,7 +34,12 @@ import { ChatImageStorageService } from '../messages/chat-image-storage.service'
     }),
   ],
   controllers: [MessagesController],
-  providers: [RealtimeGateway, MessagesService, ChatImageStorageService],
-  exports: [RealtimeGateway],
+  providers: [
+    RealtimeGateway,
+    { provide: RealtimePublisher, useExisting: RealtimeGateway },
+    MessagesService,
+    ChatImageStorageService,
+  ],
+  exports: [RealtimePublisher],
 })
 export class RealtimeModule {}

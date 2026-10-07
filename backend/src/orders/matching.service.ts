@@ -5,7 +5,7 @@ import { OfferStatus } from '../common/enums/offer-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { OrderOffer } from './order-offer.entity';
 import { Order } from './order.entity';
-import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { canTransitionOrder } from './domain/order-transition.policy';
 
 interface CandidateRow {
@@ -17,7 +17,7 @@ export class MatchingService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
-    @Optional() private readonly realtime?: RealtimeGateway,
+    @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
 
   async matchLockedOrder(manager: EntityManager, order: Order): Promise<OrderOffer | null> {
