@@ -1,0 +1,57 @@
+import '../../activity/models/rescue_order.dart';
+import '../../partner/providers/partner_provider.dart';
+import '../../voucher/providers/voucher_provider.dart';
+
+class MarketplaceBooking {
+  MarketplaceBooking({
+    required this.partnerId,
+    required this.serviceType,
+    required List<RescueOrderItem> items,
+  }) : items = List.unmodifiable(items);
+  final String partnerId;
+  final String serviceType;
+  final List<RescueOrderItem> items;
+  int get quantity => items.fold(0, (sum, item) => sum + item.quantity);
+  int get subtotal => items.fold(0, (sum, item) => sum + item.total);
+
+  bool isValidFor(PartnerShop partner) {
+    if (!partner.station.isOpen || items.isEmpty || partner.id != partnerId) {
+      return false;
+    }
+    final menu = partner.menu(serviceType);
+    final ids = <String>{};
+    for (final item in items) {
+      if (!ids.add(item.packageId)) return false;
+      final matches = menu.where((package) => package.id == item.packageId);
+      if (matches.length != 1) return false;
+      final package = matches.single;
+      if (package.price != item.unitPrice ||
+          package.name != item.name ||
+          package.serviceType != item.serviceType) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  int discountFor(VoucherOffer? voucher, DateTime now) {
+    if (voucher == null ||
+        voucher.usedAt != null ||
+        !voucher.expiresAt.isAfter(now) ||
+        subtotal < 50000) {
+      return 0;
+    }
+    final discount = switch (voucher.code) {
+      'SOS20' || 'MOTO20' => 20000,
+      'DEM15'
+          when items.every(
+            (item) => item.serviceType == RescueServiceType.nightRescue,
+          ) =>
+        subtotal * 15 ~/ 100,
+      _ => 0,
+    };
+    return discount.clamp(0, subtotal);
+  }
+
+  static int travelFee(double distanceKm) => 10000 + distanceKm.ceil() * 5000;
+}
