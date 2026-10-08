@@ -1,0 +1,103 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [main, cam-thu, thanh-vy]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  push:
+    branches: [main, cam-thu, thanh-vy]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: motocare
+          POSTGRES_PASSWORD: ci-test-password
+          POSTGRES_DB: motocare_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U motocare -d motocare_ci_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      CORS_ORIGIN: http://localhost:3000
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+      DATABASE_NAME: motocare_ci_test
+      DATABASE_USER: motocare
+      DATABASE_PASSWORD: ci-test-password
+      TEST_DATABASE_NAME: motocare_ci_test
+      JWT_SECRET: ci-test-only-jwt-secret-longer-than-32-characters
+      JWT_EXPIRES_IN: 1d
+      DEMO_MODE: true
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Reject tracked secrets and runtime files
+        run: npm run security:check-files
+
+      - name: Parse PowerShell operations scripts
+        shell: pwsh
+        run: |
+          $allErrors = @()
+          Get-ChildItem scripts -Filter '*.ps1' | ForEach-Object {
+            $tokens = $null
+            $fileErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$fileErrors) | Out-Null
+            $allErrors += $fileErrors
+          }
+          if ($allErrors.Count -gt 0) {
+            $allErrors | ForEach-Object { Write-Error $_.Message }
+            exit 1
+          }
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck source and tests
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Run database migrations
+        run: npm run migration:run
+
+      - name: Test database and HTTP demo flow
+        run: npm run test:db
+
+      - name: Build
+        run: npm run build

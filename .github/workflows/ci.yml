@@ -22,6 +22,37 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      - name: Verify repository integration guardrails
+        shell: bash
+        run: |
+          required_files=(
+            ".github/CODEOWNERS"
+            ".github/PULL_REQUEST_TEMPLATE.md"
+            ".github/workflows/backend-ci.yml"
+            ".github/workflows/ci.yml"
+            ".github/workflows/pr-policy.yml"
+            ".github/workflows/release-android.yml"
+            "AGENTS.md"
+            "CONTRIBUTING.md"
+            "backend/docs/API_CATALOG.md"
+            "backend/docs/PROGRESS.md"
+            "docs/README.md"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "Required repository file was removed: $file"
+              exit 1
+            fi
+          done
+
+          forbidden_files="$(git ls-files | grep -E '(^|/)\.vscode/|(^|/)\.flutter-plugins-dependencies( |$)|(^|/)android/\.kotlin/|(^|/)ios/Flutter/(Generated\.xcconfig|flutter_export_environment\.sh)$' || true)"
+          if [[ -n "$forbidden_files" ]]; then
+            echo "Generated or machine-local files must not be committed:"
+            echo "$forbidden_files"
+            exit 1
+          fi
+
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
