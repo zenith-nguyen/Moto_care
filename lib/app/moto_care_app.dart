@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/realtime/realtime_session_coordinator.dart';
 import 'router/app_router.dart';
 
 class MotoCareApp extends ConsumerWidget {
@@ -9,6 +10,7 @@ class MotoCareApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(realtimeSessionCoordinatorProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
