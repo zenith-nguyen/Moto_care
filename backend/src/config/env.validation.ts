@@ -65,4 +65,40 @@ export const envValidationSchema = Joi.object({
   SMTP_USER: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
   SMTP_PASSWORD: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
   SMTP_FROM: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
+  SEPAY_ENABLED: Joi.boolean().default(false),
+  SEPAY_MODE: Joi.string().valid('test').default('test'),
+  SEPAY_BANK: Joi.when('SEPAY_ENABLED', {
+    is: true,
+    then: Joi.string().trim().min(2).max(50).required(),
+    otherwise: Joi.string().optional(),
+  }),
+  SEPAY_ACCOUNT_NUMBER: Joi.when('SEPAY_ENABLED', {
+    is: true,
+    then: Joi.string()
+      .trim()
+      .uppercase()
+      .pattern(/^SBSEPAY[A-Z0-9]{12}$/)
+      .required(),
+    otherwise: Joi.string().optional(),
+  }),
+  SEPAY_ACCOUNT_HOLDER: Joi.when('SEPAY_ENABLED', {
+    is: true,
+    then: Joi.string().trim().min(2).max(100).required(),
+    otherwise: Joi.string().optional(),
+  }),
+  SEPAY_PAYMENT_CODE_PREFIX: Joi.string()
+    .pattern(/^[A-Z]{2,5}$/)
+    .default('MC'),
+  SEPAY_TRANSFER_MEMO_PREFIX: Joi.string()
+    .trim()
+    .uppercase()
+    .pattern(/^[A-Z0-9]{1,30}$/)
+    .allow('')
+    .default(''),
+  SEPAY_WEBHOOK_SECRET: Joi.when('SEPAY_ENABLED', {
+    is: true,
+    then: Joi.string().min(32).required(),
+    otherwise: Joi.string().optional(),
+  }),
+  SEPAY_WEBHOOK_MAX_AGE_SECONDS: Joi.number().integer().min(30).max(900).default(300),
 });

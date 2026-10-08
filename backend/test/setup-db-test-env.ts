@@ -18,4 +18,13 @@ Object.assign(process.env, {
   MATCH_RADIUS_KM: '10',
   CHAT_UPLOAD_DIR: join(tmpdir(), `motocare-chat-http-test-${process.pid}`),
   CHAT_IMAGE_MAX_BYTES: '5242880',
+  SEPAY_ENABLED: 'true',
+  SEPAY_MODE: 'test',
+  SEPAY_BANK: 'MBBank',
+  SEPAY_ACCOUNT_NUMBER: 'SBSEPAYX9KA2B7MN4QR',
+  SEPAY_ACCOUNT_HOLDER: 'MOTOCARE TEST',
+  SEPAY_PAYMENT_CODE_PREFIX: 'MC',
+  SEPAY_TRANSFER_MEMO_PREFIX: '',
+  SEPAY_WEBHOOK_SECRET: 'db-test-only-sepay-webhook-secret-32-characters',
+  SEPAY_WEBHOOK_MAX_AGE_SECONDS: '300',
 });

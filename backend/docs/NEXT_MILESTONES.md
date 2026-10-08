@@ -1,6 +1,6 @@
 # MotoCare — các mốc sau Prompt C (thiết kế và trạng thái)
 
-Cập nhật: 2026-10-05. Chính sách thu trước và hoàn 100% trước khi sửa **đã được duyệt**. PR #7 đã đưa giả lập thanh toán/hoàn, realtime và admin duyệt thợ vào `main`; chưa có tiền thật hoặc APK hoàn chỉnh. Trạng thái chính xác theo `PROGRESS.md`; hợp đồng Flutter theo `FLUTTER_API_HANDOFF.md`; hướng dẫn demo theo `DEMO_RUNBOOK.md`. Các dòng mô tả triển khai production bên dưới là kế hoạch, không phải chức năng đã chạy.
+Cập nhật: 2026-10-08. Chính sách thu trước và hoàn 100% trước khi sửa **đã được duyệt**. Hệ thống đã có sandbox thanh toán/hoàn, realtime, admin duyệt thợ và adapter SePay Test mode tắt mặc định; chưa có tiền thật hoặc APK hoàn chỉnh. Trạng thái chính xác theo `PROGRESS.md`; hợp đồng Flutter theo `FLUTTER_API_HANDOFF.md`; hướng dẫn demo theo `DEMO_RUNBOOK.md`. Các dòng mô tả triển khai production bên dưới là kế hoạch, không phải chức năng đã chạy.
 
 ## Phạm vi và trách nhiệm
 
@@ -25,7 +25,7 @@ Cập nhật: 2026-10-05. Chính sách thu trước và hoàn 100% trước khi 
 
 ## Quyết định thanh toán — đã chốt chính sách, chỉ code sandbox
 
-Người dùng đã duyệt thu giá tạm tính trước matching: không tìm được thợ hoặc hủy trước khi bắt đầu sửa thì hoàn 100%; sau khi bắt đầu sửa thì Admin xét từng trường hợp. `PROJECT_CONTEXT.md` mục 7 đã cập nhật. Ngân hàng/SePay thật và xử lý giá chênh lệch vẫn chưa triển khai.
+Người dùng đã duyệt thu giá tạm tính trước matching: không tìm được thợ hoặc hủy trước khi bắt đầu sửa thì hoàn 100%; sau khi bắt đầu sửa thì Admin xét từng trường hợp. `PROJECT_CONTEXT.md` mục 7 đã cập nhật. SePay Test mode QR/webhook đã có adapter mặc định tắt; ngân hàng Live và hoàn tiền thật vẫn chưa triển khai.
 
 Đề xuất cho bản demo/sandbox:
 

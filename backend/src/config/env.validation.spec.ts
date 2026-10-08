@@ -43,4 +43,48 @@ describe("environment validation", () => {
     });
     expect(result.error).toBeUndefined();
   });
+
+  it('keeps SePay disabled by default and requires all Test mode secrets when enabled', () => {
+    const disabled = envValidationSchema.validate(requiredEnvironment);
+    expect(disabled.error).toBeUndefined();
+    expect(disabled.value.SEPAY_ENABLED).toBe(false);
+
+    const incomplete = envValidationSchema.validate(
+      {
+        ...requiredEnvironment,
+        SEPAY_ENABLED: true,
+      },
+      { abortEarly: false },
+    );
+    const message = incomplete.error?.message ?? '';
+    expect(message).toContain('SEPAY_BANK');
+    expect(message).toContain('SEPAY_ACCOUNT_NUMBER');
+    expect(message).toContain('SEPAY_ACCOUNT_HOLDER');
+    expect(message).toContain('SEPAY_WEBHOOK_SECRET');
+
+    const enabled = envValidationSchema.validate({
+      ...requiredEnvironment,
+      SEPAY_ENABLED: true,
+      SEPAY_MODE: 'test',
+      SEPAY_BANK: 'MBBank',
+      SEPAY_ACCOUNT_NUMBER: 'SBSEPAYX9KA2B7MN4QR',
+      SEPAY_ACCOUNT_HOLDER: 'MOTOCARE DEMO',
+      SEPAY_WEBHOOK_SECRET: 's'.repeat(32),
+    });
+    expect(enabled.error).toBeUndefined();
+  });
+
+  it('rejects real bank account numbers for the Test mode QR adapter', () => {
+    const result = envValidationSchema.validate({
+      ...requiredEnvironment,
+      SEPAY_ENABLED: true,
+      SEPAY_MODE: 'test',
+      SEPAY_BANK: 'MBBank',
+      SEPAY_ACCOUNT_NUMBER: '0123456789',
+      SEPAY_ACCOUNT_HOLDER: 'MOTOCARE DEMO',
+      SEPAY_WEBHOOK_SECRET: 's'.repeat(32),
+    });
+
+    expect(result.error?.message).toContain('SEPAY_ACCOUNT_NUMBER');
+  });
 });
