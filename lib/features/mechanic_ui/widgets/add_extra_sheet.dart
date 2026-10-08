@@ -77,11 +77,15 @@ class _AddExtraSheetState extends State<AddExtraSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            Text('Báo giá phụ tùng phát sinh',
-                style: appText(18, weight: FontWeight.w800)),
+            Text(
+              'Báo giá phụ tùng phát sinh',
+              style: appText(18, weight: FontWeight.w800),
+            ),
             const SizedBox(height: 4),
-            Text('Khách sẽ nhận thông báo và xác nhận chi phí này trên app. Chỉ khoản đã được xác nhận mới cộng vào thu nhập.',
-                style: appText(13, color: AppColors.textSub)),
+            Text(
+              'Khách sẽ nhận thông báo và xác nhận chi phí này trên app. Chỉ khoản đã được xác nhận mới cộng vào thu nhập.',
+              style: appText(13, color: AppColors.textSub),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _amountCtrl,
@@ -93,7 +97,11 @@ class _AddExtraSheetState extends State<AddExtraSheet> {
                 labelText: 'Số tiền (đồng)',
                 suffixText: 'đ',
                 helperText: _amount > 0 ? formatVnd(_amount) : null,
-                helperStyle: appText(12.5, weight: FontWeight.w600, color: AppColors.primaryDark),
+                helperStyle: appText(
+                  12.5,
+                  weight: FontWeight.w600,
+                  color: AppColors.primaryDark,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -103,7 +111,10 @@ class _AddExtraSheetState extends State<AddExtraSheet> {
               children: [
                 for (final v in _quickAmounts)
                   ActionChip(
-                    label: Text(formatVnd(v), style: appText(12.5, weight: FontWeight.w600)),
+                    label: Text(
+                      formatVnd(v),
+                      style: appText(12.5, weight: FontWeight.w600),
+                    ),
                     backgroundColor: AppColors.surface,
                     side: const BorderSide(color: AppColors.border),
                     onPressed: () => setState(() {
@@ -127,11 +138,21 @@ class _AddExtraSheetState extends State<AddExtraSheet> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Icon(Icons.error_outline, size: 16, color: AppColors.primaryDark),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: AppColors.primaryDark,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(_error!,
-                        style: appText(12.5, weight: FontWeight.w600, color: AppColors.primaryDark)),
+                    child: Text(
+                      _error!,
+                      style: appText(
+                        12.5,
+                        weight: FontWeight.w600,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -148,10 +169,17 @@ class _AddExtraSheetState extends State<AddExtraSheet> {
                         foregroundColor: AppColors.textSub,
                         side: const BorderSide(color: AppColors.disabled),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md)),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
                       ),
-                      child: Text('Hủy',
-                          style: appText(15, weight: FontWeight.w700, color: AppColors.textSub)),
+                      child: Text(
+                        'Hủy',
+                        style: appText(
+                          15,
+                          weight: FontWeight.w700,
+                          color: AppColors.textSub,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -167,10 +195,17 @@ class _AddExtraSheetState extends State<AddExtraSheet> {
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.md)),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
                       ),
-                      child: Text('Gửi khách xác nhận',
-                          style: appText(15, weight: FontWeight.w800, color: Colors.white)),
+                      child: Text(
+                        'Gửi khách xác nhận',
+                        style: appText(
+                          15,
+                          weight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ),
                 ),

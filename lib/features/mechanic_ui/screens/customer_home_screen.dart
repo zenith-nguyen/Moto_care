@@ -23,7 +23,10 @@ class CustomerHomeScreen extends StatelessWidget {
     );
     if (result == null || !context.mounted) return;
     state.submitPartnerApplication(result.name, result.area);
-    showAppSnack(context, 'Đã gửi hồ sơ. Hệ thống sẽ duyệt trên CMS/Admin Backend.');
+    showAppSnack(
+      context,
+      'Đã gửi hồ sơ. Hệ thống sẽ duyệt trên CMS/Admin Backend.',
+    );
   }
 
   /// Hỏi người dùng có muốn sang Màn hình Thợ ngay không.
@@ -32,9 +35,13 @@ class CustomerHomeScreen extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
-        title: Text('Hồ sơ đối tác đã được duyệt',
-            style: appText(17, weight: FontWeight.w800)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Text(
+          'Hồ sơ đối tác đã được duyệt',
+          style: appText(17, weight: FontWeight.w800),
+        ),
         content: Text(
           'Bạn muốn sang Màn hình Thợ để nhận đơn ngay?',
           style: appText(14.5, color: AppColors.textSub, height: 1.4),
@@ -42,8 +49,14 @@ class CustomerHomeScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Để sau',
-                style: appText(14, weight: FontWeight.w700, color: AppColors.textSub)),
+            child: Text(
+              'Để sau',
+              style: appText(
+                14,
+                weight: FontWeight.w700,
+                color: AppColors.textSub,
+              ),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
@@ -52,10 +65,14 @@ class CustomerHomeScreen extends StatelessWidget {
               foregroundColor: Colors.white,
               elevation: 0,
               minimumSize: const Size(0, 44),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
             ),
-            child: Text('Sang giao diện Thợ',
-                style: appText(14, weight: FontWeight.w800, color: Colors.white)),
+            child: Text(
+              'Sang giao diện Thợ',
+              style: appText(14, weight: FontWeight.w800, color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -93,7 +110,10 @@ class CustomerHomeScreen extends StatelessWidget {
             children: [
               Text('MotoCare', style: appText(26, weight: FontWeight.w800)),
               const SizedBox(height: 2),
-              Text('Cứu hộ xe máy tức thời', style: appText(14, color: AppColors.textSub)),
+              Text(
+                'Cứu hộ xe máy tức thời',
+                style: appText(14, color: AppColors.textSub),
+              ),
               const SizedBox(height: 20),
 
               // Khối gọi cứu hộ (giao diện Khách: ngoài phạm vi bài này)
@@ -106,26 +126,43 @@ class CustomerHomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Xe bạn gặp sự cố?',
-                        style: appText(19, weight: FontWeight.w800, color: Colors.white)),
+                    Text(
+                      'Xe bạn gặp sự cố?',
+                      style: appText(
+                        19,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text('Kết nối thợ sửa xe gần nhất trong vài phút.',
-                        style: appText(13.5, color: Colors.white.op(0.75))),
+                    Text(
+                      'Kết nối thợ sửa xe gần nhất trong vài phút.',
+                      style: appText(13.5, color: Colors.white.op(0.75)),
+                    ),
                     const SizedBox(height: 14),
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
                         onPressed: () => showAppSnack(
-                            context, 'Giao diện Khách nằm ngoài phạm vi phần Thợ (demo).'),
+                          context,
+                          'Giao diện Khách nằm ngoài phạm vi phần Thợ (demo).',
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.sm)),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
                         ),
-                        child: Text('Gọi cứu hộ ngay',
-                            style: appText(14.5, weight: FontWeight.w800, color: Colors.white)),
+                        child: Text(
+                          'Gọi cứu hộ ngay',
+                          style: appText(
+                            14.5,
+                            weight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -144,7 +181,10 @@ class CustomerHomeScreen extends StatelessWidget {
               if (status == PartnerStatus.approved) ...[
                 const SizedBox(height: 12),
                 AppCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -169,8 +209,14 @@ class CustomerHomeScreen extends StatelessWidget {
                   child: TextButton(
                     onPressed: () => _simulateNextLogin(context, state),
                     style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
-                    child: Text('Demo: giả lập đăng nhập lần sau',
-                        style: appText(13, weight: FontWeight.w600, color: AppColors.textSub)),
+                    child: Text(
+                      'Demo: giả lập đăng nhập lần sau',
+                      style: appText(
+                        13,
+                        weight: FontWeight.w600,
+                        color: AppColors.textSub,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -180,8 +226,10 @@ class CustomerHomeScreen extends StatelessWidget {
                 child: TextButton.icon(
                   onPressed: state.skipToMechanic,
                   icon: const Icon(Icons.fast_forward_outlined, size: 18),
-                  label: Text('Vào nhanh giao diện Thợ (bỏ qua đăng ký)',
-                      style: appText(13, weight: FontWeight.w600)),
+                  label: Text(
+                    'Vào nhanh giao diện Thợ (bỏ qua đăng ký)',
+                    style: appText(13, weight: FontWeight.w600),
+                  ),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.textSub,
                     minimumSize: const Size(0, 44),
@@ -253,15 +301,23 @@ class _PartnerCard extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration: BoxDecoration(color: tone.op(0.12), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: tone.op(0.12),
+                  shape: BoxShape.circle,
+                ),
                 child: Icon(icon, size: 22, color: tone),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Text(title, style: appText(16, weight: FontWeight.w800))),
+              Expanded(
+                child: Text(title, style: appText(16, weight: FontWeight.w800)),
+              ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(body, style: appText(13.5, color: AppColors.textSub, height: 1.4)),
+          Text(
+            body,
+            style: appText(13.5, color: AppColors.textSub, height: 1.4),
+          ),
           const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
@@ -273,9 +329,13 @@ class _PartnerCard extends StatelessWidget {
                       foregroundColor: AppColors.ink,
                       side: const BorderSide(color: AppColors.ink, width: 1.4),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md)),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
                     ),
-                    child: Text(cta, style: appText(14.5, weight: FontWeight.w700)),
+                    child: Text(
+                      cta,
+                      style: appText(14.5, weight: FontWeight.w700),
+                    ),
                   )
                 : ElevatedButton(
                     onPressed: onCta,
@@ -284,10 +344,17 @@ class _PartnerCard extends StatelessWidget {
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md)),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
                     ),
-                    child: Text(cta,
-                        style: appText(14.5, weight: FontWeight.w800, color: Colors.white)),
+                    child: Text(
+                      cta,
+                      style: appText(
+                        14.5,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
           ),
         ],
@@ -312,7 +379,9 @@ class _PartnerFormSheet extends StatefulWidget {
 }
 
 class _PartnerFormSheetState extends State<_PartnerFormSheet> {
-  late final TextEditingController _name = TextEditingController(text: widget.initialName);
+  late final TextEditingController _name = TextEditingController(
+    text: widget.initialName,
+  );
   String _area = MockData.districts[2]; // Quận 5
   String? _error;
 
@@ -346,11 +415,16 @@ class _PartnerFormSheetState extends State<_PartnerFormSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
-            Text('Đăng ký làm đối tác', style: appText(18, weight: FontWeight.w800)),
+            Text(
+              'Đăng ký làm đối tác',
+              style: appText(18, weight: FontWeight.w800),
+            ),
             const SizedBox(height: 4),
             Text(
               'Giấy tờ (CCCD/ĐKKD, chứng chỉ thợ) sẽ được tải lên và xác minh ở bước sau.',
@@ -370,7 +444,9 @@ class _PartnerFormSheetState extends State<_PartnerFormSheet> {
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: _area,
-              decoration: const InputDecoration(labelText: 'Quận/huyện hoạt động'),
+              decoration: const InputDecoration(
+                labelText: 'Quận/huyện hoạt động',
+              ),
               style: appText(15, weight: FontWeight.w600),
               items: [
                 for (final d in MockData.districts)
@@ -391,10 +467,17 @@ class _PartnerFormSheetState extends State<_PartnerFormSheet> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md)),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
                 ),
-                child: Text('Gửi hồ sơ',
-                    style: appText(15.5, weight: FontWeight.w800, color: Colors.white)),
+                child: Text(
+                  'Gửi hồ sơ',
+                  style: appText(
+                    15.5,
+                    weight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ],

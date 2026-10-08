@@ -46,16 +46,17 @@ class _IncomingOrderPopupState extends State<IncomingOrderPopup>
   @override
   void initState() {
     super.initState();
-    _countdown = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: _totalSeconds),
-    )
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _finish(IncomingOrderResult.timeout);
-        }
-      })
-      ..forward();
+    _countdown =
+        AnimationController(
+            vsync: this,
+            duration: const Duration(seconds: _totalSeconds),
+          )
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              _finish(IncomingOrderResult.timeout);
+            }
+          })
+          ..forward();
   }
 
   @override
@@ -85,7 +86,10 @@ class _IncomingOrderPopupState extends State<IncomingOrderPopup>
       transitionDuration: const Duration(milliseconds: 240),
       pageBuilder: (_, _, _) => _PhotoViewer(order: widget.order),
       transitionBuilder: (_, animation, _, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: curved,
           child: ScaleTransition(
@@ -135,13 +139,20 @@ class _IncomingOrderPopupState extends State<IncomingOrderPopup>
                             order.headline,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
-                            style: appText(19, weight: FontWeight.w800, height: 1.25),
+                            style: appText(
+                              19,
+                              weight: FontWeight.w800,
+                              height: 1.25,
+                            ),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _CountdownRing(controller: _countdown, totalSeconds: _totalSeconds),
+                    _CountdownRing(
+                      controller: _countdown,
+                      totalSeconds: _totalSeconds,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -152,13 +163,21 @@ class _IncomingOrderPopupState extends State<IncomingOrderPopup>
                   children: [
                     const Padding(
                       padding: EdgeInsets.only(top: 1),
-                      child: Icon(Icons.location_on_outlined, size: 20, color: AppColors.primary),
+                      child: Icon(
+                        Icons.location_on_outlined,
+                        size: 20,
+                        color: AppColors.primary,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '${order.address} (Cách bạn ${formatKm(order.distanceKm)})',
-                        style: appText(14.5, weight: FontWeight.w600, height: 1.35),
+                        style: appText(
+                          14.5,
+                          weight: FontWeight.w600,
+                          height: 1.35,
+                        ),
                       ),
                     ),
                   ],
@@ -172,7 +191,10 @@ class _IncomingOrderPopupState extends State<IncomingOrderPopup>
                 // Thu nhập nhận được
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.md),
@@ -180,12 +202,18 @@ class _IncomingOrderPopupState extends State<IncomingOrderPopup>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Thu nhập nhận được',
-                          style: appText(13, color: AppColors.textSub)),
+                      Text(
+                        'Thu nhập nhận được',
+                        style: appText(13, color: AppColors.textSub),
+                      ),
                       const SizedBox(height: 2),
                       Text(
                         formatVnd(order.earning),
-                        style: appText(36, weight: FontWeight.w800, color: AppColors.primary),
+                        style: appText(
+                          36,
+                          weight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
                       ),
                       Text(
                         'Chiết khấu sàn: ${formatVnd(order.platformFee)}',
@@ -208,16 +236,24 @@ class _IncomingOrderPopupState extends State<IncomingOrderPopup>
                       child: SizedBox(
                         height: 52,
                         child: OutlinedButton(
-                          onPressed: () => _finish(IncomingOrderResult.rejected),
+                          onPressed: () =>
+                              _finish(IncomingOrderResult.rejected),
                           style: OutlinedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: AppColors.textSub,
                             side: const BorderSide(color: AppColors.disabled),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md)),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
                           ),
-                          child: Text('TỪ CHỐI',
-                              style: appText(14, weight: FontWeight.w700, color: AppColors.textSub)),
+                          child: Text(
+                            'TỪ CHỐI',
+                            style: appText(
+                              14,
+                              weight: FontWeight.w700,
+                              color: AppColors.textSub,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -227,16 +263,24 @@ class _IncomingOrderPopupState extends State<IncomingOrderPopup>
                       child: SizedBox(
                         height: 60,
                         child: ElevatedButton(
-                          onPressed: () => _finish(IncomingOrderResult.accepted),
+                          onPressed: () =>
+                              _finish(IncomingOrderResult.accepted),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md)),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
                           ),
-                          child: Text('CHẤP NHẬN ĐƠN',
-                              style: appText(16, weight: FontWeight.w800, color: Colors.white)),
+                          child: Text(
+                            'CHẤP NHẬN ĐƠN',
+                            style: appText(
+                              16,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -263,8 +307,13 @@ class _CountdownRing extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        final remaining =
-            math.max(0, math.min(totalSeconds, (totalSeconds * (1 - controller.value)).ceil()));
+        final remaining = math.max(
+          0,
+          math.min(
+            totalSeconds,
+            (totalSeconds * (1 - controller.value)).ceil(),
+          ),
+        );
         return Semantics(
           label: 'Còn $remaining giây để phản hồi',
           child: SizedBox(
@@ -286,9 +335,18 @@ class _CountdownRing extends StatelessWidget {
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('$remaining',
-                        style: appText(24, weight: FontWeight.w800, height: 1)),
-                    Text('giây', style: appText(10.5, color: AppColors.textSub, height: 1.2)),
+                    Text(
+                      '$remaining',
+                      style: appText(24, weight: FontWeight.w800, height: 1),
+                    ),
+                    Text(
+                      'giây',
+                      style: appText(
+                        10.5,
+                        color: AppColors.textSub,
+                        height: 1.2,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -318,7 +376,9 @@ class _PhotoThumbnail extends StatelessWidget {
               height: 76,
               child: Stack(
                 children: [
-                  const Positioned.fill(child: ScenePhoto(borderRadius: AppRadius.sm)),
+                  const Positioned.fill(
+                    child: ScenePhoto(borderRadius: AppRadius.sm),
+                  ),
                   Positioned(
                     right: 6,
                     bottom: 6,
@@ -328,7 +388,11 @@ class _PhotoThumbnail extends StatelessWidget {
                         color: Colors.black.op(0.55),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.zoom_out_map, size: 14, color: Colors.white),
+                      child: const Icon(
+                        Icons.zoom_out_map,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],
@@ -341,10 +405,15 @@ class _PhotoThumbnail extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Ảnh hiện trường', style: appText(14, weight: FontWeight.w700)),
+              Text(
+                'Ảnh hiện trường',
+                style: appText(14, weight: FontWeight.w700),
+              ),
               const SizedBox(height: 2),
-              Text('Khách gửi lúc báo sự cố. Bấm vào ảnh để xem toàn màn hình.',
-                  style: appText(12.5, color: AppColors.textSub, height: 1.3)),
+              Text(
+                'Khách gửi lúc báo sự cố. Bấm vào ảnh để xem toàn màn hình.',
+                style: appText(12.5, color: AppColors.textSub, height: 1.3),
+              ),
             ],
           ),
         ),

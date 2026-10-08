@@ -76,7 +76,9 @@ class AvatarCircle extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         shape: BoxShape.circle,
-        border: borderColor == null ? null : Border.all(color: borderColor!, width: 2),
+        border: borderColor == null
+            ? null
+            : Border.all(color: borderColor!, width: 2),
       ),
       child: Text(
         initial,
@@ -102,10 +104,20 @@ class VerifiedBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.check_circle_outline, size: 14, color: AppColors.successDark),
+          const Icon(
+            Icons.check_circle_outline,
+            size: 14,
+            color: AppColors.successDark,
+          ),
           const SizedBox(width: 4),
-          Text(label,
-              style: appText(11.5, weight: FontWeight.w600, color: AppColors.successDark)),
+          Text(
+            label,
+            style: appText(
+              11.5,
+              weight: FontWeight.w600,
+              color: AppColors.successDark,
+            ),
+          ),
         ],
       ),
     );
@@ -120,7 +132,10 @@ class UrgentBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 10, vertical: compact ? 3 : 5),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 8 : 10,
+        vertical: compact ? 3 : 5,
+      ),
       decoration: BoxDecoration(
         color: AppColors.primarySoft,
         borderRadius: BorderRadius.circular(20),
@@ -128,12 +143,20 @@ class UrgentBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.bolt_outlined, size: compact ? 12 : 14, color: AppColors.primaryDark),
+          Icon(
+            Icons.bolt_outlined,
+            size: compact ? 12 : 14,
+            color: AppColors.primaryDark,
+          ),
           const SizedBox(width: 3),
           Text(
             'ĐƠN KHẨN CẤP',
-            style: appText(compact ? 10 : 11.5,
-                weight: FontWeight.w800, color: AppColors.primaryDark, letterSpacing: 0.5),
+            style: appText(
+              compact ? 10 : 11.5,
+              weight: FontWeight.w800,
+              color: AppColors.primaryDark,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),
@@ -190,7 +213,9 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Text(text, style: appText(16, weight: FontWeight.w700))),
+        Expanded(
+          child: Text(text, style: appText(16, weight: FontWeight.w700)),
+        ),
         ?trailing,
       ],
     );
@@ -229,7 +254,10 @@ class _ScenePainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFF2E3238));
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFF2E3238),
+    );
     canvas.drawRect(
       Rect.fromLTWH(0, h * 0.64, w, h * 0.36),
       Paint()..color = const Color(0xFF3D434B),
@@ -239,7 +267,11 @@ class _ScenePainter extends CustomPainter {
       ..color = Colors.white.op(0.35)
       ..strokeWidth = math.max(1.5, h * 0.018);
     for (double x = -w * 0.04; x < w; x += w * 0.16) {
-      canvas.drawLine(Offset(x, h * 0.88), Offset(x + w * 0.08, h * 0.88), dash);
+      canvas.drawLine(
+        Offset(x, h * 0.88),
+        Offset(x + w * 0.08, h * 0.88),
+        dash,
+      );
     }
 
     final c = Offset(w * 0.5, h * 0.56);

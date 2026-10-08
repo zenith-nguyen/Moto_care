@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 class AppBottomNav extends StatelessWidget {
-  const AppBottomNav({super.key, required this.currentIndex, required this.onChanged});
+  const AppBottomNav({
+    super.key,
+    required this.currentIndex,
+    required this.onChanged,
+  });
 
   final int currentIndex;
   final ValueChanged<int> onChanged;
@@ -50,7 +54,11 @@ class _NavSpec {
 }
 
 class _NavButton extends StatelessWidget {
-  const _NavButton({required this.spec, required this.active, required this.onTap});
+  const _NavButton({
+    required this.spec,
+    required this.active,
+    required this.onTap,
+  });
 
   final _NavSpec spec;
   final bool active;
@@ -80,8 +88,11 @@ class _NavButton extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 spec.label,
-                style: appText(11.5,
-                    weight: active ? FontWeight.w700 : FontWeight.w500, color: color),
+                style: appText(
+                  11.5,
+                  weight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
               ),
             ],
           ),

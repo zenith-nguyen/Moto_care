@@ -25,14 +25,17 @@ class RadarMap extends StatefulWidget {
   State<RadarMap> createState() => _RadarMapState();
 }
 
-class _RadarMapState extends State<RadarMap> with SingleTickerProviderStateMixin {
+class _RadarMapState extends State<RadarMap>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
 
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 2800))
-      ..repeat();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    )..repeat();
   }
 
   @override
@@ -71,7 +74,11 @@ class _RadarMapState extends State<RadarMap> with SingleTickerProviderStateMixin
                   border: Border.all(color: Colors.white, width: 3),
                   boxShadow: AppShadows.soft,
                 ),
-                child: const Icon(Icons.two_wheeler, size: 22, color: Colors.white),
+                child: const Icon(
+                  Icons.two_wheeler,
+                  size: 22,
+                  color: Colors.white,
+                ),
               ),
             ),
             Positioned(
@@ -136,7 +143,10 @@ class _RadarPainter extends CustomPainter {
     final h = size.height;
 
     // Nền bản đồ + khối xanh (công viên)
-    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFFEDEFF1));
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFFEDEFF1),
+    );
     final park = Paint()..color = const Color(0xFFDCE8DA);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -163,10 +173,18 @@ class _RadarPainter extends CustomPainter {
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round;
     for (final fx in const [0.12, 0.32, 0.5, 0.68, 0.88]) {
-      canvas.drawLine(Offset(w * fx, 0), Offset(w * fx, h), fx == 0.5 ? major : minor);
+      canvas.drawLine(
+        Offset(w * fx, 0),
+        Offset(w * fx, h),
+        fx == 0.5 ? major : minor,
+      );
     }
     for (final fy in const [0.18, 0.4, 0.6, 0.82]) {
-      canvas.drawLine(Offset(0, h * fy), Offset(w, h * fy), fy == 0.4 ? major : minor);
+      canvas.drawLine(
+        Offset(0, h * fy),
+        Offset(w, h * fy),
+        fy == 0.4 ? major : minor,
+      );
     }
     canvas.drawLine(Offset(-10, h * 0.95), Offset(w + 10, h * 0.1), major);
 
@@ -175,7 +193,11 @@ class _RadarPainter extends CustomPainter {
     final maxR = math.min(w, h) * 0.42;
     final tone = active ? AppColors.primary : AppColors.disabled;
 
-    canvas.drawCircle(center, maxR, Paint()..color = tone.op(active ? 0.08 : 0.10));
+    canvas.drawCircle(
+      center,
+      maxR,
+      Paint()..color = tone.op(active ? 0.08 : 0.10),
+    );
     canvas.drawCircle(
       center,
       maxR,
@@ -203,11 +225,16 @@ class _RadarPainter extends CustomPainter {
     // Ghim các đơn khẩn cấp (khoảng cách tỉ lệ với bán kính)
     for (var i = 0; i < orders.length; i++) {
       final o = orders[i];
-      final dist = (o.distanceKm / radiusKm).clamp(0.12, 0.95).toDouble() * maxR;
+      final dist =
+          (o.distanceKm / radiusKm).clamp(0.12, 0.95).toDouble() * maxR;
       final angle = -math.pi / 2 + (i + 1) * 2.1;
       final p = center + Offset(math.cos(angle), math.sin(angle)) * dist;
       canvas.drawCircle(p, 9, Paint()..color = Colors.white);
-      canvas.drawCircle(p, 6, Paint()..color = active ? AppColors.primary : AppColors.disabled);
+      canvas.drawCircle(
+        p,
+        6,
+        Paint()..color = active ? AppColors.primary : AppColors.disabled,
+      );
     }
   }
 

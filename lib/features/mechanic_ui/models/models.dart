@@ -16,14 +16,30 @@ class TierInfo {
 
   String get title => 'Hạng $name';
 
-  static const TierInfo bronze =
-      TierInfo._(MechanicTier.bronze, 'Đồng', Color(0xFFB87333), 0);
-  static const TierInfo silver =
-      TierInfo._(MechanicTier.silver, 'Bạc', Color(0xFF8E99A8), 20);
-  static const TierInfo gold =
-      TierInfo._(MechanicTier.gold, 'Vàng', Color(0xFFE5A100), 50);
-  static const TierInfo diamond =
-      TierInfo._(MechanicTier.diamond, 'Kim Cương', Color(0xFF7C3AED), 100);
+  static const TierInfo bronze = TierInfo._(
+    MechanicTier.bronze,
+    'Đồng',
+    Color(0xFFB87333),
+    0,
+  );
+  static const TierInfo silver = TierInfo._(
+    MechanicTier.silver,
+    'Bạc',
+    Color(0xFF8E99A8),
+    20,
+  );
+  static const TierInfo gold = TierInfo._(
+    MechanicTier.gold,
+    'Vàng',
+    Color(0xFFE5A100),
+    50,
+  );
+  static const TierInfo diamond = TierInfo._(
+    MechanicTier.diamond,
+    'Kim Cương',
+    Color(0xFF7C3AED),
+    100,
+  );
 
   static const List<TierInfo> all = [bronze, silver, gold, diamond];
 
@@ -38,7 +54,8 @@ class TierInfo {
     return result;
   }
 
-  TierInfo? get next => tier.index + 1 < all.length ? all[tier.index + 1] : null;
+  TierInfo? get next =>
+      tier.index + 1 < all.length ? all[tier.index + 1] : null;
 
   /// Số đơn còn thiếu để lên hạng kế tiếp (0 nếu đã max).
   int ordersToNext(int totalOrders) {
@@ -111,17 +128,17 @@ class OrderRequest {
   String get headline => '$issue — $vehicle';
 
   OrderRequest withId(String newId) => OrderRequest(
-        id: newId,
-        issue: issue,
-        vehicle: vehicle,
-        address: address,
-        distanceKm: distanceKm,
-        earning: earning,
-        platformFee: platformFee,
-        customerName: customerName,
-        customerPhone: customerPhone,
-        etaMinutes: etaMinutes,
-      );
+    id: newId,
+    issue: issue,
+    vehicle: vehicle,
+    address: address,
+    distanceKm: distanceKm,
+    earning: earning,
+    platformFee: platformFee,
+    customerName: customerName,
+    customerPhone: customerPhone,
+    etaMinutes: etaMinutes,
+  );
 }
 
 /// Trạng thái báo giá phát sinh: thợ gửi -> khách xác nhận trên app.

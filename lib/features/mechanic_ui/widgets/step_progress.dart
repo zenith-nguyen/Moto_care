@@ -10,7 +10,8 @@ class StepProgress extends StatelessWidget {
   final int current; // chỉ số bước hiện tại (0-based)
   final List<String> labels;
 
-  bool _isDone(int i) => i < current || (i == current && i == labels.length - 1);
+  bool _isDone(int i) =>
+      i < current || (i == current && i == labels.length - 1);
 
   @override
   Widget build(BuildContext context) {
@@ -58,8 +59,9 @@ class _StepCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color labelColor =
-        done ? AppColors.ink : (active ? AppColors.primaryDark : AppColors.textSub);
+    final Color labelColor = done
+        ? AppColors.ink
+        : (active ? AppColors.primaryDark : AppColors.textSub);
 
     return Column(
       children: [
@@ -67,9 +69,17 @@ class _StepCell extends StatelessWidget {
           height: 30,
           child: Row(
             children: [
-              Expanded(child: isFirst ? const SizedBox.shrink() : _Connector(done: leftDone)),
+              Expanded(
+                child: isFirst
+                    ? const SizedBox.shrink()
+                    : _Connector(done: leftDone),
+              ),
               _Dot(number: index + 1, done: done, active: active),
-              Expanded(child: isLast ? const SizedBox.shrink() : _Connector(done: rightDone)),
+              Expanded(
+                child: isLast
+                    ? const SizedBox.shrink()
+                    : _Connector(done: rightDone),
+              ),
             ],
           ),
         ),
@@ -119,7 +129,9 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color bg = done ? AppColors.success : (active ? AppColors.primary : AppColors.border);
+    final Color bg = done
+        ? AppColors.success
+        : (active ? AppColors.primary : AppColors.border);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 350),
       width: 28,
@@ -129,15 +141,24 @@ class _Dot extends StatelessWidget {
         color: bg,
         shape: BoxShape.circle,
         boxShadow: active
-            ? [BoxShadow(color: AppColors.primary.op(0.28), spreadRadius: 3, blurRadius: 0)]
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.op(0.28),
+                  spreadRadius: 3,
+                  blurRadius: 0,
+                ),
+              ]
             : null,
       ),
       child: done
           ? const Icon(Icons.check, size: 16, color: Colors.white)
           : Text(
               '$number',
-              style: appText(12,
-                  weight: FontWeight.w700, color: active ? Colors.white : AppColors.textSub),
+              style: appText(
+                12,
+                weight: FontWeight.w700,
+                color: active ? Colors.white : AppColors.textSub,
+              ),
             ),
     );
   }

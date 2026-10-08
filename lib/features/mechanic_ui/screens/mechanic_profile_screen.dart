@@ -25,7 +25,9 @@ class MechanicProfileScreen extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
         title: Text('Đăng xuất?', style: appText(17, weight: FontWeight.w800)),
         content: Text(
           'Bạn sẽ ngừng nhận đơn cho đến khi đăng nhập lại.',
@@ -38,8 +40,14 @@ class MechanicProfileScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Đăng xuất',
-                style: appText(14, weight: FontWeight.w700, color: AppColors.primaryDark)),
+            child: Text(
+              'Đăng xuất',
+              style: appText(
+                14,
+                weight: FontWeight.w700,
+                color: AppColors.primaryDark,
+              ),
+            ),
           ),
         ],
       ),
@@ -47,7 +55,10 @@ class MechanicProfileScreen extends StatelessWidget {
     if (ok != true || !context.mounted) return;
     state.setOnline(false);
     state.setTab(0);
-    showAppSnack(context, 'Đã đăng xuất (demo) — trạng thái chuyển sang Tạm nghỉ.');
+    showAppSnack(
+      context,
+      'Đã đăng xuất (demo) — trạng thái chuyển sang Tạm nghỉ.',
+    );
   }
 
   @override
@@ -75,17 +86,23 @@ class MechanicProfileScreen extends StatelessWidget {
               // ---- Dịch vụ nhận đơn ----
               const SectionTitle('Dịch vụ nhận đơn'),
               const SizedBox(height: 4),
-              Text('Chỉ nhận đơn thuộc các dịch vụ đang bật.',
-                  style: appText(12.5, color: AppColors.textSub)),
+              Text(
+                'Chỉ nhận đơn thuộc các dịch vụ đang bật.',
+                style: appText(12.5, color: AppColors.textSub),
+              ),
               const SizedBox(height: 10),
               AppCard(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
                 child: Column(
                   children: [
                     for (var i = 0; i < state.services.length; i++) ...[
                       _ServiceRow(
                         skill: state.services[i],
-                        onChanged: (v) => state.setService(state.services[i], v),
+                        onChanged: (v) =>
+                            state.setService(state.services[i], v),
                       ),
                       if (i != state.services.length - 1)
                         const Divider(height: 1, color: AppColors.border),
@@ -105,13 +122,19 @@ class MechanicProfileScreen extends StatelessWidget {
                     _DocumentTile(
                       icon: Icons.badge_outlined,
                       title: 'CCCD / Giấy ĐKKD',
-                      onTap: () => showAppSnack(context, 'Xem chi tiết CCCD / Giấy ĐKKD (demo).'),
+                      onTap: () => showAppSnack(
+                        context,
+                        'Xem chi tiết CCCD / Giấy ĐKKD (demo).',
+                      ),
                     ),
                     const Divider(height: 1, color: AppColors.border),
                     _DocumentTile(
                       icon: Icons.workspace_premium_outlined,
                       title: 'Chứng chỉ thợ',
-                      onTap: () => showAppSnack(context, 'Xem chi tiết chứng chỉ thợ (demo).'),
+                      onTap: () => showAppSnack(
+                        context,
+                        'Xem chi tiết chứng chỉ thợ (demo).',
+                      ),
                     ),
                   ],
                 ),
@@ -121,13 +144,12 @@ class MechanicProfileScreen extends StatelessWidget {
               // ---- Khu vực hoạt động ----
               const SectionTitle('Khu vực hoạt động'),
               const SizedBox(height: 4),
-              Text('Quận/huyện mặc định nhận đơn.',
-                  style: appText(12.5, color: AppColors.textSub)),
-              const SizedBox(height: 10),
-              _AreaDropdown(
-                value: profile.area,
-                onChanged: state.setArea,
+              Text(
+                'Quận/huyện mặc định nhận đơn.',
+                style: appText(12.5, color: AppColors.textSub),
               ),
+              const SizedBox(height: 10),
+              _AreaDropdown(value: profile.area, onChanged: state.setArea),
               const SizedBox(height: 28),
 
               // ---- Chuyển về giao diện Khách ----
@@ -136,13 +158,16 @@ class MechanicProfileScreen extends StatelessWidget {
                 child: OutlinedButton.icon(
                   onPressed: () => state.switchMode(AppMode.customer),
                   icon: const Icon(Icons.swap_horiz, size: 20),
-                  label: Text('Chuyển sang giao diện Khách',
-                      style: appText(14.5, weight: FontWeight.w700)),
+                  label: Text(
+                    'Chuyển sang giao diện Khách',
+                    style: appText(14.5, weight: FontWeight.w700),
+                  ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.ink,
                     side: const BorderSide(color: AppColors.border),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md)),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
                   ),
                 ),
               ),
@@ -158,7 +183,11 @@ class MechanicProfileScreen extends StatelessWidget {
                   ),
                   child: Text(
                     'Đăng xuất',
-                    style: appText(15, weight: FontWeight.w700, color: AppColors.primaryDark),
+                    style: appText(
+                      15,
+                      weight: FontWeight.w700,
+                      color: AppColors.primaryDark,
+                    ),
                   ),
                 ),
               ),
@@ -194,10 +223,12 @@ class _ProfileHeader extends StatelessWidget {
                   style: appText(17, weight: FontWeight.w800, height: 1.2),
                 ),
                 const SizedBox(height: 2),
-                Text('Thợ: ${profile.ownerName}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: appText(12.5, color: AppColors.textSub)),
+                Text(
+                  'Thợ: ${profile.ownerName}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: appText(12.5, color: AppColors.textSub),
+                ),
                 const SizedBox(height: 8),
                 if (profile.verified) const VerifiedBadge(),
               ],
@@ -207,13 +238,18 @@ class _ProfileHeader extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onEdit,
             icon: const Icon(Icons.edit_outlined, size: 16),
-            label: Text('Chỉnh sửa', style: appText(12.5, weight: FontWeight.w700)),
+            label: Text(
+              'Chỉnh sửa',
+              style: appText(12.5, weight: FontWeight.w700),
+            ),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.ink,
               side: const BorderSide(color: AppColors.border),
               minimumSize: const Size(0, 44),
               padding: const EdgeInsets.symmetric(horizontal: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
             ),
           ),
         ],
@@ -242,7 +278,11 @@ class _ServiceRow extends StatelessWidget {
               color: on ? AppColors.ink : AppColors.surface,
               shape: BoxShape.circle,
             ),
-            child: Icon(skill.icon, size: 21, color: on ? Colors.white : AppColors.disabled),
+            child: Icon(
+              skill.icon,
+              size: 21,
+              color: on ? Colors.white : AppColors.disabled,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -251,10 +291,12 @@ class _ServiceRow extends StatelessWidget {
               children: [
                 Text(skill.name, style: appText(14.5, weight: FontWeight.w700)),
                 const SizedBox(height: 1),
-                Text(skill.description,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: appText(12, color: AppColors.textSub)),
+                Text(
+                  skill.description,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: appText(12, color: AppColors.textSub),
+                ),
               ],
             ),
           ),
@@ -273,7 +315,11 @@ class _ServiceRow extends StatelessWidget {
 }
 
 class _DocumentTile extends StatelessWidget {
-  const _DocumentTile({required this.icon, required this.title, required this.onTap});
+  const _DocumentTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String title;
@@ -291,15 +337,20 @@ class _DocumentTile extends StatelessWidget {
             Container(
               width: 42,
               height: 42,
-              decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, size: 21, color: AppColors.ink),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: appText(14.5, weight: FontWeight.w700)),
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: appText(14.5, weight: FontWeight.w700),
+              ),
             ),
             const SizedBox(width: 8),
             const VerifiedBadge(label: 'Đã xác minh'),
@@ -329,14 +380,21 @@ class _AreaDropdown extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.location_on_outlined, size: 20, color: AppColors.primary),
+          const Icon(
+            Icons.location_on_outlined,
+            size: 20,
+            color: AppColors.primary,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: value,
                 isExpanded: true,
-                icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.ink),
+                icon: const Icon(
+                  Icons.keyboard_arrow_down,
+                  color: AppColors.ink,
+                ),
                 dropdownColor: Colors.white,
                 borderRadius: BorderRadius.circular(AppRadius.sm),
                 style: appText(15, weight: FontWeight.w600),
@@ -344,7 +402,10 @@ class _AreaDropdown extends StatelessWidget {
                   for (final d in MockData.districts)
                     DropdownMenuItem<String>(
                       value: d,
-                      child: Text(d, style: appText(15, weight: FontWeight.w600)),
+                      child: Text(
+                        d,
+                        style: appText(15, weight: FontWeight.w600),
+                      ),
                     ),
                 ],
                 onChanged: (v) {
@@ -368,7 +429,9 @@ class _EditNameDialog extends StatefulWidget {
 }
 
 class _EditNameDialogState extends State<_EditNameDialog> {
-  late final TextEditingController _ctrl = TextEditingController(text: widget.initial);
+  late final TextEditingController _ctrl = TextEditingController(
+    text: widget.initial,
+  );
 
   @override
   void dispose() {
@@ -379,8 +442,13 @@ class _EditNameDialogState extends State<_EditNameDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
-      title: Text('Chỉnh sửa hồ sơ', style: appText(17, weight: FontWeight.w800)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      title: Text(
+        'Chỉnh sửa hồ sơ',
+        style: appText(17, weight: FontWeight.w800),
+      ),
       content: TextField(
         controller: _ctrl,
         autofocus: true,
@@ -391,11 +459,25 @@ class _EditNameDialogState extends State<_EditNameDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text('Hủy', style: appText(14, weight: FontWeight.w700, color: AppColors.textSub)),
+          child: Text(
+            'Hủy',
+            style: appText(
+              14,
+              weight: FontWeight.w700,
+              color: AppColors.textSub,
+            ),
+          ),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(_ctrl.text),
-          child: Text('Lưu', style: appText(14, weight: FontWeight.w800, color: AppColors.primaryDark)),
+          child: Text(
+            'Lưu',
+            style: appText(
+              14,
+              weight: FontWeight.w800,
+              color: AppColors.primaryDark,
+            ),
+          ),
         ),
       ],
     );

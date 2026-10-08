@@ -75,7 +75,10 @@ class MechanicWalletScreen extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-                child: Text('Ví của tôi', style: appText(22, weight: FontWeight.w800)),
+                child: Text(
+                  'Ví của tôi',
+                  style: appText(22, weight: FontWeight.w800),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -94,13 +97,20 @@ class MechanicWalletScreen extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: () => _deposit(context, state),
                           icon: const Icon(Icons.add_circle_outline, size: 20),
-                          label: Text('Nạp tiền', style: appText(14.5, weight: FontWeight.w700)),
+                          label: Text(
+                            'Nạp tiền',
+                            style: appText(14.5, weight: FontWeight.w700),
+                          ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppColors.ink,
                             backgroundColor: Colors.white,
-                            side: const BorderSide(color: AppColors.ink, width: 1.4),
+                            side: const BorderSide(
+                              color: AppColors.ink,
+                              width: 1.4,
+                            ),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md)),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
                           ),
                         ),
                       ),
@@ -112,15 +122,25 @@ class MechanicWalletScreen extends StatelessWidget {
                         height: 52,
                         child: ElevatedButton.icon(
                           onPressed: () => _withdraw(context, state),
-                          icon: const Icon(Icons.account_balance_outlined, size: 20),
-                          label: Text('Rút tiền về Ngân hàng',
-                              style: appText(14.5, weight: FontWeight.w800, color: Colors.white)),
+                          icon: const Icon(
+                            Icons.account_balance_outlined,
+                            size: 20,
+                          ),
+                          label: Text(
+                            'Rút tiền về Ngân hàng',
+                            style: appText(
+                              14.5,
+                              weight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md)),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                            ),
                           ),
                         ),
                       ),
@@ -135,8 +155,10 @@ class MechanicWalletScreen extends StatelessWidget {
                   trailing: TextButton.icon(
                     onPressed: () => showWeeklySummary(context),
                     icon: const Icon(Icons.insights_outlined, size: 16),
-                    label: Text('Tổng kết tuần',
-                        style: appText(12.5, weight: FontWeight.w700)),
+                    label: Text(
+                      'Tổng kết tuần',
+                      style: appText(12.5, weight: FontWeight.w700),
+                    ),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.ink,
                       minimumSize: const Size(0, 44),
@@ -148,7 +170,8 @@ class MechanicWalletScreen extends StatelessWidget {
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   itemCount: txs.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1, color: AppColors.border),
+                  separatorBuilder: (_, _) =>
+                      const Divider(height: 1, color: AppColors.border),
                   itemBuilder: (context, i) => _TransactionTile(tx: txs[i]),
                 ),
               ),
@@ -181,8 +204,10 @@ class _BalanceCard extends StatelessWidget {
               child: Container(
                 width: 160,
                 height: 160,
-                decoration:
-                    BoxDecoration(color: AppColors.primary.op(0.28), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.op(0.28),
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
             Positioned(
@@ -191,8 +216,10 @@ class _BalanceCard extends StatelessWidget {
               child: Container(
                 width: 90,
                 height: 90,
-                decoration:
-                    BoxDecoration(color: AppColors.primary.op(0.16), shape: BoxShape.circle),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.op(0.16),
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
             Padding(
@@ -200,20 +227,30 @@ class _BalanceCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Số dư khả dụng',
-                      style: appText(13.5, color: Colors.white.op(0.72))),
+                  Text(
+                    'Số dư khả dụng',
+                    style: appText(13.5, color: Colors.white.op(0.72)),
+                  ),
                   const SizedBox(height: 6),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
                       formatVnd(balance),
-                      style: appText(34, weight: FontWeight.w800, color: Colors.white),
+                      style: appText(
+                        34,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),
                   Row(
                     children: [
-                      Icon(Icons.verified_outlined, size: 16, color: Colors.white.op(0.72)),
+                      Icon(
+                        Icons.verified_outlined,
+                        size: 16,
+                        color: Colors.white.op(0.72),
+                      ),
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
@@ -250,7 +287,10 @@ class _TransactionTile extends StatelessWidget {
           Container(
             width: 42,
             height: 42,
-            decoration: BoxDecoration(color: color.op(0.12), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.op(0.12),
+              shape: BoxShape.circle,
+            ),
             child: Icon(
               income ? Icons.arrow_upward : Icons.arrow_downward,
               size: 20,
@@ -330,7 +370,9 @@ class _AmountSheetState extends State<_AmountSheet> {
     if (_amount <= 0) {
       setState(() => _error = 'Vui lòng nhập số tiền lớn hơn 0.');
     } else if (max != null && _amount > max) {
-      setState(() => _error = 'Số tiền vượt quá số dư khả dụng (${formatVnd(max)}).');
+      setState(
+        () => _error = 'Số tiền vượt quá số dư khả dụng (${formatVnd(max)}).',
+      );
     } else {
       Navigator.of(context).pop(_amount);
     }
@@ -356,7 +398,9 @@ class _AmountSheetState extends State<_AmountSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: AppColors.border, borderRadius: BorderRadius.circular(2)),
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -374,7 +418,11 @@ class _AmountSheetState extends State<_AmountSheet> {
                 labelText: 'Số tiền (đồng)',
                 suffixText: 'đ',
                 helperText: _amount > 0 ? formatVnd(_amount) : null,
-                helperStyle: appText(12.5, weight: FontWeight.w600, color: AppColors.primaryDark),
+                helperStyle: appText(
+                  12.5,
+                  weight: FontWeight.w600,
+                  color: AppColors.primaryDark,
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -384,14 +432,20 @@ class _AmountSheetState extends State<_AmountSheet> {
               children: [
                 for (final v in quick)
                   ActionChip(
-                    label: Text(formatVnd(v), style: appText(12.5, weight: FontWeight.w600)),
+                    label: Text(
+                      formatVnd(v),
+                      style: appText(12.5, weight: FontWeight.w600),
+                    ),
                     backgroundColor: AppColors.surface,
                     side: const BorderSide(color: AppColors.border),
                     onPressed: () => _setAmount(v),
                   ),
                 if (widget.allowAll && widget.maxAmount != null)
                   ActionChip(
-                    label: Text('Rút tất cả', style: appText(12.5, weight: FontWeight.w600)),
+                    label: Text(
+                      'Rút tất cả',
+                      style: appText(12.5, weight: FontWeight.w600),
+                    ),
                     backgroundColor: AppColors.surface,
                     side: const BorderSide(color: AppColors.border),
                     onPressed: () => _setAmount(widget.maxAmount!),
@@ -402,11 +456,21 @@ class _AmountSheetState extends State<_AmountSheet> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Icon(Icons.error_outline, size: 16, color: AppColors.primaryDark),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 16,
+                    color: AppColors.primaryDark,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
-                    child: Text(_error!,
-                        style: appText(12.5, weight: FontWeight.w600, color: AppColors.primaryDark)),
+                    child: Text(
+                      _error!,
+                      style: appText(
+                        12.5,
+                        weight: FontWeight.w600,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -422,10 +486,17 @@ class _AmountSheetState extends State<_AmountSheet> {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md)),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
                 ),
-                child: Text(widget.confirmLabel,
-                    style: appText(15.5, weight: FontWeight.w800, color: Colors.white)),
+                child: Text(
+                  widget.confirmLabel,
+                  style: appText(
+                    15.5,
+                    weight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ),
           ],

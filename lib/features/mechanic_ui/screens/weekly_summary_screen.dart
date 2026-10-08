@@ -15,12 +15,17 @@ Future<void> showWeeklySummary(BuildContext context) {
       reverseTransitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (_, _, _) => const WeeklySummaryScreen(),
       transitionsBuilder: (_, animation, _, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+        );
         return FadeTransition(
           opacity: curved,
           child: SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
-                .animate(curved),
+            position: Tween<Offset>(
+              begin: const Offset(0, 0.06),
+              end: Offset.zero,
+            ).animate(curved),
             child: child,
           ),
         );
@@ -44,8 +49,10 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
   @override
   void initState() {
     super.initState();
-    _intro = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))
-      ..forward();
+    _intro = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..forward();
   }
 
   @override
@@ -59,7 +66,8 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
     final tier = state.profile.tier;
     final next = tier.next;
     final remaining = tier.ordersToNext(state.profile.totalOrders);
-    final text = 'Tuần ${MockData.weekRange} trên MotoCare: '
+    final text =
+        'Tuần ${MockData.weekRange} trên MotoCare: '
         '${formatVnd(MockData.weekIncome)} thu nhập, '
         '${MockData.weekOrders} đơn hoàn thành, '
         'đánh giá ${MockData.weekAvgRating.toStringAsFixed(1)}/5. '
@@ -67,7 +75,13 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Đã sao chép thành tích — dán vào Zalo/Facebook để chia sẻ.')));
+      ..showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Đã sao chép thành tích — dán vào Zalo/Facebook để chia sẻ.',
+          ),
+        ),
+      );
   }
 
   void _openHistory() {
@@ -81,8 +95,9 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
     final tier = state.profile.tier;
     final next = tier.next;
     final remaining = tier.ordersToNext(state.profile.totalOrders);
-    final tierLine =
-        next == null ? tier.title : '${tier.title} — còn $remaining đơn lên ${next.name}';
+    final tierLine = next == null
+        ? tier.title
+        : '${tier.title} — còn $remaining đơn lên ${next.name}';
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
@@ -103,7 +118,9 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                         children: [
                           Align(
                             alignment: Alignment.centerRight,
-                            child: _CloseButton(onTap: () => Navigator.of(context).pop()),
+                            child: _CloseButton(
+                              onTap: () => Navigator.of(context).pop(),
+                            ),
                           ),
                           const SizedBox(height: 16),
                           _Reveal(
@@ -112,11 +129,23 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Tổng kết tuần của bạn',
-                                    style: appText(27, weight: FontWeight.w800, color: Colors.white, height: 1.2)),
+                                Text(
+                                  'Tổng kết tuần của bạn',
+                                  style: appText(
+                                    27,
+                                    weight: FontWeight.w800,
+                                    color: Colors.white,
+                                    height: 1.2,
+                                  ),
+                                ),
                                 const SizedBox(height: 6),
-                                Text(MockData.weekRange,
-                                    style: appText(14.5, color: Colors.white.op(0.7))),
+                                Text(
+                                  MockData.weekRange,
+                                  style: appText(
+                                    14.5,
+                                    color: Colors.white.op(0.7),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -129,7 +158,9 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                               children: [
                                 TweenAnimationBuilder<double>(
                                   tween: Tween<double>(
-                                      begin: 0, end: MockData.weekIncome.toDouble()),
+                                    begin: 0,
+                                    end: MockData.weekIncome.toDouble(),
+                                  ),
                                   duration: const Duration(milliseconds: 1600),
                                   curve: Curves.easeOutCubic,
                                   builder: (context, value, _) => FittedBox(
@@ -137,7 +168,12 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                                     alignment: Alignment.centerLeft,
                                     child: Text(
                                       formatVnd(value.round()),
-                                      style: appText(52, weight: FontWeight.w800, color: Colors.white, height: 1.1),
+                                      style: appText(
+                                        52,
+                                        weight: FontWeight.w800,
+                                        color: Colors.white,
+                                        height: 1.1,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -153,8 +189,14 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                                       ),
                                     ),
                                     const SizedBox(width: 10),
-                                    Text('Thu nhập tuần này',
-                                        style: appText(14, weight: FontWeight.w600, color: Colors.white.op(0.75))),
+                                    Text(
+                                      'Thu nhập tuần này',
+                                      style: appText(
+                                        14,
+                                        weight: FontWeight.w600,
+                                        color: Colors.white.op(0.75),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -171,11 +213,21 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                                 TextSpan(
                                   children: [
                                     TextSpan(
-                                        text: '${MockData.weekOrders}',
-                                        style: appText(20, weight: FontWeight.w800, color: Colors.white)),
+                                      text: '${MockData.weekOrders}',
+                                      style: appText(
+                                        20,
+                                        weight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                     TextSpan(
-                                        text: ' đơn hoàn thành',
-                                        style: appText(15, weight: FontWeight.w600, color: Colors.white.op(0.85))),
+                                      text: ' đơn hoàn thành',
+                                      style: appText(
+                                        15,
+                                        weight: FontWeight.w600,
+                                        color: Colors.white.op(0.85),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
@@ -195,17 +247,32 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                                       TextSpan(
                                         children: [
                                           TextSpan(
-                                              text: 'Đánh giá trung bình ',
-                                              style: appText(15, weight: FontWeight.w600, color: Colors.white.op(0.85))),
+                                            text: 'Đánh giá trung bình ',
+                                            style: appText(
+                                              15,
+                                              weight: FontWeight.w600,
+                                              color: Colors.white.op(0.85),
+                                            ),
+                                          ),
                                           TextSpan(
-                                              text: MockData.weekAvgRating.toStringAsFixed(1),
-                                              style: appText(20, weight: FontWeight.w800, color: Colors.white)),
+                                            text: MockData.weekAvgRating
+                                                .toStringAsFixed(1),
+                                            style: appText(
+                                              20,
+                                              weight: FontWeight.w800,
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  const Icon(Icons.star_rounded, size: 20, color: AppColors.warning),
+                                  const Icon(
+                                    Icons.star_rounded,
+                                    size: 20,
+                                    color: AppColors.warning,
+                                  ),
                                 ],
                               ),
                             ),
@@ -219,7 +286,12 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                               iconColor: AppColors.primary,
                               child: Text(
                                 tierLine,
-                                style: appText(15, weight: FontWeight.w700, color: Colors.white, height: 1.3),
+                                style: appText(
+                                  15,
+                                  weight: FontWeight.w700,
+                                  color: Colors.white,
+                                  height: 1.3,
+                                ),
                               ),
                             ),
                           ),
@@ -235,15 +307,30 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                                   height: 54,
                                   child: OutlinedButton.icon(
                                     onPressed: _share,
-                                    icon: const Icon(Icons.share_outlined, size: 20),
-                                    label: Text('Chia sẻ thành tích',
-                                        style: appText(15, weight: FontWeight.w700, color: Colors.white)),
+                                    icon: const Icon(
+                                      Icons.share_outlined,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      'Chia sẻ thành tích',
+                                      style: appText(
+                                        15,
+                                        weight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: Colors.white,
                                       backgroundColor: Colors.transparent,
-                                      side: BorderSide(color: Colors.white.op(0.45), width: 1.4),
+                                      side: BorderSide(
+                                        color: Colors.white.op(0.45),
+                                        width: 1.4,
+                                      ),
                                       shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(AppRadius.md)),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.md,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -257,10 +344,20 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Text('Xem chi tiết lịch sử',
-                                          style: appText(13.5, weight: FontWeight.w600, color: Colors.white.op(0.8))),
+                                      Text(
+                                        'Xem chi tiết lịch sử',
+                                        style: appText(
+                                          13.5,
+                                          weight: FontWeight.w600,
+                                          color: Colors.white.op(0.8),
+                                        ),
+                                      ),
                                       const SizedBox(width: 6),
-                                      Icon(Icons.arrow_forward, size: 16, color: Colors.white.op(0.8)),
+                                      Icon(
+                                        Icons.arrow_forward,
+                                        size: 16,
+                                        color: Colors.white.op(0.8),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -283,7 +380,11 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen>
 
 /// Hiệu ứng xuất hiện lần lượt (fade + trượt lên) theo Interval.
 class _Reveal extends StatelessWidget {
-  const _Reveal({required this.controller, required this.begin, required this.child});
+  const _Reveal({
+    required this.controller,
+    required this.begin,
+    required this.child,
+  });
 
   final Animation<double> controller;
   final double begin; // 0..1
@@ -299,7 +400,10 @@ class _Reveal extends StatelessWidget {
     return FadeTransition(
       opacity: anim,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.18), end: Offset.zero).animate(anim),
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.18),
+          end: Offset.zero,
+        ).animate(anim),
         child: child,
       ),
     );
@@ -333,7 +437,11 @@ class _CloseButton extends StatelessWidget {
 
 /// Card nhỏ nền trắng mờ trên nền tối.
 class _WrappedCard extends StatelessWidget {
-  const _WrappedCard({required this.icon, required this.iconColor, required this.child});
+  const _WrappedCard({
+    required this.icon,
+    required this.iconColor,
+    required this.child,
+  });
 
   final IconData icon;
   final Color iconColor;
@@ -354,7 +462,10 @@ class _WrappedCard extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(color: Colors.white.op(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: Colors.white.op(0.1),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, size: 24, color: iconColor),
           ),
           const SizedBox(width: 14),

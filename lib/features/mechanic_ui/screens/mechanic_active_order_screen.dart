@@ -18,7 +18,8 @@ class MechanicActiveOrderScreen extends StatefulWidget {
   final OrderRequest order;
 
   @override
-  State<MechanicActiveOrderScreen> createState() => _MechanicActiveOrderScreenState();
+  State<MechanicActiveOrderScreen> createState() =>
+      _MechanicActiveOrderScreenState();
 }
 
 class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
@@ -53,7 +54,8 @@ class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
   int get _extraTotal => _extras
       .where((e) => e.status == ExtraStatus.confirmed)
       .fold<int>(0, (sum, e) => sum + e.amount);
-  bool get _hasPendingExtra => _extras.any((e) => e.status == ExtraStatus.pending);
+  bool get _hasPendingExtra =>
+      _extras.any((e) => e.status == ExtraStatus.pending);
   int get _totalIncome => widget.order.earning + _extraTotal;
   bool get _finished => _step == _lastStep;
 
@@ -61,7 +63,10 @@ class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
   void initState() {
     super.initState();
     // Marker thợ chạy dọc tuyến trong lúc "Đang đến chỗ khách".
-    _move = AnimationController(vsync: this, duration: const Duration(seconds: 26));
+    _move = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 26),
+    );
     _move.animateTo(0.88, curve: Curves.linear);
   }
 
@@ -80,12 +85,19 @@ class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
       return;
     }
     if (_step == 3 && _hasPendingExtra) {
-      showAppSnack(context, 'Đang chờ khách xác nhận báo giá phát sinh. Vui lòng đợi hoặc hủy khoản đó.');
+      showAppSnack(
+        context,
+        'Đang chờ khách xác nhận báo giá phát sinh. Vui lòng đợi hoặc hủy khoản đó.',
+      );
       return;
     }
     setState(() => _step += 1);
     if (_step == 2) {
-      _move.animateTo(1.0, duration: const Duration(milliseconds: 700), curve: Curves.easeOut);
+      _move.animateTo(
+        1.0,
+        duration: const Duration(milliseconds: 700),
+        curve: Curves.easeOut,
+      );
     }
     if (_step == _lastStep) {
       // Ghi nhận thu nhập, trừ chiết khấu, tăng số đơn (có thể lên hạng).
@@ -97,21 +109,31 @@ class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
     final item = await showAddExtraSheet(context);
     if (item == null || !mounted) return;
     setState(() => _extras.add(item));
-    showAppSnack(context, 'Đã gửi báo giá ${formatVnd(item.amount)} cho khách xác nhận.');
+    showAppSnack(
+      context,
+      'Đã gửi báo giá ${formatVnd(item.amount)} cho khách xác nhận.',
+    );
     // Mock: sau 4 giây khách bấm "Đồng ý" trên app của họ.
-    _timers.add(Timer(const Duration(seconds: 4), () {
-      if (!mounted || !_extras.contains(item)) return;
-      setState(() => item.status = ExtraStatus.confirmed);
-      showAppSnack(context, 'Khách đã xác nhận: ${item.description}.');
-    }));
+    _timers.add(
+      Timer(const Duration(seconds: 4), () {
+        if (!mounted || !_extras.contains(item)) return;
+        setState(() => item.status = ExtraStatus.confirmed);
+        showAppSnack(context, 'Khách đã xác nhận: ${item.description}.');
+      }),
+    );
   }
 
   Future<void> _confirmLeave() async {
     final leave = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
-        title: Text('Rời khỏi đơn đang làm?', style: appText(17, weight: FontWeight.w800)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Text(
+          'Rời khỏi đơn đang làm?',
+          style: appText(17, weight: FontWeight.w800),
+        ),
         content: Text(
           'Đơn ${widget.order.id} chưa hoàn thành. Thoát bây giờ sẽ hủy đơn này.',
           style: appText(14, color: AppColors.textSub, height: 1.4),
@@ -123,8 +145,14 @@ class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Hủy đơn',
-                style: appText(14, weight: FontWeight.w700, color: AppColors.primaryDark)),
+            child: Text(
+              'Hủy đơn',
+              style: appText(
+                14,
+                weight: FontWeight.w700,
+                color: AppColors.primaryDark,
+              ),
+            ),
           ),
         ],
       ),
@@ -189,7 +217,9 @@ class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
                           Expanded(
                             child: Container(
                               height: 44,
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               alignment: Alignment.centerLeft,
                               decoration: BoxDecoration(
                                 color: Colors.white,
@@ -198,11 +228,19 @@ class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
                               ),
                               child: Row(
                                 children: [
-                                  Text(order.id, style: appText(13.5, weight: FontWeight.w800)),
+                                  Text(
+                                    order.id,
+                                    style: appText(
+                                      13.5,
+                                      weight: FontWeight.w800,
+                                    ),
+                                  ),
                                   Container(
                                     width: 1,
                                     height: 16,
-                                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
                                     color: AppColors.border,
                                   ),
                                   Expanded(
@@ -210,7 +248,11 @@ class _MechanicActiveOrderScreenState extends State<MechanicActiveOrderScreen>
                                       _statusText,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: appText(13, weight: FontWeight.w600, color: AppColors.textSub),
+                                      style: appText(
+                                        13,
+                                        weight: FontWeight.w600,
+                                        color: AppColors.textSub,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -269,7 +311,10 @@ class _CustomerCard extends StatelessWidget {
           Container(
             width: 46,
             height: 46,
-            decoration: const BoxDecoration(color: AppColors.surface, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+            ),
             child: const Icon(Icons.person_outline, color: AppColors.ink),
           ),
           const SizedBox(width: 12),
@@ -277,10 +322,12 @@ class _CustomerCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(order.customerName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: appText(15, weight: FontWeight.w700)),
+                Text(
+                  order.customerName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: appText(15, weight: FontWeight.w700),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${order.vehicle} · ${order.address}',
@@ -295,13 +342,17 @@ class _CustomerCard extends StatelessWidget {
           CircleIconButton(
             icon: Icons.phone_outlined,
             tooltip: 'Gọi điện',
-            onTap: () => showAppSnack(context, 'Đang gọi ${order.customerPhone} (demo)'),
+            onTap: () =>
+                showAppSnack(context, 'Đang gọi ${order.customerPhone} (demo)'),
           ),
           const SizedBox(width: 8),
           CircleIconButton(
             icon: Icons.chat_bubble_outline,
             tooltip: 'Nhắn tin',
-            onTap: () => showAppSnack(context, 'Mở tin nhắn với ${order.customerName} (demo)'),
+            onTap: () => showAppSnack(
+              context,
+              'Mở tin nhắn với ${order.customerName} (demo)',
+            ),
           ),
         ],
       ),
@@ -342,7 +393,11 @@ class _BottomPanel extends StatelessWidget {
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         boxShadow: [
-          BoxShadow(color: Colors.black.op(0.12), blurRadius: 24, offset: const Offset(0, -6)),
+          BoxShadow(
+            color: Colors.black.op(0.12),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
+          ),
         ],
       ),
       child: SafeArea(
@@ -376,10 +431,12 @@ class _BottomPanel extends StatelessWidget {
                     ),
                     child: Text(
                       '+ Thêm phụ tùng phát sinh',
-                      style: appText(13.5,
-                          weight: FontWeight.w700,
-                          color: AppColors.primaryDark,
-                          decoration: TextDecoration.underline),
+                      style: appText(
+                        13.5,
+                        weight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                        decoration: TextDecoration.underline,
+                      ),
                     ),
                   ),
                 ),
@@ -390,18 +447,25 @@ class _BottomPanel extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: onAdvance,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: finished ? AppColors.ink : AppColors.primary,
+                    backgroundColor: finished
+                        ? AppColors.ink
+                        : AppColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md)),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
                   ),
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 200),
                     child: Text(
                       actionLabel,
                       key: ValueKey<String>(actionLabel),
-                      style: appText(16, weight: FontWeight.w800, color: Colors.white),
+                      style: appText(
+                        16,
+                        weight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -456,7 +520,10 @@ class _IncomeSummary extends StatelessWidget {
                   ),
                   Container(
                     margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: extras[i].status == ExtraStatus.confirmed
                           ? AppColors.successSoft
@@ -464,23 +531,33 @@ class _IncomeSummary extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      extras[i].status == ExtraStatus.confirmed ? 'Khách đã xác nhận' : 'Chờ khách xác nhận',
-                      style: appText(10.5,
-                          weight: FontWeight.w700,
-                          color: extras[i].status == ExtraStatus.confirmed
-                              ? AppColors.successDark
-                              : const Color(0xFF9A5B00)),
+                      extras[i].status == ExtraStatus.confirmed
+                          ? 'Khách đã xác nhận'
+                          : 'Chờ khách xác nhận',
+                      style: appText(
+                        10.5,
+                        weight: FontWeight.w700,
+                        color: extras[i].status == ExtraStatus.confirmed
+                            ? AppColors.successDark
+                            : const Color(0xFF9A5B00),
+                      ),
                     ),
                   ),
-                  Text(formatVnd(extras[i].amount),
-                      style: appText(13, weight: FontWeight.w600)),
+                  Text(
+                    formatVnd(extras[i].amount),
+                    style: appText(13, weight: FontWeight.w600),
+                  ),
                   if (canEdit && extras[i].status == ExtraStatus.pending)
                     InkResponse(
                       radius: 18,
                       onTap: () => onRemove(i),
                       child: const Padding(
                         padding: EdgeInsets.only(left: 8),
-                        child: Icon(Icons.close, size: 16, color: AppColors.textSub),
+                        child: Icon(
+                          Icons.close,
+                          size: 16,
+                          color: AppColors.textSub,
+                        ),
                       ),
                     ),
                 ],
@@ -493,11 +570,19 @@ class _IncomeSummary extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text('Tổng thu nhập tạm tính',
-                    style: appText(13.5, weight: FontWeight.w600)),
+                child: Text(
+                  'Tổng thu nhập tạm tính',
+                  style: appText(13.5, weight: FontWeight.w600),
+                ),
               ),
-              Text(formatVnd(totalIncome),
-                  style: appText(18, weight: FontWeight.w800, color: AppColors.primary)),
+              Text(
+                formatVnd(totalIncome),
+                style: appText(
+                  18,
+                  weight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
+              ),
             ],
           ),
         ],
@@ -508,7 +593,9 @@ class _IncomeSummary extends StatelessWidget {
   Widget _line(String label, String value) {
     return Row(
       children: [
-        Expanded(child: Text(label, style: appText(13, color: AppColors.textSub))),
+        Expanded(
+          child: Text(label, style: appText(13, color: AppColors.textSub)),
+        ),
         Text(value, style: appText(13, weight: FontWeight.w600)),
       ],
     );
@@ -531,12 +618,20 @@ class _SuccessNote extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.check_circle_outline, size: 20, color: AppColors.successDark),
+          const Icon(
+            Icons.check_circle_outline,
+            size: 20,
+            color: AppColors.successDark,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               'Đơn hoàn tất — ${formatVnd(total)} đã được cộng vào ví.',
-              style: appText(13.5, weight: FontWeight.w600, color: AppColors.successDark),
+              style: appText(
+                13.5,
+                weight: FontWeight.w600,
+                color: AppColors.successDark,
+              ),
             ),
           ),
         ],

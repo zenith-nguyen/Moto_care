@@ -52,7 +52,10 @@ class _RouteMapPainter extends CustomPainter {
     final h = size.height;
 
     // Nền + khối xanh
-    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFFEDEFF1));
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFFEDEFF1),
+    );
     final park = Paint()..color = const Color(0xFFDCE8DA);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
@@ -79,10 +82,18 @@ class _RouteMapPainter extends CustomPainter {
       ..strokeWidth = 9
       ..strokeCap = StrokeCap.round;
     for (final fx in const [0.08, 0.3, 0.52, 0.74, 0.96]) {
-      canvas.drawLine(Offset(w * fx, 0), Offset(w * fx, h), fx == 0.52 ? major : minor);
+      canvas.drawLine(
+        Offset(w * fx, 0),
+        Offset(w * fx, h),
+        fx == 0.52 ? major : minor,
+      );
     }
     for (final fy in const [0.12, 0.3, 0.46, 0.62, 0.8]) {
-      canvas.drawLine(Offset(0, h * fy), Offset(w, h * fy), fy == 0.46 ? major : minor);
+      canvas.drawLine(
+        Offset(0, h * fy),
+        Offset(w, h * fy),
+        fy == 0.46 ? major : minor,
+      );
     }
     canvas.drawLine(Offset(-20, h * 0.92), Offset(w + 20, h * 0.18), major);
 
@@ -140,7 +151,12 @@ class _RouteMapPainter extends CustomPainter {
     _paintMarker(canvas, pts.last, Icons.person_outline, AppColors.ink);
     final tangent = metric.getTangentForOffset(total * t);
     if (tangent != null) {
-      _paintMarker(canvas, tangent.position, Icons.two_wheeler, AppColors.primary);
+      _paintMarker(
+        canvas,
+        tangent.position,
+        Icons.two_wheeler,
+        AppColors.primary,
+      );
     }
   }
 

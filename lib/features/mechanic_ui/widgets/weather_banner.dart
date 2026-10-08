@@ -29,7 +29,11 @@ class WeatherBanner extends StatelessWidget {
               color: AppColors.warning.op(0.22),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.thunderstorm_outlined, size: 22, color: Color(0xFF9A5B00)),
+            child: const Icon(
+              Icons.thunderstorm_outlined,
+              size: 22,
+              color: Color(0xFF9A5B00),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

@@ -30,9 +30,10 @@ class _TierProgressCardState extends State<TierProgressCard>
   double get _target => widget.tier.progress(widget.totalOrders);
 
   Animation<double> _tween(double from, double to) {
-    return Tween<double>(begin: from, end: to).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    return Tween<double>(
+      begin: from,
+      end: to,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
   }
 
   @override
@@ -88,7 +89,11 @@ class _TierProgressCardState extends State<TierProgressCard>
               color: tier.color.op(0.14),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.military_tech_outlined, size: 30, color: tier.color),
+            child: Icon(
+              Icons.military_tech_outlined,
+              size: 30,
+              color: tier.color,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -97,10 +102,19 @@ class _TierProgressCardState extends State<TierProgressCard>
               children: [
                 Row(
                   children: [
-                    Text(tier.title, style: appText(16, weight: FontWeight.w700)),
+                    Text(
+                      tier.title,
+                      style: appText(16, weight: FontWeight.w700),
+                    ),
                     const Spacer(),
-                    Text(countText,
-                        style: appText(12, weight: FontWeight.w600, color: AppColors.textSub)),
+                    Text(
+                      countText,
+                      style: appText(
+                        12,
+                        weight: FontWeight.w600,
+                        color: AppColors.textSub,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),

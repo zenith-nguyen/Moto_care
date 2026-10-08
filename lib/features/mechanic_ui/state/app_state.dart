@@ -26,7 +26,9 @@ class AppState extends ChangeNotifier {
 
   /// Khách gửi hồ sơ qua mục "Trở thành đối tác" -> chờ duyệt trên CMS/Admin.
   void submitPartnerApplication(String shopName, String area) {
-    profile.displayName = shopName.trim().isEmpty ? profile.displayName : shopName.trim();
+    profile.displayName = shopName.trim().isEmpty
+        ? profile.displayName
+        : shopName.trim();
     profile.area = area;
     partnerStatus = PartnerStatus.pending;
     notifyListeners();
@@ -99,8 +101,9 @@ class AppState extends ChangeNotifier {
   void cycleTierDemo() {
     final next = (profile.tier.tier.index + 1) % TierInfo.all.length;
     final isLast = next == TierInfo.all.length - 1;
-    profile.totalOrders =
-        isLast ? TierInfo.all[next].minOrders + 20 : TierInfo.all[next + 1].minOrders - 6;
+    profile.totalOrders = isLast
+        ? TierInfo.all[next].minOrders + 20
+        : TierInfo.all[next + 1].minOrders - 6;
     notifyListeners();
   }
 
@@ -143,9 +146,17 @@ class AppState extends ChangeNotifier {
     final income = order.earning + extraTotal;
     final now = DateTime.now();
     transactions.insert(
-        0, WalletTransaction(orderId: order.id, time: now, amount: -order.platformFee));
+      0,
+      WalletTransaction(
+        orderId: order.id,
+        time: now,
+        amount: -order.platformFee,
+      ),
+    );
     transactions.insert(
-        0, WalletTransaction(orderId: order.id, time: now, amount: income));
+      0,
+      WalletTransaction(orderId: order.id, time: now, amount: income),
+    );
     balance += income - order.platformFee;
     todayRevenue += income;
     todayOrders += 1;
@@ -157,7 +168,7 @@ class AppState extends ChangeNotifier {
 /// Cung cấp AppState cho toàn cây widget (đặt phía trên MaterialApp).
 class AppScope extends InheritedNotifier<AppState> {
   const AppScope({super.key, required AppState state, required super.child})
-      : super(notifier: state);
+    : super(notifier: state);
 
   /// Dùng trong build(): tự rebuild khi state đổi.
   static AppState of(BuildContext context) {

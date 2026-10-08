@@ -30,7 +30,10 @@ class _MechanicHomeScreenState extends State<MechanicHomeScreen> {
   Future<void> _openIncoming(OrderRequest order) async {
     final state = AppScope.read(context);
     if (!state.isOnline) {
-      showAppSnack(context, 'Bạn đang tạm nghỉ — bật "Đang nhận đơn" để nhận đơn mới.');
+      showAppSnack(
+        context,
+        'Bạn đang tạm nghỉ — bật "Đang nhận đơn" để nhận đơn mới.',
+      );
       return;
     }
     if (_popupOpen) return;
@@ -51,7 +54,10 @@ class _MechanicHomeScreenState extends State<MechanicHomeScreen> {
       showAppSnack(context, 'Đã từ chối — đơn được chuyển cho thợ khác.');
     } else if (result == IncomingOrderResult.timeout) {
       state.removeNearby(order);
-      showAppSnack(context, 'Hết thời gian phản hồi — đơn đã chuyển cho thợ khác.');
+      showAppSnack(
+        context,
+        'Hết thời gian phản hồi — đơn đã chuyển cho thợ khác.',
+      );
     }
   }
 
@@ -89,9 +95,13 @@ class _MechanicHomeScreenState extends State<MechanicHomeScreen> {
                       'Khu vực hoạt động',
                       trailing: Text(
                         state.isOnline ? 'Đang quét đơn...' : 'Đã tắt',
-                        style: appText(12.5,
-                            weight: FontWeight.w600,
-                            color: state.isOnline ? AppColors.primaryDark : AppColors.textSub),
+                        style: appText(
+                          12.5,
+                          weight: FontWeight.w600,
+                          color: state.isOnline
+                              ? AppColors.primaryDark
+                              : AppColors.textSub,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -103,8 +113,14 @@ class _MechanicHomeScreenState extends State<MechanicHomeScreen> {
                     const SizedBox(height: 20),
                     SectionTitle(
                       'Đơn khẩn cấp gần bạn',
-                      trailing: Text('${state.nearbyOrders.length} đơn',
-                          style: appText(12.5, weight: FontWeight.w600, color: AppColors.textSub)),
+                      trailing: Text(
+                        '${state.nearbyOrders.length} đơn',
+                        style: appText(
+                          12.5,
+                          weight: FontWeight.w600,
+                          color: AppColors.textSub,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     _OrderModeToggle(
@@ -123,7 +139,11 @@ class _MechanicHomeScreenState extends State<MechanicHomeScreen> {
                         child: Text(
                           'Chế độ tự động: đơn khẩn cấp sẽ nổ thẳng lên màn hình và bạn có 15 giây để phản hồi. '
                           'Dùng "Giả lập nổ đơn" bên dưới để xem thử.',
-                          style: appText(13, color: AppColors.textSub, height: 1.4),
+                          style: appText(
+                            13,
+                            color: AppColors.textSub,
+                            height: 1.4,
+                          ),
                         ),
                       ),
                   ],
@@ -178,7 +198,11 @@ class _HomeHeader extends StatelessWidget {
           ),
           child: Row(
             children: [
-              AvatarCircle(initial: profile.initial, size: 52, borderColor: Colors.white),
+              AvatarCircle(
+                initial: profile.initial,
+                size: 52,
+                borderColor: Colors.white,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -188,7 +212,11 @@ class _HomeHeader extends StatelessWidget {
                       profile.displayName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: appText(17, weight: FontWeight.w700, color: Colors.white),
+                      style: appText(
+                        17,
+                        weight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     if (profile.verified) const VerifiedBadge(),
@@ -249,7 +277,11 @@ class _OnlineSwitch extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               isOnline ? 'Đang nhận đơn' : 'Tạm nghỉ',
-              style: appText(11.5, weight: FontWeight.w600, color: Colors.white.op(0.9)),
+              style: appText(
+                11.5,
+                weight: FontWeight.w600,
+                color: Colors.white.op(0.9),
+              ),
             ),
           ],
         ),
@@ -277,15 +309,20 @@ class _StatsCard extends StatelessWidget {
           Expanded(
             child: _StatItem(
               label: 'Doanh thu hôm nay',
-              value: Text(formatVnd(state.todayRevenue),
-                  style: appText(17, weight: FontWeight.w800)),
+              value: Text(
+                formatVnd(state.todayRevenue),
+                style: appText(17, weight: FontWeight.w800),
+              ),
             ),
           ),
           const _VerticalDivider(),
           Expanded(
             child: _StatItem(
               label: 'Đơn hoàn thành',
-              value: Text('${state.todayOrders}', style: appText(17, weight: FontWeight.w800)),
+              value: Text(
+                '${state.todayOrders}',
+                style: appText(17, weight: FontWeight.w800),
+              ),
             ),
           ),
           const _VerticalDivider(),
@@ -295,10 +332,16 @@ class _StatsCard extends StatelessWidget {
               value: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.star_rounded, size: 18, color: AppColors.warning),
+                  const Icon(
+                    Icons.star_rounded,
+                    size: 18,
+                    color: AppColors.warning,
+                  ),
                   const SizedBox(width: 2),
-                  Text(state.profile.rating.toStringAsFixed(1),
-                      style: appText(17, weight: FontWeight.w800)),
+                  Text(
+                    state.profile.rating.toStringAsFixed(1),
+                    style: appText(17, weight: FontWeight.w800),
+                  ),
                 ],
               ),
             ),
@@ -378,7 +421,11 @@ class _OrderModeToggle extends StatelessWidget {
 }
 
 class _ModeSegment extends StatelessWidget {
-  const _ModeSegment({required this.label, required this.selected, required this.onTap});
+  const _ModeSegment({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -402,8 +449,11 @@ class _ModeSegment extends StatelessWidget {
           ),
           child: Text(
             label,
-            style: appText(13,
-                weight: FontWeight.w700, color: selected ? Colors.white : AppColors.textSub),
+            style: appText(
+              13,
+              weight: FontWeight.w700,
+              color: selected ? Colors.white : AppColors.textSub,
+            ),
           ),
         ),
       ),
@@ -445,10 +495,8 @@ class _NearbyOrdersList extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: orders.length,
         separatorBuilder: (_, _) => const SizedBox(width: 12),
-        itemBuilder: (context, i) => UrgentOrderChip(
-          order: orders[i],
-          onTap: () => onTap(orders[i]),
-        ),
+        itemBuilder: (context, i) =>
+            UrgentOrderChip(order: orders[i], onTap: () => onTap(orders[i])),
       ),
     );
   }
@@ -480,9 +528,20 @@ class _DemoTools extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.science_outlined, size: 16, color: AppColors.textSub),
+              const Icon(
+                Icons.science_outlined,
+                size: 16,
+                color: AppColors.textSub,
+              ),
               const SizedBox(width: 6),
-              Text('Công cụ demo', style: appText(12.5, weight: FontWeight.w700, color: AppColors.textSub)),
+              Text(
+                'Công cụ demo',
+                style: appText(
+                  12.5,
+                  weight: FontWeight.w700,
+                  color: AppColors.textSub,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -490,14 +549,28 @@ class _DemoTools extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _DemoButton(label: 'Giả lập nổ đơn', icon: Icons.bolt_outlined, onTap: onSimulate),
-              _DemoButton(label: 'Tổng kết tuần', icon: Icons.insights_outlined, onTap: onWeekly),
-              _DemoButton(label: 'Bật/tắt cảnh báo mưa', icon: Icons.thunderstorm_outlined, onTap: onToggleRain),
+              _DemoButton(
+                label: 'Giả lập nổ đơn',
+                icon: Icons.bolt_outlined,
+                onTap: onSimulate,
+              ),
+              _DemoButton(
+                label: 'Tổng kết tuần',
+                icon: Icons.insights_outlined,
+                onTap: onWeekly,
+              ),
+              _DemoButton(
+                label: 'Bật/tắt cảnh báo mưa',
+                icon: Icons.thunderstorm_outlined,
+                onTap: onToggleRain,
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text('Mẹo: bấm giữ vào card hạng để xem các hạng khác.',
-              style: appText(11.5, color: AppColors.textSub)),
+          Text(
+            'Mẹo: bấm giữ vào card hạng để xem các hạng khác.',
+            style: appText(11.5, color: AppColors.textSub),
+          ),
         ],
       ),
     );
@@ -505,7 +578,11 @@ class _DemoTools extends StatelessWidget {
 }
 
 class _DemoButton extends StatelessWidget {
-  const _DemoButton({required this.label, required this.icon, required this.onTap});
+  const _DemoButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   final String label;
   final IconData icon;
@@ -523,7 +600,9 @@ class _DemoButton extends StatelessWidget {
         side: const BorderSide(color: AppColors.border),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         minimumSize: const Size(0, 44),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sm)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
       ),
     );
   }

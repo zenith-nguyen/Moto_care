@@ -11,7 +11,9 @@ class AppColors {
   //   primaryDark -> Color(0xFFB3430F)
   //   online      -> success
   static const Color primary = Color(0xFFE63946); // CTA, badge khan cap
-  static const Color primaryDark = Color(0xFFC62833); // chu do tren nen do nhat (du tuong phan)
+  static const Color primaryDark = Color(
+    0xFFC62833,
+  ); // chu do tren nen do nhat (du tuong phan)
   static const Color primarySoft = Color(0xFFFDECEE);
 
   static const Color ink = Color(0xFF1A1A1A); // header, text chinh, nav active
@@ -21,7 +23,9 @@ class AppColors {
   static const Color textSub = Color(0xFF6B7280);
 
   static const Color success = Color(0xFF1F9254);
-  static const Color successDark = Color(0xFF146B3A); // chu xanh tren nen xanh nhat
+  static const Color successDark = Color(
+    0xFF146B3A,
+  ); // chu xanh tren nen xanh nhat
   static const Color successSoft = Color(0xFFE3F4EB);
 
   /// Màu trạng thái ONLINE (Switch nhận đơn, chấm trạng thái).
@@ -78,26 +82,25 @@ ThemeData buildAppTheme() {
   final base = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.primary,
-      onPrimary: Colors.white,
-      secondary: AppColors.ink,
-      onSecondary: Colors.white,
-      error: AppColors.primary,
-      surface: AppColors.bg,
-      onSurface: AppColors.ink,
-    ),
+    colorScheme:
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.primary,
+          onPrimary: Colors.white,
+          secondary: AppColors.ink,
+          onSecondary: Colors.white,
+          error: AppColors.primary,
+          surface: AppColors.bg,
+          onSurface: AppColors.ink,
+        ),
   );
 
   return base.copyWith(
     scaffoldBackgroundColor: AppColors.bg,
-    textTheme: GoogleFonts.beVietnamProTextTheme(base.textTheme).apply(
-      bodyColor: AppColors.ink,
-      displayColor: AppColors.ink,
-    ),
+    textTheme: GoogleFonts.beVietnamProTextTheme(base.textTheme)
+        .apply(bodyColor: AppColors.ink, displayColor: AppColors.ink),
     dividerColor: AppColors.border,
     splashFactory: InkRipple.splashFactory,
     snackBarTheme: SnackBarThemeData(

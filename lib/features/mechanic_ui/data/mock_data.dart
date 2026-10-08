@@ -29,14 +29,14 @@ class MockData {
   ];
 
   static MechanicProfile profile() => MechanicProfile(
-        displayName: 'Minh Phát Garage',
-        ownerName: 'Nguyễn Minh Phát',
-        phone: '0908 123 456',
-        verified: true,
-        rating: 4.9,
-        totalOrders: 44, // Hạng Bạc (20–49), còn 6 đơn lên Vàng (50)
-        area: 'Quận 5',
-      );
+    displayName: 'Minh Phát Garage',
+    ownerName: 'Nguyễn Minh Phát',
+    phone: '0908 123 456',
+    verified: true,
+    rating: 4.9,
+    totalOrders: 44, // Hạng Bạc (20–49), còn 6 đơn lên Vàng (50)
+    area: 'Quận 5',
+  );
 
   static const List<OrderRequest> _templates = [
     OrderRequest(
@@ -124,36 +124,36 @@ class MockData {
   }
 
   static List<ServiceSkill> services() => [
-        ServiceSkill(
-          name: 'Vá xe',
-          description: 'Vá lốp, thay săm, bơm hơi',
-          icon: Icons.tire_repair_outlined,
-        ),
-        ServiceSkill(
-          name: 'Kích bình',
-          description: 'Kích nổ máy khi hết bình ắc quy',
-          icon: Icons.bolt_outlined,
-        ),
-        ServiceSkill(
-          name: 'Cẩu kéo',
-          description: 'Kéo xe về tiệm khi hư nặng',
-          icon: Icons.local_shipping_outlined,
-          enabled: false,
-        ),
-        ServiceSkill(
-          name: 'Thay nhớt',
-          description: 'Thay nhớt tại chỗ',
-          icon: Icons.oil_barrel_outlined,
-        ),
-        ServiceSkill(
-          name: 'Tiếp xăng khẩn cấp',
-          description: 'Mang xăng đến khi xe hết xăng',
-          icon: Icons.local_gas_station_outlined,
-        ),
-        ServiceSkill(
-          name: 'Sửa điện',
-          description: 'Đèn, còi, hệ thống đánh lửa',
-          icon: Icons.electrical_services_outlined,
-        ),
-      ];
+    ServiceSkill(
+      name: 'Vá xe',
+      description: 'Vá lốp, thay săm, bơm hơi',
+      icon: Icons.tire_repair_outlined,
+    ),
+    ServiceSkill(
+      name: 'Kích bình',
+      description: 'Kích nổ máy khi hết bình ắc quy',
+      icon: Icons.bolt_outlined,
+    ),
+    ServiceSkill(
+      name: 'Cẩu kéo',
+      description: 'Kéo xe về tiệm khi hư nặng',
+      icon: Icons.local_shipping_outlined,
+      enabled: false,
+    ),
+    ServiceSkill(
+      name: 'Thay nhớt',
+      description: 'Thay nhớt tại chỗ',
+      icon: Icons.oil_barrel_outlined,
+    ),
+    ServiceSkill(
+      name: 'Tiếp xăng khẩn cấp',
+      description: 'Mang xăng đến khi xe hết xăng',
+      icon: Icons.local_gas_station_outlined,
+    ),
+    ServiceSkill(
+      name: 'Sửa điện',
+      description: 'Đèn, còi, hệ thống đánh lửa',
+      icon: Icons.electrical_services_outlined,
+    ),
+  ];
 }
