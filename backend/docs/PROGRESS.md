@@ -26,12 +26,13 @@ Cập nhật lần cuối: 2026-10-08
 
 ## Đang làm / Tiếp theo
 
-1. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): PR #22 có nền Customer UI dùng được nhưng còn file cache/generated và Google Maps phải có fallback không cần key; PR #23 có màn hình Provider dùng được nhưng đang xóa workflow/docs/platform và thay dependency nền nên không được merge trực tiếp.
-2. Tích hợp Customer UI và Provider UI thành hai PR độc lập từ `main`, giữ router/state/API contract chung; sau đó mới nối Admin UI và build APK ba vai trò.
-3. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
-4. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
-5. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
-6. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
+1. Nhánh `feat/zenith/flutter-api-foundation`: cấu hình API build-time, Dio/Bearer/request ID, secure token, session `/users/me`, role routing, error mapping, tiền decimal và client contract SePay Test mode. Màn hình hiện chỉ là integration placeholder để UI nhóm thay thế.
+2. Tiếp theo bổ sung Socket.IO client dùng cùng session, room/event contract và REST resync sau reconnect; sau đó mới nối từng Customer/Provider/Admin screen.
+3. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): PR #22 có nền Customer UI dùng được nhưng còn file cache/generated và Google Maps phải có fallback không cần key; PR #23 có màn hình Provider dùng được nhưng đang xóa workflow/docs/platform và thay dependency nền nên không được merge trực tiếp.
+4. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
+5. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
+6. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
+7. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
 
 ## Quyết định đã chốt
 
