@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,8 +6,9 @@ import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../activity/services/activity_actions.dart';
 import '../../home/theme/home_theme.dart';
-import '../../partner/providers/partner_provider.dart';
-import '../models/order_tracking_journey.dart';
+import '../providers/order_tracking_provider.dart';
+import '../providers/tracking_chat_provider.dart';
+import '../services/order_tracking_service.dart';
 import '../widgets/order_tracking_chat_sheet.dart';
 import '../widgets/order_tracking_map.dart';
 import '../widgets/order_tracking_status_card.dart';
@@ -27,30 +25,20 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final _motion = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1500),
+    duration: trackingInterval,
   );
   final _sheet = DraggableScrollableController();
-  final _messages = <String>[];
-  Timer? _timer;
-  OrderTrackingJourney? _journey;
-  int _step = 0;
+  final _screenKey = Object();
+  TrackingKey get _key => (_screenKey, widget.orderId);
+  OrderTrackingController get _controller =>
+      ref.read(orderTrackingProvider(_key).notifier);
   bool _foreground = true;
   bool _chatOpen = false;
   bool _cancelling = false;
-
-  RescueOrder? get _order =>
-      ref.read(activityProvider).orderById(widget.orderId);
-  bool get _arrived =>
-      _journey != null &&
-      (_step >= _journey!.lastStep || _journey!.distanceKm < .001);
   bool get _canMove =>
       mounted &&
       _foreground &&
       !_chatOpen &&
-      !_arrived &&
-      _journey != null &&
-      (_order?.status == RescueOrderStatus.pending ||
-          _order?.status == RescueOrderStatus.enRoute) &&
       !MediaQuery.disableAnimationsOf(context) &&
       TickerMode.valuesOf(context).enabled;
 
@@ -58,26 +46,14 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _loadJourney();
-  }
-
-  void _loadJourney() {
-    final order = _order;
-    final shops = ref
-        .read(partnerShopsProvider)
-        .where((shop) => shop.id == order?.partnerId);
-    _journey = order == null
-        ? null
-        : OrderTrackingJourney.fromOrder(
-            order,
-            shops.isEmpty ? null : shops.first,
-          );
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncMotion();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncMotion();
+    });
   }
 
   @override
@@ -85,11 +61,10 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.orderId != widget.orderId) {
       _stopMotion();
-      _step = 0;
       _motion.value = 0;
-      _messages.clear();
-      _loadJourney();
-      _syncMotion();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _syncMotion();
+      });
     }
   }
 
@@ -100,30 +75,16 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   }
 
   void _stopMotion() {
-    _timer?.cancel();
-    _timer = null;
     _motion.stop();
   }
 
   void _syncMotion() {
-    if (!_canMove) {
+    _controller.setEnabled(_canMove);
+    if (!_canMove || !_controller.canMove) {
       _stopMotion();
       return;
     }
-    if (_timer?.isActive == true) return;
     _motion.forward();
-    _timer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
-      if (!_canMove) {
-        _stopMotion();
-        return;
-      }
-      setState(() => _step++);
-      if (_arrived) {
-        _stopMotion();
-      } else {
-        _motion.forward(from: 0);
-      }
-    });
   }
 
   @override
@@ -156,9 +117,11 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
       showDragHandle: true,
       useSafeArea: true,
       builder: (context) => OrderTrackingChatSheet(
-        mechanicName: order.hasProvider ? order.providerName! : 'Nguyễn Văn A',
+        mechanicName: order.hasProvider
+            ? order.providerName!
+            : ref.read(trackingMechanicProvider).name,
         orderCode: order.orderCode,
-        messages: _messages,
+        sessionKey: _key,
       ),
     );
     if (!mounted) return;
@@ -180,6 +143,17 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   @override
   Widget build(BuildContext context) {
     final order = ref.watch(activityProvider).orderById(widget.orderId);
+    ref.watch(orderTrackingProvider(_key));
+    ref.watch(trackingChatProvider(_key));
+    ref.listen(orderTrackingProvider(_key), (previous, next) {
+      if (previous?.step != next.step) {
+        if (next.arrived) {
+          _motion.stop();
+        } else {
+          _motion.forward(from: 0);
+        }
+      }
+    });
     ref.listen(activityProvider, (_, next) {
       final status = next.orderById(widget.orderId)?.status;
       if (status != RescueOrderStatus.pending &&
@@ -253,49 +227,12 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   }
 
   Widget _trackingBody(BuildContext context, RescueOrder order) {
-    final journey = _journey;
-    final displayStep =
-        journey != null &&
-            (order.status == RescueOrderStatus.repairing ||
-                order.status == RescueOrderStatus.completed)
-        ? journey.lastStep
-        : _step;
-    final remaining = journey?.remainingKm(_step, _motion.value);
-    final minutes = journey == null || journey.distanceKm == 0
-        ? 0
-        : math.max(1, (5 * (remaining ?? 0) / journey.distanceKm).ceil());
-    final (heading, badge, subtitle) = switch (order.status) {
-      RescueOrderStatus.cancelled => (
-        'Đơn cứu hộ đã hủy',
-        'ĐÃ HỦY',
-        'Lộ trình đã dừng. Bạn có thể đặt một đơn mới.',
-      ),
-      RescueOrderStatus.completed => (
-        'Cứu hộ đã hoàn tất',
-        'HOÀN TẤT',
-        'Cảm ơn bạn đã sử dụng MotoCare.',
-      ),
-      RescueOrderStatus.repairing => (
-        'Thợ đang xử lý sự cố',
-        'ĐANG SỬA',
-        'Thợ đã đến và đang kiểm tra xe của bạn.',
-      ),
-      _ when journey == null => (
-        'Đang chuẩn bị lộ trình',
-        'CHỜ VỊ TRÍ',
-        'Vị trí sự cố chưa có tọa độ để theo dõi.',
-      ),
-      _ when _arrived => (
-        'Thợ đã đến vị trí của bạn',
-        'ĐÃ ĐẾN',
-        'Đã đến điểm SOS • 0.0 km',
-      ),
-      _ => (
-        'Thợ đang trên đường đến',
-        'ĐANG ĐẾN',
-        'Dự kiến đến trong $minutes phút • ${remaining!.toStringAsFixed(1)} km',
-      ),
-    };
+    final state = ref.read(orderTrackingProvider(_key));
+    final journey = state.journey;
+    final snapshot = ref
+        .read(orderTrackingServiceProvider)
+        .snapshot(order, journey, state.step, _motion.value);
+    final displayStep = snapshot.displayStep;
     return LayoutBuilder(
       builder: (context, constraints) {
         final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -364,9 +301,9 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                   children: [
                     OrderTrackingStatusCard(
                       order: order,
-                      heading: heading,
-                      subtitle: subtitle,
-                      badge: badge,
+                      heading: snapshot.heading,
+                      subtitle: snapshot.subtitle,
+                      badge: snapshot.badge,
                       onCall: order.status.isActive ? () => _call(order) : null,
                       onChat: order.status.isActive ? () => _chat(order) : null,
                       onCancel: order.status.isActive && !_cancelling

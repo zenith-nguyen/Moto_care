@@ -221,10 +221,11 @@ class _OrderInvoice extends StatelessWidget {
               label: 'Phụ tùng phát sinh',
               value: formatOrderPrice(order.extraPartPrice),
             ),
-            _CostLine(
-              label: 'Voucher',
-              value: '- ${formatOrderPrice(order.discount)}',
-            ),
+            if (order.discount > 0)
+              _CostLine(
+                label: 'Điều chỉnh giá',
+                value: '- ${formatOrderPrice(order.discount)}',
+              ),
             const Divider(height: 24, color: Color(0xFFDDDDDD)),
             _CostLine(
               label: order.status == RescueOrderStatus.completed

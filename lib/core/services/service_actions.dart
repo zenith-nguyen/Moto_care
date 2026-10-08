@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../widgets/service_scaffold.dart';
+import '../config/support_contact.dart';
 
 final serviceUrlLauncherProvider = Provider<Future<bool> Function(Uri)>(
   (ref) =>
@@ -10,7 +11,9 @@ final serviceUrlLauncherProvider = Provider<Future<bool> Function(Uri)>(
 );
 
 // Existing contact number used by the registration screen.
-final supportHotlineProvider = Provider<String>((ref) => '1130');
+final supportHotlineProvider = Provider<String>(
+  (ref) => SupportContact.hotline,
+);
 
 Future<void> launchServiceUri(
   BuildContext context,

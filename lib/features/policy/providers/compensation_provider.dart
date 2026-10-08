@@ -1,20 +1,7 @@
-import 'dart:typed_data';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CompensationReport {
-  CompensationReport({
-    required this.orderId,
-    required this.description,
-    Uint8List? evidence,
-  }) : evidence = evidence == null
-           ? null
-           : Uint8List.fromList(evidence).asUnmodifiableView();
-
-  final String orderId;
-  final String description;
-  final Uint8List? evidence;
-}
+import '../models/compensation_report.dart';
+export '../models/compensation_report.dart';
 
 final compensationReportsProvider =
     NotifierProvider<CompensationReportsController, List<CompensationReport>>(

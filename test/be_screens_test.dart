@@ -119,15 +119,17 @@ Future<void> _nightCheckout(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('Account header and club react to shared profile updates', (
+  testWidgets('Account identity updates without membership or rewards', (
     tester,
   ) async {
     await _open(tester, '/tai-khoan');
     expect(find.text(profileFixture.fullName), findsOneWidget);
     expect(find.text(profileFixture.phoneNumber), findsOneWidget);
     expect(find.text('5.0'), findsOneWidget);
-    expect(find.text('350 xu'), findsOneWidget);
-    expect(find.text('Thành viên Vàng'), findsOneWidget);
+    expect(find.text('350 xu'), findsNothing);
+    expect(find.text('Thành viên Vàng'), findsNothing);
+    expect(find.text('MotoCare Club'), findsNothing);
+    expect(find.text('Đổi quà ›'), findsNothing);
     expect(
       Theme.of(tester.element(find.byType(HomeBottomNavigation)))
           .scaffoldBackgroundColor,
@@ -146,23 +148,22 @@ void main() {
         );
     await tester.pumpAndSettle();
     expect(find.text('Lê Bình'), findsOneWidget);
-    expect(find.text('900 xu'), findsOneWidget);
+    expect(find.text('900 xu'), findsNothing);
+    expect(find.text('Thành viên Bạch Kim'), findsNothing);
     expect(find.text('Nguyễn Văn An'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Account links open requested routes and club opens rewards', (
+  testWidgets('Account links open supported routes without offers or rewards', (
     tester,
   ) async {
     final router = await _open(tester, '/tai-khoan');
-    await _tap(tester, find.text('Đổi quà ›'));
-    expect(router.state.uri.path, '/tich-diem');
-    router.pop();
-    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('account-membership')), findsNothing);
+    expect(find.byKey(const ValueKey('account-vouchers')), findsNothing);
+    expect(find.text('Kho ưu đãi'), findsNothing);
     for (final (id, route) in [
       ('vehicles', '/xe-cua-toi'),
       ('mechanic', '/dang-ky-tho'),
-      ('vouchers', '/kho-voucher'),
       ('help', '/faq'),
       ('commitment', '/cam-ket-dich-vu'),
     ]) {

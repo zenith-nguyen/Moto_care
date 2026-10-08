@@ -4,10 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/service_actions.dart';
 import '../../../core/widgets/service_scaffold.dart';
 import '../models/service_place.dart';
-
-final servicePlacesProvider = Provider<List<ServicePlace>>(
-  (ref) => demoServicePlaces,
-);
+import '../providers/service_place_provider.dart';
+export '../providers/service_place_provider.dart' show servicePlacesProvider;
 
 enum _PlaceView { map, list }
 
@@ -34,13 +32,9 @@ class _TramSacTiemSuaScreenState extends ConsumerState<TramSacTiemSuaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final places = ref.watch(servicePlacesProvider).where((place) {
-      return normalizeServiceSearch('${place.name} ${place.address}')
-              .contains(_query) &&
-          (!_filters.contains('Trạm sạc') || place.isCharging) &&
-          (!_filters.contains('Mở 24/7') || place.is24Hours) &&
-          (!_filters.contains('Sửa xe xăng') || place.repairsPetrol);
-    }).toList()..sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+    final places = ref.watch(
+      filteredServicePlacesProvider((_query, Set.unmodifiable(_filters))),
+    );
     final selected = places.isEmpty
         ? null
         : places.firstWhere(

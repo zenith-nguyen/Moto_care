@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../activity/models/rescue_order.dart';
-import '../../profile/models/user_profile.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../rescue_station/models/rescue_station.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
@@ -38,30 +37,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ref.read(profileProvider).initialized) {
         return;
       }
-      final user = widget.user!;
       ref
           .read(profileProvider.notifier)
-          .initialize(
-            UserProfile(
-              id: user.memberId ?? '',
-              fullName: user.displayName.trim(),
-              memberTier: user.membershipLabel,
-              rewardPoints: user.rewardPoints,
-            ),
-          );
+          .initializeFromHome(widget.user, onlyIfUninitialized: true);
     });
   }
 
-  HomeUser get _user {
-    final state = ref.read(profileProvider);
-    if (!state.initialized && widget.user != null) return widget.user!;
-    return HomeUser(
-      displayName: state.profile.fullName,
-      memberId: state.profile.id,
-      membershipLabel: state.profile.memberTier,
-      rewardPoints: state.profile.rewardPoints,
-    );
-  }
+  HomeUser get _user => ref.read(homeUserProvider(widget.user));
 
   void _selectDestination(HomeDestination destination) {
     if (destination == HomeDestination.home) return;
@@ -77,9 +59,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       HomeDestination.personalInfo => '/thong-tin-ca-nhan',
       HomeDestination.account => '/tai-khoan',
       HomeDestination.services => '/dich-vu',
-      HomeDestination.membership => '/tich-diem',
       HomeDestination.nearbyServices => '/tram-sac-tiem-sua',
-      HomeDestination.vouchers => '/kho-voucher',
       HomeDestination.prices => '/bang-gia',
       HomeDestination.partnership => '/dang-ky-tho',
       HomeDestination.serviceCommitment => '/cam-ket-dich-vu',
@@ -89,11 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     };
     context.push(
       route,
-      extra:
-          destination == HomeDestination.personalInfo ||
-              destination == HomeDestination.membership
-          ? _user
-          : null,
+      extra: destination == HomeDestination.personalInfo ? _user : null,
     );
   }
 
@@ -161,11 +137,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(profileProvider);
     final user = state.initialized
-        ? HomeUser(
-            displayName: state.profile.fullName,
-            membershipLabel: state.profile.memberTier,
-            rewardPoints: state.profile.rewardPoints,
-          )
+        ? HomeUser(displayName: state.profile.fullName)
         : widget.user;
     final name = user?.displayName.trim();
     final vehicle = ref.watch(defaultVehicleProvider);
@@ -193,7 +165,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     HomeHeader(
                       name: name == null || name.isEmpty ? 'bạn' : name,
-                      tier: user?.membershipLabel ?? '',
                       address: location?.address ?? 'Chưa chọn vị trí',
                       vehicle: vehicle == null
                           ? 'Chọn xe cần cứu hộ'
@@ -213,17 +184,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 _selectService(context, service),
                           ),
                           const SizedBox(height: 22),
-                          HomeClubCard(
-                            accentColor: HomeColors.red,
-                            gradientColors: const [
-                              HomeColors.tint,
-                              HomeColors.selected,
-                            ],
-                            points: user?.rewardPoints ?? 0,
-                            onPressed: () =>
-                                _selectDestination(HomeDestination.membership),
-                          ),
-                          const SizedBox(height: 20),
                           HomeNearbySection(
                             stations: stations,
                             location: location,
@@ -232,14 +192,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             onStation: (station) =>
                                 _showStation(context, station),
-                          ),
-                          const SizedBox(height: 20),
-                          HomeOffersSection(
-                            onVouchers: () =>
-                                _selectDestination(HomeDestination.vouchers),
-                            onTips: () => _selectDestination(
-                              HomeDestination.emergencyTips,
-                            ),
                           ),
                         ],
                       ),

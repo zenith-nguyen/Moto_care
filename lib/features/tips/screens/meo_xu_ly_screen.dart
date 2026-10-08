@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/service_actions.dart';
 import '../../../core/widgets/service_scaffold.dart';
 import '../models/emergency_tip.dart';
+import '../providers/emergency_tips_provider.dart';
 import '../widgets/tip_illustration.dart';
 
 class MeoXuLyScreen extends ConsumerWidget {
@@ -118,7 +119,7 @@ class MeoXuLyScreen extends ConsumerWidget {
           ),
         ),
         const ServiceSectionTitle('Hướng dẫn xử lý nhanh'),
-        for (final tip in emergencyTips)
+        for (final tip in ref.watch(emergencyTipsProvider))
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: Card(

@@ -1,102 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../rescue_station/models/rescue_station.dart';
 import '../models/rescue_location.dart';
 import '../providers/home_provider.dart';
 import '../theme/home_theme.dart';
 
-class HomeClubCard extends StatelessWidget {
-  const HomeClubCard({
-    super.key,
-    required this.points,
-    required this.onPressed,
-    this.tier = 'Quyền lợi ưu tiên cứu hộ đêm',
-    this.actionLabel = 'Quyền lợi ›',
-    this.accentColor = HomeColors.primary,
-    this.gradientColors = const [HomeColors.tint, HomeColors.selected],
-  });
-  final int points;
-  final VoidCallback onPressed;
-  final String tier;
-  final String actionLabel;
-  final Color accentColor;
-  final List<Color> gradientColors;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(colors: gradientColors),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: accentColor.withValues(alpha: 0.18)),
-    ),
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'MotoCare Club',
-                      style: TextStyle(
-                        color: HomeColors.text,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.stars_rounded, size: 18, color: accentColor),
-                      const SizedBox(width: 5),
-                      Text(
-                        '$points xu',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      tier,
-                      style: const TextStyle(fontSize: 13, height: 1.4),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    actionLabel,
-                    style: TextStyle(
-                      color: accentColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-class HomeNearbySection extends StatelessWidget {
+class HomeNearbySection extends ConsumerWidget {
   const HomeNearbySection({
     super.key,
     required this.stations,
@@ -110,7 +20,7 @@ class HomeNearbySection extends StatelessWidget {
   final ValueChanged<RescueStation> onStation;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +65,7 @@ class HomeNearbySection extends StatelessWidget {
               itemCount: stations.length,
               itemBuilder: (context, index) {
                 final station = stations[index];
-                final distance = stationDistanceKm(station, location);
+                final distance = ref.watch(stationDistanceProvider(station));
                 return Container(
                   width: 232,
                   margin: const EdgeInsets.only(right: 12, bottom: 6),
@@ -251,130 +161,4 @@ class HomeNearbySection extends StatelessWidget {
       ],
     );
   }
-}
-
-class HomeOffersSection extends StatelessWidget {
-  const HomeOffersSection({
-    super.key,
-    required this.onVouchers,
-    required this.onTips,
-  });
-  final VoidCallback onVouchers;
-  final VoidCallback onTips;
-
-  @override
-  Widget build(BuildContext context) {
-    final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        InkWell(
-          onTap: onVouchers,
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 10),
-            child: Text(
-              'Mẹo hay & Ưu đãi hôm nay ›',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _OfferBanner(
-                title: 'Giảm 30k\ncứu hộ đêm',
-                caption: 'Ưu đãi mẫu • Xem điều kiện',
-                icon: Icons.nights_stay_rounded,
-                colors: const [HomeColors.tintStrong, HomeColors.tint],
-                iconColor: HomeColors.red,
-                height: 146 + (scale - 1) * 70,
-                onPressed: onVouchers,
-              ),
-              const SizedBox(width: 12),
-              _OfferBanner(
-                title: 'Xe chết máy\nmùa mưa?',
-                caption: 'Mẹo xử lý an toàn',
-                icon: Icons.umbrella_rounded,
-                colors: const [HomeColors.tintStrong, HomeColors.tint],
-                iconColor: HomeColors.red,
-                height: 146 + (scale - 1) * 70,
-                onPressed: onTips,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _OfferBanner extends StatelessWidget {
-  const _OfferBanner({
-    required this.title,
-    required this.caption,
-    required this.icon,
-    required this.colors,
-    required this.iconColor,
-    required this.height,
-    required this.onPressed,
-  });
-  final String title;
-  final String caption;
-  final IconData icon;
-  final List<Color> colors;
-  final Color iconColor;
-  final double height;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 270,
-    height: height,
-    decoration: BoxDecoration(
-      gradient: LinearGradient(colors: colors),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          height: 1.3,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Icon(icon, size: 48, color: iconColor),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                caption,
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: HomeColors.secondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
 }

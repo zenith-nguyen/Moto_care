@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../models/admin_message.dart';
+import '../providers/chat_directory_provider.dart';
+import '../services/chat_service.dart';
 
 import '../../../core/router/main_navigation.dart';
 import '../../home/models/home_destination.dart';
@@ -8,26 +12,19 @@ import '../../home/widgets/home_bottom_navigation.dart';
 import '../models/chat_conversation.dart';
 import '../theme/chat_theme.dart';
 
-Future<bool> _launchPhone(Uri uri) =>
-    launchUrl(uri, mode: LaunchMode.externalApplication);
+class TinNhanScreen extends ConsumerWidget {
+  const TinNhanScreen({super.key, this.launchPhone});
 
-class TinNhanScreen extends StatelessWidget {
-  const TinNhanScreen({super.key, this.launchPhone = _launchPhone});
-
-  final Future<bool> Function(Uri) launchPhone;
+  final Future<bool> Function(Uri)? launchPhone;
 
   Future<void> _callMechanic(
     BuildContext context,
     ChatConversation conversation,
+    WidgetRef ref,
   ) async {
-    var opened = false;
-    try {
-      opened = await launchPhone(
-        Uri(scheme: 'tel', path: conversation.phoneNumber),
-      );
-    } on Exception {
-      opened = false;
-    }
+    final opened = await ref
+        .read(chatServiceProvider)
+        .call(conversation.phoneNumber, launcher: launchPhone);
     if (!context.mounted || opened) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -46,7 +43,8 @@ class TinNhanScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conversations = ref.watch(chatConversationsProvider);
     return Theme(
       data: ChatTheme.light,
       child: DefaultTabController(
@@ -86,53 +84,27 @@ class TinNhanScreen extends StatelessWidget {
                     ListView.builder(
                       key: const PageStorageKey('rescue-conversations'),
                       padding: const EdgeInsets.all(16),
-                      itemCount: mockRescueConversations.length,
+                      itemCount: conversations.length,
                       itemBuilder: (context, index) {
-                        final conversation = mockRescueConversations[index];
+                        final conversation = conversations[index];
                         return _RescueConversationCard(
                           conversation: conversation,
                           onTap: () =>
                               context.push('/chat-detail', extra: conversation),
-                          onCall: () => _callMechanic(context, conversation),
+                          onCall: () =>
+                              _callMechanic(context, conversation, ref),
                         );
                       },
                     ),
-                    const _AdminMessageList(
+                    _AdminMessageList(
                       storageKey: 'customer-support',
                       icon: Icons.support_agent_rounded,
-                      messages: [
-                        (
-                          title: 'CSKH MotoCare',
-                          message: 'Xin chào! MotoCare có thể giúp gì cho bạn hôm nay?',
-                          time: '09:00',
-                        ),
-                        (
-                          title: 'Hỗ trợ đơn cứu hộ',
-                          message: 'Nếu cần hỗ trợ về đơn cứu hộ, hãy gửi mã đơn cho đội ngũ CSKH.',
-                          time: 'Hôm qua',
-                        ),
-                      ],
+                      messages: ref.watch(chatSupportMessagesProvider),
                     ),
-                    const _AdminMessageList(
+                    _AdminMessageList(
                       storageKey: 'admin-notifications',
                       icon: Icons.notifications_outlined,
-                      messages: [
-                        (
-                          title: 'Chào mừng đến với MotoCare',
-                          message: 'Đội ngũ MotoCare luôn sẵn sàng đồng hành và hỗ trợ bạn trên mọi hành trình.',
-                          time: '08:30',
-                        ),
-                        (
-                          title: 'Đơn cứu hộ đã hoàn tất',
-                          message: 'Cảm ơn bạn đã sử dụng dịch vụ. Hãy đánh giá trải nghiệm để MotoCare phục vụ tốt hơn.',
-                          time: 'Hôm qua',
-                        ),
-                        (
-                          title: 'Nhắc nhở bảo dưỡng xe',
-                          message: 'Kiểm tra lốp, phanh và dầu máy định kỳ để chuyến đi luôn an toàn.',
-                          time: '28/09',
-                        ),
-                      ],
+                      messages: ref.watch(chatNotificationsProvider),
                     ),
                   ],
                 ),
@@ -272,8 +244,6 @@ class _RescueConversationCard extends StatelessWidget {
   }
 }
 
-typedef _AdminMessage = ({String title, String message, String time});
-
 class _AdminMessageList extends StatelessWidget {
   const _AdminMessageList({
     required this.storageKey,
@@ -283,7 +253,7 @@ class _AdminMessageList extends StatelessWidget {
 
   final String storageKey;
   final IconData icon;
-  final List<_AdminMessage> messages;
+  final List<AdminMessage> messages;
 
   @override
   Widget build(BuildContext context) {

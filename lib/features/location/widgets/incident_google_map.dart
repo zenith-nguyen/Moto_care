@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../services/location_api_config.dart';
-
-abstract interface class IncidentCameraController {
-  Future<void> animateTo(LatLng target, {double zoom = 17});
-}
+import '../services/incident_camera_controller.dart';
+export '../services/incident_camera_controller.dart';
 
 class GoogleIncidentCameraController implements IncidentCameraController {
   GoogleIncidentCameraController(this.mapController);

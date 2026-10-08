@@ -37,19 +37,7 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final user = widget.user;
-      if (user != null || !ref.read(profileProvider).initialized) {
-        ref
-            .read(profileProvider.notifier)
-            .initialize(
-              UserProfile(
-                id: user?.memberId ?? '',
-                fullName: user?.displayName.trim() ?? '',
-                memberTier: user?.membershipLabel ?? 'Chưa có hạng',
-                rewardPoints: user?.rewardPoints ?? 0,
-              ),
-            );
-      }
+      ref.read(profileProvider.notifier).initializeFromHome(widget.user);
       unawaited(_recoverAvatar());
     });
   }
@@ -421,16 +409,6 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
                           minimumSize: const Size(48, 48),
                         ),
                         child: const Text('Xóa tài khoản'),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Hồ sơ dùng thử • Các thay đổi và tùy chọn bảo mật chỉ lưu trong phiên sử dụng.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: ProfileTheme.muted,
-                          fontSize: 12,
-                          height: 1.5,
-                        ),
                       ),
                     ],
                   ),

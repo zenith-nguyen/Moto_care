@@ -1,6 +1,5 @@
 import '../../activity/models/rescue_order.dart';
-import '../../partner/providers/partner_provider.dart';
-import '../../voucher/providers/voucher_provider.dart';
+import '../../partner/models/partner_shop.dart';
 
 class MarketplaceBooking {
   MarketplaceBooking({
@@ -32,25 +31,6 @@ class MarketplaceBooking {
       }
     }
     return true;
-  }
-
-  int discountFor(VoucherOffer? voucher, DateTime now) {
-    if (voucher == null ||
-        voucher.usedAt != null ||
-        !voucher.expiresAt.isAfter(now) ||
-        subtotal < 50000) {
-      return 0;
-    }
-    final discount = switch (voucher.code) {
-      'SOS20' || 'MOTO20' => 20000,
-      'DEM15'
-          when items.every(
-            (item) => item.serviceType == RescueServiceType.nightRescue,
-          ) =>
-        subtotal * 15 ~/ 100,
-      _ => 0,
-    };
-    return discount.clamp(0, subtotal);
   }
 
   static int travelFee(double distanceKm) => 10000 + distanceKm.ceil() * 5000;

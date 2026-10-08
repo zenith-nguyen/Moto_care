@@ -20,4 +20,20 @@ abstract final class ProfileValidation {
     }
     return null;
   }
+
+  static String? currentPassword(String? value) =>
+      value == null || value.isEmpty ? 'Nhập mật khẩu hiện tại' : null;
+  static String? newPassword(String? value, String current) {
+    if (value == null || value.length < 8 || value.length > 128) {
+      return 'Mật khẩu phải có từ 8 đến 128 ký tự';
+    }
+    if (value.trim().isEmpty) {
+      return 'Mật khẩu không được chỉ chứa khoảng trắng';
+    }
+    if (value == current) return 'Mật khẩu mới phải khác mật khẩu hiện tại';
+    return null;
+  }
+
+  static String? confirmPassword(String? value, String password) =>
+      value != password ? 'Mật khẩu nhập lại không khớp' : null;
 }

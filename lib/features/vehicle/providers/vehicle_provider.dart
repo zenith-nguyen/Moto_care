@@ -1,3 +1,5 @@
+import '../data/vehicle_brands.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/vehicle.dart';
@@ -118,3 +120,5 @@ class VehicleController extends Notifier<List<Vehicle>> {
     return true;
   }
 }
+
+final vehicleBrandsProvider = Provider<List<String>>((ref) => vehicleBrands);

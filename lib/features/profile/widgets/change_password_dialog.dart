@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/profile_account_service.dart';
+import '../models/profile_validation.dart';
 
 class ChangePasswordDialog extends StatefulWidget {
   const ChangePasswordDialog({super.key, required this.service});
@@ -84,9 +85,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   ),
                 ),
                 textInputAction: TextInputAction.next,
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Nhập mật khẩu hiện tại'
-                    : null,
+                validator: ProfileValidation.currentPassword,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -101,18 +100,8 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   helperText: 'Từ 8 đến 128 ký tự',
                 ),
                 textInputAction: TextInputAction.next,
-                validator: (value) {
-                  if (value == null || value.length < 8 || value.length > 128) {
-                    return 'Mật khẩu phải có từ 8 đến 128 ký tự';
-                  }
-                  if (value.trim().isEmpty) {
-                    return 'Mật khẩu không được chỉ chứa khoảng trắng';
-                  }
-                  if (value == _current.text) {
-                    return 'Mật khẩu mới phải khác mật khẩu hiện tại';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    ProfileValidation.newPassword(value, _current.text),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -125,9 +114,8 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 decoration: const InputDecoration(
                   labelText: 'Nhập lại mật khẩu mới',
                 ),
-                validator: (value) => value != _password.text
-                    ? 'Mật khẩu nhập lại không khớp'
-                    : null,
+                validator: (value) =>
+                    ProfileValidation.confirmPassword(value, _password.text),
               ),
               if (_error != null)
                 Padding(

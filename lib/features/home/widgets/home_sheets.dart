@@ -6,6 +6,7 @@ import '../../activity/providers/activity_provider.dart';
 import '../../activity/widgets/order_summary.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
 import '../providers/home_provider.dart';
+import '../providers/home_confirmation_provider.dart';
 import '../theme/home_theme.dart';
 import 'home_service_grid.dart';
 
@@ -140,40 +141,19 @@ class HomeRescueConfirmationSheet extends ConsumerStatefulWidget {
 
 class _HomeRescueConfirmationSheetState
     extends ConsumerState<HomeRescueConfirmationSheet> {
-  String? _error;
-  bool _submitted = false;
-
+  final _draftKey = Object();
   void _confirm() {
-    if (_submitted) return;
-    final vehicle = ref.read(defaultVehicleProvider);
-    final location = ref.read(rescueLocationProvider);
-    if (vehicle == null ||
-        location == null ||
-        location.address.trim().isEmpty) {
-      return;
-    }
-    try {
-      final order = ref
-          .read(activityProvider.notifier)
-          .createOrder(
-            serviceType: widget.service.orderType!,
-            userVehicle: '${vehicle.name} (${vehicle.licensePlate})',
-            locationAddress: location.address,
-            locationLandmark: location.landmark,
-            locationLatitude: location.latitude,
-            locationLongitude: location.longitude,
-          );
-      _submitted = true;
-      Navigator.pop(context, order);
-    } on StateError {
-      setState(
-        () => _error = 'Bạn đang có đơn cứu hộ. Hãy kiểm tra trong Hoạt động.',
-      );
-    }
+    final order = ref
+        .read(homeConfirmationProvider((_draftKey, widget.service)).notifier)
+        .submit();
+    if (order != null) Navigator.pop(context, order);
   }
 
   @override
   Widget build(BuildContext context) {
+    final draft = ref.watch(
+      homeConfirmationProvider((_draftKey, widget.service)),
+    );
     final vehicle = ref.watch(defaultVehicleProvider);
     final location = ref.watch(rescueLocationProvider);
     final hasActiveOrder = ref.watch(activityProvider).activeOrders.isNotEmpty;
@@ -182,7 +162,7 @@ class _HomeRescueConfirmationSheetState
         location != null &&
         location.address.trim().isNotEmpty &&
         !hasActiveOrder &&
-        !_submitted;
+        !draft.submitted;
     return HomeSheetContent(
       title: widget.service == HomeService.maintenance
           ? 'Xác nhận yêu cầu bảo dưỡng'
@@ -245,10 +225,10 @@ class _HomeRescueConfirmationSheetState
             height: 1.5,
           ),
         ),
-        if (hasActiveOrder || _error != null) ...[
+        if (hasActiveOrder || draft.error != null) ...[
           const SizedBox(height: 16),
           Text(
-            _error ?? 'Bạn đang có đơn cứu hộ. Hãy kiểm tra trong Hoạt động trước khi tạo đơn mới.',
+            draft.error ?? 'Bạn đang có đơn cứu hộ. Hãy kiểm tra trong Hoạt động trước khi tạo đơn mới.',
             style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ],

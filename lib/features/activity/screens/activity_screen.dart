@@ -43,9 +43,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final orders =
-        ref.watch(activityProvider).orders.where(_filter.includes).toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final orders = ref.watch(filteredActivityOrdersProvider(_filter));
     return Theme(
       data: HomeTheme.light,
       child: Builder(

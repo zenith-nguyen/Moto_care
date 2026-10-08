@@ -15,7 +15,7 @@ All eight Home service tiles open `/partners?service=<service title>`.
   an immutable `MarketplaceBooking` to `/checkout`.
 - `CheckoutScreen` validates the cart against the current shop/menu before saving.
   It displays package quantities, a shared garage vehicle, incident address and
-  notes, payment preference, vouchers, service subtotal and travel fee. The travel
+  notes, payment preference, service subtotal and travel fee. The travel
   estimate is 10,000 VND plus 5,000 VND per rounded-up kilometer. Distances use
   straight-line GPS distance when available, otherwise sample reference distances.
 - An invalid/missing checkout extra, missing shop or missing tracking order gets
@@ -41,18 +41,18 @@ explicitly label the session demo. Partner identities, capabilities, verificatio
 menu prices and arrival estimates remain sample data supplied through
 `partnerShopsProvider`; an API can replace this boundary.
 
-SOS20 and MOTO20 discount 20,000 VND on service subtotals of at least 50,000 VND.
-DEM15 discounts 15% only when all packages are night rescue. Expired/used offers
-and unsupported codes provide no discount. Voucher eligibility is checked again
-at submission, and a voucher is marked used only after an order is saved.
+Checkout has no promo-code entry or voucher selection. The quoted total is the
+service subtotal plus the travel fee, and new orders have zero discount.
 
 ## Orders and tracking
 
 `ActivityController.createOrder` retains the partner ID/name, immutable package
-items, payment method, voucher, notes, GPS coordinates and the exact displayed
-subtotal/travel/discount. `basePrice` continues to include the travel fee for
+items, payment method, notes, GPS coordinates and the exact displayed
+subtotal and travel fee. `basePrice` continues to include the travel fee for
 compatibility with existing invoice calculations. Old JSON defaults to an empty
-item list, cash payment and no partner/voucher. New records retain all fields
+item list, cash payment and no partner. Historical discount and voucher fields
+remain compatible with existing JSON; nonzero historical adjustments still
+contribute to invoice totals. New records retain all fields
 when serialized or updated. Only one active order can exist.
 
 Checkout now opens `/order-tracking?id=<order ID>` directly. It shows the
@@ -65,7 +65,7 @@ The older `/rescue-tracking` radar route remains available for existing callers.
 
 ## Validation
 
-`test/marketplace_flow_test.dart` covers cart quantities, prices, vouchers,
+`test/marketplace_flow_test.dart` covers cart quantities, full prices without vouchers,
 payment, JSON, cancellation, missing routes, GPS/manual-entry races and 320px
 layouts with 1.5x text and the keyboard. `test/device_location_service_test.dart`
 checks native permission handling and bounded coordinate acquisition. Home tests

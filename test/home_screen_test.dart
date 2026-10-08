@@ -153,8 +153,8 @@ void main() {
     expect(find.text('Chào Nguyễn An'), findsOneWidget);
     expect(find.text('Tên cũ'), findsNothing);
     expect(find.text('Honda Vision (59-A1 123.45)'), findsOneWidget);
-    await tester.ensureVisible(find.text('720 xu'));
-    expect(find.text('720 xu'), findsOneWidget);
+    expect(find.text('720 xu'), findsNothing);
+    expect(find.text('Thành viên Vàng'), findsNothing);
     container
         .read(profileProvider.notifier)
         .initialize(
@@ -178,9 +178,9 @@ void main() {
         .position
         .jumpTo(0);
     await tester.pumpAndSettle();
-    expect(find.text('Thành viên Bạch Kim'), findsOneWidget);
-    await tester.ensureVisible(find.text('1200 xu'));
-    expect(find.text('1200 xu'), findsOneWidget);
+    expect(find.text('Chào Lê Bình'), findsOneWidget);
+    expect(find.text('Thành viên Bạch Kim'), findsNothing);
+    expect(find.text('1200 xu'), findsNothing);
   });
 
   testWidgets(
@@ -374,7 +374,7 @@ void main() {
   );
 
   testWidgets(
-    'Five home tabs route and returning preserves session selection',
+    'Four home tabs route and returning preserves session selection',
     (tester) async {
       final router = createAppRouter();
       addTearDown(router.dispose);
@@ -398,7 +398,6 @@ void main() {
       for (final (label, path) in [
         ('Hoạt động', '/hoat-dong'),
         ('Dịch vụ', '/dich-vu'),
-        ('Kho ưu đãi', '/kho-voucher'),
         ('Tài khoản', '/tai-khoan'),
       ]) {
         await _tap(tester, find.text(label));
@@ -436,13 +435,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(router.state.uri.path, '/trang-chu');
     expect(find.text('Chào Nguyễn An'), findsOneWidget);
-    router.push('/tich-diem');
+    router.push('/bang-gia');
     await tester.pumpAndSettle();
-    await _tap(
-      tester,
-      find.descendant(of: nav, matching: find.text('Kho ưu đãi')),
-    );
-    expect(router.state.uri.path, '/kho-voucher');
     await _tap(
       tester,
       find.descendant(of: nav, matching: find.text('Dịch vụ')),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../home/theme/home_theme.dart';
+import '../models/auth_validation.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -12,17 +13,8 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  static final _emailPattern = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
-
   final _formKey = GlobalKey<FormState>();
   String _email = '';
-
-  String? _validateEmail(String? value) {
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Vui lòng nhập email';
-    if (!_emailPattern.hasMatch(email)) return 'Email không hợp lệ';
-    return null;
-  }
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
@@ -146,7 +138,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                                   color: Color(0xFF707070),
                                 ),
                               ),
-                              validator: _validateEmail,
+                              validator: AuthValidation.email,
                               onChanged: (value) =>
                                   setState(() => _email = value),
                               onFieldSubmitted: (_) => _submit(),
@@ -164,7 +156,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               disabledBackgroundColor: HomeColors.redSelected,
                               disabledForegroundColor: AppTheme.mutedText,
                             ),
-                            onPressed: _validateEmail(_email) == null
+                            onPressed: AuthValidation.email(_email) == null
                                 ? _submit
                                 : null,
                             child: const Text('Nhận mã xác thực'),

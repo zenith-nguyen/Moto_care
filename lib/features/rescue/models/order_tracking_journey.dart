@@ -2,7 +2,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../activity/models/rescue_order.dart';
-import '../../partner/providers/partner_provider.dart';
+import '../../partner/models/partner_shop.dart';
 
 /// A simulated path, never a Directions response or a mechanic GPS feed.
 class OrderTrackingJourney {

@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/config/support_contact.dart';
 import '../../home/theme/home_theme.dart';
 import '../models/auth_validation.dart';
 
@@ -25,16 +26,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _acceptedTerms = false;
 
-  bool get _validPhone => RegExp(r'^0?[1-9][0-9]{8}$').hasMatch(_phone);
-  bool get _hasMinLength => _password.length >= 8;
-  bool get _hasMixedCase =>
-      RegExp(r'[a-z]').hasMatch(_password) &&
-      RegExp(r'[A-Z]').hasMatch(_password);
-  bool get _hasNumber => RegExp(r'[0-9]').hasMatch(_password);
+  bool get _validPhone => AuthValidation.registrationPhone(_phone);
+  bool get _hasMinLength => AuthValidation.hasMinLength(_password);
+  bool get _hasMixedCase => AuthValidation.hasMixedCase(_password);
+  bool get _hasNumber => AuthValidation.hasNumber(_password);
   bool get _hasSpecialCharacter =>
-      RegExp(r'[^a-zA-Z0-9\s]').hasMatch(_password);
-  bool get _validPassword =>
-      _hasMinLength && _hasMixedCase && _hasNumber && _hasSpecialCharacter;
+      AuthValidation.hasSpecialCharacter(_password);
+  bool get _validPassword => AuthValidation.registrationPassword(_password);
   bool get _canSubmit =>
       AuthValidation.email(_email) == null &&
       _validPhone &&
@@ -311,7 +309,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     'chúng tôi qua hotline ',
                 children: [
                   TextSpan(
-                    text: '1130',
+                    text: SupportContact.hotline,
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ],

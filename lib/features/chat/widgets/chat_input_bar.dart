@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/chat_theme.dart';
+import '../data/demo_chat_data.dart' show chatQuickReplies;
 
 class ChatInputBar extends StatelessWidget {
   const ChatInputBar({
@@ -17,12 +18,6 @@ class ChatInputBar extends StatelessWidget {
   final VoidCallback onPickPhoto;
   final VoidCallback onSend;
   final ValueChanged<String> onQuickReply;
-
-  static const _quickReplies = [
-    'Tôi đang ở đúng vị trí ghim',
-    'Anh đến đâu rồi?',
-    'Xe tôi bị thủng lốp / không nổ máy',
-  ];
 
   @override
   Widget build(BuildContext context) => Container(
@@ -41,7 +36,7 @@ class ChatInputBar extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             child: Row(
               children: [
-                for (final text in _quickReplies)
+                for (final text in chatQuickReplies)
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ActionChip(

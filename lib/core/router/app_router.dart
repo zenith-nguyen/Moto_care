@@ -15,7 +15,6 @@ import '../../features/location/screens/select_location_screen.dart';
 import '../../features/location/screens/incident_location_screen.dart';
 import '../../features/home/screens/trang_chu.dart';
 import '../../features/help/screens/faq_screen.dart';
-import '../../features/membership/screens/tich_diem_screen.dart';
 import '../../features/partner/screens/dang_ky_tho_screen.dart';
 import '../../features/partner/screens/partner_list_screen.dart';
 import '../../features/partner/screens/partner_detail_screen.dart';
@@ -30,7 +29,6 @@ import '../../features/profile/screens/thong_tin_ca_nhan_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/services/screens/services_screen.dart';
 import '../../features/tips/screens/meo_xu_ly_screen.dart';
-import '../../features/voucher/screens/kho_voucher_screen.dart';
 import '../../features/vehicle/screens/xe_cua_toi_screen.dart';
 import '../../features/rescue_station/screens/tram_cuu_ho_screen.dart';
 
@@ -130,18 +128,8 @@ GoRouter createAppRouter() {
         ),
       ),
       GoRoute(
-        path: '/tich-diem',
-        builder: (context, state) => TichDiemScreen(
-          user: state.extra is HomeUser ? state.extra as HomeUser : null,
-        ),
-      ),
-      GoRoute(
         path: '/tram-sac-tiem-sua',
         builder: (context, state) => const TramSacTiemSuaScreen(),
-      ),
-      GoRoute(
-        path: '/kho-voucher',
-        builder: (context, state) => const KhoVoucherScreen(),
       ),
       GoRoute(
         path: '/bang-gia',

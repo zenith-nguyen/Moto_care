@@ -4,13 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/main_navigation.dart';
-import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../activity/widgets/order_summary.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/theme/home_theme.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
-import '../../home/widgets/home_sections.dart';
 import '../../home/widgets/home_sheets.dart';
 import '../providers/profile_provider.dart';
 import '../widgets/account_widgets.dart';
@@ -48,15 +46,10 @@ class ProfileScreen extends ConsumerWidget {
   );
 
   void _expenses(BuildContext context, WidgetRef ref) {
-    final orders = ref
-        .read(activityProvider)
-        .historyOrders
-        .where((order) => order.status == RescueOrderStatus.completed)
-        .toList();
-    final total = orders.fold<int>(0, (sum, order) => sum + order.totalPrice);
-    final maintenanceCount = orders
-        .where((order) => order.serviceType == RescueServiceType.maintenance)
-        .length;
+    final summary = ref.read(completedOrderSummaryProvider);
+    final orders = summary.orders;
+    final total = summary.total;
+    final maintenanceCount = summary.maintenanceCount;
     showHomeSheet<void>(
       context,
       HomeSheetContent(
@@ -117,15 +110,6 @@ class ProfileScreen extends ConsumerWidget {
                     AccountHeader(
                       state: state,
                       onEdit: () => context.push('/thong-tin-ca-nhan'),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: HomeClubCard(
-                        points: profile.rewardPoints,
-                        tier: profile.memberTier,
-                        actionLabel: 'Đổi quà ›',
-                        onPressed: () => context.push('/tich-diem'),
-                      ),
                     ),
                     AccountMenuGroup(
                       title: 'Quản lý xe & Sự cố',
@@ -201,12 +185,6 @@ class ProfileScreen extends ConsumerWidget {
                           () => context.push('/thong-tin-ca-nhan'),
                         ),
                         AccountMenuItem(
-                          'membership',
-                          'Tích điểm & Hạng thành viên',
-                          Icons.loyalty_rounded,
-                          () => context.push('/tich-diem'),
-                        ),
-                        AccountMenuItem(
                           'places',
                           'Trạm sạc & Tiệm sửa xe gần nhất',
                           Icons.ev_station_rounded,
@@ -217,12 +195,6 @@ class ProfileScreen extends ConsumerWidget {
                           'Bảng giá dịch vụ & Phụ tùng',
                           Icons.receipt_long_rounded,
                           () => context.push('/bang-gia'),
-                        ),
-                        AccountMenuItem(
-                          'vouchers',
-                          'Kho ưu đãi',
-                          Icons.local_offer_outlined,
-                          () => context.push('/kho-voucher'),
                         ),
                         AccountMenuItem(
                           'insurance',

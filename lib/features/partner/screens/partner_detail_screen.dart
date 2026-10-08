@@ -5,8 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../activity/widgets/order_summary.dart';
 import '../../home/providers/home_provider.dart';
 import '../../home/theme/home_theme.dart';
-import '../../rescue/models/marketplace_booking.dart';
-import '../providers/partner_provider.dart';
+import '../providers/partner_cart_provider.dart';
 import '../widgets/marketplace_widgets.dart';
 
 class PartnerDetailScreen extends ConsumerStatefulWidget {
@@ -23,13 +22,12 @@ class PartnerDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PartnerDetailScreenState extends ConsumerState<PartnerDetailScreen> {
-  final _quantities = <String, int>{};
+  final _cartKey = Object();
+  PartnerCartKey get _key => (_cartKey, widget.partnerId, widget.serviceType);
   @override
   Widget build(BuildContext context) {
-    final matches = ref
-        .watch(partnerShopsProvider)
-        .where((shop) => shop.id == widget.partnerId);
-    final shop = matches.isEmpty ? null : matches.first;
+    final quantities = ref.watch(partnerCartProvider(_key));
+    final shop = ref.watch(partnerShopProvider(widget.partnerId));
     if (shop == null) {
       return const MarketplaceScaffold(
         title: 'Thông tin tiệm',
@@ -41,16 +39,7 @@ class _PartnerDetailScreenState extends ConsumerState<PartnerDetailScreen> {
       ref.watch(rescueLocationProvider),
     );
     final menu = shop.menu(widget.serviceType);
-    final selected = [
-      for (final package in menu)
-        if ((_quantities[package.id] ?? 0) > 0)
-          package.item(_quantities[package.id]!),
-    ];
-    final booking = MarketplaceBooking(
-      partnerId: shop.id,
-      serviceType: widget.serviceType,
-      items: selected,
-    );
+    final booking = ref.watch(partnerBookingProvider(_key));
     return MarketplaceScaffold(
       title: 'Chi tiết tiệm',
       body: ListView(
@@ -135,10 +124,10 @@ class _PartnerDetailScreenState extends ConsumerState<PartnerDetailScreen> {
                             ),
                           ),
                           QuantityControl(
-                            quantity: _quantities[package.id] ?? 0,
-                            onChanged: (quantity) => setState(
-                              () => _quantities[package.id] = quantity,
-                            ),
+                            quantity: quantities[package.id] ?? 0,
+                            onChanged: (quantity) => ref
+                                .read(partnerCartProvider(_key).notifier)
+                                .setQuantity(package.id, quantity),
                           ),
                         ],
                       ),

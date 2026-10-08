@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../theme/home_theme.dart';
+import '../models/promo_banner.dart';
+import '../data/promo_banners.dart';
 
 class PromoBannerSlider extends StatefulWidget {
   const PromoBannerSlider({super.key});
@@ -14,20 +16,6 @@ class PromoBannerSlider extends StatefulWidget {
 class _PromoBannerSliderState extends State<PromoBannerSlider>
     with WidgetsBindingObserver {
   static const _autoScrollInterval = Duration(seconds: 4);
-  static const _banners = [
-    _PromoBannerData(
-      title: 'Giới thiệu xe máy điện Magnus Max G',
-      imageAsset: 'assets/images/Banner1.png',
-    ),
-    _PromoBannerData(
-      title: 'Xe máy điện màu xanh',
-      imageAsset: 'assets/images/Banner2.png',
-    ),
-    _PromoBannerData(
-      title: 'Xe mô tô Yamaha màu đen',
-      imageAsset: 'assets/images/Banner3.png',
-    ),
-  ];
 
   final _pageController = PageController();
   Timer? _autoScrollTimer;
@@ -71,7 +59,7 @@ class _PromoBannerSliderState extends State<PromoBannerSlider>
     }
     unawaited(
       _pageController.animateToPage(
-        (_currentPage + 1) % _banners.length,
+        (_currentPage + 1) % promoBanners.length,
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       ),
@@ -108,22 +96,22 @@ class _PromoBannerSliderState extends State<PromoBannerSlider>
             onNotification: _onScrollNotification,
             child: PageView.builder(
               controller: _pageController,
-              itemCount: _banners.length,
+              itemCount: promoBanners.length,
               onPageChanged: (page) => setState(() => _currentPage = page),
               itemBuilder: (context, index) => _PromoBanner(
                 key: ValueKey('promo-banner-$index'),
-                data: _banners[index],
+                data: promoBanners[index],
               ),
             ),
           ),
         ),
         const SizedBox(height: 12),
         Semantics(
-          label: 'Banner ${_currentPage + 1} trên ${_banners.length}',
+          label: 'Banner ${_currentPage + 1} trên ${promoBanners.length}',
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              for (var index = 0; index < _banners.length; index++)
+              for (var index = 0; index < promoBanners.length; index++)
                 AnimatedContainer(
                   key: ValueKey('promo-dot-$index'),
                   duration: const Duration(milliseconds: 200),
@@ -145,17 +133,10 @@ class _PromoBannerSliderState extends State<PromoBannerSlider>
   }
 }
 
-class _PromoBannerData {
-  const _PromoBannerData({required this.title, required this.imageAsset});
-
-  final String title;
-  final String imageAsset;
-}
-
 class _PromoBanner extends StatelessWidget {
   const _PromoBanner({super.key, required this.data});
 
-  final _PromoBannerData data;
+  final PromoBannerData data;
 
   @override
   Widget build(BuildContext context) {

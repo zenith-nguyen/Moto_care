@@ -1,10 +1,10 @@
-import 'dart:math' as math;
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../rescue_station/models/rescue_station.dart';
 import '../../rescue_station/providers/rescue_station_provider.dart';
 import '../models/rescue_location.dart';
+import '../../location/services/location_validation.dart';
+import '../../location/services/location_service.dart';
 
 /// Supply an address and coordinates from the location service when available.
 final initialRescueLocationProvider = Provider<RescueLocation?>((ref) => null);
@@ -20,17 +20,7 @@ class RescueLocationController extends Notifier<RescueLocation?> {
   bool confirmLocation(RescueLocation location) {
     final address = location.address.trim();
     final landmark = location.landmark.trim();
-    if (address.length < 5 || address.length > 240 || landmark.length > 240) {
-      return false;
-    }
-    if ((location.latitude == null) != (location.longitude == null) ||
-        (location.latitude != null &&
-            (!location.latitude!.isFinite || location.latitude!.abs() > 90)) ||
-        (location.longitude != null &&
-            (!location.longitude!.isFinite ||
-                location.longitude!.abs() > 180))) {
-      return false;
-    }
+    if (!isValidRescueLocation(location)) return false;
     state = RescueLocation(
       address: address,
       landmark: landmark,
@@ -50,18 +40,8 @@ class RescueLocationController extends Notifier<RescueLocation?> {
   }
 }
 
-double stationDistanceKm(RescueStation station, RescueLocation? location) {
-  if (location == null || !location.hasCoordinates) return station.distanceKm;
-  double radians(double value) => value * math.pi / 180;
-  final deltaLat = radians(station.latitude - location.latitude!);
-  final deltaLon = radians(station.longitude - location.longitude!);
-  final a =
-      math.pow(math.sin(deltaLat / 2), 2) +
-      math.cos(radians(location.latitude!)) *
-          math.cos(radians(station.latitude)) *
-          math.pow(math.sin(deltaLon / 2), 2);
-  return 6371 * 2 * math.asin(math.sqrt(a.clamp(0, 1)));
-}
+double stationDistanceKm(RescueStation station, RescueLocation? location) =>
+    const LocationService().stationDistanceKm(station, location);
 
 final homeNearbyStationsProvider = Provider<List<RescueStation>>((ref) {
   final location = ref.watch(rescueLocationProvider);
@@ -75,3 +55,8 @@ final homeNearbyStationsProvider = Provider<List<RescueStation>>((ref) {
   });
   return List.unmodifiable(stations.take(6));
 });
+
+final stationDistanceProvider = Provider.family<double, RescueStation>(
+  (ref, station) =>
+      stationDistanceKm(station, ref.watch(rescueLocationProvider)),
+);

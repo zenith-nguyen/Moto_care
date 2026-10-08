@@ -1,17 +1,18 @@
 # Profile module
 
-`/tai-khoan` opens the light `ProfileScreen` from the five-tab navigation. Its
-centered avatar, name, phone, static 5.0 rating presentation and Club card follow
-the supplied Be reference. Name, phone, tier, points and avatar watch the shared
-`profileProvider`; missing identity stays neutral. The menu is divided into
+`/tai-khoan` opens the light `ProfileScreen` from the four-tab navigation. Its
+centered avatar, name, phone and static 5.0 rating presentation follow the
+supplied Be reference. Name, phone and avatar watch the shared
+`profileProvider`; missing identity stays neutral. Club, rewards and membership
+features have been removed from the mobile app. The menu is divided into
 vehicle/emergency, partner/shop, and system/help groups.
 
 The edit action opens `/thong-tin-ca-nhan` (`ThongTinCaNhanScreen`), which retains
-its detailed profile and security functions. The Account menu also opens this route. Optional `HomeUser` route data supplies name, member ID,
-tier and points; existing full profile data takes priority. Returning updates
+its detailed profile and security functions. The Account menu also opens this route. Optional `HomeUser` route data supplies name and account ID;
+existing full profile data takes priority. Returning updates
 both the Home greeting and Account header.
 
-Account menu links reuse the garage, partner, voucher, FAQ and commitment routes.
+Account menu links reuse the garage, partner, FAQ and commitment routes.
 The spending sheet totals completed orders only, using derived order prices.
 The contact sheet shows the stored emergency contact and opens profile settings
 for protected editing. Payment, shop registration and insurance sheets disclose
@@ -21,8 +22,10 @@ service terms and FAQ. `test/be_screens_test.dart` covers these new interactions
 and reactive data, plus 320px layouts with 1.5x text.
 
 The detailed edit screen uses the shared light background, white cards, orange
-account controls and five-tab bottom navigation with Account selected. Its scroll view and modal edit sheet support narrow screens,
+account controls and four-tab bottom navigation with Account selected. Its scroll view and modal edit sheet support narrow screens,
 larger text and the keyboard.
+
+[Account preview](screenshots/no-offers-account.png).
 
 [Personal information preview](screenshots/light-personal-info.png).
 

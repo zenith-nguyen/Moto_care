@@ -11,7 +11,6 @@ const _mainTabPaths = {
   HomeDestination.messages: '/tin-nhan',
   HomeDestination.services: '/dich-vu',
   HomeDestination.account: '/tai-khoan',
-  HomeDestination.vouchers: '/kho-voucher',
 };
 
 Future<void> navigateMainTab(

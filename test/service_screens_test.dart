@@ -16,18 +16,14 @@ import 'package:moto_care/features/activity/models/rescue_order.dart';
 import 'package:moto_care/features/activity/providers/activity_provider.dart';
 import 'package:moto_care/features/chat/screens/tin_nhan_screen.dart';
 import 'package:moto_care/features/home/models/home_user.dart';
-import 'package:moto_care/features/membership/screens/tich_diem_screen.dart';
 import 'package:moto_care/features/partner/providers/partner_registration_provider.dart';
 import 'package:moto_care/features/places/models/service_place.dart';
 import 'package:moto_care/features/places/screens/tram_sac_tiem_sua_screen.dart';
 import 'package:moto_care/features/policy/providers/compensation_provider.dart';
-import 'package:moto_care/features/voucher/providers/voucher_provider.dart';
 
 const _user = HomeUser(displayName: 'Nguyễn Văn An', memberId: 'MC15335206');
 const _routes = [
-  '/tich-diem',
   '/tram-sac-tiem-sua',
-  '/kho-voucher',
   '/bang-gia',
   '/dang-ky-tho',
   '/cam-ket-dich-vu',
@@ -49,7 +45,6 @@ Future<GoRouter> _open(
     ProviderScope(
       key: UniqueKey(),
       overrides: [
-        voucherClockProvider.overrideWithValue(() => DateTime(2026, 10, 3)),
         serviceUrlLauncherProvider.overrideWithValue(
           launcher ?? (_) async => false,
         ),
@@ -127,74 +122,52 @@ ProviderContainer _container(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(ServiceScaffold)));
 
 void main() {
-  testWidgets(
-    'Account keeps all former menu destinations and their bottom navigation',
-    (tester) async {
-      final router = await _open(tester, '/trang-chu');
-      await _tap(tester, find.text('Tài khoản'));
-      const ids = [
-        'membership',
-        'places',
-        'vouchers',
-        'prices',
-        'mechanic',
-        'commitment',
-        'help',
-        'tips',
-      ];
-      for (var index = 0; index < ids.length; index++) {
-        final item = find.byKey(ValueKey('account-${ids[index]}'));
-        await _tap(tester, item);
-        expect(router.state.uri.path, _routes[index]);
-        expect(find.byType(ServiceScaffold), findsOneWidget);
-        final nav = find.byType(HomeBottomNavigation);
-        expect(nav, findsOneWidget);
-        for (final destination in HomeDestination.homeNavigationItems) {
-          expect(
-            find.descendant(
-              of: nav,
-              matching: find.text(destination.navigationLabel),
-            ),
-            findsOneWidget,
-          );
-        }
-        await _tap(tester, find.byTooltip('Quay lại'));
-        expect(router.state.uri.path, '/tai-khoan');
+  testWidgets('Account keeps supported destinations and four-tab navigation', (
+    tester,
+  ) async {
+    final router = await _open(tester, '/trang-chu');
+    await _tap(tester, find.text('Tài khoản'));
+    const ids = ['places', 'prices', 'mechanic', 'commitment', 'help', 'tips'];
+    for (var index = 0; index < ids.length; index++) {
+      final item = find.byKey(ValueKey('account-${ids[index]}'));
+      await _tap(tester, item);
+      expect(router.state.uri.path, _routes[index]);
+      expect(find.byType(ServiceScaffold), findsOneWidget);
+      final nav = find.byType(HomeBottomNavigation);
+      expect(nav, findsOneWidget);
+      for (final destination in HomeDestination.homeNavigationItems) {
+        expect(
+          find.descendant(
+            of: nav,
+            matching: find.text(destination.navigationLabel),
+          ),
+          findsOneWidget,
+        );
       }
-      await _tap(tester, find.text('Trang chủ'));
-      expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
-    },
-  );
+      await _tap(tester, find.byTooltip('Quay lại'));
+      expect(router.state.uri.path, '/tai-khoan');
+    }
+    await _tap(tester, find.text('Trang chủ'));
+    expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
+  });
 
-  testWidgets(
-    'Membership receives identity, gold tier and remaining progress',
-    (tester) async {
-      await _open(tester, '/tich-diem');
-      expect(find.byType(TichDiemScreen), findsOneWidget);
-      expect(find.text('Nguyễn Văn An'), findsOneWidget);
-      expect(find.text('ID: MC15335206'), findsOneWidget);
-      expect(find.text('Vàng'), findsOneWidget);
-      expect(find.text('350 điểm'), findsOneWidget);
-      expect(
-        find.text('Tích thêm 150 điểm để lên hạng Bạch Kim.'),
-        findsOneWidget,
-      );
-      expect(
-        tester
-            .widget<LinearProgressIndicator>(
-              find.byType(LinearProgressIndicator),
-            )
-            .value,
-        .7,
-      );
-      await tester.scrollUntilVisible(
-        find.text('+50 điểm - Đơn SOS #MC8821'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('-100 điểm - Đổi Voucher 20k'), findsOneWidget);
-    },
-  );
+  test('Retired offers and membership routes are absent', () {
+    final router = createAppRouter();
+    addTearDown(router.dispose);
+    final paths = router.configuration.routes.whereType<GoRoute>().map(
+      (route) => route.path,
+    );
+    expect(paths, isNot(contains('/tich-diem')));
+    expect(paths, isNot(contains('/kho-voucher')));
+    expect(
+      HomeDestination.menuItems.map((item) => item.label),
+      isNot(contains('Kho ưu đãi')),
+    );
+    expect(
+      HomeDestination.menuItems.map((item) => item.label),
+      isNot(contains('Tích điểm & Hạng thành viên')),
+    );
+  });
 
   testWidgets(
     'Place search and combined filters update both map and list with an empty state',
@@ -262,40 +235,6 @@ void main() {
         find.textContaining('Không thể mở ứng dụng gọi điện.'),
         findsOneWidget,
       );
-    },
-  );
-
-  testWidgets(
-    'Promo codes validate, normalize and prevent duplicates; voucher returns to home',
-    (tester) async {
-      final router = await _open(tester, '/trang-chu');
-      router.push('/kho-voucher');
-      await tester.pumpAndSettle();
-      await _tap(tester, find.text('Áp dụng'));
-      expect(find.text('Vui lòng nhập mã ưu đãi.'), findsOneWidget);
-      await tester.enterText(find.byType(TextField), 'INVALID');
-      await _tap(tester, find.text('Áp dụng'));
-      expect(find.text('Mã ưu đãi không hợp lệ.'), findsOneWidget);
-      await tester.enterText(find.byType(TextField), ' moto20 ');
-      await _tap(tester, find.text('Áp dụng'));
-      final container = _container(tester);
-      expect(
-        container.read(voucherProvider).where((v) => v.code == 'MOTO20').length,
-        1,
-      );
-      await tester.enterText(find.byType(TextField), 'MOTO20');
-      await _tap(tester, find.text('Áp dụng'));
-      expect(
-        find.text('Mã này đã có trong kho voucher của bạn.'),
-        findsOneWidget,
-      );
-      await _tap(tester, find.text('Lịch sử sử dụng'));
-      expect(find.text('Đã sử dụng: 28/09/2026'), findsOneWidget);
-      expect(find.text('Dùng ngay'), findsNothing);
-      await _tap(tester, find.text('Voucher sẵn có'));
-      await _tap(tester, find.text('Dùng ngay').first);
-      expect(router.state.uri.path, '/trang-chu');
-      expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
     },
   );
 
@@ -467,9 +406,14 @@ void main() {
         'huy don',
       );
       await tester.enterText(find.byType(TextField), '');
-      await _tap(tester, find.text('Voucher'));
-      await _tap(tester, find.text('Làm thế nào để sử dụng voucher?'));
-      expect(find.text('Làm thế nào để sử dụng voucher?'), findsOneWidget);
+      expect(find.text('Voucher'), findsNothing);
+      expect(find.text('Làm thế nào để sử dụng voucher?'), findsNothing);
+      await _tap(tester, find.text('Thanh toán'));
+      await _tap(tester, find.text('Làm sao khi thợ báo giá khác với app?'));
+      expect(
+        find.textContaining('Yêu cầu thợ giải thích từng khoản'),
+        findsOneWidget,
+      );
       expect(find.text('Tôi có thể hủy đơn cứu hộ không?'), findsNothing);
       await _tap(tester, find.text('Gọi Hotline 24/7'));
       expect(calls.single.toString(), 'tel:1130');
@@ -490,7 +434,6 @@ void main() {
       addTearDown(tester.view.resetViewInsets);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       for (final path in [
-        '/kho-voucher',
         '/dang-ky-tho',
         '/faq',
         '/bang-gia',

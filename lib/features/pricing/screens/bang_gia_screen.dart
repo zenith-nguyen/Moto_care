@@ -1,33 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../providers/pricing_provider.dart';
+import '../models/price_group.dart';
 
 import '../../../core/widgets/service_scaffold.dart';
 
-const _priceGroups = [
-  (
-    'Cứu hộ cơ bản',
-    Icons.build_circle_outlined,
-    [('Vá xe', '30k - 50k'), ('Cứu hộ hết xăng', '40k'), ('Kích bình', '50k')],
-  ),
-  (
-    'Săm & Lốp xe',
-    Icons.tire_repair,
-    [('Ruột xe số', '90k'), ('Lốp tay ga không ruột', '350k - 450k')],
-  ),
-  (
-    'Bình Ắc quy & Điện',
-    Icons.battery_charging_full,
-    [('Thay bình ắc quy GS', '380k')],
-  ),
-];
-
-class BangGiaScreen extends StatefulWidget {
+class BangGiaScreen extends ConsumerStatefulWidget {
   const BangGiaScreen({super.key});
 
   @override
-  State<BangGiaScreen> createState() => _BangGiaScreenState();
+  ConsumerState<BangGiaScreen> createState() => _BangGiaScreenState();
 }
 
-class _BangGiaScreenState extends State<BangGiaScreen> {
+class _BangGiaScreenState extends ConsumerState<BangGiaScreen> {
   String _query = '';
   final _search = TextEditingController();
 
@@ -39,20 +25,7 @@ class _BangGiaScreenState extends State<BangGiaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final groups = [
-      for (final (title, icon, items) in _priceGroups)
-        (
-          title,
-          icon,
-          items
-              .where(
-                (item) =>
-                    normalizeServiceSearch('$title ${item.$1}')
-                        .contains(_query),
-              )
-              .toList(),
-        ),
-    ].where((group) => group.$3.isNotEmpty).toList();
+    final groups = ref.watch(filteredPriceGroupsProvider(_query));
     return ServiceScaffold(
       title: 'Bảng giá dịch vụ & Phụ tùng',
       body: ListView(
@@ -103,7 +76,7 @@ class _BangGiaScreenState extends State<BangGiaScreen> {
               padding: EdgeInsets.all(24),
               child: Text('Không tìm thấy phụ tùng hoặc dịch vụ phù hợp.'),
             ),
-          for (final (title, icon, items) in groups)
+          for (final (title, category, items) in groups)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Card(
@@ -112,7 +85,11 @@ class _BangGiaScreenState extends State<BangGiaScreen> {
                   initiallyExpanded: _query.isNotEmpty,
                   shape: const Border(),
                   collapsedShape: const Border(),
-                  leading: Icon(icon, color: ServiceColors.orange),
+                  leading: Icon(switch (category) {
+                    PriceCategory.rescue => Icons.build_circle_outlined,
+                    PriceCategory.tire => Icons.tire_repair,
+                    PriceCategory.battery => Icons.battery_charging_full,
+                  }, color: ServiceColors.orange),
                   title: Text(
                     title,
                     style: const TextStyle(fontWeight: FontWeight.w700),

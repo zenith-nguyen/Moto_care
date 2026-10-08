@@ -1,3 +1,4 @@
+import 'package:moto_care/features/chat/data/demo_chat_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -8,7 +9,6 @@ import 'package:go_router/go_router.dart';
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
 import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/chat/models/chat_conversation.dart';
 import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';
 import 'package:moto_care/features/chat/screens/tin_nhan_screen.dart';
 import 'package:moto_care/features/home/models/home_user.dart';
@@ -20,14 +20,16 @@ Future<void> _openMessages(
   Future<bool> Function(Uri)? launchPhone,
 }) async {
   await tester.pumpWidget(
-    MaterialApp(
-      theme: AppTheme.light,
-      locale: const Locale('vi'),
-      supportedLocales: const [Locale('vi')],
-      localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: launchPhone == null
-          ? const TinNhanScreen()
-          : TinNhanScreen(launchPhone: launchPhone),
+    ProviderScope(
+      child: MaterialApp(
+        theme: AppTheme.light,
+        locale: const Locale('vi'),
+        supportedLocales: const [Locale('vi')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        home: launchPhone == null
+            ? const TinNhanScreen()
+            : TinNhanScreen(launchPhone: launchPhone),
+      ),
     ),
   );
   await tester.pumpAndSettle();

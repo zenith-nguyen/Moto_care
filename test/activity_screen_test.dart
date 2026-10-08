@@ -215,7 +215,7 @@ void main() {
         'Phí di chuyển',
         'Phí công sửa',
         'Phụ tùng phát sinh',
-        'Voucher',
+        'Điều chỉnh giá',
         'Tổng thanh toán',
       ]) {
         expect(find.text(label), findsOneWidget);

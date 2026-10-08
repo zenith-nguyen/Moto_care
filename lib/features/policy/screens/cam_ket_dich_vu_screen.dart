@@ -1,13 +1,10 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/photo_attachment_field.dart';
 import '../../../core/widgets/service_scaffold.dart';
-import '../../activity/models/rescue_order.dart';
-import '../../activity/providers/activity_provider.dart';
-import '../providers/compensation_provider.dart';
+import '../providers/compensation_draft_provider.dart';
+import '../services/compensation_service.dart';
 
 class CamKetDichVuScreen extends ConsumerStatefulWidget {
   const CamKetDichVuScreen({super.key});
@@ -19,10 +16,9 @@ class CamKetDichVuScreen extends ConsumerStatefulWidget {
 class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
   final _form = GlobalKey<FormState>();
   final _description = TextEditingController();
-  String? _orderId;
-  Uint8List? _evidence;
-  bool _submitted = false;
-
+  final _draftKey = Object();
+  CompensationDraftController get _controller =>
+      ref.read(compensationDraftProvider(_draftKey).notifier);
   @override
   void dispose() {
     _description.dispose();
@@ -30,23 +26,12 @@ class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
   }
 
   Future<void> _submit() async {
-    if (_submitted || !_form.currentState!.validate()) return;
-    final order = ref.read(activityProvider).orderById(_orderId);
-    if (order == null || order.status == RescueOrderStatus.cancelled) {
+    if (!_form.currentState!.validate()) return;
+    if (!_controller.submit(_description.text)) {
       showServiceMessage(context, 'Đơn không còn phù hợp để gửi báo cáo.');
       return;
     }
     FocusScope.of(context).unfocus();
-    ref
-        .read(compensationReportsProvider.notifier)
-        .submit(
-          CompensationReport(
-            orderId: _orderId!,
-            description: _description.text.trim(),
-            evidence: _evidence,
-          ),
-        );
-    setState(() => _submitted = true);
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -67,24 +52,20 @@ class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final orders =
-        ref
-            .watch(activityProvider)
-            .orders
-            .where((order) => order.status != RescueOrderStatus.cancelled)
-            .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final recent = orders.take(5).toList();
+    final draft = ref.watch(compensationDraftProvider(_draftKey));
+    final service = ref.watch(compensationServiceProvider);
+    final recent = ref.watch(recentCompensationOrdersProvider);
+    final commitments = ref.watch(commitmentsProvider);
     return ServiceScaffold(
       title: 'Cam kết dịch vụ & Bồi thường',
       bottomBar: SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
           style: FilledButton.styleFrom(backgroundColor: ServiceColors.orange),
-          onPressed: _submitted || recent.isEmpty ? null : _submit,
+          onPressed: draft.submitted || recent.isEmpty ? null : _submit,
           icon: const Icon(Icons.send_outlined),
           label: Text(
-            _submitted ? 'Đã ghi nhận báo cáo' : 'Gửi báo cáo bồi thường',
+            draft.submitted ? 'Đã ghi nhận báo cáo' : 'Gửi báo cáo bồi thường',
           ),
         ),
       ),
@@ -105,29 +86,21 @@ class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 24),
-            for (final (icon, title, description) in const [
-              (
-                Icons.price_check,
-                'Cam kết Giá',
-                'Thợ xác nhận chi phí trước khi sửa. Bạn có quyền từ chối khoản phát sinh chưa được đồng ý.',
-              ),
-              (
-                Icons.verified_outlined,
-                'Bảo hành 7 ngày',
-                'Liên hệ hỗ trợ nếu lỗi đã sửa tái diễn trong 7 ngày để được kiểm tra điều kiện bảo hành.',
-              ),
-              (
-                Icons.badge_outlined,
-                'Lý lịch Thợ',
-                'Thông tin thợ được xác minh trước khi tham gia mạng lưới đối tác MotoCare.',
-              ),
-            ])
+            for (final (index, (title, description)) in commitments.indexed)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Card(
                   child: ListTile(
                     contentPadding: const EdgeInsets.all(18),
-                    leading: Icon(icon, color: ServiceColors.orange, size: 30),
+                    leading: Icon(
+                      const [
+                        Icons.price_check,
+                        Icons.verified_outlined,
+                        Icons.badge_outlined,
+                      ][index % 3],
+                      color: ServiceColors.orange,
+                      size: 30,
+                    ),
                     title: Text(
                       title,
                       style: const TextStyle(
@@ -166,8 +139,8 @@ class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
                           recent.map((order) => order.id).join(','),
                         ),
                         initialValue:
-                            recent.any((order) => order.id == _orderId)
-                            ? _orderId
+                            recent.any((order) => order.id == draft.orderId)
+                            ? draft.orderId
                             : null,
                         isExpanded: true,
                         decoration: const InputDecoration(
@@ -180,10 +153,8 @@ class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
                               child: Text(order.orderCode),
                             ),
                         ],
-                        onChanged: (value) => setState(() => _orderId = value),
-                        validator: (value) => value == null
-                            ? 'Vui lòng chọn mã đơn cần báo cáo.'
-                            : null,
+                        onChanged: _controller.selectOrder,
+                        validator: service.validateOrder,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
@@ -195,14 +166,12 @@ class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
                         minLines: 4,
                         maxLines: 7,
                         maxLength: 1000,
-                        validator: (value) => (value?.trim().length ?? 0) < 10
-                            ? 'Vui lòng mô tả sự cố ít nhất 10 ký tự.'
-                            : null,
+                        validator: service.validateDescription,
                       ),
                       const SizedBox(height: 16),
                       PhotoAttachmentField(
                         label: 'Tải ảnh hóa đơn/bằng chứng',
-                        onChanged: (photo) => _evidence = photo,
+                        onChanged: _controller.attachEvidence,
                       ),
                       const SizedBox(height: 12),
                       const Text(

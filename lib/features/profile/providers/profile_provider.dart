@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/profile_validation.dart';
 import '../models/user_profile.dart';
+import '../models/profile_state.dart';
+import '../../home/models/home_user.dart';
+export '../models/profile_state.dart';
 
 /// Override with account data when the authentication API is connected.
 final initialUserProfileProvider = Provider<UserProfile>(
@@ -12,33 +15,6 @@ final initialUserProfileProvider = Provider<UserProfile>(
 final profileProvider = NotifierProvider<ProfileController, ProfileState>(
   ProfileController.new,
 );
-
-@immutable
-class ProfileState {
-  const ProfileState({
-    required this.profile,
-    this.initialized = false,
-    this.avatarBytes,
-    this.biometricEnabled = false,
-  });
-
-  final UserProfile profile;
-  final bool initialized;
-  final Uint8List? avatarBytes;
-  final bool biometricEnabled;
-
-  ProfileState copyWith({
-    UserProfile? profile,
-    bool? initialized,
-    Uint8List? avatarBytes,
-    bool? biometricEnabled,
-  }) => ProfileState(
-    profile: profile ?? this.profile,
-    initialized: initialized ?? this.initialized,
-    avatarBytes: avatarBytes ?? this.avatarBytes,
-    biometricEnabled: biometricEnabled ?? this.biometricEnabled,
-  );
-}
 
 class ProfileController extends Notifier<ProfileState> {
   @override
@@ -54,6 +30,19 @@ class ProfileController extends Notifier<ProfileState> {
     if (state.initialized && state.profile.id == seed.id) return;
     // An API-supplied profile takes priority over the limited HomeUser payload.
     state = ProfileState(profile: seed, initialized: true);
+  }
+
+  void initializeFromHome(HomeUser? user, {bool onlyIfUninitialized = false}) {
+    if (onlyIfUninitialized && state.initialized) return;
+    if (user == null && state.initialized) return;
+    initialize(
+      UserProfile(
+        id: user?.memberId ?? '',
+        fullName: user?.displayName.trim() ?? '',
+        memberTier: user?.membershipLabel ?? 'Chưa có hạng',
+        rewardPoints: user?.rewardPoints ?? 0,
+      ),
+    );
   }
 
   bool saveDetails({
@@ -97,3 +86,17 @@ class ProfileController extends Notifier<ProfileState> {
 
   void clearSession() => state = const ProfileState(profile: UserProfile.empty);
 }
+
+final homeUserProvider = Provider.autoDispose.family<HomeUser, HomeUser?>((
+  ref,
+  seed,
+) {
+  final state = ref.watch(profileProvider);
+  if (!state.initialized && seed != null) return seed;
+  return HomeUser(
+    displayName: state.profile.fullName,
+    memberId: state.profile.id,
+    membershipLabel: state.profile.memberTier,
+    rewardPoints: state.profile.rewardPoints,
+  );
+});

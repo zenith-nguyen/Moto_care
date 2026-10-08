@@ -7,7 +7,6 @@ class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
     required this.name,
-    required this.tier,
     required this.address,
     required this.vehicle,
     required this.onLocation,
@@ -15,7 +14,6 @@ class HomeHeader extends StatelessWidget {
   });
 
   final String name;
-  final String tier;
   final String address;
   final String vehicle;
   final VoidCallback onLocation;
@@ -25,10 +23,7 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final topInset = MediaQuery.paddingOf(context).top;
-    final visibleTier = tier.trim();
-    final hasTier =
-        visibleTier.isNotEmpty && visibleTier.toLowerCase() != 'chưa có hạng';
-    final headerHeight = topInset + (hasTier ? 146 : 110) + (scale - 1) * 70;
+    final headerHeight = topInset + 110 + (scale - 1) * 70;
     final boxHeight = 132 + (scale - 1) * 54;
     return SizedBox(
       height: headerHeight + boxHeight,
@@ -68,42 +63,6 @@ class HomeHeader extends StatelessWidget {
                           height: 1.25,
                         ),
                       ),
-                      if (hasTier) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.65),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.star_rounded,
-                                color: HomeColors.red,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 5),
-                              Flexible(
-                                child: Text(
-                                  visibleTier,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: HomeColors.text,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),

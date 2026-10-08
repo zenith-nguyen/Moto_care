@@ -22,7 +22,6 @@ import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
 import 'package:moto_care/features/rescue_station/providers/rescue_station_provider.dart';
 import 'package:moto_care/features/vehicle/models/vehicle.dart';
 import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
-import 'package:moto_care/features/voucher/providers/voucher_provider.dart';
 
 import 'fixtures/marketplace_router_fixture.dart';
 
@@ -40,7 +39,6 @@ const _location = RescueLocation(
   latitude: 10.757,
   longitude: 106.668,
 );
-final _now = DateTime(2026, 10, 6, 12);
 
 Future<GoRouter> _open(
   WidgetTester tester, {
@@ -57,7 +55,6 @@ Future<GoRouter> _open(
         initialVehiclesProvider.overrideWithValue([_vehicle]),
         initialRescueLocationProvider.overrideWithValue(location),
         initialRescueOrdersProvider.overrideWithValue([]),
-        voucherClockProvider.overrideWithValue(() => _now),
         if (emptyPartners) rescueStationsProvider.overrideWithValue([]),
         deviceLocationProvider.overrideWithValue(
           gps ??
@@ -143,7 +140,7 @@ void main() {
   );
 
   testWidgets(
-    'Selected packages, quantities, payment and voucher survive booking and JSON',
+    'Booking preserves packages and payment without voucher discounts',
     (tester) async {
       final router = await _open(tester);
       await _chooseShop(tester);
@@ -177,11 +174,9 @@ void main() {
         find.byKey(const ValueKey('checkout-payment')),
       );
       await tapMarketplace(tester, find.byKey(const ValueKey('payment-momo')));
-      await tapMarketplace(
-        tester,
-        find.byKey(const ValueKey('checkout-voucher')),
-      );
-      await tapMarketplace(tester, find.textContaining('SOS20 •'));
+      expect(find.byKey(const ValueKey('checkout-voucher')), findsNothing);
+      expect(find.text('Thêm mã giảm giá / Voucher'), findsNothing);
+      expect(find.text('Giảm giá voucher'), findsNothing);
       final priceText = tester
           .widget<Text>(find.byKey(const ValueKey('checkout-total')))
           .data;
@@ -192,8 +187,9 @@ void main() {
       expect(order.items.map((item) => item.quantity), [2, 1]);
       expect(order.partnerName, 'Đại lý chính hãng An Phát');
       expect(order.paymentMethod, RescuePaymentMethod.momo);
-      expect(order.voucherCode, 'SOS20');
-      expect(order.discount, 20000);
+      expect(order.voucherCode, isEmpty);
+      expect(order.discount, 0);
+      expect(order.totalPrice, booking.subtotal + order.travelFee);
       expect(order.laborFee, 110000);
       expect(priceText, formatOrderPrice(order.totalPrice));
       expect(order.locationLatitude, _location.latitude);
@@ -207,13 +203,6 @@ void main() {
             .items
             .map((item) => item.toJson()),
         order.items.map((item) => item.toJson()),
-      );
-      expect(
-        _state(tester)
-            .read(voucherProvider)
-            .firstWhere((offer) => offer.code == 'SOS20')
-            .usedAt,
-        _now,
       );
       await tapMarketplace(tester, find.text('Hủy đơn hàng'));
       await tapMarketplace(tester, find.text('Xác nhận hủy'));
@@ -397,34 +386,7 @@ void main() {
     );
   });
 
-  test('Voucher discounts enforce minimum, expiry, used state and service restrictions', () {
-    final booking = MarketplaceBooking(
-      partnerId: 'shop',
-      serviceType: 'Vá xe',
-      items: [MarketplaceCatalog.packages[1].item(1)],
-    );
-    VoucherOffer offer({
-      String code = 'SOS20',
-      DateTime? usedAt,
-      DateTime? expiresAt,
-    }) => VoucherOffer(
-      code: code,
-      title: 'Ưu đãi',
-      expiresAt: expiresAt ?? _now.add(const Duration(days: 1)),
-      usedAt: usedAt,
-    );
-    expect(booking.discountFor(offer(), _now), 20000);
-    expect(booking.discountFor(offer(usedAt: _now), _now), 0);
-    expect(booking.discountFor(offer(expiresAt: _now), _now), 0);
-    expect(booking.discountFor(offer(code: 'DEM15'), _now), 0);
-    expect(
-      MarketplaceBooking(
-        partnerId: 'shop',
-        serviceType: 'Vá xe',
-        items: [MarketplaceCatalog.packages.first.item(1)],
-      ).discountFor(offer(), _now),
-      0,
-    );
+  test('Booking items reject zero quantities', () {
     expect(
       () => RescueOrderItem(
         packageId: 'x',

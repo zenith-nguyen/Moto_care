@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../activity/widgets/order_summary.dart';
-import '../../home/providers/home_provider.dart';
+import '../providers/partner_search_provider.dart';
 import '../../home/theme/home_theme.dart';
 import '../providers/partner_provider.dart';
 import '../widgets/marketplace_widgets.dart';
@@ -20,33 +20,16 @@ class _PartnerListScreenState extends ConsumerState<PartnerListScreen> {
   PartnerVehicleType? _filter;
   @override
   Widget build(BuildContext context) {
-    final location = ref.watch(rescueLocationProvider);
-    final shops =
-        ref
-            .watch(partnerShopsProvider)
-            .where(
-              (shop) =>
-                  shop.station.isOpen &&
-                  shop.menu(widget.serviceType).isNotEmpty &&
-                  (_filter == null || shop.vehicleTypes.contains(_filter)) &&
-                  '${shop.station.name} ${shop.station.address}'
-                      .toLowerCase()
-                      .contains(_query.trim().toLowerCase()),
-            )
-            .toList()
-          ..sort(
-            (a, b) => stationDistanceKm(
-              a.station,
-              location,
-            ).compareTo(stationDistanceKm(b.station, location)),
-          );
+    final listings = ref.watch(
+      partnerSearchProvider((widget.serviceType, _query, _filter)),
+    );
     return MarketplaceScaffold(
       title: widget.serviceType,
       onBack: () => context.canPop() ? context.pop() : context.go('/trang-chu'),
       body: ListView.builder(
         key: const ValueKey('partner-list'),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        itemCount: shops.length + 1,
+        itemCount: listings.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
             return Column(
@@ -85,7 +68,7 @@ class _PartnerListScreenState extends ConsumerState<PartnerListScreen> {
                   style: TextStyle(color: HomeColors.secondary, fontSize: 12),
                 ),
                 const SizedBox(height: 12),
-                if (shops.isEmpty)
+                if (listings.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Text(
@@ -96,12 +79,10 @@ class _PartnerListScreenState extends ConsumerState<PartnerListScreen> {
               ],
             );
           }
-          final shop = shops[index - 1];
-          final distance = stationDistanceKm(shop.station, location);
-          final price = shop
-              .menu(widget.serviceType)
-              .map((item) => item.price)
-              .reduce((a, b) => a < b ? a : b);
+          final listing = listings[index - 1];
+          final shop = listing.shop;
+          final distance = listing.distance;
+          final price = listing.price;
           void select() => context.push(
             '/partners/${Uri.encodeComponent(shop.id)}?service=${Uri.encodeComponent(widget.serviceType)}',
           );
@@ -109,6 +90,7 @@ class _PartnerListScreenState extends ConsumerState<PartnerListScreen> {
             key: ValueKey('partner-${shop.id}'),
             shop: shop,
             distance: distance,
+            minutes: listing.minutes,
             price: price,
             onSelected: select,
           );
@@ -123,11 +105,13 @@ class _PartnerCard extends StatelessWidget {
     super.key,
     required this.shop,
     required this.distance,
+    required this.minutes,
     required this.price,
     required this.onSelected,
   });
   final PartnerShop shop;
   final double distance;
+  final int minutes;
   final int price;
   final VoidCallback onSelected;
 
@@ -191,7 +175,7 @@ class _PartnerCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            '${shop.station.rating.toStringAsFixed(1)} (${shop.station.completedRescues}+)  |  ≈ ${distance.toStringAsFixed(1)} km  |  ≈ ${(distance * 5).ceil() + 5} phút',
+                            '${shop.station.rating.toStringAsFixed(1)} (${shop.station.completedRescues}+)  |  ≈ ${distance.toStringAsFixed(1)} km  |  ≈ $minutes phút',
                             style: const TextStyle(
                               color: HomeColors.secondary,
                               fontSize: 12,

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/router/main_navigation.dart';
-import '../../../core/widgets/photo_attachment_field.dart';
+import '../../../core/providers/attachment_provider.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
 import '../models/chat_conversation.dart';
@@ -27,7 +27,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   bool _selectingPhoto = false;
-  bool _pickingPhoto = false;
+  final _pickerKey = Object();
   int _scrollRequest = 0;
 
   @override
@@ -110,31 +110,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
         ),
       );
       if (!mounted || source == null || widget.conversation != chat) return;
-      setState(() => _pickingPhoto = true);
-      final picker = ref.read(
-        source == ImageSource.camera
-            ? cameraAttachmentPickerProvider
-            : attachmentPickerProvider,
-      );
-      final photo = await picker();
+      final photo = await ref
+          .read(attachmentProvider((_pickerKey, chat)).notifier)
+          .pick(useCamera: source == ImageSource.camera);
       if (!mounted || photo == null || widget.conversation != chat) return;
       ref.read(chatMessagesProvider(chat).notifier).sendImage(photo);
-    } catch (error) {
-      if (!mounted || widget.conversation != chat) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            error is StateError
-                ? error.message.toString()
-                : source == ImageSource.camera
-                ? 'Không thể mở camera. Vui lòng kiểm tra quyền truy cập.'
-                : 'Không thể mở thư viện ảnh. Vui lòng kiểm tra quyền truy cập.',
-          ),
-        ),
-      );
     } finally {
       _selectingPhoto = false;
-      if (mounted) setState(() => _pickingPhoto = false);
     }
   }
 
@@ -149,6 +131,13 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   @override
   Widget build(BuildContext context) {
     final chat = widget.conversation;
+    final picker = ref.watch(attachmentProvider((_pickerKey, chat)));
+    ref.listen(attachmentProvider((_pickerKey, chat)), (_, next) {
+      if (next.error != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(next.error!)));
+      }
+    });
     final messages = chat == null
         ? null
         : ref.watch(chatMessagesProvider(chat));
@@ -217,7 +206,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                         ),
                         ChatInputBar(
                           controller: _textController,
-                          isPickingPhoto: _pickingPhoto,
+                          isPickingPhoto: picker.picking,
                           onPickPhoto: _pickPhoto,
                           onSend: _sendText,
                           onQuickReply: _sendText,

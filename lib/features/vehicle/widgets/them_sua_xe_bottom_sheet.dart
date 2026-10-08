@@ -80,19 +80,7 @@ class _ThemSuaXeBottomSheetState extends ConsumerState<ThemSuaXeBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final brands = <String>{
-      'Honda',
-      'Yamaha',
-      'Suzuki',
-      'SYM',
-      'Piaggio',
-      'Kymco',
-      'VinFast',
-      'Yadea',
-      'Pega',
-      'Khác',
-      ?_brand,
-    };
+    final brands = <String>{...ref.watch(vehicleBrandsProvider), ?_brand};
     return SafeArea(
       top: false,
       child: SingleChildScrollView(

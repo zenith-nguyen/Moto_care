@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 
 enum HomeDestination {
   personalInfo('Thông tin cá nhân', Icons.account_circle_rounded),
-  membership('Tích điểm & Hạng thành viên', Icons.loyalty_rounded),
   nearbyServices('Trạm sạc & Tiệm sửa xe gần nhất', Icons.ev_station_rounded),
-  vouchers('Kho ưu đãi', Icons.local_offer_rounded),
   prices('Bảng giá dịch vụ & Phụ tùng', Icons.receipt_long_rounded),
   partnership('Trở thành đối tác (Dành cho thợ)', Icons.handshake_rounded),
   serviceCommitment('Cam kết dịch vụ & Bồi thường', Icons.verified_rounded),
@@ -25,9 +23,7 @@ enum HomeDestination {
 
   static const menuItems = [
     personalInfo,
-    membership,
     nearbyServices,
-    vouchers,
     prices,
     partnership,
     serviceCommitment,
@@ -43,16 +39,9 @@ enum HomeDestination {
     messages,
   ];
 
-  static const homeNavigationItems = [
-    home,
-    activity,
-    services,
-    vouchers,
-    account,
-  ];
+  static const homeNavigationItems = [home, activity, services, account];
 
   String get navigationLabel => switch (this) {
-    vouchers => 'Kho ưu đãi',
     personalInfo => 'Tài khoản',
     _ => label,
   };

@@ -17,4 +17,18 @@ abstract final class AuthValidation {
         ? null
         : 'Email hoặc số điện thoại không hợp lệ';
   }
+
+  static bool registrationPhone(String value) =>
+      RegExp(r'^0?[1-9][0-9]{8}$').hasMatch(value);
+  static bool hasMinLength(String value) => value.length >= 8;
+  static bool hasMixedCase(String value) =>
+      RegExp(r'[a-z]').hasMatch(value) && RegExp(r'[A-Z]').hasMatch(value);
+  static bool hasNumber(String value) => RegExp(r'[0-9]').hasMatch(value);
+  static bool hasSpecialCharacter(String value) =>
+      RegExp(r'[^a-zA-Z0-9\s]').hasMatch(value);
+  static bool registrationPassword(String value) =>
+      hasMinLength(value) &&
+      hasMixedCase(value) &&
+      hasNumber(value) &&
+      hasSpecialCharacter(value);
 }

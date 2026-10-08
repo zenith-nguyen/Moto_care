@@ -95,10 +95,9 @@ void main() {
     expect(find.byType(TrangChu), findsOneWidget);
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
-    expect(find.text('Thành viên Vàng'), findsOneWidget);
-    await _tap(tester, find.text('MotoCare Club'));
-    expect(router.state.uri.path, '/tich-diem');
-    expect(find.text('Nguyễn Văn An'), findsOneWidget);
+    expect(find.text('Thành viên Vàng'), findsNothing);
+    expect(find.text('MotoCare Club'), findsNothing);
+    expect(router.state.uri.path, '/trang-chu');
     expect(tester.takeException(), isNull);
   });
 
@@ -110,8 +109,7 @@ void main() {
     expect(find.text('Chưa có hạng'), findsNothing);
     expect(find.text('Chọn xe cần cứu hộ'), findsOneWidget);
     expect(find.text('Vị trí sự cố: Chưa chọn vị trí'), findsOneWidget);
-    await tester.ensureVisible(find.text('0 xu'));
-    expect(find.text('0 xu'), findsOneWidget);
+    expect(find.text('0 xu'), findsNothing);
   });
 
   testWidgets('Home removes menu, drawer and search actions', (tester) async {
@@ -124,11 +122,13 @@ void main() {
   });
 
   testWidgets(
-    'Bottom navigation has the five requested tabs and keeps home active',
+    'Bottom navigation has four tabs without offers and keeps home active',
     (tester) async {
       final selections = <HomeDestination>[];
       await _openHome(tester, onSelected: selections.add);
       final nav = find.byType(HomeBottomNavigation);
+      expect(HomeDestination.homeNavigationItems, hasLength(4));
+      expect(find.text('Kho ưu đãi'), findsNothing);
       await _tap(
         tester,
         find.descendant(of: nav, matching: find.text('Trang chủ')),
@@ -146,7 +146,6 @@ void main() {
       expect(selections, [
         HomeDestination.activity,
         HomeDestination.services,
-        HomeDestination.vouchers,
         HomeDestination.account,
       ]);
       expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
@@ -154,19 +153,15 @@ void main() {
   );
 
   testWidgets(
-    'Club, offers and tips dispatch features while charging opens the partner list',
+    'Home has no club or offer cards while charging opens the partner list',
     (tester) async {
       final selections = <HomeDestination>[];
       await _openHome(tester, onSelected: selections.add);
-      await _tap(tester, find.text('MotoCare Club'));
-      await _tap(tester, find.text('Giảm 30k\ncứu hộ đêm'));
-      await _tap(tester, find.text('Xe chết máy\nmùa mưa?'));
+      expect(find.text('MotoCare Club'), findsNothing);
+      expect(find.text('Mẹo hay & Ưu đãi hôm nay ›'), findsNothing);
+      expect(find.text('Giảm 30k\ncứu hộ đêm'), findsNothing);
       await _tap(tester, find.byKey(const ValueKey('home-service-charging')));
-      expect(selections, [
-        HomeDestination.membership,
-        HomeDestination.vouchers,
-        HomeDestination.emergencyTips,
-      ]);
+      expect(selections, isEmpty);
       expect(find.text('Trạm sạc gần nhất'), findsOneWidget);
       expect(find.byType(PartnerListScreen), findsOneWidget);
       await tester.tap(find.byType(BackButton));
@@ -188,12 +183,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('An empty membership label does not leave an empty badge', (
+  testWidgets('Legacy membership data does not display a badge', (
     tester,
   ) async {
     await _openHome(
       tester,
-      user: const HomeUser(displayName: 'Nguyễn An', membershipLabel: ''),
+      user: const HomeUser(
+        displayName: 'Nguyễn An',
+        membershipLabel: 'Thành viên Vàng',
+        rewardPoints: 350,
+      ),
     );
     expect(
       find.descendant(
@@ -245,7 +244,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       }
-      await tester.ensureVisible(find.text('Mẹo hay & Ưu đãi hôm nay ›'));
+      await tester.ensureVisible(find.text('Cứu hộ nhanh gần đây'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       tester

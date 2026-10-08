@@ -1,8 +1,4 @@
-import 'dart:async';
-
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,16 +7,14 @@ import '../../../core/widgets/service_scaffold.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/models/rescue_location.dart';
-import '../../home/providers/home_provider.dart';
 import '../../home/theme/home_theme.dart';
 import '../../home/widgets/brand_backdrop.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../models/place_suggestion.dart';
-import '../services/device_location_service.dart';
-import '../services/location_api_config.dart';
-import '../services/places_service.dart';
 import '../providers/incident_location_provider.dart';
+import '../providers/location_search_provider.dart';
+import '../services/location_validation.dart';
 
 class SelectLocationScreen extends ConsumerStatefulWidget {
   const SelectLocationScreen({
@@ -38,206 +32,55 @@ class SelectLocationScreen extends ConsumerStatefulWidget {
 
 class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final RescueLocation _initial =
-      widget.initialLocation ??
-      ref.read(rescueLocationProvider) ??
-      ref.read(incidentCurrentLocationProvider);
-  late final _address = TextEditingController(text: _initial.address);
-  late final _landmark = TextEditingController(text: _initial.landmark);
-  late RescueLocation _addressSource = _initial;
-  String _query = '';
-  bool _openingMap = false;
-  bool _searching = false;
-  bool _resolving = false;
-  String? _error;
-  List<PlaceSuggestion> _suggestions = [];
-  Timer? _debounce;
-  CancelToken? _searchCancel;
-  CancelToken? _detailCancel;
-  int _revision = 0;
-  String _sessionToken = newPlacesSessionToken();
-
-  bool _current(int revision) => mounted && revision == _revision;
-
-  void _onQueryChanged(String value) {
-    _debounce?.cancel();
-    _searchCancel?.cancel();
-    _detailCancel?.cancel();
-    final revision = ++_revision;
-    setState(() {
-      _query = value.trim();
-      _addressSource = RescueLocation(address: value.trim());
-      _suggestions = [];
-      _searching = false;
-      _resolving = false;
-      _openingMap = false;
-      _error = null;
-    });
-    if (_query.isEmpty) {
-      _sessionToken = newPlacesSessionToken();
-      return;
-    }
-    _debounce = Timer(
-      const Duration(milliseconds: 300),
-      () => unawaited(_search(_query, revision)),
-    );
-  }
-
-  Future<void> _search(String query, int revision) async {
-    if (!_current(revision)) return;
-    final cancel = _searchCancel = CancelToken();
-    setState(() => _searching = true);
-    try {
-      final suggestions = await ref
-          .read(placesServiceProvider)
-          .autocomplete(
-            query,
-            sessionToken: _sessionToken,
-            bias: _initial.hasCoordinates
-                ? LatLng(_initial.latitude!, _initial.longitude!)
-                : null,
-            cancelToken: cancel,
-          );
-      if (_current(revision)) setState(() => _suggestions = suggestions);
-    } on Exception catch (error) {
-      if (_current(revision) &&
-          !(error is DioException && CancelToken.isCancel(error))) {
-        setState(
-          () => _error = error is PlacesException
-              ? error.message
-              : 'Không tìm được địa điểm. Vui lòng thử lại.',
-        );
-      }
-    } finally {
-      if (_current(revision)) setState(() => _searching = false);
-    }
-  }
-
-  Future<void> _selectSuggestion(PlaceSuggestion suggestion) async {
-    if (_resolving || _openingMap) return;
-    _debounce?.cancel();
-    _searchCancel?.cancel();
-    final revision = ++_revision;
-    final cancel = _detailCancel = CancelToken();
-    setState(() {
-      _resolving = true;
-      _searching = false;
-      _error = null;
-    });
-    try {
-      final token = _sessionToken;
-      _sessionToken = newPlacesSessionToken();
-      final location = await ref
-          .read(placesServiceProvider)
-          .detail(suggestion.id, sessionToken: token, cancelToken: cancel);
-      if (!_current(revision)) return;
-      await _openMap(location);
-    } on Exception catch (error) {
-      if (_current(revision) &&
-          !(error is DioException && CancelToken.isCancel(error))) {
-        setState(
-          () => _error = error is PlacesException
-              ? error.message
-              : 'Chưa lấy được tọa độ. Vui lòng chọn lại địa điểm.',
-        );
-      }
-    } finally {
-      if (_current(revision)) setState(() => _resolving = false);
-    }
-  }
-
-  Future<void> _useGps() async {
-    if (_resolving || _openingMap) return;
-    _debounce?.cancel();
-    _searchCancel?.cancel();
-    final revision = ++_revision;
-    setState(() {
-      _resolving = true;
-      _error = null;
-      _searching = false;
-    });
-    try {
-      final location = await ref
-          .read(deviceLocationProvider)()
-          .timeout(const Duration(seconds: 24));
-      if (_current(revision)) await _openMap(location);
-    } on Exception catch (error) {
-      if (_current(revision)) {
-        setState(
-          () => _error = error is LocationLookupException
-              ? error.message
-              : 'Chưa lấy được GPS. Bạn có thể nhập địa chỉ.',
-        );
-      }
-    } finally {
-      if (_current(revision)) setState(() => _resolving = false);
-    }
-  }
+  final _draftKey = Object();
+  (Object, RescueLocation?) get _key => (_draftKey, widget.initialLocation);
+  LocationSearchController get _controller =>
+      ref.read(locationSearchProvider(_key).notifier);
+  late final _address = TextEditingController(
+    text: ref.read(locationSearchProvider(_key)).source.address,
+  );
+  late final _landmark = TextEditingController(
+    text: ref.read(locationSearchProvider(_key)).source.landmark,
+  );
 
   @override
   void dispose() {
-    _debounce?.cancel();
-    _searchCancel?.cancel();
-    _detailCancel?.cancel();
     _address.dispose();
     _landmark.dispose();
     super.dispose();
   }
 
+  Future<void> _selectSuggestion(PlaceSuggestion suggestion) async {
+    final place = await _controller.selectSuggestion(suggestion);
+    if (mounted && place != null) await _openMap(place);
+  }
+
+  Future<void> _useGps() async {
+    final place = await _controller.useGps();
+    if (mounted && place != null) await _openMap(place);
+  }
+
   Future<void> _openMap([RescueLocation? place, bool pickOnMap = false]) async {
-    if (_openingMap) return;
+    if (ref.read(locationSearchProvider(_key)).openingMap) return;
     if (pickOnMap && widget.returnSelection && context.canPop()) {
       context.pop();
       return;
     }
     if (place != null) {
       _address.text = place.address;
-      _addressSource = place;
-      setState(() => _query = '');
+      _controller.acceptPlace(place);
     }
     if (!(pickOnMap && _address.text.trim().isEmpty) &&
         !_formKey.currentState!.validate()) {
       return;
     }
     FocusScope.of(context).unfocus();
-    _debounce?.cancel();
-    _searchCancel?.cancel();
-    setState(() {
-      _openingMap = true;
-      _error = null;
-    });
-    final revision = _revision;
-    final source = _addressSource;
-    final address = _address.text.trim();
-    var resolved = address == source.address.trim()
-        ? source
-        : RescueLocation(address: address);
-    try {
-      if (!pickOnMap &&
-          !resolved.hasCoordinates &&
-          ref.read(locationApiConfigProvider).geocodingConfigured) {
-        final cancel = _detailCancel = CancelToken();
-        resolved = await ref
-            .read(placesServiceProvider)
-            .geocode(address, cancelToken: cancel);
-      }
-    } on Exception catch (error) {
-      if (_current(revision)) {
-        setState(() {
-          _openingMap = false;
-          _error = error is PlacesException ? error.message : 'Chưa tìm được tọa độ địa chỉ này. Hãy chọn một kết quả tìm kiếm.';
-        });
-      }
-      return;
-    }
-    if (!mounted) return;
-    if (revision != _revision) return;
-    final location = RescueLocation(
-      address: resolved.address,
-      landmark: _landmark.text.trim(),
-      latitude: resolved.latitude,
-      longitude: resolved.longitude,
+    final location = await _controller.prepareMap(
+      address: _address.text,
+      landmark: _landmark.text,
+      pickOnMap: pickOnMap,
     );
+    if (!mounted || location == null) return;
     if (widget.returnSelection && context.canPop()) {
       context.pop(location);
       return;
@@ -247,7 +90,7 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
       extra: location,
     );
     if (!mounted) return;
-    setState(() => _openingMap = false);
+    _controller.closeMap();
     if (order != null) {
       if (context.canPop()) {
         context.pop(order);
@@ -261,12 +104,15 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final draft = ref.watch(locationSearchProvider(_key));
     final profile = ref.watch(profileProvider).profile;
     final places = ref.watch(recentIncidentPlacesProvider);
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     final compact = MediaQuery.sizeOf(context).width < 380 || scale > 1.2;
     final mapButton = TextButton(
-      onPressed: _openingMap || _resolving ? null : () => _openMap(null, true),
+      onPressed: draft.openingMap || draft.resolving
+          ? null
+          : () => _openMap(null, true),
       child: const Text('Chọn trên bản đồ', style: TextStyle(fontSize: 13)),
     );
     return Theme(
@@ -337,22 +183,21 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                               tooltip: 'Xóa địa chỉ',
                               onPressed: () {
                                 _address.clear();
-                                _onQueryChanged('');
+                                _controller.editQuery('');
                               },
                               icon: const Icon(Icons.close_rounded, size: 18),
                             ),
                           ),
-                      onChanged: _onQueryChanged,
-                      validator: (value) => (value?.trim().length ?? 0) < 5
-                          ? 'Vui lòng nhập địa chỉ ít nhất 5 ký tự.'
-                          : null,
+                      onChanged: _controller.editQuery,
+                      validator: validateIncidentAddress,
                     ),
-                    if ((_resolving && _query.isEmpty) || _openingMap)
+                    if ((draft.resolving && draft.query.isEmpty) ||
+                        draft.openingMap)
                       const Padding(
                         padding: EdgeInsets.only(top: 12),
                         child: LinearProgressIndicator(),
                       ),
-                    if (_query.isNotEmpty) ...[
+                    if (draft.query.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       const Wrap(
                         alignment: WrapAlignment.spaceBetween,
@@ -372,7 +217,7 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                           ),
                         ],
                       ),
-                      if (_searching || _resolving)
+                      if (draft.searching || draft.resolving)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: LinearProgressIndicator(),
@@ -381,9 +226,9 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                         key: const ValueKey('place-suggestions'),
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _suggestions.length,
+                        itemCount: draft.suggestions.length,
                         itemBuilder: (context, index) {
-                          final suggestion = _suggestions[index];
+                          final suggestion = draft.suggestions[index];
                           return ListTile(
                             key: ValueKey('place-${suggestion.id}'),
                             contentPadding: EdgeInsets.zero,
@@ -398,16 +243,16 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                               ),
                             ),
                             subtitle: Text(suggestion.address),
-                            onTap: _resolving || _openingMap
+                            onTap: draft.resolving || draft.openingMap
                                 ? null
                                 : () => _selectSuggestion(suggestion),
                           );
                         },
                       ),
-                      if (!_searching &&
-                          !_resolving &&
-                          _suggestions.isEmpty &&
-                          _error == null)
+                      if (!draft.searching &&
+                          !draft.resolving &&
+                          draft.suggestions.isEmpty &&
+                          draft.error == null)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 12),
                           child: Text(
@@ -415,11 +260,11 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                           ),
                         ),
                     ],
-                    if (_error != null)
+                    if (draft.error != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: Text(
-                          _error!,
+                          draft.error!,
                           style: const TextStyle(color: HomeColors.red),
                         ),
                       ),
@@ -437,7 +282,7 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                         icon: Icons.edit_outlined,
                         iconColor: HomeColors.secondary,
                       ).copyWith(counterText: ''),
-                      onFieldSubmitted: _resolving || _openingMap
+                      onFieldSubmitted: draft.resolving || draft.openingMap
                           ? null
                           : (_) => _openMap(),
                     ),
@@ -461,7 +306,9 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                           Icons.chevron_right_rounded,
                           color: HomeColors.secondary,
                         ),
-                        onTap: _openingMap || _resolving ? null : _useGps,
+                        onTap: draft.openingMap || draft.resolving
+                            ? null
+                            : _useGps,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -483,8 +330,8 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                           backgroundColor: HomeColors.surface,
                           side: const BorderSide(color: HomeColors.border),
                           onPressed:
-                              _openingMap ||
-                                  _resolving ||
+                              draft.openingMap ||
+                                  draft.resolving ||
                                   profile.defaultAddress.trim().isEmpty
                               ? null
                               : () => _openMap(
@@ -499,8 +346,8 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                           backgroundColor: HomeColors.surface,
                           side: const BorderSide(color: HomeColors.border),
                           onPressed:
-                              _openingMap ||
-                                  _resolving ||
+                              draft.openingMap ||
+                                  draft.resolving ||
                                   profile.workAddress.trim().isEmpty
                               ? null
                               : () => _openMap(
@@ -509,7 +356,7 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                         ),
                       ],
                     ),
-                    if (_query.isEmpty) ...[
+                    if (draft.query.isEmpty) ...[
                       const ServiceSectionTitle('Địa điểm gần đây'),
                       if (places.isEmpty)
                         const Padding(
@@ -548,7 +395,7 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                               height: 1.5,
                             ),
                           ),
-                          onTap: _openingMap || _resolving
+                          onTap: draft.openingMap || draft.resolving
                               ? null
                               : () => _openMap(place.location),
                         ),

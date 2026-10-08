@@ -1,3 +1,5 @@
+import 'package:moto_care/features/chat/data/demo_chat_data.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -6,7 +8,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moto_care/core/widgets/photo_attachment_field.dart';
-import 'package:moto_care/features/chat/models/chat_conversation.dart';
 import 'package:moto_care/features/chat/models/chat_message.dart';
 import 'package:moto_care/features/chat/providers/chat_messages_provider.dart';
 import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';

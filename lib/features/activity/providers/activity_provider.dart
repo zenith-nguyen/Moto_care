@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/mock_rescue_orders.dart';
 import '../models/rescue_order.dart';
+import '../models/activity_state.dart';
+export '../models/activity_state.dart';
+import '../models/activity_filter.dart';
+import '../services/rescue_order_service.dart';
 
 final initialRescueOrdersProvider = Provider<List<RescueOrder>>(
   (ref) => mockRescueOrders,
@@ -12,48 +16,7 @@ final activityProvider = NotifierProvider<ActivityController, ActivityState>(
   ActivityController.new,
 );
 
-@immutable
-class RescueComplaint {
-  const RescueComplaint({
-    required this.orderId,
-    required this.message,
-    required this.createdAt,
-  });
-
-  final String orderId;
-  final String message;
-  final DateTime createdAt;
-}
-
-@immutable
-class ActivityState {
-  ActivityState({
-    required List<RescueOrder> orders,
-    List<RescueComplaint> complaints = const [],
-  }) : orders = List.unmodifiable(orders),
-       complaints = List.unmodifiable(complaints);
-
-  final List<RescueOrder> orders;
-  final List<RescueComplaint> complaints;
-
-  List<RescueOrder> get activeOrders =>
-      orders.where((order) => order.status.isActive).toList();
-
-  List<RescueOrder> get historyOrders =>
-      orders.where((order) => !order.status.isActive).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-  RescueOrder? orderById(String? id) {
-    for (final order in orders) {
-      if (order.id == id) return order;
-    }
-    return null;
-  }
-}
-
 class ActivityController extends Notifier<ActivityState> {
-  int _sequence = 0;
-
   @override
   ActivityState build() =>
       ActivityState(orders: ref.watch(initialRescueOrdersProvider));
@@ -101,44 +64,29 @@ class ActivityController extends Notifier<ActivityState> {
     String voucherCode = '',
     List<RescueOrderItem> items = const [],
   }) {
-    if (state.activeOrders.isNotEmpty) {
-      throw StateError('An active rescue order already exists');
-    }
-    if (userVehicle.trim().isEmpty || locationAddress.trim().isEmpty) {
-      throw ArgumentError('Vehicle and location are required');
-    }
-    final now = DateTime.now();
-    final price = basePrice ?? mockBasePrice(serviceType);
-    final sequence = (++_sequence).toString().padLeft(3, '0');
-    final order = RescueOrder(
-      id: 'order-${now.microsecondsSinceEpoch}-$sequence',
-      orderCode:
-          'MC-${now.year}${now.month.toString().padLeft(2, '0')}'
-          '${now.day.toString().padLeft(2, '0')}-$sequence',
-      status: RescueOrderStatus.pending,
-      serviceType: serviceType,
-      userVehicle: userVehicle.trim(),
-      locationAddress: locationAddress.trim(),
-      locationLandmark: locationLandmark.trim(),
-      incidentDescription: incidentDescription.trim(),
-      serviceOption: serviceOption.trim(),
-      vehicleType: vehicleType.trim(),
-      incidentPhotoBytes: incidentPhotoBytes == null
-          ? null
-          : Uint8List.fromList(incidentPhotoBytes).asUnmodifiableView(),
-      basePrice: price,
-      travelFee: travelFee ?? (price < 30000 ? price : 30000),
-      extraPartPrice: 0,
-      discount: discount,
-      partnerId: partnerId,
-      partnerName: partnerName,
-      paymentMethod: paymentMethod,
-      voucherCode: voucherCode,
-      items: items,
-      createdAt: now,
-      locationLatitude: locationLatitude,
-      locationLongitude: locationLongitude,
-    );
+    final order = ref
+        .read(rescueOrderServiceProvider)
+        .createOrder(
+          hasActiveOrder: state.activeOrders.isNotEmpty,
+          serviceType: serviceType,
+          userVehicle: userVehicle,
+          locationAddress: locationAddress,
+          locationLatitude: locationLatitude,
+          locationLongitude: locationLongitude,
+          locationLandmark: locationLandmark,
+          incidentDescription: incidentDescription,
+          serviceOption: serviceOption,
+          vehicleType: vehicleType,
+          incidentPhotoBytes: incidentPhotoBytes,
+          basePrice: basePrice,
+          travelFee: travelFee,
+          discount: discount,
+          partnerId: partnerId,
+          partnerName: partnerName,
+          paymentMethod: paymentMethod,
+          voucherCode: voucherCode,
+          items: items,
+        );
     state = ActivityState(
       orders: [order, ...state.orders],
       complaints: state.complaints,
@@ -184,3 +132,30 @@ class ActivityController extends Notifier<ActivityState> {
     );
   }
 }
+
+final filteredActivityOrdersProvider = Provider.autoDispose
+    .family<List<RescueOrder>, ActivityFilter>((ref, filter) {
+      final orders =
+          ref.watch(activityProvider).orders.where(filter.includes).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return List.unmodifiable(orders);
+    });
+final completedOrderSummaryProvider =
+    Provider<({List<RescueOrder> orders, int total, int maintenanceCount})>((
+      ref,
+    ) {
+      final orders = ref
+          .watch(activityProvider)
+          .historyOrders
+          .where((order) => order.status == RescueOrderStatus.completed)
+          .toList();
+      return (
+        orders: List.unmodifiable(orders),
+        total: orders.fold(0, (sum, order) => sum + order.totalPrice),
+        maintenanceCount: orders
+            .where(
+              (order) => order.serviceType == RescueServiceType.maintenance,
+            )
+            .length,
+      );
+    });

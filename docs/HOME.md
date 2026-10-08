@@ -9,11 +9,10 @@ same red accent through `AppTheme`. Supporting feature screens use the base
 
 ## Data and navigation
 
-- Name, tier and reward points watch `profileProvider`. `UserProfile.rewardPoints`
-  defaults to zero and round-trips through JSON. A `HomeUser` route payload seeds
-  an uninitialized profile; an existing profile takes priority. Profile edits
-  update the greeting without reopening the screen. The header hides the
-  membership badge when its label is empty or the placeholder “Chưa có hạng”.
+- The name watches `profileProvider`. A `HomeUser` route payload seeds an
+  uninitialized profile; an existing profile takes priority. Profile edits
+  update the greeting without reopening the screen. Home does not display
+  membership tiers, reward points, a Club card or offer cards.
 - The emergency vehicle watches `defaultVehicleProvider`. The picker uses the
   garage's `vehicleProvider` and `setDefault`, so selection is shared with the
   vehicle screen. Dismissal leaves the default unchanged. Empty garages offer
@@ -23,17 +22,18 @@ same red accent through `AppTheme`. Supporting feature screens use the base
   opens the [incident location flow](LOCATION.md): address and landmark search,
   a draggable map confirmation sheet, then rescue request details. Drafts do not
   update the shared location until confirmation. Typed address changes clear
-  stale coordinates. The map and current-location shortcut use sample data;
-  no native GPS or address geocoding is connected yet.
-- The light bottom bar contains Home, Activity, Services (`/dich-vu`), Vouchers
+  stale coordinates. The map and current-location shortcut use configured native Maps, GPS and
+  Places/geocoding services; see LOCATION.md for unavailable-key fallbacks.
+- The light bottom bar contains four tabs: Home, Activity, Services (`/dich-vu`)
   and Account (`/tai-khoan`). Moving between secondary tabs replaces the current
   tab above Home, so returning preserves the existing Home page. The Home menu button and drawer have been removed. Vehicles,
-  Messages and all former menu destinations are available from Account; rescue stations are also
+  Messages and the supported menu destinations are available from Account; rescue stations are also
   accessible from Services and Home's nearby section.
 - All eight service tiles open `PartnerListScreen` at `/partners`, passing the
   tile title as `serviceType`. The [marketplace flow](MARKETPLACE.md) then selects
-  a shop and packages, checks out and tracks the saved order. Club, offer cards,
-  tips and station cards open their corresponding features. The Services tab
+  a shop and packages, checks out and tracks the saved order. Station cards
+  open the rescue-station feature; emergency tips remain available from Services
+  and Account. The Services tab
   still opens `/dich-vu`.
 - `PromoBannerSlider` sits below the header, before the service grid. Its three
   banners display `assets/images/Banner1.png`, `Banner2.png` and `Banner3.png`
@@ -83,13 +83,12 @@ Nearby cards consume `rescueStationsProvider`. With GPS coordinates they sort by
 straight-line distance; without coordinates they use the directory's reference
 distances. The directory is still sample data and the UI labels it accordingly.
 No live road distances or availability service is connected. The empty directory
-has a dedicated message. Offer banners are examples and link to the existing
-voucher screen for terms.
+has a dedicated message.
 
 ## Validation
 
 Rendered previews with the bundled Roboto fonts are available for
-[Home](screenshots/light-home.png), [Account](screenshots/be-profile.png),
+[Home](screenshots/no-offers-home.png), [Account](screenshots/no-offers-account.png),
 [Services](screenshots/be-services.png) and [Activity](screenshots/be-activity.png).
 The dynamic request sheet preview is available
 [here](screenshots/dynamic-rescue-request.png).

@@ -16,28 +16,24 @@ retention, missing context and narrow layouts.
 
 The Account menu and Services tiles open the following supporting `go_router`
 routes. These screens use the shared light background, white cards, dark text
-and orange accents. `ServiceScaffold` retains the five Home navigation tabs below
-any fixed form or support actions. `/kho-voucher` is labeled “Kho ưu đãi”.
+and orange accents. `ServiceScaffold` retains the four Home navigation tabs below
+any fixed form or support actions. `/kho-voucher` and `/tich-diem` have been
+removed along with the offers, points and membership modules.
 
 | Route | Feature |
 | --- | --- |
-| `/tich-diem` | Gold membership, 350 points, 500-point Platinum target, privileges and point history |
 | `/tram-sac-tiem-sua` | Address search, combined filters, interactive mock map and service list |
-| `/kho-voucher` | Promo code entry, available vouchers and usage history |
 | `/bang-gia` | Searchable service and part prices grouped in expansion tiles |
 | `/dang-ky-tho` | Three-step partner registration, identity photos, experience, tools and area |
 | `/cam-ket-dich-vu` | Service commitments and compensation form using recent activity orders |
 | `/faq` | Searchable questions, topic filters, hotline and message navigation |
 | `/meo-xu-ly` | Four illustrated emergency articles displayed in scrollable bottom sheets |
 
-Light previews: [Offers](screenshots/light-offers.png),
-[Membership](screenshots/light-membership.png), [Help](screenshots/light-help.png)
-and [Messages](screenshots/light-messages.png).
+Light previews: [Help](screenshots/light-help.png) and
+[Messages](screenshots/light-messages.png).
 
 ## Prototype boundaries
 
-- Membership name and ID use the session profile or `HomeUser` passed from home;
-  missing identity is neutral. Tier, points, privileges and history are examples.
 - Service places, distances, ratings, opening status and map markers are mock data.
   There is no geolocation, Google Maps SDK or live address lookup. Search matches
   the local name/address list, including input without Vietnamese accents.
@@ -47,10 +43,6 @@ and [Messages](screenshots/light-messages.png).
 - The FAQ hotline uses the existing registration-screen contact, `1130`, via
   `supportHotlineProvider`. Confirm the production support number and operating
   hours before release. Chat opens `/tin-nhan` as requested.
-- `MOTO20` is the sample promo code. Empty, unknown and duplicate codes are rejected.
-  Offers have sample expiration dates; expired offers cannot be used. `Dùng ngay`
-  returns to home while preserving its account. It does not redeem a voucher or
-  deduct membership points; redemption requires a real order/backend.
 - Partner and compensation submissions are immutable Riverpod records retained
   only in memory for the current `ProviderScope`. Forms explicitly disclose the
   trial state; no request reaches Admin or an insurer and there is no actual
@@ -87,6 +79,6 @@ approval and backend integration before production use.
 ## Validation
 
 `test/service_screens_test.dart` covers menu routing and account preservation,
-membership progress, combined place filters and external-launch fallbacks, promo
-validation and history, price search, form validation/photo selection/session
+removed offer/membership routes, combined place filters and external-launch
+fallbacks, price search, form validation/photo selection/session
 submission, empty orders, FAQ actions, article steps and 320px layouts with 1.5x text.

@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/widgets/service_scaffold.dart';
+import '../../../core/services/search_service.dart';
 import '../data/mock_rescue_stations.dart';
 import '../models/rescue_station.dart';
 

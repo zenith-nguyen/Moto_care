@@ -4,7 +4,11 @@ import '../../activity/models/rescue_order.dart';
 import '../../activity/widgets/order_summary.dart';
 import '../../home/theme/home_theme.dart';
 
-class OrderTrackingStatusCard extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../services/order_tracking_service.dart';
+
+class OrderTrackingStatusCard extends ConsumerWidget {
   const OrderTrackingStatusCard({
     super.key,
     required this.order,
@@ -14,17 +18,18 @@ class OrderTrackingStatusCard extends StatelessWidget {
     required this.onCall,
     required this.onChat,
     required this.onCancel,
-    this.rating = 4.9,
+    this.rating,
   });
   final RescueOrder order;
   final String heading, subtitle, badge;
-  final double rating;
+  final double? rating;
   final VoidCallback? onCall, onChat, onCancel;
 
   @override
-  Widget build(BuildContext context) {
-    final name = order.hasProvider ? order.providerName! : 'Nguyễn Văn A';
-    final shop = order.partnerName ?? 'Tiệm sửa xe Siêu Tốc';
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mechanic = ref.watch(trackingMechanicProvider);
+    final name = order.hasProvider ? order.providerName! : mechanic.name;
+    final shop = order.partnerName ?? mechanic.shop;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -122,7 +127,7 @@ class OrderTrackingStatusCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${order.providerPlate ?? '59-P1 688.99'} (Honda Wave)',
+                    '${order.providerPlate ?? mechanic.plate} (${mechanic.vehicle})',
                     style: const TextStyle(
                       color: HomeColors.secondary,
                       fontSize: 12,
@@ -138,7 +143,7 @@ class OrderTrackingStatusCard extends StatelessWidget {
               children: [
                 const Icon(Icons.star_rounded, color: HomeColors.red, size: 16),
                 Text(
-                  rating.toStringAsFixed(1),
+                  (rating ?? mechanic.rating).toStringAsFixed(1),
                   style: const TextStyle(
                     color: HomeColors.red,
                     fontWeight: FontWeight.w700,
