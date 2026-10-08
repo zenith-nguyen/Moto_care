@@ -23,11 +23,12 @@ Cập nhật lần cuối: 2026-10-08
 - PR #21 đã merge vào `main`: Orders dùng port do Payments sở hữu; prepayment, refund, adjustment, wallet credit và ledger đã về payment adapter nhưng vẫn dùng chung transaction/row lock; API/schema không đổi, CI xanh.
 - PR #24 đã merge vào `main`: strict typecheck cho `src + test`, Jest mocks có kiểu cụ thể và Backend CI bắt buộc `npm run typecheck`; 51 unit tests ở mốc nhánh tiếp theo vẫn xanh.
 - PR #25 đã merge vào `main`: adapter SePay **Test mode** mặc định tắt, VietQR mô phỏng có `simulationOnly=true`, xác thực webhook HMAC raw-body/timestamp, chống replay/idempotency, audit tối thiểu và migration `0012`. Migration local đã xác nhận đủ 13 bước và bảng `sepay_webhook_events` tồn tại; `/health` và `/docs` trả `200` ngày 2026-10-08.
+- PR #27 đã merge vào `main`: nền Flutter dùng cấu hình API build-time, Dio/Bearer/request ID, secure token, session `/users/me`, role routing, lỗi an toàn, tiền decimal và client SePay Test mode chỉ nhận QR mô phỏng. 16 Flutter tests, analyze và APK debug/release đã xanh ở mốc nhánh.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/flutter-api-foundation`: cấu hình API build-time, Dio/Bearer/request ID, secure token, session `/users/me`, role routing, error mapping, tiền decimal và client contract SePay Test mode. Màn hình hiện chỉ là integration placeholder để UI nhóm thay thế.
-2. Tiếp theo bổ sung Socket.IO client dùng cùng session, room/event contract và REST resync sau reconnect; sau đó mới nối từng Customer/Provider/Admin screen.
+1. Nhánh `feat/zenith/flutter-realtime-foundation`: Socket.IO dùng chung session/API origin, JWT trong handshake auth, typed event cho offer/order/GPS/chat, private order/provider scope, reconnect có REST resync và cleanup khi logout. Màn hình hiện vẫn chỉ là integration placeholder để UI nhóm thay thế.
+2. Sau realtime foundation, nối REST snapshot + controller cho Customer trước, rồi Provider và Admin; mỗi vai trò tích hợp theo màn hình nhỏ để không kéo nguyên prototype cũ vào `main`.
 3. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): PR #22 có nền Customer UI dùng được nhưng còn file cache/generated và Google Maps phải có fallback không cần key; PR #23 có màn hình Provider dùng được nhưng đang xóa workflow/docs/platform và thay dependency nền nên không được merge trực tiếp.
 4. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
 5. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
