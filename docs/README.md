@@ -18,6 +18,7 @@ This folder is the single source of truth for technical guides, collaboration ru
 - [`DEPENDENCIES.md`](DEPENDENCIES.md): approved dependencies and usage boundaries.
 - [`WORKFLOW.md`](WORKFLOW.md): branch protection, CI/CD, and versioning.
 - [`UI_INTEGRATION_GUARDRAILS.md`](UI_INTEGRATION_GUARDRAILS.md): safe Flutter UI handoff and integration checklist.
+- [`FLUTTER_INTEGRATION_FOUNDATION.md`](FLUTTER_INTEGRATION_FOUNDATION.md): shared API, session, routing, and SePay Test mode client foundation.
 - [`RELEASES.md`](RELEASES.md): Android release procedure.
 - [`branches/cam-thu.md`](branches/cam-thu.md): Cam Thu's branch guide.
 - [`branches/thanh-vy.md`](branches/thanh-vy.md): Thanh Vy's branch guide.
