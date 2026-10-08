@@ -22,16 +22,16 @@ Cập nhật lần cuối: 2026-10-08
 - PR #20 đã merge vào `main`: application service phát event qua `RealtimePublisher`; Socket.IO gateway chỉ là adapter, không đổi event/room/payload/API; CI xanh.
 - PR #21 đã merge vào `main`: Orders dùng port do Payments sở hữu; prepayment, refund, adjustment, wallet credit và ledger đã về payment adapter nhưng vẫn dùng chung transaction/row lock; API/schema không đổi, CI xanh.
 - PR #24 đã merge vào `main`: strict typecheck cho `src + test`, Jest mocks có kiểu cụ thể và Backend CI bắt buộc `npm run typecheck`; 51 unit tests ở mốc nhánh tiếp theo vẫn xanh.
+- PR #25 đã merge vào `main`: adapter SePay **Test mode** mặc định tắt, VietQR mô phỏng có `simulationOnly=true`, xác thực webhook HMAC raw-body/timestamp, chống replay/idempotency, audit tối thiểu và migration `0012`. Migration local đã xác nhận đủ 13 bước và bảng `sepay_webhook_events` tồn tại; `/health` và `/docs` trả `200` ngày 2026-10-08.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/sepay-adapter`: adapter SePay **Test mode** tắt mặc định; chỉ VA giả `SBSEPAY...`, VietQR có `simulationOnly=true`, đúng amount/payment code; HMAC raw-body + timestamp; advisory lock, unique transaction và audit tối thiểu; migration `0012`. Đã qua typecheck, lint, 53 unit tests, build, sensitive-file scan, production dependency audit, 36 PostgreSQL/PostGIS/HTTP tests và migration đủ 13 bước trên DB trống.
-2. Sau khi PR adapter merge, chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
-3. PR UI #23 hiện chưa an toàn để merge: đang xóa workflow/docs/platform, đổi application ID/package, bỏ dependency tích hợp, không đạt format/analyze và xóa test. Cần làm sạch trên nhánh UI, giữ thay đổi đúng phạm vi rồi mới tích hợp API.
+1. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): PR #22 có nền Customer UI dùng được nhưng còn file cache/generated và Google Maps phải có fallback không cần key; PR #23 có màn hình Provider dùng được nhưng đang xóa workflow/docs/platform và thay dependency nền nên không được merge trực tiếp.
+2. Tích hợp Customer UI và Provider UI thành hai PR độc lập từ `main`, giữ router/state/API contract chung; sau đó mới nối Admin UI và build APK ba vai trò.
+3. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
 4. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
-5. Cam Thu/Vy merge UI Flutter Khách/Thợ/Admin và nối API theo [FLUTTER_API_HANDOFF.md](FLUTTER_API_HANDOFF.md); `lib/main.dart` trên main hiện vẫn là counter starter. Chưa có APK MotoCare hoàn chỉnh để gửi thầy.
-6. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
-7. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
+5. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
+6. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
 
 ## Quyết định đã chốt
 
