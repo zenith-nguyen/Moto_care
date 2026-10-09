@@ -1,6 +1,6 @@
 # MotoCare Backend — Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-10-08
+Cập nhật lần cuối: 2026-10-09
 
 ## Đã xong
 
@@ -24,16 +24,18 @@ Cập nhật lần cuối: 2026-10-08
 - PR #24 đã merge vào `main`: strict typecheck cho `src + test`, Jest mocks có kiểu cụ thể và Backend CI bắt buộc `npm run typecheck`; 51 unit tests ở mốc nhánh tiếp theo vẫn xanh.
 - PR #25 đã merge vào `main`: adapter SePay **Test mode** mặc định tắt, VietQR mô phỏng có `simulationOnly=true`, xác thực webhook HMAC raw-body/timestamp, chống replay/idempotency, audit tối thiểu và migration `0012`. Migration local đã xác nhận đủ 13 bước và bảng `sepay_webhook_events` tồn tại; `/health` và `/docs` trả `200` ngày 2026-10-08.
 - PR #27 đã merge vào `main`: nền Flutter dùng cấu hình API build-time, Dio/Bearer/request ID, secure token, session `/users/me`, role routing, lỗi an toàn, tiền decimal và client SePay Test mode chỉ nhận QR mô phỏng. 16 Flutter tests, analyze và APK debug/release đã xanh ở mốc nhánh.
+- PR #29 đã merge vào `main`: Flutter Socket.IO dùng chung session/API origin, JWT chỉ nằm trong handshake auth, typed event cho offer/order/GPS/chat, private provider/order scope, reconnect yêu cầu REST resync và cleanup khi logout. Analyze, 24 tests, APK debug và CI đều xanh.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/flutter-realtime-foundation`: Socket.IO dùng chung session/API origin, JWT trong handshake auth, typed event cho offer/order/GPS/chat, private order/provider scope, reconnect có REST resync và cleanup khi logout. Màn hình hiện vẫn chỉ là integration placeholder để UI nhóm thay thế.
-2. Sau realtime foundation, nối REST snapshot + controller cho Customer trước, rồi Provider và Admin; mỗi vai trò tích hợp theo màn hình nhỏ để không kéo nguyên prototype cũ vào `main`.
-3. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): PR #22 có nền Customer UI dùng được nhưng còn file cache/generated và Google Maps phải có fallback không cần key; PR #23 có màn hình Provider dùng được nhưng đang xóa workflow/docs/platform và thay dependency nền nên không được merge trực tiếp.
-4. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
-5. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
-6. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
-7. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
+1. Nhánh `feat/zenith/customer-order-integration`: typed repository/controller Flutter cho incident catalog, tạo/danh sách/chi tiết đơn, weather-price snapshot, retry/cancel, GPS snapshot, SePay Test QR và xác nhận thanh toán sandbox. Không nhập UI prototype trong nhánh này.
+2. Lát Customer kế tiếp: chat text/ảnh và lịch sử, duyệt/từ chối giá cuối, đánh giá; tiếp tục dùng REST làm nguồn thật và realtime để báo thay đổi.
+3. Sau Customer, nối Provider REST/controller (online/GPS/offer/service/final price/wallet), rồi Admin REST/controller; mỗi vai trò tích hợp theo lát nhỏ trước khi lấy UI nhóm vào.
+4. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): chỉ lấy màn hình/assets cần thiết, không lấy cache/generated, không ghi đè nền kiến trúc hoặc workflow; Google Maps phải có fallback không cần key.
+5. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
+6. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
+7. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
+8. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
 
 ## Quyết định đã chốt
 
