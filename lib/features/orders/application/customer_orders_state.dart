@@ -1,6 +1,7 @@
 import '../../incidents/domain/incident_type.dart';
 import '../../payments/domain/bank_transfer_instructions.dart';
 import '../domain/order_models.dart';
+import '../domain/order_action_results.dart';
 
 enum CustomerOrderAction {
   create,
@@ -11,6 +12,9 @@ enum CustomerOrderAction {
   confirmDemoPrepayment,
   confirmDemoAdjustment,
   loadTransferInstructions,
+  loadStartToken,
+  approveFinalPrice,
+  rejectFinalPrice,
 }
 
 class CustomerOrdersState {
@@ -19,6 +23,7 @@ class CustomerOrdersState {
     required this.orders,
     this.selectedOrder,
     this.transferInstructions,
+    this.serviceStartToken,
     this.action,
     this.lastFailure,
   });
@@ -27,6 +32,7 @@ class CustomerOrdersState {
   final List<OrderSummary> orders;
   final OrderDetails? selectedOrder;
   final BankTransferInstructions? transferInstructions;
+  final ServiceStartToken? serviceStartToken;
   final CustomerOrderAction? action;
   final Object? lastFailure;
 
@@ -37,6 +43,7 @@ class CustomerOrdersState {
     List<OrderSummary>? orders,
     Object? selectedOrder = _unchanged,
     Object? transferInstructions = _unchanged,
+    Object? serviceStartToken = _unchanged,
     Object? action = _unchanged,
     Object? lastFailure = _unchanged,
   }) {
@@ -49,6 +56,9 @@ class CustomerOrdersState {
       transferInstructions: identical(transferInstructions, _unchanged)
           ? this.transferInstructions
           : transferInstructions as BankTransferInstructions?,
+      serviceStartToken: identical(serviceStartToken, _unchanged)
+          ? this.serviceStartToken
+          : serviceStartToken as ServiceStartToken?,
       action: identical(action, _unchanged)
           ? this.action
           : action as CustomerOrderAction?,

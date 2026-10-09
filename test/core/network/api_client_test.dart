@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:moto_care/core/auth/session_invalidation_bus.dart';
 import 'package:moto_care/core/network/api_client.dart';
 import 'package:moto_care/core/network/api_failure.dart';
+import 'package:moto_care/core/network/json_api.dart';
 
 import '../../support/memory_token_store.dart';
 
@@ -140,6 +141,75 @@ void main() {
     await subscription.cancel();
     await bus.dispose();
   });
+
+  test(
+    'uploads multipart bytes with the declared field and MIME type',
+    () async {
+      final bus = SessionInvalidationBus();
+      final adapter = RecordingAdapter((options) {
+        return jsonResponse(201, {
+          'id': 1,
+          'senderId': 7,
+          'content': null,
+          'image': null,
+          'createdAt': '2026-10-10T00:00:00.000Z',
+        });
+      });
+      final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+        ..httpClientAdapter = adapter;
+      final api = ApiClient(dio, MemoryTokenStore('jwt'), bus);
+
+      await api.postMultipartObject(
+        '/orders/42/messages',
+        fields: const {'content': 'Ảnh hiện trường'},
+        file: BinaryUpload(
+          fieldName: 'image',
+          bytes: Uint8List.fromList([0x89, 0x50, 0x4e, 0x47]),
+          filename: 'incident.png',
+          contentType: 'image/png',
+        ),
+      );
+
+      final form = adapter.lastOptions?.data as FormData;
+      expect(
+        form.fields.any(
+          (field) => field.key == 'content' && field.value == 'Ảnh hiện trường',
+        ),
+        isTrue,
+      );
+      expect(form.files.single.key, 'image');
+      expect(form.files.single.value.filename, 'incident.png');
+      expect(form.files.single.value.contentType.toString(), 'image/png');
+      await bus.dispose();
+    },
+  );
+
+  test(
+    'downloads protected binary data through the authenticated client',
+    () async {
+      final bus = SessionInvalidationBus();
+      final adapter = RecordingAdapter((options) {
+        return ResponseBody.fromBytes(
+          [0xff, 0xd8, 0xff],
+          200,
+          headers: {
+            Headers.contentTypeHeader: ['image/jpeg'],
+          },
+        );
+      });
+      final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+        ..httpClientAdapter = adapter;
+      final api = ApiClient(dio, MemoryTokenStore('jwt'), bus);
+
+      final image = await api.getBinary('/orders/42/messages/9/image');
+
+      expect(image.bytes, [0xff, 0xd8, 0xff]);
+      expect(image.contentType, 'image/jpeg');
+      expect(adapter.lastOptions?.headers['Authorization'], 'Bearer jwt');
+      expect(adapter.lastOptions?.responseType, ResponseType.bytes);
+      await bus.dispose();
+    },
+  );
 }
 
 class RecordingAdapter implements HttpClientAdapter {

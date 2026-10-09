@@ -62,6 +62,11 @@ class RecordingJsonApi implements JsonApi {
   Object? lastData;
 
   @override
+  Future<BinaryResponse> getBinary(String path) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getList(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -88,5 +93,14 @@ class RecordingJsonApi implements JsonApi {
     lastPath = path;
     lastData = data;
     return postResponse;
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMultipartObject(
+    String path, {
+    Map<String, String> fields = const {},
+    required BinaryUpload file,
+  }) {
+    throw UnimplementedError();
   }
 }

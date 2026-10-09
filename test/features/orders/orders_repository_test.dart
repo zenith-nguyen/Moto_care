@@ -87,6 +87,48 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test(
+    'loads the short-lived service start token without exposing a secret',
+    () async {
+      final api = RecordingJsonApi()
+        ..objectResponse = {
+          'orderId': 42,
+          'token': 'opaque-start-token',
+          'expiresAt': '2026-10-10T00:05:00.000Z',
+        };
+
+      final token = await HttpOrdersRepository(api).getStartToken(42);
+
+      expect(api.lastPath, '/orders/42/start-token');
+      expect(token.token, 'opaque-start-token');
+    },
+  );
+
+  test('approves a final-price proposal through its exact endpoint', () async {
+    final api = RecordingJsonApi()..objectResponse = _priceDecisionJson();
+
+    final result = await HttpOrdersRepository(api)
+        .approveFinalPrice(orderId: 42, proposalId: 8);
+
+    expect(api.lastPath, '/orders/42/price-proposals/8/approve');
+    expect(api.lastData, isNull);
+    expect(result.orderStatus, OrderStatus.awaitingPayment);
+    expect(result.paymentAdjustment?.amount.value, '25000.00');
+  });
+
+  test('rejects a final-price proposal with a trimmed reason', () async {
+    final api = RecordingJsonApi()..objectResponse = _priceDecisionJson();
+
+    await HttpOrdersRepository(api).rejectFinalPrice(
+      orderId: 42,
+      proposalId: 8,
+      reason: '  Chưa thống nhất phụ tùng  ',
+    );
+
+    expect(api.lastPath, '/orders/42/price-proposals/8/reject');
+    expect(api.lastData, {'reason': 'Chưa thống nhất phụ tùng'});
+  });
 }
 
 Map<String, dynamic> creationJson() => {
@@ -138,4 +180,26 @@ Map<String, dynamic> pricingJson() => {
   'windSpeedKmh': '12.00',
   'windGustKmh': '20.00',
   'attribution': 'Weather data by Open-Meteo.com',
+};
+
+Map<String, dynamic> _priceDecisionJson() => {
+  'orderId': 42,
+  'orderStatus': 'AWAITING_PAYMENT',
+  'proposal': {
+    'id': 8,
+    'proposedFinalPrice': '135000.00',
+    'reason': 'Thay ruột xe và van',
+    'status': 'APPROVED',
+    'customerReason': null,
+    'disputeReason': null,
+    'resolutionReason': null,
+  },
+  'paymentAdjustment': {
+    'id': 9,
+    'type': 'CHARGE',
+    'amount': '25000.00',
+    'status': 'PENDING',
+    'isDemo': true,
+    'settledAt': null,
+  },
 };

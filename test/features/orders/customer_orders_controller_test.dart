@@ -17,6 +17,7 @@ import 'package:moto_care/features/orders/domain/geo_point.dart';
 import 'package:moto_care/features/orders/domain/order_action_results.dart';
 import 'package:moto_care/features/orders/domain/order_models.dart';
 import 'package:moto_care/features/orders/domain/order_status.dart';
+import 'package:moto_care/features/orders/domain/price_decision_result.dart';
 import 'package:moto_care/features/payments/data/payments_repository.dart';
 import 'package:moto_care/features/payments/domain/bank_transfer_instructions.dart';
 import 'package:moto_care/features/payments/domain/demo_payment_result.dart';
@@ -113,6 +114,29 @@ void main() {
     expect(orders.detailsLoadCount, 3);
     expect(paid.lastFailure, isNull);
     expect(paid.action, isNull);
+
+    await container
+        .read(customerOrdersControllerProvider.notifier)
+        .loadServiceStartToken();
+    expect(
+      container
+          .read(customerOrdersControllerProvider)
+          .value
+          ?.serviceStartToken
+          ?.token,
+      'opaque-start-token',
+    );
+
+    await container
+        .read(customerOrdersControllerProvider.notifier)
+        .approveFinalPrice();
+    expect(orders.approveCount, 1);
+
+    await container
+        .read(customerOrdersControllerProvider.notifier)
+        .rejectFinalPrice(' Chưa đồng ý phụ tùng ');
+    expect(orders.rejectCount, 1);
+    expect(orders.lastRejectReason, ' Chưa đồng ý phụ tùng ');
   });
 }
 
@@ -143,6 +167,9 @@ class FakeIncidentTypesRepository implements IncidentTypesRepository {
 class FakeOrdersRepository implements OrdersRepository {
   int createCount = 0;
   int detailsLoadCount = 0;
+  int approveCount = 0;
+  int rejectCount = 0;
+  String? lastRejectReason;
   bool _created = false;
 
   @override
@@ -172,13 +199,37 @@ class FakeOrdersRepository implements OrdersRepository {
   }
 
   @override
-  Future<ServiceStartToken> getStartToken(int orderId) {
-    throw UnimplementedError();
+  Future<PriceDecisionResult> approveFinalPrice({
+    required int orderId,
+    required int proposalId,
+  }) async {
+    approveCount += 1;
+    return PriceDecisionResult.fromJson(_priceDecisionJson());
+  }
+
+  @override
+  Future<ServiceStartToken> getStartToken(int orderId) async {
+    return ServiceStartToken.fromJson({
+      'orderId': orderId,
+      'token': 'opaque-start-token',
+      'expiresAt': '2026-10-10T00:05:00.000Z',
+    });
   }
 
   @override
   Future<OrderCreationResult> retryMatching(int orderId) {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<PriceDecisionResult> rejectFinalPrice({
+    required int orderId,
+    required int proposalId,
+    required String reason,
+  }) async {
+    rejectCount += 1;
+    lastRejectReason = reason;
+    return PriceDecisionResult.fromJson(_priceDecisionJson());
   }
 }
 
@@ -289,7 +340,15 @@ Map<String, dynamic> _detailsJson() => {
   'payment': null,
   'providerLocation': null,
   'message': null,
-  'priceProposal': null,
+  'priceProposal': {
+    'id': 8,
+    'proposedFinalPrice': '135000.00',
+    'reason': 'Thay ruột xe và van',
+    'status': 'PENDING',
+    'customerReason': null,
+    'disputeReason': null,
+    'resolutionReason': null,
+  },
   'paymentAdjustment': null,
 };
 
@@ -305,4 +364,26 @@ Map<String, dynamic> _pricingJson() => {
   'windSpeedKmh': '12.00',
   'windGustKmh': '20.00',
   'attribution': 'Weather data by Open-Meteo.com',
+};
+
+Map<String, dynamic> _priceDecisionJson() => {
+  'orderId': 42,
+  'orderStatus': 'AWAITING_PAYMENT',
+  'proposal': {
+    'id': 8,
+    'proposedFinalPrice': '135000.00',
+    'reason': 'Thay ruột xe và van',
+    'status': 'APPROVED',
+    'customerReason': null,
+    'disputeReason': null,
+    'resolutionReason': null,
+  },
+  'paymentAdjustment': {
+    'id': 9,
+    'type': 'CHARGE',
+    'amount': '25000.00',
+    'status': 'PENDING',
+    'isDemo': true,
+    'settledAt': null,
+  },
 };
