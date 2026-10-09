@@ -20,6 +20,7 @@ This folder is the single source of truth for technical guides, collaboration ru
 - [`UI_INTEGRATION_GUARDRAILS.md`](UI_INTEGRATION_GUARDRAILS.md): safe Flutter UI handoff and integration checklist.
 - [`FLUTTER_INTEGRATION_FOUNDATION.md`](FLUTTER_INTEGRATION_FOUNDATION.md): shared API, session, routing, and SePay Test mode client foundation.
 - [`FLUTTER_REALTIME_FOUNDATION.md`](FLUTTER_REALTIME_FOUNDATION.md): authenticated Socket.IO lifecycle, typed events, private room scopes, and REST resync rules.
+- [`FLUTTER_CUSTOMER_ORDER_INTEGRATION.md`](FLUTTER_CUSTOMER_ORDER_INTEGRATION.md): Customer incident, order, pricing, GPS snapshot, and SePay Test controller contract for UI integration.
 - [`RELEASES.md`](RELEASES.md): Android release procedure.
 - [`branches/cam-thu.md`](branches/cam-thu.md): Cam Thu's branch guide.
 - [`branches/thanh-vy.md`](branches/thanh-vy.md): Thanh Vy's branch guide.

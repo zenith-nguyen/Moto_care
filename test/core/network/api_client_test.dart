@@ -10,6 +10,46 @@ import 'package:moto_care/core/network/api_failure.dart';
 import '../../support/memory_token_store.dart';
 
 void main() {
+  test('parses a JSON object list without weakening item types', () async {
+    final tokenStore = MemoryTokenStore('jwt-for-test');
+    final bus = SessionInvalidationBus();
+    final adapter = RecordingAdapter((options) {
+      return jsonResponse(200, [
+        {'id': 1, 'name': 'Xẹp lốp'},
+      ]);
+    });
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+      ..httpClientAdapter = adapter;
+    final api = ApiClient(dio, tokenStore, bus);
+
+    final items = await api.getList('/incident-types');
+
+    expect(items.single['id'], 1);
+    await bus.dispose();
+  });
+
+  test('rejects a non-list response for a list endpoint', () async {
+    final bus = SessionInvalidationBus();
+    final adapter = RecordingAdapter((options) {
+      return jsonResponse(200, {'id': 1});
+    });
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+      ..httpClientAdapter = adapter;
+    final api = ApiClient(dio, MemoryTokenStore(), bus);
+
+    await expectLater(
+      api.getList('/orders'),
+      throwsA(
+        isA<ApiFailure>().having(
+          (failure) => failure.kind,
+          'kind',
+          ApiFailureKind.invalidResponse,
+        ),
+      ),
+    );
+    await bus.dispose();
+  });
+
   test(
     'adds bearer token and request ID without logging credentials',
     () async {
@@ -122,7 +162,7 @@ class RecordingAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-ResponseBody jsonResponse(int statusCode, Map<String, dynamic> body) {
+ResponseBody jsonResponse(int statusCode, Object body) {
   return ResponseBody.fromString(
     jsonEncode(body),
     statusCode,
