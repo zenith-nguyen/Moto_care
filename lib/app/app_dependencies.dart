@@ -12,8 +12,10 @@ import '../core/realtime/realtime_transport.dart';
 import '../core/realtime/socket_io_realtime_transport.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/incidents/data/incident_types_repository.dart';
+import '../features/messages/data/messages_repository.dart';
 import '../features/orders/data/orders_repository.dart';
 import '../features/payments/data/payments_repository.dart';
+import '../features/reviews/data/reviews_repository.dart';
 
 final appConfigProvider = Provider<AppConfig>((ref) {
   return AppConfig.fromEnvironment();
@@ -67,6 +69,14 @@ final incidentTypesRepositoryProvider = Provider<IncidentTypesRepository>((
 
 final ordersRepositoryProvider = Provider<OrdersRepository>((ref) {
   return HttpOrdersRepository(ref.watch(jsonApiProvider));
+});
+
+final messagesRepositoryProvider = Provider<MessagesRepository>((ref) {
+  return HttpMessagesRepository(ref.watch(jsonApiProvider));
+});
+
+final reviewsRepositoryProvider = Provider<ReviewsRepository>((ref) {
+  return HttpReviewsRepository(ref.watch(jsonApiProvider));
 });
 
 final realtimeTransportProvider = Provider<RealtimeTransport>((ref) {

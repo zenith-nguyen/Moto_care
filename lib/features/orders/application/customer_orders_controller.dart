@@ -64,6 +64,7 @@ class CustomerOrdersController extends AsyncNotifier<CustomerOrdersState> {
           orders: await ordersFuture,
           selectedOrder: selectedFuture == null ? null : await selectedFuture,
           transferInstructions: null,
+          serviceStartToken: null,
         ),
       );
     });
@@ -76,6 +77,7 @@ class CustomerOrdersController extends AsyncNotifier<CustomerOrdersState> {
         _requireState().copyWith(
           selectedOrder: details,
           transferInstructions: null,
+          serviceStartToken: null,
         ),
       );
       ref.read(realtimeSessionCoordinatorProvider).followOrder(orderId);
@@ -86,7 +88,11 @@ class CustomerOrdersController extends AsyncNotifier<CustomerOrdersState> {
     final current = state.value;
     if (current == null || current.isBusy) return;
     state = AsyncData(
-      current.copyWith(selectedOrder: null, transferInstructions: null),
+      current.copyWith(
+        selectedOrder: null,
+        transferInstructions: null,
+        serviceStartToken: null,
+      ),
     );
     ref.read(realtimeSessionCoordinatorProvider).leaveOrder();
   }
@@ -109,6 +115,7 @@ class CustomerOrdersController extends AsyncNotifier<CustomerOrdersState> {
           orders: await ordersFuture,
           selectedOrder: details,
           transferInstructions: null,
+          serviceStartToken: null,
         ),
       );
       ref.read(realtimeSessionCoordinatorProvider).followOrder(created.id);
@@ -162,6 +169,47 @@ class CustomerOrdersController extends AsyncNotifier<CustomerOrdersState> {
     });
   }
 
+  Future<void> loadServiceStartToken() async {
+    await _withSelectedOrder(CustomerOrderAction.loadStartToken, (
+      orderId,
+    ) async {
+      final token = await ref
+          .read(ordersRepositoryProvider)
+          .getStartToken(orderId);
+      state = AsyncData(_requireState().copyWith(serviceStartToken: token));
+    });
+  }
+
+  Future<void> approveFinalPrice() async {
+    final proposalId = state.value?.selectedOrder?.priceProposal?.id;
+    if (proposalId == null) return;
+    await _withSelectedOrder(CustomerOrderAction.approveFinalPrice, (
+      orderId,
+    ) async {
+      await ref
+          .read(ordersRepositoryProvider)
+          .approveFinalPrice(orderId: orderId, proposalId: proposalId);
+      await _reloadOrderAndList(orderId);
+    });
+  }
+
+  Future<void> rejectFinalPrice(String reason) async {
+    final proposalId = state.value?.selectedOrder?.priceProposal?.id;
+    if (proposalId == null) return;
+    await _withSelectedOrder(CustomerOrderAction.rejectFinalPrice, (
+      orderId,
+    ) async {
+      await ref
+          .read(ordersRepositoryProvider)
+          .rejectFinalPrice(
+            orderId: orderId,
+            proposalId: proposalId,
+            reason: reason,
+          );
+      await _reloadOrderAndList(orderId);
+    });
+  }
+
   Future<void> _withSelectedOrder(
     CustomerOrderAction action,
     Future<void> Function(int orderId) operation,
@@ -199,6 +247,7 @@ class CustomerOrdersController extends AsyncNotifier<CustomerOrdersState> {
         selectedOrder: await detailsFuture,
         orders: await ordersFuture,
         transferInstructions: null,
+        serviceStartToken: null,
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
@@ -61,6 +62,46 @@ class ApiClient implements JsonApi {
   @override
   Future<Map<String, dynamic>> postObject(String path, {Object? data}) {
     return _requestObject(() => _dio.post<Object?>(path, data: data));
+  }
+
+  @override
+  Future<Map<String, dynamic>> postMultipartObject(
+    String path, {
+    Map<String, String> fields = const {},
+    required BinaryUpload file,
+  }) {
+    final form = FormData.fromMap({
+      ...fields,
+      file.fieldName: MultipartFile.fromBytes(
+        file.bytes,
+        filename: file.filename,
+        contentType: DioMediaType.parse(file.contentType),
+      ),
+    });
+    return _requestObject(() => _dio.post<Object?>(path, data: form));
+  }
+
+  @override
+  Future<BinaryResponse> getBinary(String path) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailure(
+          kind: ApiFailureKind.invalidResponse,
+          message: 'Máy chủ trả về dữ liệu không hợp lệ.',
+        );
+      }
+      return BinaryResponse(
+        bytes: data is Uint8List ? data : Uint8List.fromList(data),
+        contentType: response.headers.value(Headers.contentTypeHeader),
+      );
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
   }
 
   @override
