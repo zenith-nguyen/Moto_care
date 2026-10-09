@@ -1,6 +1,6 @@
 # MotoCare Backend — Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-10-09
+Cập nhật lần cuối: 2026-10-10
 
 ## Đã xong
 
@@ -25,12 +25,12 @@ Cập nhật lần cuối: 2026-10-09
 - PR #25 đã merge vào `main`: adapter SePay **Test mode** mặc định tắt, VietQR mô phỏng có `simulationOnly=true`, xác thực webhook HMAC raw-body/timestamp, chống replay/idempotency, audit tối thiểu và migration `0012`. Migration local đã xác nhận đủ 13 bước và bảng `sepay_webhook_events` tồn tại; `/health` và `/docs` trả `200` ngày 2026-10-08.
 - PR #27 đã merge vào `main`: nền Flutter dùng cấu hình API build-time, Dio/Bearer/request ID, secure token, session `/users/me`, role routing, lỗi an toàn, tiền decimal và client SePay Test mode chỉ nhận QR mô phỏng. 16 Flutter tests, analyze và APK debug/release đã xanh ở mốc nhánh.
 - PR #29 đã merge vào `main`: Flutter Socket.IO dùng chung session/API origin, JWT chỉ nằm trong handshake auth, typed event cho offer/order/GPS/chat, private provider/order scope, reconnect yêu cầu REST resync và cleanup khi logout. Analyze, 24 tests, APK debug và CI đều xanh.
+- PR #30 đã merge vào `main`: Flutter Customer core có incident catalog, tạo/danh sách/chi tiết đơn, snapshot giá thời tiết/GPS/payment, retry/cancel, SePay Test QR và xác nhận thanh toán sandbox; tiền decimal nghiêm ngặt và realtime luôn đồng bộ lại qua REST. 37 tests, APK debug và CI xanh.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/customer-order-integration`: typed repository/controller Flutter cho incident catalog, tạo/danh sách/chi tiết đơn, weather-price snapshot, retry/cancel, GPS snapshot, SePay Test QR và xác nhận thanh toán sandbox. Không nhập UI prototype trong nhánh này.
-2. Lát Customer kế tiếp: chat text/ảnh và lịch sử, duyệt/từ chối giá cuối, đánh giá; tiếp tục dùng REST làm nguồn thật và realtime để báo thay đổi.
-3. Sau Customer, nối Provider REST/controller (online/GPS/offer/service/final price/wallet), rồi Admin REST/controller; mỗi vai trò tích hợp theo lát nhỏ trước khi lấy UI nhóm vào.
+1. Nhánh `feat/zenith/customer-service-integration`: chat text/ảnh và lịch sử, tải ảnh có JWT, mã bắt đầu sửa, duyệt/từ chối giá cuối và đánh giá; repository/controller tách theo feature, không nhập UI prototype.
+2. Sau khi hoàn tất Customer, nối Provider REST/controller (online/GPS/offer/service/final price/wallet), rồi Admin REST/controller; mỗi vai trò tích hợp theo lát nhỏ trước khi lấy UI nhóm vào.
 4. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): chỉ lấy màn hình/assets cần thiết, không lấy cache/generated, không ghi đè nền kiến trúc hoặc workflow; Google Maps phải có fallback không cần key.
 5. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
 6. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
