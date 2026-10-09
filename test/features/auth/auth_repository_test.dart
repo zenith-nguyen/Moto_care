@@ -62,6 +62,14 @@ class RecordingJsonApi implements JsonApi {
   Object? lastData;
 
   @override
+  Future<List<Map<String, dynamic>>> getList(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Map<String, dynamic>> getObject(
     String path, {
     Map<String, dynamic>? queryParameters,

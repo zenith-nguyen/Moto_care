@@ -39,6 +39,16 @@ class ApiClient implements JsonApi {
   final Random _random = Random.secure();
 
   @override
+  Future<List<Map<String, dynamic>>> getList(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) {
+    return _requestList(
+      () => _dio.get<Object?>(path, queryParameters: queryParameters),
+    );
+  }
+
+  @override
   Future<Map<String, dynamic>> getObject(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -71,6 +81,34 @@ class ApiClient implements JsonApi {
         );
       }
       return Map<String, dynamic>.from(data);
+    } on DioException catch (error) {
+      throw ApiFailure.fromDio(error);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _requestList(
+    Future<Response<Object?>> Function() request,
+  ) async {
+    try {
+      final response = await request();
+      final data = response.data;
+      if (data is! List) {
+        throw const ApiFailure(
+          kind: ApiFailureKind.invalidResponse,
+          message: 'Máy chủ trả về dữ liệu không hợp lệ.',
+        );
+      }
+      return data
+          .map((item) {
+            if (item is! Map) {
+              throw const ApiFailure(
+                kind: ApiFailureKind.invalidResponse,
+                message: 'Máy chủ trả về dữ liệu không hợp lệ.',
+              );
+            }
+            return Map<String, dynamic>.from(item);
+          })
+          .toList(growable: false);
     } on DioException catch (error) {
       throw ApiFailure.fromDio(error);
     }

@@ -11,6 +11,8 @@ import '../core/realtime/realtime_client.dart';
 import '../core/realtime/realtime_transport.dart';
 import '../core/realtime/socket_io_realtime_transport.dart';
 import '../features/auth/data/auth_repository.dart';
+import '../features/incidents/data/incident_types_repository.dart';
+import '../features/orders/data/orders_repository.dart';
 import '../features/payments/data/payments_repository.dart';
 
 final appConfigProvider = Provider<AppConfig>((ref) {
@@ -55,6 +57,16 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 final paymentsRepositoryProvider = Provider<PaymentsRepository>((ref) {
   return HttpPaymentsRepository(ref.watch(jsonApiProvider));
+});
+
+final incidentTypesRepositoryProvider = Provider<IncidentTypesRepository>((
+  ref,
+) {
+  return HttpIncidentTypesRepository(ref.watch(jsonApiProvider));
+});
+
+final ordersRepositoryProvider = Provider<OrdersRepository>((ref) {
+  return HttpOrdersRepository(ref.watch(jsonApiProvider));
 });
 
 final realtimeTransportProvider = Provider<RealtimeTransport>((ref) {
