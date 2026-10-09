@@ -7,6 +7,9 @@ import '../core/auth/token_store.dart';
 import '../core/config/app_config.dart';
 import '../core/network/api_client.dart';
 import '../core/network/json_api.dart';
+import '../core/realtime/realtime_client.dart';
+import '../core/realtime/realtime_transport.dart';
+import '../core/realtime/socket_io_realtime_transport.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/payments/data/payments_repository.dart';
 
@@ -52,4 +55,14 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 final paymentsRepositoryProvider = Provider<PaymentsRepository>((ref) {
   return HttpPaymentsRepository(ref.watch(jsonApiProvider));
+});
+
+final realtimeTransportProvider = Provider<RealtimeTransport>((ref) {
+  return SocketIoRealtimeTransport();
+});
+
+final realtimeClientProvider = Provider<RealtimeClient>((ref) {
+  final client = RealtimeClient(ref.watch(realtimeTransportProvider));
+  ref.onDispose(client.dispose);
+  return client;
 });

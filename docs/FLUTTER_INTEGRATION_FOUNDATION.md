@@ -76,8 +76,9 @@ When UI branches are ready:
    Provider, or Admin shell.
 3. Keep role authorization server-side; client routing is navigation, not a
    security boundary.
-4. Connect REST repositories first. Realtime Socket.IO and reconnect/fallback
-   are the next foundation milestone.
+4. Connect REST repositories first, then consume the shared Socket.IO client
+   documented in [FLUTTER_REALTIME_FOUNDATION.md](FLUTTER_REALTIME_FOUNDATION.md).
+   Realtime events never replace the REST snapshot/resync path.
 5. Preserve loading, empty, offline, `409` refresh, `429` wait, and session-expiry
    states in every final screen.
 
