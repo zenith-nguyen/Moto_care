@@ -15,7 +15,9 @@ import '../features/incidents/data/incident_types_repository.dart';
 import '../features/messages/data/messages_repository.dart';
 import '../features/orders/data/orders_repository.dart';
 import '../features/payments/data/payments_repository.dart';
+import '../features/providers/data/providers_repository.dart';
 import '../features/reviews/data/reviews_repository.dart';
+import '../features/wallet/data/wallet_repository.dart';
 
 final appConfigProvider = Provider<AppConfig>((ref) {
   return AppConfig.fromEnvironment();
@@ -77,6 +79,14 @@ final messagesRepositoryProvider = Provider<MessagesRepository>((ref) {
 
 final reviewsRepositoryProvider = Provider<ReviewsRepository>((ref) {
   return HttpReviewsRepository(ref.watch(jsonApiProvider));
+});
+
+final providersRepositoryProvider = Provider<ProvidersRepository>((ref) {
+  return HttpProvidersRepository(ref.watch(jsonApiProvider));
+});
+
+final walletRepositoryProvider = Provider<WalletRepository>((ref) {
+  return HttpWalletRepository(ref.watch(jsonApiProvider));
 });
 
 final realtimeTransportProvider = Provider<RealtimeTransport>((ref) {
