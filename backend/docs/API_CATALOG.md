@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-11. Có 59 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
+Cập nhật: 2026-10-11. Có 72 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
 
 ## Auth, tài khoản và health
 
@@ -30,8 +30,31 @@ Mã đặt lại mật khẩu hết hạn sau 10 phút, giới hạn năm lần 
 | PATCH | `/providers/me/status` | Provider đã duyệt | Bật/tắt sẵn sàng nhận đơn |
 | PATCH | `/providers/me/orders/:orderId/location` | Provider được gán | GPS theo đơn và phát realtime |
 | GET | `/providers/me/offers/pending` | Provider | REST fallback cho offer đang chờ |
+| GET | `/provider-skills` | Đã đăng nhập | Catalog kỹ năng thợ đang active |
+| GET | `/providers/me/profile` | Provider | Hồ sơ nghề nghiệp và trạng thái xác minh kỹ năng |
+| PATCH | `/providers/me/profile` | Provider | Sửa bio, kinh nghiệm và bán kính phục vụ; không sửa hạng |
+| PUT | `/providers/me/skills` | Provider | Thay danh sách kỹ năng tự khai; kỹ năng mới chờ Admin xác minh |
+| GET | `/providers/me/statistics/weekly` | Provider | Thống kê tuần tính từ order/review/wallet, không lưu counter |
+| GET | `/orders/:orderId/provider-profile` | Customer/Provider liên quan | Summary thợ đã gán, chỉ kỹ năng verified; không trả email/phone |
+| GET | `/admin/provider-skills` | Admin | Toàn bộ catalog kỹ năng, kể cả inactive |
+| POST | `/admin/provider-skills` | Admin | Tạo kỹ năng |
+| PATCH | `/admin/provider-skills/:skillId` | Admin | Sửa hoặc ngừng dùng kỹ năng |
+| PATCH | `/admin/providers/:providerId/tier` | Admin | Đổi hạng thợ |
+| PATCH | `/admin/providers/:providerId/skills/:skillId/verification` | Admin | Xác minh/từ chối/reset kỹ năng thợ |
 
 Matching dùng PostGIS, vị trí tối đa 120 giây, bán kính mặc định 10 km và offer mặc định 15 giây.
+
+Chi tiết hồ sơ nghề nghiệp và thống kê: [PROVIDER_DIRECTORY.md](PROVIDER_DIRECTORY.md).
+
+## Địa điểm dịch vụ trên bản đồ
+
+| Method | Path | Quyền | Trạng thái / mục đích |
+| --- | --- | --- | --- |
+| GET | `/service-locations/viewport` | Đã đăng nhập | Tối đa 200 marker active trong vùng bản đồ, lọc theo loại |
+| GET | `/service-locations/nearby` | Đã đăng nhập | Marker trong bán kính 0.1–50 km, sắp theo khoảng cách PostGIS |
+
+Dữ liệu OSM chỉ mang tính tham khảo, không phải đối tác MotoCare và không có
+đặt lịch/thanh toán. Xem [SERVICE_LOCATION_MARKERS.md](SERVICE_LOCATION_MARKERS.md).
 
 ## Đơn cứu hộ
 

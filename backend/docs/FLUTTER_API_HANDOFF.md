@@ -28,6 +28,29 @@ APK dùng ở mạng khác phải nhận URL HTTPS của môi trường demo.
 
 Provider mới đăng ký ở trạng thái chờ duyệt. Admin dùng `GET /admin/providers/pending` và `PATCH /admin/providers/:id/approval`. Provider chỉ bật online sau khi được duyệt và đã gửi vị trí mới.
 
+### Hồ sơ nghề nghiệp, kỹ năng và thống kê thợ
+
+- Catalog chọn nhanh: `GET /provider-skills`.
+- Hồ sơ thợ hiện tại: `GET/PATCH /providers/me/profile`.
+- Gửi toàn bộ lựa chọn kỹ năng: `PUT /providers/me/skills`. UI phải hiển thị
+  `PENDING`, `VERIFIED`, `REJECTED`; không tự đổi trạng thái ở client.
+- Thống kê: `GET /providers/me/statistics/weekly`. Tiền vẫn là decimal string;
+  `week_start` nếu truyền phải là thứ Hai theo `Asia/Ho_Chi_Minh`.
+- Sau khi có thợ nhận đơn, Customer gọi
+  `GET /orders/:orderId/provider-profile`. Response không có số điện thoại;
+  nút Gọi vẫn dùng endpoint contact riêng.
+
+Chi tiết: [PROVIDER_DIRECTORY.md](PROVIDER_DIRECTORY.md).
+
+### Marker tiệm sửa, trạm sạc, cây xăng và phụ tùng
+
+Flutter dùng `GET /service-locations/viewport` sau khi người dùng dừng kéo map
+khoảng 500–800 ms. Màn hình “gần tôi” dùng `/service-locations/nearby`. Không
+gọi trực tiếp Overpass hoặc Google Places từ Flutter và không chứa API key bản
+đồ trong source. Marker `isVerified=false` phải được trình bày là thông tin tham
+khảo, không phải đối tác/đang mở cửa theo thời gian thực. Chi tiết request,
+filter và attribution: [SERVICE_LOCATION_MARKERS.md](SERVICE_LOCATION_MARKERS.md).
+
 ### Quên mật khẩu
 
 1. Màn hình quên mật khẩu gửi `{ "email": "..." }` tới `POST /auth/password/forgot`.
