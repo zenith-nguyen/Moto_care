@@ -129,6 +129,47 @@ void main() {
     expect(api.lastPath, '/orders/42/price-proposals/8/reject');
     expect(api.lastData, {'reason': 'Chưa thống nhất phụ tùng'});
   });
+
+  test('maps provider offer and service commands to exact endpoints', () async {
+    final api = RecordingJsonApi()
+      ..objectResponse = {'orderId': 42, 'status': 'ACCEPTED'};
+    final repository = HttpOrdersRepository(api);
+
+    await repository.acceptOffer(orderId: 42, offerId: 9);
+    expect(api.lastPath, '/orders/42/offers/9/accept');
+    await repository.markArrived(42);
+    expect(api.lastPath, '/orders/42/arrive');
+    await repository.startService(
+      orderId: 42,
+      token: '1760000000000.${'a' * 64}',
+    );
+    expect(api.lastPath, '/orders/42/start');
+    await repository.completeService(42);
+    expect(api.lastPath, '/orders/42/complete');
+  });
+
+  test('normalizes provider price proposal and dispute contracts', () async {
+    final api = RecordingJsonApi()..objectResponse = _priceDecisionJson();
+    final repository = HttpOrdersRepository(api);
+
+    await repository.proposeFinalPrice(
+      orderId: 42,
+      finalPrice: ' 135000.00 ',
+      reason: '  Replace damaged inner tube  ',
+    );
+    expect(api.lastPath, '/orders/42/price-proposals');
+    expect(api.lastData, {
+      'final_price': '135000.00',
+      'reason': 'Replace damaged inner tube',
+    });
+    await repository.disputeFinalPrice(
+      orderId: 42,
+      proposalId: 8,
+      reason: '  Photo evidence attached  ',
+    );
+    expect(api.lastPath, '/orders/42/price-proposals/8/dispute');
+    expect(api.lastData, {'reason': 'Photo evidence attached'});
+  });
 }
 
 Map<String, dynamic> creationJson() => {

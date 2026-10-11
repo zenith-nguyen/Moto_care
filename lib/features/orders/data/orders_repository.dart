@@ -30,6 +30,28 @@ abstract interface class OrdersRepository {
     required int proposalId,
     required String reason,
   });
+
+  Future<void> acceptOffer({required int orderId, required int offerId});
+
+  Future<void> rejectOffer({required int orderId, required int offerId});
+
+  Future<void> markArrived(int orderId);
+
+  Future<void> startService({required int orderId, required String token});
+
+  Future<PriceDecisionResult> proposeFinalPrice({
+    required int orderId,
+    required String finalPrice,
+    required String reason,
+  });
+
+  Future<PriceDecisionResult> disputeFinalPrice({
+    required int orderId,
+    required int proposalId,
+    required String reason,
+  });
+
+  Future<void> completeService(int orderId);
 }
 
 class HttpOrdersRepository implements OrdersRepository {
@@ -131,6 +153,97 @@ class HttpOrdersRepository implements OrdersRepository {
     );
     return PriceDecisionResult.fromJson(response);
   }
+
+  @override
+  Future<void> acceptOffer({required int orderId, required int offerId}) async {
+    _requireOrderId(orderId);
+    _requireOfferId(offerId);
+    final response = await _api.postObject(
+      '/orders/$orderId/offers/$offerId/accept',
+    );
+    _requireResponseOrderId(response, orderId);
+  }
+
+  @override
+  Future<void> rejectOffer({required int orderId, required int offerId}) async {
+    _requireOrderId(orderId);
+    _requireOfferId(offerId);
+    final response = await _api.postObject(
+      '/orders/$orderId/offers/$offerId/reject',
+    );
+    _requireResponseOrderId(response, orderId);
+  }
+
+  @override
+  Future<void> markArrived(int orderId) async {
+    _requireOrderId(orderId);
+    final response = await _api.postObject('/orders/$orderId/arrive');
+    _requireResponseOrderId(response, orderId);
+  }
+
+  @override
+  Future<void> startService({
+    required int orderId,
+    required String token,
+  }) async {
+    _requireOrderId(orderId);
+    final normalized = token.trim();
+    if (!RegExp(r'^\d{13}\.[0-9a-f]{64}$').hasMatch(normalized)) {
+      throw const FormatException('Invalid or expired service-start token.');
+    }
+    final response = await _api.postObject(
+      '/orders/$orderId/start',
+      data: {'token': normalized},
+    );
+    _requireResponseOrderId(response, orderId);
+  }
+
+  @override
+  Future<PriceDecisionResult> proposeFinalPrice({
+    required int orderId,
+    required String finalPrice,
+    required String reason,
+  }) async {
+    _requireOrderId(orderId);
+    final normalizedPrice = _requireMoney(finalPrice);
+    final normalizedReason = _requireReason(
+      reason,
+      'Price proposal reason',
+      minimumLength: 5,
+    );
+    final response = await _api.postObject(
+      '/orders/$orderId/price-proposals',
+      data: {'final_price': normalizedPrice, 'reason': normalizedReason},
+    );
+    return PriceDecisionResult.fromJson(response);
+  }
+
+  @override
+  Future<PriceDecisionResult> disputeFinalPrice({
+    required int orderId,
+    required int proposalId,
+    required String reason,
+  }) async {
+    _requireOrderId(orderId);
+    _requireProposalId(proposalId);
+    final normalizedReason = _requireReason(
+      reason,
+      'Dispute reason',
+      minimumLength: 3,
+    );
+    final response = await _api.postObject(
+      '/orders/$orderId/price-proposals/$proposalId/dispute',
+      data: {'reason': normalizedReason},
+    );
+    return PriceDecisionResult.fromJson(response);
+  }
+
+  @override
+  Future<void> completeService(int orderId) async {
+    _requireOrderId(orderId);
+    final response = await _api.postObject('/orders/$orderId/complete');
+    _requireResponseOrderId(response, orderId);
+  }
 }
 
 void _requireOrderId(int orderId) {
@@ -139,4 +252,39 @@ void _requireOrderId(int orderId) {
 
 void _requireProposalId(int proposalId) {
   if (proposalId <= 0) throw ArgumentError.value(proposalId, 'proposalId');
+}
+
+void _requireOfferId(int offerId) {
+  if (offerId <= 0) throw ArgumentError.value(offerId, 'offerId');
+}
+
+void _requireResponseOrderId(Map<String, dynamic> response, int orderId) {
+  final responseOrderId = response['orderId'];
+  if (responseOrderId is! int || responseOrderId != orderId) {
+    throw const FormatException('Invalid order command response.');
+  }
+}
+
+String _requireMoney(String value) {
+  final normalized = value.trim();
+  if (!RegExp(r'^(0|[1-9]\d{0,9})\.\d{2}$').hasMatch(normalized)) {
+    throw const FormatException(
+      'Price must be a non-negative decimal with two digits.',
+    );
+  }
+  return normalized;
+}
+
+String _requireReason(
+  String value,
+  String field, {
+  required int minimumLength,
+}) {
+  final normalized = value.trim();
+  if (normalized.length < minimumLength || normalized.length > 500) {
+    throw FormatException(
+      '$field must contain $minimumLength to 500 characters.',
+    );
+  }
+  return normalized;
 }

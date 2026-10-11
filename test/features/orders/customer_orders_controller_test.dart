@@ -173,6 +173,49 @@ class FakeOrdersRepository implements OrdersRepository {
   bool _created = false;
 
   @override
+  Future<void> acceptOffer({required int orderId, required int offerId}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> completeService(int orderId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<PriceDecisionResult> disputeFinalPrice({
+    required int orderId,
+    required int proposalId,
+    required String reason,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> markArrived(int orderId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<PriceDecisionResult> proposeFinalPrice({
+    required int orderId,
+    required String finalPrice,
+    required String reason,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> rejectOffer({required int orderId, required int offerId}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> startService({required int orderId, required String token}) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<List<OrderSummary>> listMine() async => _created
       ? [OrderSummary.fromJson(_summaryJson())]
       : const <OrderSummary>[];
