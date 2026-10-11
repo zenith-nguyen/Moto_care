@@ -19,6 +19,7 @@ import { RealtimeModule } from './realtime/realtime.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
+import { ServiceLocationsModule } from './service-locations/service-locations.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     CommonModule,
     UsersModule,
     VehiclesModule,
+    ServiceLocationsModule,
     HealthModule,
     IncidentTypesModule,
     OrdersModule,
