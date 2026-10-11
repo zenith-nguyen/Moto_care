@@ -1,6 +1,6 @@
 # MotoCare — demo một laptop, ba vai trò (không dùng tiền thật)
 
-Cập nhật: 2026-10-08. Tài liệu này là **hướng dẫn chuẩn bị**, không phải xác nhận APK đã hoàn thiện. Hiện repo `main` vẫn có Flutter counter starter; Cam Thu/Vy cần merge UI và tích hợp API trước khi có thể phát APK cho thầy.
+Cập nhật: 2026-10-11. Tài liệu này là **hướng dẫn chuẩn bị**, không phải xác nhận APK đã hoàn thiện. Repository/controller cho cả ba vai trò đã nối API; màn hình hiện vẫn là integration placeholder. Cam Thu/Vy cần merge UI trước khi có thể phát APK hoàn chỉnh cho thầy.
 
 ## Kiến trúc và giới hạn
 
@@ -72,7 +72,8 @@ Socket.IO handshake `auth: { token, orderId? }`, không để JWT trong URL. `pr
 
 ## Checklist nghiệm thu trước khi gửi APK
 
-- [ ] UI Khách/Thợ/Admin đã merge, nối hết API cần dùng, không còn Flutter counter starter.
+- [ ] UI Khách/Thợ/Admin đã merge vào các controller có sẵn, không còn integration placeholder.
+- [ ] Quyền GPS foreground, từ chối quyền, tắt dịch vụ vị trí, camera/thư viện ảnh và Android lost-image recovery đã thử trên máy thật.
 - [ ] Có DB demo riêng, mật khẩu/secret mạnh, không chứa tài khoản seed mật khẩu mẫu; chỉ dữ liệu thử.
 - [ ] API qua HTTPS/WSS từ 4G, không dùng localhost; mất mạng/reconnect/offer 15 giây được thử.
 - [ ] Chạy `npm run backup:check`, `npm run backup:create` và phục hồi thử theo [BACKUP_RESTORE.md](BACKUP_RESTORE.md); cất snapshot ngoài Git và không chia sẻ công khai.
