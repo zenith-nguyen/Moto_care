@@ -11,6 +11,7 @@ import '../core/realtime/realtime_client.dart';
 import '../core/realtime/realtime_transport.dart';
 import '../core/realtime/socket_io_realtime_transport.dart';
 import '../features/auth/data/auth_repository.dart';
+import '../features/admin/data/admin_repository.dart';
 import '../features/incidents/data/incident_types_repository.dart';
 import '../features/messages/data/messages_repository.dart';
 import '../features/orders/data/orders_repository.dart';
@@ -57,6 +58,10 @@ final jsonApiProvider = Provider<JsonApi>((ref) {
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return HttpAuthRepository(ref.watch(jsonApiProvider));
+});
+
+final adminRepositoryProvider = Provider<AdminRepository>((ref) {
+  return HttpAdminRepository(ref.watch(jsonApiProvider));
 });
 
 final paymentsRepositoryProvider = Provider<PaymentsRepository>((ref) {

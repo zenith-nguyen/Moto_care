@@ -1,6 +1,6 @@
 # MotoCare Backend — Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-10-10
+Cập nhật lần cuối: 2026-10-11
 
 ## Đã xong
 
@@ -27,16 +27,17 @@ Cập nhật lần cuối: 2026-10-10
 - PR #29 đã merge vào `main`: Flutter Socket.IO dùng chung session/API origin, JWT chỉ nằm trong handshake auth, typed event cho offer/order/GPS/chat, private provider/order scope, reconnect yêu cầu REST resync và cleanup khi logout. Analyze, 24 tests, APK debug và CI đều xanh.
 - PR #30 đã merge vào `main`: Flutter Customer core có incident catalog, tạo/danh sách/chi tiết đơn, snapshot giá thời tiết/GPS/payment, retry/cancel, SePay Test QR và xác nhận thanh toán sandbox; tiền decimal nghiêm ngặt và realtime luôn đồng bộ lại qua REST. 37 tests, APK debug và CI xanh.
 - PR #31 đã merge vào `main`: Flutter Customer service có chat text/ảnh bảo vệ, realtime de-duplicate/resync, mã bắt đầu sửa, duyệt/từ chối giá cuối và đánh giá. 52 tests, analyze, APK và CI xanh.
+- PR #32 đã merge vào `main`: Flutter Provider service có online/offline, GPS chờ đơn và theo đơn, offer, vòng đời cứu hộ, giá cuối/tranh chấp, ví và rút tiền sandbox; realtime chỉ báo hiệu và REST resync là nguồn chuẩn. 59 tests, analyze, APK và CI xanh.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/provider-service-integration`: nối Flutter Provider REST/controller cho online/GPS, offer, vòng đời cứu hộ, giá cuối/tranh chấp và ví/rút tiền sandbox; realtime chỉ báo hiệu và REST resync là nguồn chuẩn.
-2. Sau Provider, nối Admin REST/controller cho dashboard, duyệt thợ, đối soát, tranh chấp, refund và withdrawal; sau đó mới nhập UI nhóm theo từng lát và test ba vai trò.
-4. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): chỉ lấy màn hình/assets cần thiết, không lấy cache/generated, không ghi đè nền kiến trúc hoặc workflow; Google Maps phải có fallback không cần key.
-5. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
-6. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
-7. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
-8. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
+1. Nhánh `feat/zenith/admin-integration`: nối Flutter Admin REST/controller cho dashboard, biểu đồ, duyệt thợ, đối soát, tranh chấp, refund và withdrawal sandbox; quyết định tài chính không tự retry.
+2. Sau Admin, nền repository/controller của cả Customer, Provider và Admin hoàn tất. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): chỉ lấy màn hình/assets cần thiết, không lấy cache/generated, không ghi đè nền kiến trúc hoặc workflow; Google Maps phải có fallback không cần key.
+3. Test ba vai trò end-to-end: vòng đời đơn, offer hết hạn, GPS/reconnect, chat ảnh, giá cuối, thanh toán/hoàn tiền/rút tiền sandbox và các hàng đợi Admin.
+4. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
+5. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
+6. Test APK release trên điện thoại khác mạng với HTTPS/WSS tới laptop qua Tailscale Funnel **sau khi** tách DB demo, đổi secret/mật khẩu đã lộ và hoàn tất checklist [DEMO_RUNBOOK.md](DEMO_RUNBOOK.md). Laptop phải bật; không có bảo đảm 24/7.
+7. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
 
 ## Quyết định đã chốt
 
