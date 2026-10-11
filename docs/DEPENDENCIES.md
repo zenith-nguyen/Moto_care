@@ -18,6 +18,8 @@ Treat the application and bundle IDs as permanent after the first store release.
 | `dio` | HTTP client | Calling the Moto Care backend. Configure timeouts and interceptors in one client. |
 | `flutter_secure_storage` | Encrypted device storage | Persisting credentials, access tokens, or refresh tokens. Never use it for non-sensitive UI preferences. |
 | `socket_io_client` | Authenticated realtime transport | Receiving MotoCare offer, order, GPS, and chat events through the shared realtime adapter. |
+| `geolocator` | Foreground device location | Acquiring Customer/Provider coordinates while the app is open. Background tracking is not enabled. |
+| `image_picker` | Chat image selection | Selecting one camera/gallery image before the shared 5 MiB validation and protected upload flow. |
 | `json_annotation` | Model annotations | Defining API request and response models. |
 | `build_runner` and `json_serializable` | JSON model code generation | Generating `fromJson` and `toJson` for annotated models. |
 
@@ -28,5 +30,7 @@ Treat the application and bundle IDs as permanent after the first store release.
 - Use `dio` for backend communication. Keep base URL, headers, token injection, retries, and error mapping in the data layer rather than in widgets.
 - Store tokens only with `flutter_secure_storage`. Do not place them in source code, logs, `shared_preferences`, or version control.
 - Create Socket.IO connections only through the shared realtime transport. Keep JWTs in handshake `auth`, never URL/query parameters, and reload REST snapshots after every connection or reconnect.
+- Acquire location only through the shared device-location source. Do not request background location or start a platform location service without a separate privacy/battery review.
+- Select chat images only through the shared picker adapter. Detect file content before upload; never trust a filename extension or client MIME type.
 - Run `dart run build_runner build --delete-conflicting-outputs` after changing a `json_serializable` model, then commit the generated `.g.dart` file with its source model.
 - Add feature-specific plugins, such as location, maps, camera, notifications, or image picking, only when the associated feature is approved.

@@ -23,6 +23,7 @@ This folder is the single source of truth for technical guides, collaboration ru
 - [`FLUTTER_CUSTOMER_ORDER_INTEGRATION.md`](FLUTTER_CUSTOMER_ORDER_INTEGRATION.md): Customer incident, order, pricing, GPS snapshot, and SePay Test controller contract for UI integration.
 - [`FLUTTER_PROVIDER_INTEGRATION.md`](FLUTTER_PROVIDER_INTEGRATION.md): Provider online/GPS, offer, service lifecycle, final price, wallet, and withdrawal controller contract.
 - [`FLUTTER_ADMIN_INTEGRATION.md`](FLUTTER_ADMIN_INTEGRATION.md): Admin analytics, reconciliation, provider review, dispute, refund, and withdrawal controller contract.
+- [`FLUTTER_DEVICE_SERVICES.md`](FLUTTER_DEVICE_SERVICES.md): foreground Provider GPS lifecycle and validated camera/gallery chat-image selection.
 - [`RELEASES.md`](RELEASES.md): Android release procedure.
 - [`branches/cam-thu.md`](branches/cam-thu.md): Cam Thu's branch guide.
 - [`branches/thanh-vy.md`](branches/thanh-vy.md): Thanh Vy's branch guide.

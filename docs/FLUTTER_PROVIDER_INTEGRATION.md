@@ -8,7 +8,7 @@ the providers below instead of calling HTTP or Socket.IO directly.
 
 | Responsibility | Riverpod provider | Notes |
 | --- | --- | --- |
-| Availability and waiting GPS | `providerPresenceControllerProvider` | Location must be fresh before going online. |
+| Availability and GPS tracking | `providerLocationTrackingControllerProvider` | Foreground only; sends a fresh point before going online. |
 | Offers and active service | `providerWorkControllerProvider` | REST is authoritative; realtime triggers resync. |
 | Demo wallet and withdrawals | `providerWalletControllerProvider` | Sandbox ledger only; never label it as real money. |
 | Chat and protected images | `customerChatControllerProvider(orderId)` | Participant-safe and reusable by Provider UI. |
@@ -19,15 +19,20 @@ Socket.IO payloads, or hold the JWT. Shared infrastructure owns those concerns.
 
 ## Availability and GPS
 
-1. Obtain Android location permission in the UI/platform layer.
-2. Call `updateWaitingLocation(GeoPoint(...))` before `setOnline(true)`.
-3. While online without an active order, refresh waiting location every 30–60
-   seconds. Stop when offline, signed out, or location is unavailable.
-4. During an assigned order call `updateOrderLocation(...)` at the foreground
-   interval selected by the UI team. The backend emits the private order-room
-   event used to move the customer's provider marker.
-5. Never fake movement. Show stale/offline state and an explicit retry when
-   permission, GPS or network is unavailable.
+1. Call `providerLocationTrackingControllerProvider.goOnline()`. It obtains
+   permission/current GPS, uploads a fresh point, then turns presence online.
+2. Waiting location refreshes every 45 seconds while the app remains active.
+3. After accepting an order call `trackOrder(orderId)` for 5-second foreground
+   updates. The backend emits the private order-room event used to move the
+   customer's provider marker.
+4. Call `resumeWaiting()` after service when the Provider stays available, or
+   `goOffline()` when availability is turned off.
+5. Never fake movement. Show the last successful timestamp and an explicit
+   retry/settings action when permission, GPS, or network is unavailable.
+
+This controller intentionally does not request background-location permission.
+The operating system can pause updates when the app is backgrounded and stops
+them when it is killed; the UI must not promise otherwise.
 
 The backend rejects online activation when the account is not approved/active
 or its location is stale. Display the safe API error; do not bypass it.
