@@ -10,6 +10,9 @@ import { User } from '../users/user.entity';
 import { Wallet } from '../payments/wallet.entity';
 import { Vehicle } from '../vehicles/vehicle.entity';
 import { VehicleType } from '../vehicles/vehicle-type.enum';
+import { Skill } from '../providers/skill.entity';
+import { ProviderSkill } from '../providers/provider-skill.entity';
+import { SkillVerificationStatus } from '../providers/skill-verification-status.enum';
 
 const DEV_PASSWORD = 'MotoCareDev123!';
 
@@ -28,6 +31,14 @@ const incidentSeeds = [
   { code: 'ENGINE_FAILURE', name: 'Chết máy', basePrice: '150000.00' },
   { code: 'DEAD_BATTERY', name: 'Hết bình', basePrice: '120000.00' },
   { code: 'MINOR_COLLISION', name: 'Va quẹt nhẹ', basePrice: '200000.00' },
+];
+
+const skillSeeds = [
+  { code: 'OUT_OF_FUEL', name: 'Hỗ trợ hết xăng', isActive: true },
+  { code: 'FLAT_TIRE', name: 'Vá và thay lốp xe máy', isActive: true },
+  { code: 'ENGINE_DIAGNOSTICS', name: 'Chẩn đoán chết máy', isActive: true },
+  { code: 'BATTERY_SERVICE', name: 'Cứu hộ ắc quy và hệ thống điện', isActive: true },
+  { code: 'MINOR_COLLISION', name: 'Xử lý va quẹt nhẹ', isActive: true },
 ];
 
 const providerSeeds: Array<{
@@ -97,8 +108,12 @@ async function seed(): Promise<void> {
     const incidentRepository = dataSource.getRepository(IncidentType);
     const walletRepository = dataSource.getRepository(Wallet);
     const vehicleRepository = dataSource.getRepository(Vehicle);
+    const skillRepository = dataSource.getRepository(Skill);
+    const providerSkillRepository = dataSource.getRepository(ProviderSkill);
 
     await incidentRepository.upsert(incidentSeeds, ['code']);
+    await skillRepository.upsert(skillSeeds, ['code']);
+    const skills = await skillRepository.find({ where: { isActive: true }, order: { id: 'ASC' } });
 
     const customer = await findOrCreateUser(userRepository, {
       name: 'MotoCare Dev Customer',
@@ -151,6 +166,18 @@ async function seed(): Promise<void> {
       const wallet = await walletRepository.findOneBy({ providerId: provider.id });
       if (!wallet) {
         await walletRepository.save(walletRepository.create({ providerId: provider.id, balance: '0.00' }));
+      }
+
+      for (const skill of skills.slice(0, 3)) {
+        const existingSkill = await providerSkillRepository.findOneBy({ providerId: provider.id, skillId: skill.id });
+        if (!existingSkill) {
+          await providerSkillRepository.save(providerSkillRepository.create({
+            providerId: provider.id,
+            skillId: skill.id,
+            verificationStatus: SkillVerificationStatus.VERIFIED,
+            verifiedAt: new Date(),
+          }));
+        }
       }
     }
 

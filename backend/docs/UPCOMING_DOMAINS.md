@@ -11,9 +11,9 @@ Customer vehicle CRUD, one-default-vehicle enforcement, vehicle snapshots in
 orders and protected tap-to-call contact. See
 [PROFILE_VEHICLE_CONTACT_WORKFLOW.md](PROFILE_VEHICLE_CONTACT_WORKFLOW.md).
 
-## Next: Provider professional profile
+## Completed: Provider professional profile
 
-Planned persistence:
+Implemented persistence:
 
 - extend `providers` with public bio, years of experience and service radius;
 - `skills` catalog managed by Admin;
@@ -21,22 +21,24 @@ Planned persistence:
 - provider tier represented by an enum and changed only by a documented policy
   or Admin, never directly by the Provider client.
 
-Planned APIs cover own profile editing, public assigned-provider summary, skill
-selection and Admin verification. Weekly Provider statistics should be queried
-from orders, reviews and wallet transactions for a requested week. They are not
-stored as mutable counters, avoiding drift after refunds or Admin corrections.
+APIs cover own profile editing, public assigned-provider summary, skill selection
+and Admin verification. Weekly Provider statistics are queried from orders,
+reviews and wallet transactions for a requested week. They are not stored as
+mutable counters, avoiding drift after refunds or Admin corrections. See
+[PROVIDER_DIRECTORY.md](PROVIDER_DIRECTORY.md).
 
-## Later: repair shops and charging stations
+## Completed directory foundation: repair shops and charging stations
 
-Use one `service_locations` aggregate with a type (`REPAIR_SHOP` or
-`CHARGING_STATION`), verified owner, contact, opening-hours data, active status
-and `geography(Point,4326)` plus GiST index. Search is by distance and type.
-Charging connector/power metadata belongs in a child table rather than generic
-columns on every location.
+One `service_locations` aggregate now stores OSM/manual POIs with repair,
+charging, fuel and parts types, contact/opening-hours metadata, active status and
+`geography(Point,4326)` plus GiST index. Search supports viewport and distance.
+The first snapshot importer is limited to TP.HCM and never treats OSM rows as
+verified MotoCare partners. See
+[SERVICE_LOCATION_MARKERS.md](SERVICE_LOCATION_MARKERS.md).
 
-The first version is a verified directory. Booking slots, navigation/ETA and
-station-owner self-service are separate milestones because each adds new
-authorization and consistency rules.
+Booking slots, navigation/ETA, charging connector details and station-owner
+self-service remain separate milestones because each adds new authorization and
+consistency rules.
 
 ## Later: marketplace and spare parts
 

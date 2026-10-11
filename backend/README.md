@@ -50,6 +50,24 @@ the other person's direct phone only when the user taps Call via
 `GET /orders/:id/participant-contact`. See
 [PROFILE_VEHICLE_CONTACT_WORKFLOW.md](docs/PROFILE_VEHICLE_CONTACT_WORKFLOW.md).
 
+Providers maintain professional details and skill claims through
+`/providers/me/profile` and `/providers/me/skills`; only Admin can verify a
+skill or change a tier. Weekly statistics are derived from orders, reviews and
+wallet transactions. See [PROVIDER_DIRECTORY.md](docs/PROVIDER_DIRECTORY.md).
+
+Informational TP.HCM repair, charging, fuel and parts markers use the
+`service_locations` PostGIS directory. After migrations, import/update the
+named OpenStreetMap snapshot manually:
+
+```powershell
+npm run locations:import-osm
+```
+
+The command requires Internet access, does not use a Google key, does not delete
+missing rows and never marks OSM data as verified or partnered. Flutter queries
+`/service-locations/viewport` or `/service-locations/nearby`; see
+[SERVICE_LOCATION_MARKERS.md](docs/SERVICE_LOCATION_MARKERS.md).
+
 The order snapshots the incident base price and optional weather surcharge, then starts in `AWAITING_PREPAYMENT`. `WEATHER_PRICING_ENABLED=false` is the safe default. When enabled for the non-commercial educational demo, the backend queries Open-Meteo at rounded customer coordinates, caches the result, applies `1.00`/`1.10`/`1.20`, and falls back to `1.00` on timeout or invalid data. The response `pricing` object contains the immutable breakdown and attribution. See [WEATHER_PRICING_PLAN.md](docs/WEATHER_PRICING_PLAN.md).
 
 No offer is sent until payment is confirmed. For **local sandbox only**, set `DEMO_MODE=true` and call `POST /payments/demo/orders/:id/confirm` as the customer to simulate exact payment (no bank transfer). Matching then offers one provider 15 seconds. If they reject or time out, matching tries the next nearest provider. If none is available, the order stays `PENDING_MATCH`; the customer can call `POST /orders/:id/retry-match` later. Customers and related providers can poll `GET /orders/:id`. Providers can poll `GET /providers/me/offers/pending` for their own active offers and call `POST /orders/:id/offers/:offerId/accept` or `/reject`. Swagger documents all request and response bodies. Money is returned as decimal strings; PostGIS coordinates are stored as `[longitude, latitude]`.
@@ -121,9 +139,9 @@ npm run migration:run
 npm run seed
 ```
 
-The migration sequence enables PostGIS, creates the core schema, protects matching/wallet invariants, adds chat/password recovery/weather snapshots, final-price/payment-adjustment ledgers, withdrawal reservations and the minimal SePay webhook audit. Migrations run transactionally one at a time because a later migration expands a partial index with newly committed PostgreSQL enum values. Enum additions cannot be automatically removed; take a backup before applying them to any important database.
+The migration sequence enables PostGIS, creates the core schema, protects matching/wallet invariants, adds chat/password recovery/weather snapshots, final-price/payment-adjustment ledgers, withdrawal reservations, the minimal SePay webhook audit, Customer vehicles, Provider skills and service-location markers. Migrations run transactionally one at a time because a later migration expands a partial index with newly committed PostgreSQL enum values. Enum additions cannot be automatically removed; take a backup before applying them to any important database.
 
-The seed creates five selectable incident types, three approved online providers around Ho Chi Minh City, one development customer with a default motorbike, one development admin, and a wallet for each seeded provider. By default all seeded accounts use the development-only password `MotoCareDev123!`; **never run this default seed against a publicly accessible or production database**. The script rejects `NODE_ENV=production`. For a separate demo database set `DEMO_MODE=true` and distinct `SEED_CUSTOMER_PASSWORD`, `SEED_PROVIDER_PASSWORD`, `SEED_ADMIN_PASSWORD` (each 16+ characters) before `npm run seed`. Existing users' passwords are not changed by reseeding. Never expose a database containing default-password accounts.
+The seed creates five selectable incident types, five Provider skills, three approved online Providers with verified sample skills around Ho Chi Minh City, one development Customer with a default motorbike, one development Admin, and a wallet for each seeded Provider. By default all seeded accounts use the development-only password `MotoCareDev123!`; **never run this default seed against a publicly accessible or production database**. The script rejects `NODE_ENV=production`. For a separate demo database set `DEMO_MODE=true` and distinct `SEED_CUSTOMER_PASSWORD`, `SEED_PROVIDER_PASSWORD`, `SEED_ADMIN_PASSWORD` (each 16+ characters) before `npm run seed`. Existing users' passwords are not changed by reseeding. Never expose a database containing default-password accounts.
 
 To verify the PostGIS nearest-provider query:
 

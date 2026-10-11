@@ -16,6 +16,9 @@ import { OrderPriceProposal } from '../orders/order-price-proposal.entity';
 import { PaymentAdjustment } from '../payments/payment-adjustment.entity';
 import { SepayWebhookEvent } from '../payments/sepay-webhook-event.entity';
 import { Vehicle } from '../vehicles/vehicle.entity';
+import { ProviderSkill } from '../providers/provider-skill.entity';
+import { Skill } from '../providers/skill.entity';
+import { ServiceLocation } from '../service-locations/service-location.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -41,6 +44,9 @@ export default new DataSource({
     PaymentAdjustment,
     SepayWebhookEvent,
     Vehicle,
+    Skill,
+    ProviderSkill,
+    ServiceLocation,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsTransactionMode: 'each',

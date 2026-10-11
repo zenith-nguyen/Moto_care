@@ -30,21 +30,26 @@ Cập nhật lần cuối: 2026-10-11
 - PR #32 đã merge vào `main`: Flutter Provider service có online/offline, GPS chờ đơn và theo đơn, offer, vòng đời cứu hộ, giá cuối/tranh chấp, ví và rút tiền sandbox; realtime chỉ báo hiệu và REST resync là nguồn chuẩn. 59 tests, analyze, APK và CI xanh.
 - PR #33 đã merge vào `main`: Flutter Admin có dashboard/timeseries, đối soát, duyệt thợ, tranh chấp, hoàn tiền và rút tiền sandbox; quyết định tài chính không tự retry. 67 tests, analyze, APK và CI xanh. Nền repository/controller cho cả ba vai trò đã hoàn tất.
 - PR #34 đã merge vào `main`: Flutter có GPS foreground cho thợ ở trạng thái chờ/đang làm đơn và chọn ảnh chat từ camera/thư viện với kiểm tra dung lượng/chữ ký; không xin quyền vị trí nền.
+- PR #35 đã merge vào `main`: sửa hồ sơ tên/điện thoại an toàn, CRUD xe Customer, snapshot xe vào order và endpoint bấm Gọi chỉ cho hai người tham gia đơn active; CI Backend/Flutter/branch policy đều xanh.
+- Nhánh `feat/zenith/provider-directory-locations`: hồ sơ nghề nghiệp, skill claim/xác minh, tier chỉ Admin sửa, thống kê tuần tính từ dữ liệu nguồn; `service_locations` PostGIS và importer snapshot OSM TP.HCM. Lần chạy local ngày 2026-10-11 import 482 marker có tên (127 repair, 9 charging, 328 fuel, 18 parts); GiST được xác nhận bằng `EXPLAIN`.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/customer-profile-vehicles`: hồ sơ sửa an toàn, CRUD xe khách, snapshot xe vào đơn và endpoint bấm Gọi chỉ cho hai người tham gia đơn active.
-2. Tiếp theo: hồ sơ nghề nghiệp, kỹ năng/hạng thợ và thống kê tuần; sau đó mới tách domain trạm sạc/tiệm sửa và marketplace/phụ tùng theo [UPCOMING_DOMAINS.md](UPCOMING_DOMAINS.md).
-3. Chưa lấy code UI Customer/Provider đang được nhóm chỉnh sửa. Khi UI ổn định, dọn và tích hợp theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): chỉ lấy màn hình/assets cần thiết, không lấy cache/generated, không ghi đè nền kiến trúc/workflow; bản đồ phải có fallback không cần key.
-4. Test ba vai trò end-to-end: vòng đời đơn, offer hết hạn, GPS/reconnect, chat ảnh, giá cuối, thanh toán/hoàn tiền/rút tiền sandbox và các hàng đợi Admin.
-5. Hoàn thiện release signing cục bộ, DB demo tách biệt, secret rotation và HTTPS/WSS Funnel; chạy checklist thiết bị thật trước khi tạo APK nộp bài.
-6. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
-7. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
-8. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
+1. Hoàn tất kiểm chứng và PR cho nhánh `feat/zenith/provider-directory-locations`.
+2. PR #22 UI Customer hiện conflict với `main`, không có CI và chứa nhiều generated/cache duplicate; chưa merge nguyên nhánh. Tích hợp lại từng feature từ `main` mới theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md).
+3. Sau khi UI Customer sạch và ổn định: nối profile/vehicles, service-location marker, order/realtime/chat vào repository/controller hiện có; không giữ mock làm nguồn dữ liệu runtime.
+4. Tiếp theo backend: marketplace/phụ tùng read-only catalog; checkout/stock/payment chỉ làm sau khi chốt delivery/refund và payment purpose riêng.
+5. Test ba vai trò end-to-end: vòng đời đơn, offer hết hạn, GPS/reconnect, chat ảnh, giá cuối, thanh toán/hoàn tiền/rút tiền sandbox và các hàng đợi Admin.
+6. Hoàn thiện release signing cục bộ, DB demo tách biệt, secret rotation và HTTPS/WSS Funnel; chạy checklist thiết bị thật trước khi tạo APK nộp bài.
+7. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
+8. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
+9. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
 
 ## Quyết định đã chốt
 
 - PostgreSQL + PostGIS, TypeORM migration thủ công; không `synchronize`.
+- POI TP.HCM dùng snapshot OpenStreetMap import thủ công, không scrape Google Maps, không yêu cầu API key/billing. OSM rows mặc định không verified/partner và chỉ để hiển thị marker.
+- Tier và xác minh kỹ năng thuộc quyền Admin. Thống kê tuần của thợ được tính từ order/review/wallet, không lưu counter có thể lệch.
 - Tất cả tiền `numeric`/`decimal`, không float; vị trí `geography(Point,4326)` có GiST.
 - Thu trước giá tạm tính rồi mới matching. Không tìm được thợ hoặc hủy trước khi sửa: hoàn 100%; sau khi bắt đầu sửa: Admin xét từng trường hợp. Thu/hoàn **thực** cần xác nhận ngân hàng/SePay, không tự giả định có escrow hoặc API hoàn tự động. Bản hiện tại chỉ sandbox, không nhận/chuyển tiền.
 - Provider online gửi REST GPS 30–60 giây; matching chỉ dùng vị trí trong 120 giây, bán kính mặc định 10 km. Khi có đơn có thể gửi GPS theo đơn vài giây/lần; socket đẩy tới người tham gia và REST là fallback.

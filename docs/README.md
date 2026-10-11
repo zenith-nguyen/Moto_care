@@ -18,6 +18,7 @@ This folder is the single source of truth for technical guides, collaboration ru
 - [`DEPENDENCIES.md`](DEPENDENCIES.md): approved dependencies and usage boundaries.
 - [`WORKFLOW.md`](WORKFLOW.md): branch protection, CI/CD, and versioning.
 - [`UI_INTEGRATION_GUARDRAILS.md`](UI_INTEGRATION_GUARDRAILS.md): safe Flutter UI handoff and integration checklist.
+- [`PR22_CUSTOMER_UI_REVIEW.md`](PR22_CUSTOMER_UI_REVIEW.md): merge risk assessment and safe extraction plan for Customer UI PR #22.
 - [`FLUTTER_INTEGRATION_FOUNDATION.md`](FLUTTER_INTEGRATION_FOUNDATION.md): shared API, session, routing, and SePay Test mode client foundation.
 - [`FLUTTER_REALTIME_FOUNDATION.md`](FLUTTER_REALTIME_FOUNDATION.md): authenticated Socket.IO lifecycle, typed events, private room scopes, and REST resync rules.
 - [`FLUTTER_CUSTOMER_ORDER_INTEGRATION.md`](FLUTTER_CUSTOMER_ORDER_INTEGRATION.md): Customer incident, order, pricing, GPS snapshot, and SePay Test controller contract for UI integration.
@@ -27,6 +28,8 @@ This folder is the single source of truth for technical guides, collaboration ru
 - [`../backend/docs/API_CATALOG.md`](../backend/docs/API_CATALOG.md): current REST and Socket.IO inventory (kept under `backend/docs`, not this folder).
 - [`../backend/docs/PROFILE_VEHICLE_CONTACT_WORKFLOW.md`](../backend/docs/PROFILE_VEHICLE_CONTACT_WORKFLOW.md): editable profile, Customer vehicles, order snapshots, and tap-to-call privacy contract.
 - [`../backend/docs/UPCOMING_DOMAINS.md`](../backend/docs/UPCOMING_DOMAINS.md): staged Provider skills/statistics, service-location, and marketplace backend plan.
+- [`../backend/docs/PROVIDER_DIRECTORY.md`](../backend/docs/PROVIDER_DIRECTORY.md): Provider professional profile, verified skills, tiers, and weekly statistics.
+- [`../backend/docs/SERVICE_LOCATION_MARKERS.md`](../backend/docs/SERVICE_LOCATION_MARKERS.md): TP.HCM OSM snapshot, PostGIS marker APIs, and Flutter map contract.
 - [`../backend/docs/CHAT_WORKFLOW.md`](../backend/docs/CHAT_WORKFLOW.md): protected realtime text/image chat contract (kept under `backend/docs`).
 - [`RELEASES.md`](RELEASES.md): Android release procedure.
 - [`branches/cam-thu.md`](branches/cam-thu.md): Cam Thu's branch guide.

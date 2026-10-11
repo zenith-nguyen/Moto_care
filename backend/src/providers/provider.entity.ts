@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { ApprovalStatus } from '../common/enums/approval-status.enum';
 import { User } from '../users/user.entity';
+import { ProviderTier } from './provider-tier.enum';
 
 export interface GeoPoint {
   type: 'Point';
@@ -50,6 +51,18 @@ export class Provider {
 
   @Column({ name: 'document_url', type: 'varchar', length: 500, nullable: true })
   documentUrl!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  bio!: string | null;
+
+  @Column({ name: 'years_of_experience', type: 'smallint', default: 0 })
+  yearsOfExperience!: number;
+
+  @Column({ name: 'service_radius_km', type: 'numeric', precision: 5, scale: 2, default: 10 })
+  serviceRadiusKm!: string;
+
+  @Column({ type: 'enum', enum: ProviderTier, default: ProviderTier.STANDARD })
+  tier!: ProviderTier;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
