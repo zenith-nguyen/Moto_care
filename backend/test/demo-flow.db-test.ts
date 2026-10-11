@@ -27,6 +27,16 @@ import { ReviewsModule } from '../src/reviews/reviews.module';
 import { User } from '../src/users/user.entity';
 import { UsersModule } from '../src/users/users.module';
 import { VehiclesModule } from '../src/vehicles/vehicles.module';
+import { ServiceLocationsModule } from '../src/service-locations/service-locations.module';
+import { ServiceLocation } from '../src/service-locations/service-location.entity';
+import { ServiceLocationSource, ServiceLocationType } from '../src/service-locations/service-location-type.enum';
+import { SkillVerificationStatus } from '../src/providers/skill-verification-status.enum';
+import { Wallet } from '../src/payments/wallet.entity';
+import { WalletTransaction } from '../src/payments/wallet-transaction.entity';
+import { WalletTransactionType } from '../src/common/enums/wallet-transaction-type.enum';
+import { Review } from '../src/reviews/review.entity';
+import { Order } from '../src/orders/order.entity';
+import { OrderStatus } from '../src/common/enums/order-status.enum';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -74,6 +84,7 @@ describe('Sandbox demo flow over HTTP', () => {
         OrdersModule,
         PaymentsModule,
         ProvidersModule,
+        ServiceLocationsModule,
         ReviewsModule,
         AdminModule,
       ],
@@ -93,7 +104,7 @@ describe('Sandbox demo flow over HTTP', () => {
   });
 
   beforeEach(async () => {
-    await database.query('TRUNCATE TABLE users, incident_types RESTART IDENTITY CASCADE');
+    await database.query('TRUNCATE TABLE users, incident_types, skills, service_locations RESTART IDENTITY CASCADE');
     incident = await database.getRepository(IncidentType).save(
       database.getRepository(IncidentType).create({
         code: 'FLAT_TIRE',
@@ -719,5 +730,182 @@ describe('Sandbox demo flow over HTTP', () => {
       .get(`/admin/reconciliation?${analyticsQuery()}&limit=101`)
       .set('Authorization', `Bearer ${admin.token}`)
       .expect(400);
+  });
+
+  it('manages Provider professional profiles, verified skills and derived weekly statistics', async () => {
+    const { customer, provider } = await prepareActors();
+    const skill = await request(app.getHttpServer())
+      .post('/admin/provider-skills')
+      .set('Authorization', `Bearer ${admin.token}`)
+      .send({ code: 'FLAT_TIRE', name: 'Vá và thay lốp xe máy' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch('/providers/me/profile')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ bio: 'Thợ cứu hộ xe máy tại TP.HCM', yearsOfExperience: 5, serviceRadiusKm: 12.5 })
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({
+        bio: 'Thợ cứu hộ xe máy tại TP.HCM',
+        yearsOfExperience: 5,
+        serviceRadiusKm: '12.50',
+        tier: 'STANDARD',
+      }));
+    await request(app.getHttpServer())
+      .put('/providers/me/skills')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ skillIds: [skill.body.id] })
+      .expect(200)
+      .expect(({ body }) => expect(body.skills).toEqual([
+        expect.objectContaining({ id: skill.body.id, verificationStatus: SkillVerificationStatus.PENDING }),
+      ]));
+
+    const providerRecord = await database.getRepository(Provider).findOneByOrFail({ userId: provider.userId });
+    await request(app.getHttpServer())
+      .patch(`/admin/providers/${providerRecord.id}/skills/${skill.body.id}/verification`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .send({ verificationStatus: 'VERIFIED' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .patch(`/admin/providers/${providerRecord.id}/tier`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .send({ tier: 'GOLD' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .patch(`/admin/providers/${providerRecord.id}/tier`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ tier: 'PLATINUM' })
+      .expect(403);
+
+    const completedOrder = await database.getRepository(Order).save(database.getRepository(Order).create({
+      code: `PROFILE-${Date.now()}`,
+      customerId: customer.userId,
+      providerId: providerRecord.id,
+      incidentTypeId: incident.id,
+      status: OrderStatus.COMPLETED,
+      customerLocation: { type: 'Point', coordinates: [106.7009, 10.7769] },
+      basePrice: '125000.00',
+      estimatedPrice: '125000.00',
+      finalPrice: '125000.00',
+    }));
+    await database.getRepository(Review).save(database.getRepository(Review).create({
+      orderId: completedOrder.id,
+      reviewerId: customer.userId,
+      revieweeId: provider.userId,
+      rating: 5,
+      comment: 'Tốt',
+    }));
+    const wallet = await database.getRepository(Wallet).save(
+      database.getRepository(Wallet).create({ providerId: providerRecord.id, balance: '125000.00' }),
+    );
+    await database.getRepository(WalletTransaction).save(database.getRepository(WalletTransaction).create({
+      walletId: wallet.id,
+      type: WalletTransactionType.CREDIT,
+      amount: '125000.00',
+      orderId: completedOrder.id,
+      withdrawalId: null,
+    }));
+
+    await request(app.getHttpServer())
+      .get(`/orders/${completedOrder.id}/provider-profile`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toMatchObject({ tier: 'GOLD', reviewCount: 1, averageRating: '5.00' });
+        expect(body.skills).toEqual([expect.objectContaining({ code: 'FLAT_TIRE', verificationStatus: 'VERIFIED' })]);
+        expect(body).not.toHaveProperty('phone');
+        expect(body).not.toHaveProperty('email');
+      });
+    const stranger = await createActor('Stranger', 'stranger.profile@motocare.test', UserRole.CUSTOMER, UserStatus.ACTIVE);
+    await request(app.getHttpServer())
+      .get(`/orders/${completedOrder.id}/provider-profile`)
+      .set('Authorization', `Bearer ${stranger.token}`)
+      .expect(404);
+
+    await request(app.getHttpServer())
+      .get('/providers/me/statistics/weekly')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({
+        timezone: 'Asia/Ho_Chi_Minh',
+        completedOrders: 1,
+        reviewCount: 1,
+        averageRating: '5.00',
+        creditedAmount: '125000.00',
+        debitedAmount: '0.00',
+      }));
+    await request(app.getHttpServer())
+      .get('/providers/me/statistics/weekly?week_start=2026-10-06')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect(400);
+  });
+
+  it('queries informational service locations by viewport and PostGIS distance', async () => {
+    const customer = await createActor(
+      'Map Customer', 'map.customer@motocare.test', UserRole.CUSTOMER, UserStatus.ACTIVE,
+    );
+    const repository = database.getRepository(ServiceLocation);
+    await repository.save([
+      repository.create({
+        source: ServiceLocationSource.OSM,
+        sourceId: 'node/near',
+        type: ServiceLocationType.REPAIR_SHOP,
+        name: 'Tiệm sửa xe gần',
+        address: 'Quận 1',
+        location: { type: 'Point', coordinates: [106.7009, 10.7769] },
+        isVerified: false,
+        isPartner: false,
+        isActive: true,
+      }),
+      repository.create({
+        source: ServiceLocationSource.OSM,
+        sourceId: 'node/far',
+        type: ServiceLocationType.CHARGING_STATION,
+        name: 'Trạm sạc xa hơn',
+        address: 'Bình Thạnh',
+        location: { type: 'Point', coordinates: [106.7105, 10.8012] },
+        isVerified: false,
+        isPartner: false,
+        isActive: true,
+      }),
+      repository.create({
+        source: ServiceLocationSource.MANUAL,
+        sourceId: 'inactive-demo',
+        type: ServiceLocationType.FUEL_STATION,
+        name: 'Điểm đã đóng',
+        address: null,
+        location: { type: 'Point', coordinates: [106.701, 10.777] },
+        isVerified: true,
+        isPartner: false,
+        isActive: false,
+      }),
+    ]);
+
+    await request(app.getHttpServer())
+      .get('/service-locations/nearby?latitude=10.7769&longitude=106.7009&radius_km=10&limit=20')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toHaveLength(2);
+        expect(body[0]).toMatchObject({ name: 'Tiệm sửa xe gần', distanceMeters: 0 });
+        expect(body[1].distanceMeters).toBeGreaterThan(0);
+      });
+    await request(app.getHttpServer())
+      .get('/service-locations/nearby?latitude=10.7769&longitude=106.7009&radius_km=10&types=REPAIR_SHOP')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toEqual([expect.objectContaining({ type: 'REPAIR_SHOP' })]));
+    await request(app.getHttpServer())
+      .get('/service-locations/viewport?north=10.82&south=10.75&east=106.73&west=106.68')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toHaveLength(2));
+    await request(app.getHttpServer())
+      .get('/service-locations/viewport?north=12&south=10&east=108&west=106')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(400);
+    await request(app.getHttpServer())
+      .get('/service-locations/nearby?latitude=10.7769&longitude=106.7009')
+      .expect(401);
   });
 });
