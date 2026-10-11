@@ -5,6 +5,7 @@ import '../core/auth/secure_token_store.dart';
 import '../core/auth/session_invalidation_bus.dart';
 import '../core/auth/token_store.dart';
 import '../core/config/app_config.dart';
+import '../core/device/device_location_source.dart';
 import '../core/network/api_client.dart';
 import '../core/network/json_api.dart';
 import '../core/realtime/realtime_client.dart';
@@ -14,6 +15,7 @@ import '../features/auth/data/auth_repository.dart';
 import '../features/admin/data/admin_repository.dart';
 import '../features/incidents/data/incident_types_repository.dart';
 import '../features/messages/data/messages_repository.dart';
+import '../features/messages/data/chat_image_picker.dart';
 import '../features/orders/data/orders_repository.dart';
 import '../features/payments/data/payments_repository.dart';
 import '../features/providers/data/providers_repository.dart';
@@ -80,6 +82,14 @@ final ordersRepositoryProvider = Provider<OrdersRepository>((ref) {
 
 final messagesRepositoryProvider = Provider<MessagesRepository>((ref) {
   return HttpMessagesRepository(ref.watch(jsonApiProvider));
+});
+
+final chatImagePickerProvider = Provider<ChatImagePicker>((ref) {
+  return SystemChatImagePicker();
+});
+
+final deviceLocationSourceProvider = Provider<DeviceLocationSource>((ref) {
+  return const GeolocatorDeviceLocationSource();
 });
 
 final reviewsRepositoryProvider = Provider<ReviewsRepository>((ref) {
