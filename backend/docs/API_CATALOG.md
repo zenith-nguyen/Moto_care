@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-08. Có 53 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
+Cập nhật: 2026-10-11. Có 59 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
 
 ## Auth, tài khoản và health
 
@@ -11,6 +11,11 @@ Cập nhật: 2026-10-08. Có 53 REST endpoints và 5 Socket.IO events. Mặc đ
 | POST | `/auth/password/forgot` | Public, 3 lần/phút | Nếu email tồn tại, gửi mã sáu số dùng một lần; response luôn chung chung |
 | POST | `/auth/password/reset` | Public, 10 lần/phút | Đổi mật khẩu bằng email + mã + mật khẩu mới; vô hiệu mọi JWT cũ |
 | GET | `/users/me` | Đã đăng nhập | Hồ sơ tài khoản hiện tại |
+| PATCH | `/users/me` | Đã đăng nhập | Sửa tên/số điện thoại; không cho đổi role/email/status |
+| GET | `/users/me/vehicles` | Customer | Danh sách xe, xe mặc định đứng trước |
+| POST | `/users/me/vehicles` | Customer | Thêm xe; xe đầu tiên tự thành mặc định |
+| PATCH | `/users/me/vehicles/:vehicleId` | Customer sở hữu | Sửa xe/chọn mặc định atomic |
+| DELETE | `/users/me/vehicles/:vehicleId` | Customer sở hữu | Xóa xe; tự chọn mặc định mới nếu cần |
 | GET | `/health` | Public | NestJS process đang phản hồi |
 | GET | `/health/ready` | Public | API gọi được PostgreSQL |
 
@@ -33,8 +38,9 @@ Matching dùng PostGIS, vị trí tối đa 120 giây, bán kính mặc định 
 | Method | Path | Quyền | Trạng thái / mục đích |
 | --- | --- | --- | --- |
 | GET | `/orders` | Customer/Provider | 30 đơn gần nhất của chính mình |
-| POST | `/orders` | Customer | Tạo đơn, snapshot giá cơ bản + thời tiết; chờ thanh toán sandbox |
-| GET | `/orders/:orderId` | Người tham gia | Snapshot trạng thái/payment/GPS |
+| POST | `/orders` | Customer | Tạo đơn, snapshot xe + giá cơ bản + thời tiết; chờ thanh toán sandbox |
+| GET | `/orders/:orderId` | Người tham gia | Snapshot xe/trạng thái/payment/GPS |
+| GET | `/orders/:orderId/participant-contact` | Customer/Provider đã gán, đơn active | Lấy số điện thoại đối tác khi bấm Gọi; không lộ trong order/offer/history |
 | POST | `/orders/:orderId/retry-match` | Customer | Thử matching lại |
 | POST | `/orders/:orderId/cancel` | Customer | Hủy trước khi bắt đầu sửa |
 | POST | `/orders/:orderId/offers/:offerId/accept` | Provider của offer | Nhận đơn atomic, chống race condition |
