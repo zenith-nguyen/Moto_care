@@ -11,6 +11,7 @@ import {
   AcceptOfferResponseDto,
   OrderDetailsResponseDto,
   OrderMatchResponseDto,
+  ParticipantContactResponseDto,
   RejectOfferResponseDto,
 } from './dto/order-response.dto';
 import { OrdersService } from './orders.service';
@@ -47,6 +48,16 @@ export class OrdersController {
   @ApiOkResponse({ description: 'Order details for customer or related provider', type: OrderDetailsResponseDto })
   get(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
     return this.orderQueries.getById(orderId, user.sub);
+  }
+
+  @Get(':orderId/participant-contact')
+  @Roles(UserRole.CUSTOMER, UserRole.PROVIDER)
+  @ApiOkResponse({
+    description: 'Direct phone of the other participant, only after assignment and while the order is active',
+    type: ParticipantContactResponseDto,
+  })
+  participantContact(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
+    return this.orderQueries.participantContact(orderId, user.sub, user.role);
   }
 
   @Post(':orderId/retry-match')

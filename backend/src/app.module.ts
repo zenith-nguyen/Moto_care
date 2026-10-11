@@ -18,6 +18,7 @@ import { ProvidersModule } from './providers/providers.module';
 import { RealtimeModule } from './realtime/realtime.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { UsersModule } from './users/users.module';
+import { VehiclesModule } from './vehicles/vehicles.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     CommonModule,
     UsersModule,
+    VehiclesModule,
     HealthModule,
     IncidentTypesModule,
     OrdersModule,

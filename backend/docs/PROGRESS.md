@@ -29,16 +29,18 @@ Cập nhật lần cuối: 2026-10-11
 - PR #31 đã merge vào `main`: Flutter Customer service có chat text/ảnh bảo vệ, realtime de-duplicate/resync, mã bắt đầu sửa, duyệt/từ chối giá cuối và đánh giá. 52 tests, analyze, APK và CI xanh.
 - PR #32 đã merge vào `main`: Flutter Provider service có online/offline, GPS chờ đơn và theo đơn, offer, vòng đời cứu hộ, giá cuối/tranh chấp, ví và rút tiền sandbox; realtime chỉ báo hiệu và REST resync là nguồn chuẩn. 59 tests, analyze, APK và CI xanh.
 - PR #33 đã merge vào `main`: Flutter Admin có dashboard/timeseries, đối soát, duyệt thợ, tranh chấp, hoàn tiền và rút tiền sandbox; quyết định tài chính không tự retry. 67 tests, analyze, APK và CI xanh. Nền repository/controller cho cả ba vai trò đã hoàn tất.
+- PR #34 đã merge vào `main`: Flutter có GPS foreground cho thợ ở trạng thái chờ/đang làm đơn và chọn ảnh chat từ camera/thư viện với kiểm tra dung lượng/chữ ký; không xin quyền vị trí nền.
 
 ## Đang làm / Tiếp theo
 
-1. Nhánh `feat/zenith/device-services`: thêm GPS foreground có vòng đời waiting/active-order và chọn ảnh chat camera/thư viện có kiểm tra byte/kích thước; không xin background location.
-2. Dọn và tích hợp UI Flutter theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): chỉ lấy màn hình/assets cần thiết, không lấy cache/generated, không ghi đè nền kiến trúc hoặc workflow; Google Maps phải có fallback không cần key.
-3. Test ba vai trò end-to-end: vòng đời đơn, offer hết hạn, GPS/reconnect, chat ảnh, giá cuối, thanh toán/hoàn tiền/rút tiền sandbox và các hàng đợi Admin.
-4. Hoàn thiện release signing cục bộ, DB demo tách biệt, secret rotation và HTTPS/WSS Funnel; chạy checklist thiết bị thật trước khi tạo APK nộp bài.
-5. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
-6. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
-7. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
+1. Nhánh `feat/zenith/customer-profile-vehicles`: hồ sơ sửa an toàn, CRUD xe khách, snapshot xe vào đơn và endpoint bấm Gọi chỉ cho hai người tham gia đơn active.
+2. Tiếp theo: hồ sơ nghề nghiệp, kỹ năng/hạng thợ và thống kê tuần; sau đó mới tách domain trạm sạc/tiệm sửa và marketplace/phụ tùng theo [UPCOMING_DOMAINS.md](UPCOMING_DOMAINS.md).
+3. Chưa lấy code UI Customer/Provider đang được nhóm chỉnh sửa. Khi UI ổn định, dọn và tích hợp theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md): chỉ lấy màn hình/assets cần thiết, không lấy cache/generated, không ghi đè nền kiến trúc/workflow; bản đồ phải có fallback không cần key.
+4. Test ba vai trò end-to-end: vòng đời đơn, offer hết hạn, GPS/reconnect, chat ảnh, giá cuối, thanh toán/hoàn tiền/rút tiền sandbox và các hàng đợi Admin.
+5. Hoàn thiện release signing cục bộ, DB demo tách biệt, secret rotation và HTTPS/WSS Funnel; chạy checklist thiết bị thật trước khi tạo APK nộp bài.
+6. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
+7. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
+8. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
 
 ## Quyết định đã chốt
 

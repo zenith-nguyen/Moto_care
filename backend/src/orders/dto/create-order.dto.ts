@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsLatitude, IsLongitude, IsNumber, Min, ValidateNested } from 'class-validator';
+import { IsInt, IsLatitude, IsLongitude, IsNumber, IsOptional, Min, ValidateNested } from 'class-validator';
 
 export class CustomerLocationDto {
   @ApiProperty({ example: 10.7769 })
@@ -19,6 +19,12 @@ export class CreateOrderDto {
   @IsInt()
   @Min(1)
   incident_type_id!: number;
+
+  @ApiPropertyOptional({ example: 1, description: 'Own vehicle; when omitted the default vehicle is snapshotted if one exists' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  vehicle_id?: number;
 
   @ApiProperty({ type: CustomerLocationDto })
   @ValidateNested()

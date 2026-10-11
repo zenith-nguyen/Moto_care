@@ -5,6 +5,28 @@ import { PaymentStatus } from '../../common/enums/payment-status.enum';
 import { WeatherCategory } from '../../pricing/weather-category.enum';
 import { PaymentAdjustmentStatus, PaymentAdjustmentType } from '../../common/enums/payment-adjustment.enum';
 import { PriceProposalStatus } from '../../common/enums/price-proposal-status.enum';
+import { UserRole } from '../../common/enums/user-role.enum';
+import { VehicleType } from '../../vehicles/vehicle-type.enum';
+
+export class OrderVehicleSnapshotDto {
+  @ApiProperty({ type: Number, nullable: true, description: 'Null when the source vehicle was deleted after order creation' })
+  sourceVehicleId!: number | null;
+
+  @ApiProperty({ enum: VehicleType })
+  type!: VehicleType;
+
+  @ApiProperty()
+  brand!: string;
+
+  @ApiProperty()
+  model!: string;
+
+  @ApiProperty()
+  licensePlate!: string;
+
+  @ApiProperty({ type: String, nullable: true })
+  color!: string | null;
+}
 
 export class WeatherPricingResponseDto {
   @ApiProperty({ example: '100000.00', description: 'Incident base price snapshot' })
@@ -53,6 +75,9 @@ export class OrderMatchResponseDto {
 
   @ApiProperty({ example: '100000.00', description: 'Decimal money value as a string' })
   estimatedPrice!: string;
+
+  @ApiProperty({ type: OrderVehicleSnapshotDto, nullable: true })
+  vehicle!: OrderVehicleSnapshotDto | null;
 
   @ApiProperty({ type: WeatherPricingResponseDto })
   pricing!: WeatherPricingResponseDto;
@@ -115,6 +140,9 @@ export class OrderDetailsResponseDto {
 
   @ApiProperty({ type: IncidentSummaryDto })
   incidentType!: IncidentSummaryDto;
+
+  @ApiProperty({ type: OrderVehicleSnapshotDto, nullable: true })
+  vehicle!: OrderVehicleSnapshotDto | null;
 
   @ApiProperty({ type: GeoPointResponseDto })
   customerLocation!: GeoPointResponseDto;
@@ -200,6 +228,9 @@ export class PendingOfferOrderDto {
   @ApiProperty({ type: IncidentSummaryDto })
   incidentType!: IncidentSummaryDto;
 
+  @ApiProperty({ type: OrderVehicleSnapshotDto, nullable: true })
+  vehicle!: OrderVehicleSnapshotDto | null;
+
   @ApiProperty({ example: '100000.00' })
   estimatedPrice!: string;
 
@@ -244,4 +275,18 @@ export class RejectOfferResponseDto extends OrderMatchResponseDto {
 
   @ApiProperty({ enum: OfferStatus })
   offerStatus!: OfferStatus;
+}
+
+export class ParticipantContactResponseDto {
+  @ApiProperty()
+  orderId!: number;
+
+  @ApiProperty({ enum: UserRole })
+  role!: UserRole;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Direct phone number; available only to assigned active-order participants' })
+  phone!: string | null;
 }

@@ -55,6 +55,9 @@ import { WithdrawalsService } from '../src/payments/withdrawals.service';
 import { WithdrawalDecision } from '../src/payments/dto/withdrawal.dto';
 import { WithdrawalStatus } from '../src/common/enums/withdrawal-status.enum';
 import { TypeOrmPaymentAccountingAdapter } from '../src/payments/infrastructure/typeorm-payment-accounting.adapter';
+import { Vehicle } from '../src/vehicles/vehicle.entity';
+import { VehicleType } from '../src/vehicles/vehicle-type.enum';
+import { VehiclesService } from '../src/vehicles/vehicles.service';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -88,7 +91,7 @@ describe('Orders and matching on PostGIS', () => {
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: testDatabase,
-      entities: [User, Provider, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review, PasswordResetCode],
+      entities: [User, Provider, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review, PasswordResetCode, Vehicle],
       synchronize: false,
       logging: false,
     });
@@ -275,6 +278,94 @@ describe('Orders and matching on PostGIS', () => {
     await database.getRepository(User).update(rejected.user.id, { status: UserStatus.PENDING_APPROVAL });
     await admin.reviewProvider(rejected.provider.id, ApprovalStatus.REJECTED);
     expect((await database.getRepository(User).findOneByOrFail({ id: rejected.user.id })).status).toBe(UserStatus.SUSPENDED);
+  });
+
+  it('updates own profile and keeps exactly one default vehicle', async () => {
+    const users = new UsersService(database.getRepository(User), database);
+    const vehicles = new VehiclesService(database);
+    const otherCustomer = await makeUser(UserRole.CUSTOMER);
+    await users.updateProfile(otherCustomer.id, { phone: '0909999999' });
+    await expect(users.updateProfile(customer.id, { phone: '0909999999' })).rejects.toBeInstanceOf(ConflictException);
+    const profile = await users.updateProfile(customer.id, { name: 'Customer Updated', phone: '0901234567' });
+    expect(profile).toMatchObject({ name: 'Customer Updated', phone: '0901234567', role: UserRole.CUSTOMER });
+
+    const first = await vehicles.create(customer.id, {
+      type: VehicleType.MOTORBIKE,
+      brand: 'Honda',
+      model: 'Wave Alpha',
+      licensePlate: '59A1-123.45',
+    });
+    const second = await vehicles.create(customer.id, {
+      type: VehicleType.ELECTRIC_MOTORBIKE,
+      brand: 'VinFast',
+      model: 'Klara S',
+      licensePlate: '59E1-456.78',
+      isDefault: true,
+    });
+    expect(first.isDefault).toBe(true);
+    expect((await vehicles.list(customer.id)).map((vehicle) => [vehicle.id, vehicle.isDefault])).toEqual([
+      [second.id, true],
+      [first.id, false],
+    ]);
+    await expect(vehicles.update(otherCustomer.id, first.id, { model: 'Not mine' }))
+      .rejects.toBeInstanceOf(NotFoundException);
+    await expect(vehicles.create(otherCustomer.id, {
+      type: VehicleType.MOTORBIKE,
+      brand: 'Honda',
+      model: 'Duplicate plate',
+      licensePlate: '59A1-123.45',
+    })).rejects.toBeInstanceOf(ConflictException);
+    await expect(vehicles.update(customer.id, second.id, { isDefault: false })).rejects.toBeInstanceOf(ConflictException);
+    expect((await vehicles.remove(customer.id, second.id)).newDefaultVehicleId).toBe(first.id);
+    expect((await vehicles.list(customer.id))[0].isDefault).toBe(true);
+  });
+
+  it('snapshots the selected vehicle into an order and preserves it after vehicle deletion', async () => {
+    const vehicles = new VehiclesService(database);
+    const vehicle = await vehicles.create(customer.id, {
+      type: VehicleType.CAR,
+      brand: 'Toyota',
+      model: 'Vios',
+      licensePlate: '51H-123.45',
+      color: 'White',
+    });
+    const created = await orders.create(customer.id, {
+      incident_type_id: incident.id,
+      vehicle_id: vehicle.id,
+      customer_location: { longitude: 106.7009, latitude: 10.7769 },
+    });
+    expect(created.vehicle).toMatchObject({
+      sourceVehicleId: vehicle.id,
+      type: VehicleType.CAR,
+      brand: 'Toyota',
+      model: 'Vios',
+      licensePlate: '51H-123.45',
+      color: 'White',
+    });
+    await vehicles.remove(customer.id, vehicle.id);
+    const details = await orderQueries.getById(created.id, customer.id);
+    expect(details.vehicle).toMatchObject({ sourceVehicleId: null, licensePlate: '51H-123.45' });
+  });
+
+  it('reveals direct phone numbers only to assigned participants during an active order', async () => {
+    await database.getRepository(User).update(customer.id, { phone: '0901234567' });
+    const assigned = await makeProvider(106.7009, 10.7769);
+    await database.getRepository(User).update(assigned.user.id, { phone: '0907654321' });
+    const outsider = await makeUser(UserRole.CUSTOMER);
+    const created = await createOrder();
+    await expect(orderQueries.participantContact(created.id, customer.id, UserRole.CUSTOMER))
+      .rejects.toBeInstanceOf(NotFoundException);
+    const offer = await database.getRepository(OrderOffer).findOneByOrFail({ orderId: created.id });
+    await orders.accept(created.id, offer.id, assigned.user.id);
+    await expect(orderQueries.participantContact(created.id, outsider.id, UserRole.CUSTOMER))
+      .rejects.toBeInstanceOf(NotFoundException);
+    await expect(orderQueries.participantContact(created.id, customer.id, UserRole.CUSTOMER))
+      .resolves.toMatchObject({ role: UserRole.PROVIDER, phone: '0907654321' });
+    await expect(orderQueries.participantContact(created.id, assigned.user.id, UserRole.PROVIDER))
+      .resolves.toMatchObject({ role: UserRole.CUSTOMER, phone: '0901234567' });
+    await orders.cancel(created.id, customer.id, 'Cancel before repair');
+    await expect(orderQueries.participantContact(created.id, customer.id, UserRole.CUSTOMER))
+      .rejects.toBeInstanceOf(ConflictException);
   });
 
   it('restricts chat and location to active order participants', async () => {

@@ -12,6 +12,7 @@ import { RealtimePublisher } from '../realtime/realtime-publisher.port';
 import { User } from '../users/user.entity';
 import { Provider } from './provider.entity';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { presentOrderVehicle } from '../orders/presentation/order.presenter';
 
 @Injectable()
 export class ProvidersService {
@@ -89,6 +90,7 @@ export class ProvidersService {
       order: {
         code: offer.order.code,
         incidentType: { id: offer.order.incidentType.id, name: offer.order.incidentType.name },
+        vehicle: presentOrderVehicle(offer.order),
         estimatedPrice: offer.order.estimatedPrice,
         pricing: {
           basePrice: offer.order.basePrice,

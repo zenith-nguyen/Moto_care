@@ -38,9 +38,17 @@ Customers use `GET /incident-types` to display selectable incidents and `POST /o
 ```json
 {
   "incident_type_id": 1,
+  "vehicle_id": 1,
   "customer_location": { "latitude": 10.7769, "longitude": 106.7009 }
 }
 ```
+
+Customers edit their name/phone with `PATCH /users/me` and manage vehicles at
+`/users/me/vehicles`. `vehicle_id` is optional; when omitted, the current default
+vehicle is snapshotted if one exists. Assigned active-order participants fetch
+the other person's direct phone only when the user taps Call via
+`GET /orders/:id/participant-contact`. See
+[PROFILE_VEHICLE_CONTACT_WORKFLOW.md](docs/PROFILE_VEHICLE_CONTACT_WORKFLOW.md).
 
 The order snapshots the incident base price and optional weather surcharge, then starts in `AWAITING_PREPAYMENT`. `WEATHER_PRICING_ENABLED=false` is the safe default. When enabled for the non-commercial educational demo, the backend queries Open-Meteo at rounded customer coordinates, caches the result, applies `1.00`/`1.10`/`1.20`, and falls back to `1.00` on timeout or invalid data. The response `pricing` object contains the immutable breakdown and attribution. See [WEATHER_PRICING_PLAN.md](docs/WEATHER_PRICING_PLAN.md).
 
@@ -115,7 +123,7 @@ npm run seed
 
 The migration sequence enables PostGIS, creates the core schema, protects matching/wallet invariants, adds chat/password recovery/weather snapshots, final-price/payment-adjustment ledgers, withdrawal reservations and the minimal SePay webhook audit. Migrations run transactionally one at a time because a later migration expands a partial index with newly committed PostgreSQL enum values. Enum additions cannot be automatically removed; take a backup before applying them to any important database.
 
-The seed creates five selectable incident types, three approved online providers around Ho Chi Minh City, one development customer, one development admin, and a wallet for each seeded provider. By default all seeded accounts use the development-only password `MotoCareDev123!`; **never run this default seed against a publicly accessible or production database**. The script rejects `NODE_ENV=production`. For a separate demo database set `DEMO_MODE=true` and distinct `SEED_CUSTOMER_PASSWORD`, `SEED_PROVIDER_PASSWORD`, `SEED_ADMIN_PASSWORD` (each 16+ characters) before `npm run seed`. Existing users' passwords are not changed by reseeding. Never expose a database containing default-password accounts.
+The seed creates five selectable incident types, three approved online providers around Ho Chi Minh City, one development customer with a default motorbike, one development admin, and a wallet for each seeded provider. By default all seeded accounts use the development-only password `MotoCareDev123!`; **never run this default seed against a publicly accessible or production database**. The script rejects `NODE_ENV=production`. For a separate demo database set `DEMO_MODE=true` and distinct `SEED_CUSTOMER_PASSWORD`, `SEED_PROVIDER_PASSWORD`, `SEED_ADMIN_PASSWORD` (each 16+ characters) before `npm run seed`. Existing users' passwords are not changed by reseeding. Never expose a database containing default-password accounts.
 
 To verify the PostGIS nearest-provider query:
 

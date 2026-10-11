@@ -38,14 +38,15 @@ Provider mới đăng ký ở trạng thái chờ duyệt. Admin dùng `GET /adm
 
 ## Luồng Khách
 
-1. `GET /incident-types` để hiển thị lựa chọn nhanh và giá cơ bản.
-2. `POST /orders` với loại sự cố và GPS khách. Đơn mới là `AWAITING_PREPAYMENT`. Dùng `estimatedPrice` làm số tiền cần xác nhận và hiển thị `pricing.basePrice`, `pricing.weatherSurcharge`, `pricing.weatherMultiplier`, `pricing.weatherCategory`. Không tự tính lại ở Flutter.
-3. Mặc định demo nội bộ gọi `POST /payments/demo/orders/:id/confirm`. Nếu backend đã bật SePay Test mode, gọi `GET /payments/orders/:id/instructions`; chỉ hiển thị `qrImageUrl`/`amount`/`transferContent` khi `mode=test` và `simulationOnly=true`, rồi poll `GET /orders/:id`. Flutter không gọi webhook, không giữ webhook secret và không mô tả QR này là thanh toán thật. Sau webhook hợp lệ, backend mới matching.
-4. Theo dõi bằng `GET /orders/:id`; socket chỉ giúp cập nhật nhanh hơn, REST vẫn là nguồn snapshot khi reconnect.
-5. Khi thợ nhận đơn: xem marker từ `providerLocation`, chat chữ/ảnh qua `GET/POST /orders/:id/messages`.
-6. Khi trạng thái `ARRIVED`, gọi `GET /orders/:id/start-token` và hiển thị token dưới dạng QR hoặc chữ cho thợ. Đây không phải QR ngân hàng.
-7. Khi `COMPLETED`, gọi `GET/POST /orders/:id/reviews`.
-8. Trước khi bắt đầu sửa, khách có thể `POST /orders/:id/cancel`; đơn đã trả sandbox chuyển sang `REFUND_PENDING`.
+1. Đọc/sửa hồ sơ bằng `GET/PATCH /users/me`; quản lý xe bằng `GET/POST/PATCH/DELETE /users/me/vehicles`. Không lưu một kho xe mock riêng trong UI.
+2. `GET /incident-types` để hiển thị lựa chọn nhanh và giá cơ bản.
+3. `POST /orders` với loại sự cố, GPS khách và `vehicle_id` tùy chọn. Nếu bỏ trống, backend snapshot xe mặc định nếu có. Đơn mới là `AWAITING_PREPAYMENT`. Dùng `estimatedPrice` làm số tiền cần xác nhận và hiển thị `pricing.basePrice`, `pricing.weatherSurcharge`, `pricing.weatherMultiplier`, `pricing.weatherCategory`. Không tự tính lại ở Flutter.
+4. Mặc định demo nội bộ gọi `POST /payments/demo/orders/:id/confirm`. Nếu backend đã bật SePay Test mode, gọi `GET /payments/orders/:id/instructions`; chỉ hiển thị `qrImageUrl`/`amount`/`transferContent` khi `mode=test` và `simulationOnly=true`, rồi poll `GET /orders/:id`. Flutter không gọi webhook, không giữ webhook secret và không mô tả QR này là thanh toán thật. Sau webhook hợp lệ, backend mới matching.
+5. Theo dõi bằng `GET /orders/:id`; socket chỉ giúp cập nhật nhanh hơn, REST vẫn là nguồn snapshot khi reconnect.
+6. Khi thợ nhận đơn: xem marker từ `providerLocation`, chat chữ/ảnh qua `GET/POST /orders/:id/messages`. Nút Gọi chỉ gọi `GET /orders/:id/participant-contact` lúc người dùng bấm; không lấy/lưu số điện thoại từ danh sách đơn.
+7. Khi trạng thái `ARRIVED`, gọi `GET /orders/:id/start-token` và hiển thị token dưới dạng QR hoặc chữ cho thợ. Đây không phải QR ngân hàng.
+8. Khi `COMPLETED`, gọi `GET/POST /orders/:id/reviews`.
+9. Trước khi bắt đầu sửa, khách có thể `POST /orders/:id/cancel`; đơn đã trả sandbox chuyển sang `REFUND_PENDING`.
 
 Ví dụ breakdown khi thời tiết mức vừa:
 

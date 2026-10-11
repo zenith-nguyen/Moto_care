@@ -15,6 +15,7 @@ import { PasswordResetCode } from '../auth/password-reset-code.entity';
 import { OrderPriceProposal } from '../orders/order-price-proposal.entity';
 import { PaymentAdjustment } from '../payments/payment-adjustment.entity';
 import { SepayWebhookEvent } from '../payments/sepay-webhook-event.entity';
+import { Vehicle } from '../vehicles/vehicle.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -39,6 +40,7 @@ export default new DataSource({
     OrderPriceProposal,
     PaymentAdjustment,
     SepayWebhookEvent,
+    Vehicle,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsTransactionMode: 'each',

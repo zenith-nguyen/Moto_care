@@ -43,12 +43,25 @@ export function presentOrderPricing(order: Order) {
   };
 }
 
+export function presentOrderVehicle(order: Order) {
+  if (!order.vehicleType || !order.vehicleBrand || !order.vehicleModel || !order.vehicleLicensePlate) return null;
+  return {
+    sourceVehicleId: order.vehicleId,
+    type: order.vehicleType,
+    brand: order.vehicleBrand,
+    model: order.vehicleModel,
+    licensePlate: order.vehicleLicensePlate,
+    color: order.vehicleColor,
+  };
+}
+
 export function presentOrderMatch(order: Order, offer: OrderOffer | null) {
   return {
     id: order.id,
     code: order.code,
     status: order.status,
     estimatedPrice: order.estimatedPrice,
+    vehicle: presentOrderVehicle(order),
     pricing: presentOrderPricing(order),
     matched: offer !== null,
     offerExpiresAt: offer?.expiresAt ?? null,
