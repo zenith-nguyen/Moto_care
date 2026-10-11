@@ -26,6 +26,7 @@ import { ProvidersModule } from '../src/providers/providers.module';
 import { ReviewsModule } from '../src/reviews/reviews.module';
 import { User } from '../src/users/user.entity';
 import { UsersModule } from '../src/users/users.module';
+import { VehiclesModule } from '../src/vehicles/vehicles.module';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -67,6 +68,7 @@ describe('Sandbox demo flow over HTTP', () => {
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.register({ secret: process.env.JWT_SECRET, signOptions: { expiresIn: '1d' } }),
         UsersModule,
+        VehiclesModule,
         HealthModule,
         IncidentTypesModule,
         OrdersModule,
@@ -192,6 +194,104 @@ describe('Sandbox demo flow over HTTP', () => {
       .digest('hex')}`;
     return { rawBody, timestamp, signature };
   }
+
+  it('manages Customer vehicles, snapshots one into the order and protects tap-to-call contact', async () => {
+    const { customer, provider } = await prepareActors();
+    await request(app.getHttpServer())
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({ name: 'HTTP Customer Updated', phone: '0901234567' })
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({ name: 'HTTP Customer Updated', phone: '0901234567' }));
+    await request(app.getHttpServer())
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ phone: '0907654321' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .patch('/users/me')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({ role: 'ADMIN' })
+      .expect(400);
+
+    const vehicle = await request(app.getHttpServer())
+      .post('/users/me/vehicles')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({
+        type: 'MOTORBIKE',
+        brand: 'Honda',
+        model: 'Wave Alpha',
+        licensePlate: '59a1-123.45',
+        color: 'Black',
+      })
+      .expect(201);
+    expect(vehicle.body).toMatchObject({ licensePlate: '59A1-123.45', isDefault: true });
+    await request(app.getHttpServer())
+      .post('/users/me/vehicles')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ type: 'MOTORBIKE', brand: 'Honda', model: 'Wave', licensePlate: '59A1-999.99' })
+      .expect(403);
+
+    const created = await request(app.getHttpServer())
+      .post('/orders')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({
+        incident_type_id: incident.id,
+        vehicle_id: vehicle.body.id,
+        customer_location: { latitude: 10.7769, longitude: 106.7009 },
+      })
+      .expect(201);
+    expect(created.body.vehicle).toMatchObject({
+      sourceVehicleId: vehicle.body.id,
+      type: 'MOTORBIKE',
+      licensePlate: '59A1-123.45',
+    });
+    await request(app.getHttpServer())
+      .post(`/payments/demo/orders/${created.body.id}/confirm`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200);
+    await request(app.getHttpServer())
+      .get(`/orders/${created.body.id}/participant-contact`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(404);
+    const offers = await request(app.getHttpServer())
+      .get('/providers/me/offers/pending')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/orders/${created.body.id}/offers/${offers.body[0].id}/accept`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect(200);
+    await request(app.getHttpServer())
+      .get(`/orders/${created.body.id}/participant-contact`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({ role: 'PROVIDER', phone: '0907654321' }));
+    await request(app.getHttpServer())
+      .get(`/orders/${created.body.id}/participant-contact`)
+      .set('Authorization', `Bearer ${provider.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({ role: 'CUSTOMER', phone: '0901234567' }));
+
+    await request(app.getHttpServer())
+      .delete(`/users/me/vehicles/${vehicle.body.id}`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200);
+    await request(app.getHttpServer())
+      .get(`/orders/${created.body.id}`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body.vehicle).toMatchObject({ sourceVehicleId: null, licensePlate: '59A1-123.45' }));
+    await request(app.getHttpServer())
+      .post(`/orders/${created.body.id}/cancel`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({ reason: 'Cancel before repair' })
+      .expect(200);
+    await request(app.getHttpServer())
+      .get(`/orders/${created.body.id}/participant-contact`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(409);
+  });
 
   it('confirms an exact SePay Test mode prepayment once and starts matching', async () => {
     const { customer } = await prepareActors();
