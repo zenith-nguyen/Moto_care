@@ -1,84 +1,42 @@
-import 'package:flutter/widgets.dart';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 
 import '../data/mock_data.dart';
 import '../models/models.dart';
 
-enum PartnerStatus { none, pending, approved }
-
-enum AppMode { customer, mechanic }
-
 /// Trạng thái dùng chung toàn app (mock, lưu trong RAM).
+/// Màn hình lắng nghe bằng `ListenableBuilder(listenable: appState, ...)`.
+final AppState appState = AppState();
+
 class AppState extends ChangeNotifier {
-  final MechanicProfile profile = MockData.profile();
-  final List<OrderRequest> nearbyOrders = MockData.nearbyOrders();
+  MechanicProfile profile = MockData.profile();
+  final List<OrderHistoryItem> history = MockData.history();
   final List<WalletTransaction> transactions = MockData.transactions();
-  final List<ServiceSkill> services = MockData.services();
 
   bool isOnline = true;
-  bool isRainIncoming = MockData.isRainIncoming;
   int tabIndex = 0;
-  OrderMode orderMode = OrderMode.manual;
+  ActiveOrder? activeOrder;
 
-  // ---------- Đối tác: đăng ký -> Admin duyệt -> chuyển giao diện Thợ ----------
-  PartnerStatus partnerStatus = PartnerStatus.none;
-  AppMode mode = AppMode.customer;
-  bool autoOpenMechanic = false; // lần đăng nhập sau tự vào giao diện Thợ
+  // ---------- Ví & thống kê ----------
+  int available = 1240000;
+  int locked = 350000;
+  int todayIncome = 350000;
+  int weekIncome = 2450000;
+  int weekWithdrawn = 1800000;
+  int weekOrders = 18;
 
-  /// Khách gửi hồ sơ qua mục "Trở thành đối tác" -> chờ duyệt trên CMS/Admin.
-  void submitPartnerApplication(String shopName, String area) {
-    profile.displayName = shopName.trim().isEmpty ? profile.displayName : shopName.trim();
-    profile.area = area;
-    partnerStatus = PartnerStatus.pending;
-    notifyListeners();
-  }
+  int get totalBalance => available + locked;
 
-  /// Mock: Admin Backend bấm "Duyệt" (demo, không có backend thật).
-  void approvePartnerDemo() {
-    partnerStatus = PartnerStatus.approved;
-    notifyListeners();
-  }
+  /// Thu nhập 7 ngày qua, phần tử cuối là hôm nay.
+  List<int> get last7Days => [...MockData.previousSixDays, todayIncome];
 
-  void switchMode(AppMode newMode) {
-    mode = newMode;
-    tabIndex = 0;
-    if (newMode == AppMode.customer) isOnline = false;
-    notifyListeners();
-  }
+  int _offerSeq = 0;
+  int _withdrawSeq = 33;
+  Timer? _quoteTimer;
 
-  void setAutoOpenMechanic(bool value) {
-    autoOpenMechanic = value;
-    notifyListeners();
-  }
-
-  /// Bỏ qua đăng ký, vào thẳng giao diện Thợ (để demo nhanh).
-  void skipToMechanic() {
-    partnerStatus = PartnerStatus.approved;
-    mode = AppMode.mechanic;
-    tabIndex = 0;
-    isOnline = true;
-    notifyListeners();
-  }
-
-  void setOrderMode(OrderMode value) {
-    orderMode = value;
-    notifyListeners();
-  }
-
-  int balance = 1240000;
-  int depositForDiscount = 500000;
-  int todayRevenue = 350000;
-  int todayOrders = 4;
-
-  int _incomingSeq = 0;
-
-  // ---------- Trang chủ ----------
   void setOnline(bool value) {
     isOnline = value;
-    notifyListeners();
-  }
-
-  void setRain(bool value) {
-    isRainIncoming = value;
     notifyListeners();
   }
 
@@ -87,28 +45,10 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Đơn "nổ" mới cho nút giả lập.
-  OrderRequest nextIncomingOrder() => MockData.incomingOrder(_incomingSeq++);
-
-  void removeNearby(OrderRequest order) {
-    nearbyOrders.removeWhere((o) => o.id == order.id);
-    notifyListeners();
-  }
-
-  /// Demo hạng thợ: bấm giữ vào card hạng để đổi sang hạng kế tiếp.
-  void cycleTierDemo() {
-    final next = (profile.tier.tier.index + 1) % TierInfo.all.length;
-    final isLast = next == TierInfo.all.length - 1;
-    profile.totalOrders =
-        isLast ? TierInfo.all[next].minOrders + 20 : TierInfo.all[next + 1].minOrders - 6;
-    notifyListeners();
-  }
-
   // ---------- Hồ sơ ----------
-  void updateDisplayName(String name) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return;
-    profile.displayName = trimmed;
+  void updateProfile({required String name, required String bio}) {
+    if (name.trim().isNotEmpty) profile.name = name.trim();
+    profile.bio = bio.trim();
     notifyListeners();
   }
 
@@ -117,59 +57,189 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setService(ServiceSkill skill, bool enabled) {
-    skill.enabled = enabled;
+  /// Đăng ký kỹ năng mới -> luôn ở trạng thái chờ Admin xác minh.
+  void registerSkill(Skill skill) {
+    skill.status = VerificationStatus.pending;
+    profile.skills.add(skill);
+    notifyListeners();
+  }
+
+  void logout() {
+    _quoteTimer?.cancel();
+    activeOrder = null;
+    tabIndex = 0;
+    isOnline = true;
+    notifyListeners();
+  }
+
+  // ---------- Đơn hàng ----------
+  OrderOffer nextOffer() {
+    final base = MockData.offers[_offerSeq % MockData.offers.length];
+    final seq = _offerSeq++;
+    if (seq < MockData.offers.length) return base;
+    return OrderOffer(
+      code: '#MC${105 + seq}',
+      service: base.service,
+      issue: base.issue,
+      description: base.description,
+      vehicle: base.vehicle,
+      plate: base.plate,
+      customerName: base.customerName,
+      customerPhone: base.customerPhone,
+      address: base.address,
+      distanceKm: base.distanceKm,
+      etaMinutes: base.etaMinutes,
+      price: base.price,
+    );
+  }
+
+  ActiveOrder acceptOffer(OrderOffer offer) {
+    final now = DateTime.now();
+    activeOrder = ActiveOrder(
+      offer: offer,
+      acceptedAt: now,
+      messages: MockData.openingChat(now),
+    );
+    notifyListeners();
+    return activeOrder!;
+  }
+
+  void markArrived() {
+    final o = activeOrder;
+    if (o == null) return;
+    o.step = OrderStep.arrived;
+    o.arrivedAt = DateTime.now();
+    notifyListeners();
+  }
+
+  void startRepair() {
+    final o = activeOrder;
+    if (o == null) return;
+    o.step = OrderStep.repairing;
+    o.repairStartedAt = DateTime.now();
+    notifyListeners();
+  }
+
+  /// Gửi đề xuất giá cuối. Mock: khách tự đồng ý sau 8 giây.
+  void sendQuote(int price, String reason) {
+    final o = activeOrder;
+    if (o == null) return;
+    o
+      ..step = OrderStep.quoting
+      ..proposedPrice = price
+      ..quoteReason = reason
+      ..quoteSentAt = DateTime.now()
+      ..quoteStatus = QuoteStatus.pending;
+    _quoteTimer?.cancel();
+    _quoteTimer = Timer(const Duration(seconds: 8), () {
+      if (activeOrder != o || o.quoteStatus != QuoteStatus.pending) return;
+      o.quoteStatus = QuoteStatus.accepted;
+      notifyListeners();
+    });
+    notifyListeners();
+  }
+
+  void cancelQuote() {
+    final o = activeOrder;
+    if (o == null) return;
+    _quoteTimer?.cancel();
+    o
+      ..step = OrderStep.repairing
+      ..proposedPrice = null
+      ..quoteReason = null
+      ..quoteSentAt = null
+      ..quoteStatus = QuoteStatus.none;
+    notifyListeners();
+  }
+
+  /// Hoàn thành đơn: ghi lịch sử, cộng tiền vào ví (đã trừ chiết khấu sàn), tăng tiến độ hạng.
+  OrderHistoryItem completeOrder() {
+    final o = activeOrder!;
+    _quoteTimer?.cancel();
+    final now = DateTime.now();
+    final offer = o.offer;
+    final item = OrderHistoryItem(
+      code: offer.code,
+      service: offer.service,
+      issue: offer.issue,
+      vehicle: offer.vehicle,
+      plate: offer.plate,
+      customerName: offer.customerName,
+      customerPhone: offer.customerPhone,
+      address: offer.address,
+      status: OrderStatus.completed,
+      time: now,
+      initialPrice: offer.price,
+      finalPrice: o.finalPrice,
+      extraReason: o.quoteStatus == QuoteStatus.accepted ? o.quoteReason : null,
+      messages: o.messages,
+      timeline: [
+        TimelineEvent('Đã nhận đơn', o.acceptedAt),
+        if (o.arrivedAt != null) TimelineEvent('Đã đến nơi', o.arrivedAt!),
+        if (o.repairStartedAt != null) TimelineEvent('Bắt đầu sửa chữa', o.repairStartedAt!),
+        if (o.quoteSentAt != null && o.quoteStatus == QuoteStatus.accepted)
+          TimelineEvent('Khách duyệt giá mới', o.quoteSentAt!),
+        TimelineEvent('Hoàn thành', now),
+      ],
+    );
+    history.insert(0, item);
+    transactions.insert(
+      0,
+      WalletTransaction(
+        code: offer.code,
+        txnId: 'TXN-${88213050 + history.length}',
+        type: TxType.credit,
+        amount: item.earning,
+        time: now,
+        orderCode: offer.code,
+        serviceName: offer.issue,
+        customerName: offer.customerName,
+        customerPhone: offer.customerPhone,
+        customerArea: offer.address,
+        platformFee: item.platformFee,
+      ),
+    );
+    available += item.earning;
+    todayIncome += item.earning;
+    weekIncome += item.earning;
+    weekOrders += 1;
+    profile.tierOrders += 1;
+    activeOrder = null;
+    notifyListeners();
+    return item;
+  }
+
+  void rateCustomer(OrderHistoryItem item, int stars, String comment) {
+    item
+      ..rating = stars
+      ..ratingComment = comment.trim().isEmpty ? null : comment.trim();
     notifyListeners();
   }
 
   // ---------- Ví ----------
-  void deposit(int amount) {
-    balance += amount;
-    depositForDiscount += amount;
-    notifyListeners();
-  }
-
-  bool withdraw(int amount) {
-    if (amount <= 0 || amount > balance) return false;
-    balance -= amount;
+  /// Sandbox: ghi nhận yêu cầu rút, tiền chuyển từ Khả dụng sang Đang khóa chờ Admin duyệt.
+  bool requestWithdraw(int amount) {
+    if (amount <= 0 || amount > available) return false;
+    available -= amount;
+    locked += amount;
+    transactions.insert(
+      0,
+      WalletTransaction(
+        code: '#RT${(_withdrawSeq++).toString().padLeft(4, '0')}',
+        txnId: 'TXN-${88213100 + _withdrawSeq}',
+        type: TxType.debit,
+        amount: amount,
+        time: DateTime.now(),
+        withdrawStatus: WithdrawStatus.pending,
+      ),
+    );
     notifyListeners();
     return true;
   }
 
-  // ---------- Hoàn thành đơn ----------
-  /// Cộng thu nhập (kèm phụ tùng phát sinh), trừ chiết khấu sàn, tăng số đơn
-  /// (có thể lên hạng) và ghi 2 dòng vào lịch sử giao dịch.
-  void completeOrder(OrderRequest order, int extraTotal) {
-    final income = order.earning + extraTotal;
-    final now = DateTime.now();
-    transactions.insert(
-        0, WalletTransaction(orderId: order.id, time: now, amount: -order.platformFee));
-    transactions.insert(
-        0, WalletTransaction(orderId: order.id, time: now, amount: income));
-    balance += income - order.platformFee;
-    todayRevenue += income;
-    todayOrders += 1;
-    profile.totalOrders += 1;
-    notifyListeners();
-  }
-}
-
-/// Cung cấp AppState cho toàn cây widget (đặt phía trên MaterialApp).
-class AppScope extends InheritedNotifier<AppState> {
-  const AppScope({super.key, required AppState state, required super.child})
-      : super(notifier: state);
-
-  /// Dùng trong build(): tự rebuild khi state đổi.
-  static AppState of(BuildContext context) {
-    final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
-    assert(scope != null, 'Không tìm thấy AppScope trong cây widget');
-    return scope!.notifier!;
-  }
-
-  /// Dùng trong callback (onTap...): không đăng ký rebuild.
-  static AppState read(BuildContext context) {
-    final scope = context.getInheritedWidgetOfExactType<AppScope>();
-    assert(scope != null, 'Không tìm thấy AppScope trong cây widget');
-    return scope!.notifier!;
+  @override
+  void dispose() {
+    _quoteTimer?.cancel();
+    super.dispose();
   }
 }

@@ -1,398 +1,254 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../models/models.dart';
+import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../utils/format.dart';
-import '../widgets/common_widgets.dart';
+import '../widgets/countdown_ring.dart';
+import '../widgets/map_views.dart';
+import '../widgets/ui.dart';
+import 'order_received_screen.dart';
 
-/// Kết quả của popup nổ đơn.
-enum IncomingOrderResult { accepted, rejected, timeout }
-
-/// Mở popup "Nổ đơn khẩn cấp" đè lên Trang chủ (nền tối phía sau).
-/// Trả về kết quả; hết 15 giây tự đóng với [IncomingOrderResult.timeout].
-Future<IncomingOrderResult?> showIncomingOrderPopup(
-  BuildContext context,
-  OrderRequest order,
-) {
-  return showModalBottomSheet<IncomingOrderResult>(
-    context: context,
-    isScrollControlled: true,
-    isDismissible: false,
-    enableDrag: false,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.op(0.68),
-    builder: (_) => IncomingOrderPopup(order: order),
+/// Mở popup offer toàn màn hình. Hoàn tất khi thợ từ chối, hết giờ, hoặc chấp nhận
+/// (khi chấp nhận, popup được thay bằng màn "Đã nhận đơn").
+Future<void> showIncomingOrder(BuildContext context, OrderOffer offer) {
+  HapticFeedback.heavyImpact();
+  return Navigator.of(context).push(
+    PageRouteBuilder<void>(
+      transitionDuration: const Duration(milliseconds: 280),
+      pageBuilder: (_, __, ___) => IncomingOrderPopup(offer: offer),
+      transitionsBuilder: (_, animation, __, child) => SlideTransition(
+        position: Tween(begin: const Offset(0, 1), end: Offset.zero)
+            .animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+        child: child,
+      ),
+    ),
   );
 }
 
 class IncomingOrderPopup extends StatefulWidget {
-  const IncomingOrderPopup({super.key, required this.order});
-  final OrderRequest order;
+  const IncomingOrderPopup({super.key, required this.offer});
+
+  final OrderOffer offer;
+
+  static const Duration timeout = Duration(seconds: 15);
 
   @override
   State<IncomingOrderPopup> createState() => _IncomingOrderPopupState();
 }
 
-class _IncomingOrderPopupState extends State<IncomingOrderPopup>
-    with SingleTickerProviderStateMixin {
-  static const int _totalSeconds = 15;
+class _IncomingOrderPopupState extends State<IncomingOrderPopup> {
+  bool _closed = false;
 
-  late final AnimationController _countdown;
-  bool _photoOpen = false;
-  bool _finished = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _countdown = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: _totalSeconds),
-    )
-      ..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _finish(IncomingOrderResult.timeout);
-        }
-      })
-      ..forward();
+  void _decline({bool timedOut = false}) {
+    if (_closed) return;
+    _closed = true;
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.of(context).pop();
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(timedOut
+            ? 'Offer ${widget.offer.code} đã hết hạn. Đang tìm đơn khác cho bạn.'
+            : 'Đã từ chối ${widget.offer.code}. Đang tìm đơn khác cho bạn.'),
+      ));
   }
 
-  @override
-  void dispose() {
-    _countdown.dispose();
-    super.dispose();
-  }
-
-  /// Đóng popup đúng 1 lần (nút bấm, nút Back hoặc hết giờ).
-  void _finish(IncomingOrderResult result) {
-    if (_finished || !mounted) return;
-    _finished = true;
-    _countdown.stop();
-    final navigator = Navigator.of(context);
-    // Nếu đang xem ảnh toàn màn hình thì đóng ảnh trước, rồi mới đóng popup.
-    if (_photoOpen) navigator.pop();
-    navigator.pop(result);
-  }
-
-  Future<void> _openPhoto() async {
-    _photoOpen = true;
-    await showGeneralDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: 'Đóng ảnh',
-      barrierColor: Colors.black.op(0.92),
-      transitionDuration: const Duration(milliseconds: 240),
-      pageBuilder: (_, __, ___) => _PhotoViewer(order: widget.order),
-      transitionBuilder: (_, animation, __, child) {
-        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
-        return FadeTransition(
-          opacity: curved,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.9, end: 1).animate(curved),
-            child: child,
-          ),
-        );
-      },
+  void _accept() {
+    if (_closed) return;
+    _closed = true;
+    final order = appState.acceptOffer(widget.offer);
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => OrderReceivedScreen(order: order)),
     );
-    _photoOpen = false;
   }
 
   @override
   Widget build(BuildContext context) {
-    final order = widget.order;
-
+    final offer = widget.offer;
     return PopScope(
       canPop: false,
-      // Nút Back của Android = từ chối đơn
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _finish(IncomingOrderResult.rejected);
+        if (!didPop) _decline();
       },
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Badge + tiêu đề + vòng đếm ngược
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: Scaffold(
+        body: Column(
+          children: [
+            // Thanh đếm ngược phẳng trên cùng, chạy song song với vòng tròn.
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1, end: 0),
+              duration: IncomingOrderPopup.timeout,
+              builder: (_, v, __) => LinearProgressIndicator(
+                value: v,
+                minHeight: 6,
+                color: AppColors.danger,
+                backgroundColor: AppColors.surface,
+              ),
+            ),
+            Expanded(
+              child: SafeArea(
+                top: true,
+                child: Column(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
                         children: [
-                          const UrgentBadge(),
-                          const SizedBox(height: 12),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(top: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.danger,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.bolt_outlined, color: Colors.white, size: 18),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'ĐƠN KHẨN CẤP',
+                                      style: appText(13.5,
+                                          weight: FontWeight.w800,
+                                          color: Colors.white,
+                                          letterSpacing: 0.4),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Spacer(),
+                              CountdownRing(
+                                total: IncomingOrderPopup.timeout,
+                                color: AppColors.danger,
+                                size: 76,
+                                strokeWidth: 6,
+                                fontSize: 22,
+                                labelBuilder: (r) => '${r.inSeconds}s',
+                                onFinished: () => _decline(timedOut: true),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Text('Thu nhập nhận được', style: appText(15, color: AppColors.textSub)),
+                          FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              formatVnd(offer.price),
+                              style: appText(58,
+                                  weight: FontWeight.w900, height: 1.1, letterSpacing: -1.5),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
                           Text(
-                            order.headline,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                            style: appText(19, weight: FontWeight.w800, height: 1.25),
+                            '${offer.issue} — ${offer.vehicle}',
+                            style: appText(18, weight: FontWeight.w800, height: 1.3),
+                          ),
+                          const SizedBox(height: 18),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            child: SizedBox(
+                              height: 170,
+                              child: Stack(
+                                children: [
+                                  const Positioned.fill(
+                                    child: RouteMap(
+                                      cell: 66,
+                                      cornerRadius: 70,
+                                      points: [
+                                        Offset(0.09, 0.85),
+                                        Offset(0.3, 0.8),
+                                        Offset(0.42, 0.5),
+                                        Offset(0.8, 0.5),
+                                      ],
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 12,
+                                    left: 12,
+                                    child: Container(
+                                      padding:
+                                          const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.ink,
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        '${offer.distanceKm} km · ~${offer.etaMinutes} phút',
+                                        style: appText(13.5,
+                                            weight: FontWeight.w800, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_outlined, size: 24),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(offer.address,
+                                    style: appText(16.5, weight: FontWeight.w700)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              const PhotoPlaceholder(width: 116, height: 84),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Ảnh hiện trường',
+                                        style: appText(16.5, weight: FontWeight.w800)),
+                                    const SizedBox(height: 4),
+                                    Text('Khách gửi lúc báo sự cố.',
+                                        style: appText(14, color: AppColors.textSub)),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    _CountdownRing(controller: _countdown, totalSeconds: _totalSeconds),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Địa điểm + khoảng cách
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 1),
-                      child: Icon(Icons.location_on_outlined, size: 20, color: AppColors.primary),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        '${order.address} (Cách bạn ${formatKm(order.distanceKm)})',
-                        style: appText(14.5, weight: FontWeight.w600, height: 1.35),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Ảnh hiện trường (bấm để phóng to)
-                _PhotoThumbnail(onTap: _openPhoto),
-                const SizedBox(height: 14),
-
-                // Thu nhập nhận được
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Thu nhập nhận được',
-                          style: appText(13, color: AppColors.textSub)),
-                      const SizedBox(height: 2),
-                      Text(
-                        formatVnd(order.earning),
-                        style: appText(36, weight: FontWeight.w800, color: AppColors.primary),
-                      ),
-                      Text(
-                        'Chiết khấu sàn: ${formatVnd(order.platformFee)}',
-                        style: appText(
-                          13,
-                          color: AppColors.textSub,
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-
-                // 2 nút hành động
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: SizedBox(
-                        height: 52,
-                        child: OutlinedButton(
-                          onPressed: () => _finish(IncomingOrderResult.rejected),
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppColors.textSub,
-                            side: const BorderSide(color: AppColors.disabled),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md)),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '- ${formatVnd(offer.platformFee)} chiết khấu sàn',
+                            style: appText(14, color: AppColors.textMuted),
                           ),
-                          child: Text('TỪ CHỐI',
-                              style: appText(14, weight: FontWeight.w700, color: AppColors.textSub)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 3,
-                      child: SizedBox(
-                        height: 60,
-                        child: ElevatedButton(
-                          onPressed: () => _finish(IncomingOrderResult.accepted),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md)),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: OutlineActionButton(label: 'Từ chối', onPressed: _decline),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 3,
+                                child: PrimaryButton(label: 'Chấp nhận đơn', onPressed: _accept),
+                              ),
+                            ],
                           ),
-                          child: Text('CHẤP NHẬN ĐƠN',
-                              style: appText(16, weight: FontWeight.w800, color: Colors.white)),
-                        ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Vòng đếm ngược 15s: CircularProgressIndicator đỏ + số giây ở giữa.
-class _CountdownRing extends StatelessWidget {
-  const _CountdownRing({required this.controller, required this.totalSeconds});
-
-  final AnimationController controller;
-  final int totalSeconds;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        final remaining =
-            math.max(0, math.min(totalSeconds, (totalSeconds * (1 - controller.value)).ceil()));
-        return Semantics(
-          label: 'Còn $remaining giây để phản hồi',
-          child: SizedBox(
-            width: 68,
-            height: 68,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 68,
-                  height: 68,
-                  child: CircularProgressIndicator(
-                    value: 1 - controller.value,
-                    strokeWidth: 6,
-                    color: AppColors.primary,
-                    backgroundColor: AppColors.border,
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('$remaining',
-                        style: appText(24, weight: FontWeight.w800, height: 1)),
-                    Text('giây', style: appText(10.5, color: AppColors.textSub, height: 1.2)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _PhotoThumbnail extends StatelessWidget {
-  const _PhotoThumbnail({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Semantics(
-          button: true,
-          label: 'Xem ảnh hiện trường toàn màn hình',
-          child: GestureDetector(
-            onTap: onTap,
-            child: SizedBox(
-              width: 104,
-              height: 76,
-              child: Stack(
-                children: [
-                  const Positioned.fill(child: ScenePhoto(borderRadius: AppRadius.sm)),
-                  Positioned(
-                    right: 6,
-                    bottom: 6,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.op(0.55),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.zoom_out_map, size: 14, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Ảnh hiện trường', style: appText(14, weight: FontWeight.w700)),
-              const SizedBox(height: 2),
-              Text('Khách gửi lúc báo sự cố. Bấm vào ảnh để xem toàn màn hình.',
-                  style: appText(12.5, color: AppColors.textSub, height: 1.3)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Xem ảnh toàn màn hình (zoom bằng 2 ngón tay).
-class _PhotoViewer extends StatelessWidget {
-  const _PhotoViewer({required this.order});
-  final OrderRequest order;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: SafeArea(
-        child: Stack(
-          children: [
-            Center(
-              child: InteractiveViewer(
-                minScale: 1,
-                maxScale: 4,
-                child: AspectRatio(
-                  aspectRatio: 4 / 3,
-                  child: const ScenePhoto(borderRadius: AppRadius.md),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 12,
-              child: CircleIconButton(
-                icon: Icons.close,
-                tooltip: 'Đóng ảnh',
-                background: Colors.white.op(0.16),
-                onTap: () => Navigator.of(context).pop(),
-              ),
-            ),
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 24,
-              child: Text(
-                'Ảnh hiện trường — ${order.headline}',
-                textAlign: TextAlign.center,
-                style: appText(13.5, color: Colors.white.op(0.85)),
               ),
             ),
           ],

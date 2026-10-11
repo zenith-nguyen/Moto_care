@@ -1,172 +1,253 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
-/// 4 cấp hạng thợ (gamification): Đồng -> Bạc -> Vàng -> Kim Cương.
-enum MechanicTier { bronze, silver, gold, diamond }
+/// Loại dịch vụ cứu hộ — quyết định icon hiển thị trong danh sách.
+enum ServiceType { tire, battery, tow, oil, electric }
 
-/// Thông tin hiển thị + ngưỡng số đơn của từng hạng.
-class TierInfo {
-  const TierInfo._(this.tier, this.name, this.color, this.minOrders);
+extension ServiceTypeX on ServiceType {
+  IconData get icon => switch (this) {
+        ServiceType.tire => Icons.adjust,
+        ServiceType.battery => Icons.bolt_outlined,
+        ServiceType.tow => Icons.local_shipping_outlined,
+        ServiceType.oil => Icons.water_drop_outlined,
+        ServiceType.electric => Icons.power_outlined,
+      };
+}
 
-  final MechanicTier tier;
-  final String name; // "Bạc"
-  final Color color; // màu icon huy chương
-  final int minOrders; // số đơn tối thiểu để vào hạng này
+/// Trạng thái xác minh do Admin quyết định — thợ chỉ xem, không tự bật/tắt.
+enum VerificationStatus { verified, pending, rejected }
 
-  String get title => 'Hạng $name';
+/// Trạng thái hồ sơ đối tác của tài khoản đăng nhập.
+enum AccountStatus { approved, pending, rejected }
 
-  static const TierInfo bronze =
-      TierInfo._(MechanicTier.bronze, 'Đồng', Color(0xFFB87333), 0);
-  static const TierInfo silver =
-      TierInfo._(MechanicTier.silver, 'Bạc', Color(0xFF8E99A8), 20);
-  static const TierInfo gold =
-      TierInfo._(MechanicTier.gold, 'Vàng', Color(0xFFE5A100), 50);
-  static const TierInfo diamond =
-      TierInfo._(MechanicTier.diamond, 'Kim Cương', Color(0xFF7C3AED), 100);
+class Skill {
+  Skill({required this.name, required this.icon, required this.status});
 
-  static const List<TierInfo> all = [bronze, silver, gold, diamond];
+  final String name;
+  final IconData icon;
+  VerificationStatus status;
+}
 
-  static TierInfo of(MechanicTier tier) => all[tier.index];
+class VerificationDoc {
+  const VerificationDoc({required this.name, required this.icon, required this.status});
 
-  /// Hạng tương ứng với tổng số đơn đã hoàn thành.
-  static TierInfo forOrders(int orders) {
-    var result = bronze;
-    for (final t in all) {
-      if (orders >= t.minOrders) result = t;
-    }
-    return result;
-  }
-
-  TierInfo? get next => tier.index + 1 < all.length ? all[tier.index + 1] : null;
-
-  /// Số đơn còn thiếu để lên hạng kế tiếp (0 nếu đã max).
-  int ordersToNext(int totalOrders) {
-    final n = next;
-    if (n == null) return 0;
-    return math.max(0, n.minOrders - totalOrders);
-  }
-
-  /// Tiến độ 0..1 trong hạng hiện tại.
-  double progress(int totalOrders) {
-    final n = next;
-    if (n == null) return 1;
-    final span = n.minOrders - minOrders;
-    return ((totalOrders - minOrders) / span).clamp(0.0, 1.0).toDouble();
-  }
+  final String name;
+  final IconData icon;
+  final VerificationStatus status;
 }
 
 class MechanicProfile {
   MechanicProfile({
-    required this.displayName,
-    required this.ownerName,
-    required this.phone,
-    required this.verified,
+    required this.name,
+    required this.email,
+    required this.bio,
+    required this.tierName,
+    required this.nextTierName,
+    required this.tierOrders,
+    required this.nextTierTarget,
+    required this.experienceYears,
+    required this.radiusKm,
     required this.rating,
-    required this.totalOrders,
+    required this.ratingCount,
     required this.area,
+    required this.skills,
+    required this.documents,
   });
 
-  String displayName; // tên tiệm / thợ
-  final String ownerName;
-  final String phone;
-  final bool verified;
+  String name;
+  final String email;
+  String bio;
+  final String tierName; // "Bạc"
+  final String nextTierName; // "Vàng"
+  int tierOrders; // số đơn trong 30 ngày tính hạng
+  final int nextTierTarget;
+  final int experienceYears;
+  final int radiusKm;
   final double rating;
-  int totalOrders; // tổng số đơn đã hoàn thành (quyết định hạng)
-  String area; // quận/huyện nhận đơn mặc định
+  final int ratingCount;
+  String area;
+  final List<Skill> skills;
+  final List<VerificationDoc> documents;
 
-  String get initial {
-    final s = displayName.trim();
-    return s.isEmpty ? '?' : s.substring(0, 1).toUpperCase();
-  }
-
-  TierInfo get tier => TierInfo.forOrders(totalOrders);
+  String get initial => name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
+  int get ordersToNextTier => (nextTierTarget - tierOrders).clamp(0, nextTierTarget);
+  double get tierProgress => (tierOrders / nextTierTarget).clamp(0.0, 1.0);
 }
 
-class OrderRequest {
-  const OrderRequest({
-    required this.id,
+/// Đơn cứu hộ được hệ thống ghép tự động và gửi tới thợ (popup 15s).
+class OrderOffer {
+  const OrderOffer({
+    required this.code,
+    required this.service,
     required this.issue,
+    required this.description,
     required this.vehicle,
-    required this.address,
-    required this.distanceKm,
-    required this.earning,
-    required this.platformFee,
+    required this.plate,
     required this.customerName,
     required this.customerPhone,
+    required this.address,
+    required this.distanceKm,
     required this.etaMinutes,
+    required this.price,
   });
 
-  final String id; // "#MC105"
-  final String issue; // "Vá lốp không ruột"
+  final String code; // "#MC105"
+  final ServiceType service;
+  final String issue; // "Hết bình, cần kích bình"
+  final String description; // nội dung sự cố chi tiết
   final String vehicle; // "Honda Vario 150"
-  final String address;
-  final double distanceKm;
-  final int earning; // thu nhập thợ nhận
-  final int platformFee; // chiết khấu sàn
+  final String plate; // "59S1-123.45"
   final String customerName;
   final String customerPhone;
+  final String address;
+  final double distanceKm;
   final int etaMinutes;
+  final int price; // giá tạm tính
 
-  String get headline => '$issue — $vehicle';
-
-  OrderRequest withId(String newId) => OrderRequest(
-        id: newId,
-        issue: issue,
-        vehicle: vehicle,
-        address: address,
-        distanceKm: distanceKm,
-        earning: earning,
-        platformFee: platformFee,
-        customerName: customerName,
-        customerPhone: customerPhone,
-        etaMinutes: etaMinutes,
-      );
+  int get platformFee => feeOf(price);
 }
 
-/// Trạng thái báo giá phát sinh: thợ gửi -> khách xác nhận trên app.
-enum ExtraStatus { pending, confirmed }
+/// Chiết khấu sàn 10%.
+int feeOf(int price) => (price * 0.1).round();
 
-/// Chế độ nhận đơn: tự động (đơn nổ thẳng lên màn hình) hoặc tự chọn từ danh sách.
-enum OrderMode { auto, manual }
+/// 5 bước xử lý đơn.
+enum OrderStep { received, arrived, repairing, quoting, completed }
 
-/// Chi phí phụ tùng phát sinh thợ báo thêm trong lúc sửa (vd: thay ruột xe / săm mới).
-class ExtraItem {
-  ExtraItem({
-    required this.description,
-    required this.amount,
-    this.status = ExtraStatus.pending,
-  });
-  final String description;
-  final int amount;
-  ExtraStatus status;
+const List<String> orderStepLabels = [
+  'Đã nhận đơn',
+  'Đã đến nơi',
+  'Đang sửa chữa',
+  'Đề xuất giá',
+  'Hoàn thành',
+];
+
+enum QuoteStatus { none, pending, accepted }
+
+/// Đơn thợ đang thực hiện.
+class ActiveOrder {
+  ActiveOrder({required this.offer, required this.acceptedAt, required this.messages});
+
+  final OrderOffer offer;
+  final DateTime acceptedAt;
+  final List<ChatMessage> messages;
+
+  OrderStep step = OrderStep.received;
+  DateTime? arrivedAt;
+  DateTime? repairStartedAt;
+
+  int? proposedPrice;
+  String? quoteReason;
+  DateTime? quoteSentAt;
+  QuoteStatus quoteStatus = QuoteStatus.none;
+
+  int get finalPrice => quoteStatus == QuoteStatus.accepted ? proposedPrice! : offer.price;
 }
 
-class WalletTransaction {
-  WalletTransaction({
-    required this.orderId,
-    required this.time,
-    required this.amount,
-  });
+enum OrderStatus { active, completed, cancelled }
 
-  final String orderId; // "#MC104"
+class TimelineEvent {
+  const TimelineEvent(this.label, this.time);
+  final String label;
   final DateTime time;
-  final int amount; // > 0: cộng tiền từ đơn, < 0: trừ chiết khấu sàn
-
-  bool get isIncome => amount > 0;
-  String get label => isIncome ? 'Cộng tiền từ đơn hàng' : 'Trừ chiết khấu sàn';
 }
 
-class ServiceSkill {
-  ServiceSkill({
-    required this.name,
-    required this.description,
-    required this.icon,
-    this.enabled = true,
+class OrderHistoryItem {
+  OrderHistoryItem({
+    required this.code,
+    required this.service,
+    required this.issue,
+    required this.vehicle,
+    required this.plate,
+    required this.customerName,
+    required this.customerPhone,
+    required this.address,
+    required this.status,
+    required this.time,
+    required this.initialPrice,
+    required this.finalPrice,
+    required this.timeline,
+    this.extraReason,
+    this.messages = const [],
+    this.rating,
+    this.ratingComment,
   });
 
-  final String name;
-  final String description;
-  final IconData icon;
-  bool enabled;
+  final String code;
+  final ServiceType service;
+  final String issue;
+  final String vehicle;
+  final String plate;
+  final String customerName;
+  final String customerPhone;
+  final String address;
+  final OrderStatus status;
+  final DateTime time; // thời điểm hoàn thành / hủy
+  final int initialPrice;
+  final int finalPrice;
+  final String? extraReason;
+  final List<TimelineEvent> timeline;
+  final List<ChatMessage> messages;
+
+  /// Đánh giá thợ dành cho khách (null = chưa đánh giá).
+  int? rating;
+  String? ratingComment;
+
+  int get extra => finalPrice - initialPrice;
+  int get platformFee => feeOf(finalPrice);
+  int get earning => finalPrice - platformFee;
+}
+
+enum TxType { credit, debit }
+
+enum WithdrawStatus { pending, approved }
+
+/// Giao dịch ví. [amount] luôn là số dương — dấu +/- suy ra từ [type] khi hiển thị.
+class WalletTransaction {
+  const WalletTransaction({
+    required this.code,
+    required this.txnId,
+    required this.type,
+    required this.amount,
+    required this.time,
+    this.withdrawStatus,
+    this.orderCode,
+    this.serviceName,
+    this.customerName,
+    this.customerPhone,
+    this.customerArea,
+    this.platformFee = 0,
+  });
+
+  final String code; // "#MC104" hoặc "#RT0032"
+  final String txnId; // "TXN-88213049"
+  final TxType type;
+  final int amount;
+  final DateTime time;
+  final WithdrawStatus? withdrawStatus;
+  final String? orderCode;
+  final String? serviceName;
+  final String? customerName;
+  final String? customerPhone;
+  final String? customerArea;
+  final int platformFee;
+
+  bool get isCredit => type == TxType.credit;
+  String get title => isCredit ? 'Cộng tiền từ đơn hoàn thành' : 'Yêu cầu rút tiền';
+}
+
+enum MessageStatus { sending, sent, failed }
+
+class ChatMessage {
+  ChatMessage({
+    required this.fromMechanic,
+    required this.time,
+    this.text,
+    this.isImage = false,
+    this.status = MessageStatus.sent,
+  });
+
+  final bool fromMechanic;
+  final DateTime time;
+  final String? text;
+  final bool isImage;
+  MessageStatus status;
 }
