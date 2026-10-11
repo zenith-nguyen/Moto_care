@@ -15,10 +15,11 @@ import { OrdersService } from './orders.service';
 import { OrderPriceProposal } from './order-price-proposal.entity';
 import { PriceAdjustmentsService } from './price-adjustments.service';
 import { OrdersQueryService } from './application/orders-query.service';
+import { Vehicle } from '../vehicles/vehicle.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([IncidentType, Order, OrderOffer, OrderPriceProposal, Provider, User]),
+    TypeOrmModule.forFeature([IncidentType, Order, OrderOffer, OrderPriceProposal, Provider, User, Vehicle]),
     PaymentAccountingModule,
     RealtimeModule,
     PricingModule,

@@ -1,9 +1,10 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, Repository } from 'typeorm';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { Provider } from '../providers/provider.entity';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { User } from './user.entity';
 
 export interface CreateUserInput {
@@ -42,6 +43,36 @@ export class UsersService {
 
   findById(id: number): Promise<User | null> {
     return this.usersRepository.findOneBy({ id });
+  }
+
+  async updateProfile(userId: number, dto: UpdateProfileDto) {
+    const user = await this.usersRepository.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('User not found');
+    if (dto.name !== undefined) user.name = dto.name;
+    if (dto.phone !== undefined) {
+      if (dto.phone === null && !user.email) throw new ConflictException('An account must keep an email or phone number');
+      user.phone = dto.phone;
+    }
+    try {
+      return this.presentProfile(await this.usersRepository.save(user));
+    } catch (error) {
+      if (error instanceof QueryFailedError && (error as QueryFailedError & { code?: string }).code === '23505') {
+        throw new ConflictException('Phone number is already registered');
+      }
+      throw error;
+    }
+  }
+
+  presentProfile(user: User | null) {
+    if (!user) throw new NotFoundException('User not found');
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      status: user.status,
+    };
   }
 
   findByIdentityWithPassword(identity: string): Promise<User | null> {

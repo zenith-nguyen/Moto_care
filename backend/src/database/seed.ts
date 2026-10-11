@@ -8,6 +8,8 @@ import { IncidentType } from '../incident-types/incident-type.entity';
 import { Provider, GeoPoint } from '../providers/provider.entity';
 import { User } from '../users/user.entity';
 import { Wallet } from '../payments/wallet.entity';
+import { Vehicle } from '../vehicles/vehicle.entity';
+import { VehicleType } from '../vehicles/vehicle-type.enum';
 
 const DEV_PASSWORD = 'MotoCareDev123!';
 
@@ -94,6 +96,7 @@ async function seed(): Promise<void> {
     const providerRepository = dataSource.getRepository(Provider);
     const incidentRepository = dataSource.getRepository(IncidentType);
     const walletRepository = dataSource.getRepository(Wallet);
+    const vehicleRepository = dataSource.getRepository(Vehicle);
 
     await incidentRepository.upsert(incidentSeeds, ['code']);
 
@@ -112,6 +115,19 @@ async function seed(): Promise<void> {
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
     });
+
+    const customerVehicle = await vehicleRepository.findOneBy({ customerId: customer.id, licensePlate: '59A1-123.45' });
+    if (!customerVehicle) {
+      await vehicleRepository.save(vehicleRepository.create({
+        customerId: customer.id,
+        type: VehicleType.MOTORBIKE,
+        brand: 'Honda',
+        model: 'Wave Alpha',
+        licensePlate: '59A1-123.45',
+        color: 'Black',
+        isDefault: true,
+      }));
+    }
 
     for (const providerSeed of providerSeeds) {
       const user = await findOrCreateUser(userRepository, {

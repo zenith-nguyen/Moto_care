@@ -14,6 +14,8 @@ import { User } from '../users/user.entity';
 import { IncidentType } from '../incident-types/incident-type.entity';
 import { Provider } from '../providers/provider.entity';
 import { WeatherCategory } from '../pricing/weather-category.enum';
+import { Vehicle } from '../vehicles/vehicle.entity';
+import { VehicleType } from '../vehicles/vehicle-type.enum';
 
 @Entity({ name: 'orders' })
 @Index('UQ_orders_code', ['code'], { unique: true })
@@ -47,6 +49,28 @@ export class Order {
   @ManyToOne(() => IncidentType, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'incident_type_id' })
   incidentType!: IncidentType;
+
+  @Column({ name: 'vehicle_id', type: 'integer', nullable: true })
+  vehicleId!: number | null;
+
+  @ManyToOne(() => Vehicle, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'vehicle_id' })
+  vehicle!: Vehicle | null;
+
+  @Column({ name: 'vehicle_type', type: 'enum', enum: VehicleType, nullable: true })
+  vehicleType!: VehicleType | null;
+
+  @Column({ name: 'vehicle_brand', type: 'varchar', length: 80, nullable: true })
+  vehicleBrand!: string | null;
+
+  @Column({ name: 'vehicle_model', type: 'varchar', length: 100, nullable: true })
+  vehicleModel!: string | null;
+
+  @Column({ name: 'vehicle_license_plate', type: 'varchar', length: 20, nullable: true })
+  vehicleLicensePlate!: string | null;
+
+  @Column({ name: 'vehicle_color', type: 'varchar', length: 40, nullable: true })
+  vehicleColor!: string | null;
 
   @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.PENDING_MATCH })
   status!: OrderStatus;

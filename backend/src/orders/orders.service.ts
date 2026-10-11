@@ -18,6 +18,7 @@ import { OrderOffer } from './order-offer.entity';
 import { Order } from './order.entity';
 import { canTransitionOrder } from './domain/order-transition.policy';
 import { presentOrderMatch } from './presentation/order.presenter';
+import { Vehicle } from '../vehicles/vehicle.entity';
 
 @Injectable()
 export class OrdersService {
@@ -48,6 +49,10 @@ export class OrdersService {
       }
       const currentIncident = await manager.getRepository(IncidentType).findOneBy({ id: dto.incident_type_id, isActive: true });
       if (!currentIncident) throw new NotFoundException('Active incident type not found');
+      const vehicle = dto.vehicle_id === undefined
+        ? await manager.getRepository(Vehicle).findOneBy({ customerId, isDefault: true })
+        : await manager.getRepository(Vehicle).findOneBy({ id: dto.vehicle_id, customerId });
+      if (dto.vehicle_id !== undefined && !vehicle) throw new NotFoundException('Vehicle not found');
       const quote = this.pricing.quote(currentIncident.basePrice, weather);
 
       const order = await manager.getRepository(Order).save(
@@ -55,6 +60,12 @@ export class OrdersService {
           code: `MC-${randomUUID().replaceAll('-', '').slice(0, 20)}`,
           customerId,
           incidentTypeId: currentIncident.id,
+          vehicleId: vehicle?.id ?? null,
+          vehicleType: vehicle?.type ?? null,
+          vehicleBrand: vehicle?.brand ?? null,
+          vehicleModel: vehicle?.model ?? null,
+          vehicleLicensePlate: vehicle?.licensePlate ?? null,
+          vehicleColor: vehicle?.color ?? null,
           status: OrderStatus.AWAITING_PREPAYMENT,
           customerLocation: {
             type: 'Point',

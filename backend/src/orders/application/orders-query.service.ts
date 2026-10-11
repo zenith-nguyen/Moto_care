@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource, MoreThan } from 'typeorm';
 import { OfferStatus } from '../../common/enums/offer-status.enum';
 import { OrderStatus } from '../../common/enums/order-status.enum';
@@ -8,9 +8,20 @@ import { Provider } from '../../providers/provider.entity';
 import { OrderOffer } from '../order-offer.entity';
 import { OrderPriceProposal } from '../order-price-proposal.entity';
 import { Order } from '../order.entity';
-import { presentOrderPricing, presentPaymentAdjustment, presentPriceProposal } from '../presentation/order.presenter';
+import { presentOrderPricing, presentOrderVehicle, presentPaymentAdjustment, presentPriceProposal } from '../presentation/order.presenter';
+import { User } from '../../users/user.entity';
 
 const providerLocationStatuses = new Set([
+  OrderStatus.ACCEPTED,
+  OrderStatus.ARRIVED,
+  OrderStatus.IN_PROGRESS,
+  OrderStatus.AWAITING_PRICE_APPROVAL,
+  OrderStatus.PRICE_DISPUTED,
+  OrderStatus.AWAITING_PAYMENT,
+  OrderStatus.PAID,
+]);
+
+const contactAvailableStatuses = new Set([
   OrderStatus.ACCEPTED,
   OrderStatus.ARRIVED,
   OrderStatus.IN_PROGRESS,
@@ -48,6 +59,7 @@ export class OrdersQueryService {
       customerId: order.customerId,
       providerId: order.providerId,
       incidentType: { id: order.incidentType.id, name: order.incidentType.name },
+      vehicle: presentOrderVehicle(order),
       customerLocation: order.customerLocation,
       estimatedPrice: order.estimatedPrice,
       pricing: presentOrderPricing(order),
@@ -85,6 +97,7 @@ export class OrdersQueryService {
       customerId: order.customerId,
       providerId: order.providerId,
       incidentTypeId: order.incidentTypeId,
+      vehicle: presentOrderVehicle(order),
       estimatedPrice: order.estimatedPrice,
       extraCost: order.extraCost,
       discountAmount: order.discountAmount,
@@ -92,6 +105,30 @@ export class OrdersQueryService {
       createdAt: order.createdAt,
       pricing: presentOrderPricing(order),
     }));
+  }
+
+  async participantContact(orderId: number, userId: number, role: UserRole) {
+    const order = await this.database.getRepository(Order).findOneBy({ id: orderId });
+    if (!order || !order.providerId) throw new NotFoundException('Order not found');
+    if (!contactAvailableStatuses.has(order.status)) {
+      throw new ConflictException('Participant contact is available only while the assigned order is active');
+    }
+
+    if (role === UserRole.CUSTOMER) {
+      if (order.customerId !== userId) throw new NotFoundException('Order not found');
+      const provider = await this.database.getRepository(Provider).findOne({
+        where: { id: order.providerId },
+        relations: { user: true },
+      });
+      if (!provider) throw new NotFoundException('Assigned provider not found');
+      return { orderId, role: UserRole.PROVIDER, name: provider.user.name, phone: provider.user.phone };
+    }
+
+    const provider = await this.database.getRepository(Provider).findOneBy({ userId });
+    if (!provider || provider.id !== order.providerId) throw new NotFoundException('Order not found');
+    const customer = await this.database.getRepository(User).findOneBy({ id: order.customerId });
+    if (!customer) throw new NotFoundException('Customer not found');
+    return { orderId, role: UserRole.CUSTOMER, name: customer.name, phone: customer.phone };
   }
 
   private async assertCanView(order: Order, userId: number): Promise<void> {
