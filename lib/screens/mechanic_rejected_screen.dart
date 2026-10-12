@@ -31,7 +31,7 @@ class _MechanicRejectedScreenState extends State<MechanicRejectedScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          padding: const EdgeInsets.fromLTRB(22, 32, 22, 16),
           child: Column(
             children: [
               Expanded(
@@ -39,76 +39,93 @@ class _MechanicRejectedScreenState extends State<MechanicRejectedScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 36),
-                      const Center(child: IconCircle(icon: Icons.highlight_off, size: 108)),
-                      const SizedBox(height: 28),
+                      const Center(
+                        child: IconCircle(
+                          icon: Icons.close,
+                          size: 112,
+                          background: AppColors.dangerSoft,
+                          color: AppColors.danger,
+                        ),
+                      ),
+                      const SizedBox(height: 26),
                       Center(
                         child: Text(
                           'Hồ sơ chưa được duyệt',
                           textAlign: TextAlign.center,
-                          style: appText(25, weight: FontWeight.w800),
+                          style: appText(23, weight: FontWeight.w600),
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        'Admin đã xem xét hồ sơ và cần bạn bổ sung thêm thông tin trước khi duyệt lại.',
-                        textAlign: TextAlign.center,
-                        style: appText(15.5, color: AppColors.textSub, height: 1.5),
+                      Center(
+                        child: Text(
+                          'Vui lòng bổ sung các mục dưới đây rồi gửi lại hồ sơ',
+                          textAlign: TextAlign.center,
+                          style: appText(14.5, color: AppColors.textSub, height: 1.45),
+                        ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.danger, width: 1.4),
+                          color: const Color(0xFFFFFAFA),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                          border: Border.all(color: const Color(0xFFF6D5D8), width: 1.6),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Lý do từ chối',
-                              style:
-                                  appText(15, weight: FontWeight.w800, color: AppColors.dangerDark),
+                              style: appText(15, weight: FontWeight.w600, color: AppColors.danger),
                             ),
                             const SizedBox(height: 6),
-                            Text(MockData.rejectReason, style: appText(15, height: 1.5)),
+                            Text(MockData.rejectReason, style: appText(15, height: 1.55)),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Text('Cần bổ sung', style: appText(16, weight: FontWeight.w800)),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 16),
                       SurfaceCard(
-                        padding: const EdgeInsets.fromLTRB(18, 14, 14, 14),
-                        child: Row(
+                        padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                MockData.rejectRequirement,
-                                style: appText(14.5, height: 1.4),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            _reuploaded
-                                ? const StatusBadge.success('Đã tải lên', icon: Icons.check)
-                                : FilledButton.icon(
-                                    onPressed: () => setState(() => _reuploaded = true),
-                                    style: FilledButton.styleFrom(
-                                      backgroundColor: AppColors.ink,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                                      minimumSize: const Size(0, 44),
-                                    ),
-                                    icon: const Icon(Icons.file_upload_outlined, size: 20),
-                                    label: Text(
-                                      'Tải lại ảnh',
-                                      style:
-                                          appText(14, weight: FontWeight.w800, color: Colors.white),
-                                    ),
+                            Text('Cần bổ sung', style: appText(15, weight: FontWeight.w600)),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    MockData.rejectRequirement,
+                                    style: appText(15, weight: FontWeight.w500),
                                   ),
+                                ),
+                                const SizedBox(width: 12),
+                                _reuploaded
+                                    ? const StatusBadge.success('Đã tải lên', icon: Icons.check)
+                                    : OutlinedButton(
+                                        onPressed: () => setState(() => _reuploaded = true),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: AppColors.danger,
+                                          side: const BorderSide(
+                                            color: AppColors.danger,
+                                            width: 1.5,
+                                          ),
+                                          shape: const StadiumBorder(),
+                                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                                          minimumSize: const Size(0, 40),
+                                        ),
+                                        child: Text(
+                                          'Tải lại ảnh',
+                                          style: appText(
+                                            14,
+                                            weight: FontWeight.w600,
+                                            color: AppColors.danger,
+                                          ),
+                                        ),
+                                      ),
+                              ],
+                            ),
                           ],
                         ),
                       ),

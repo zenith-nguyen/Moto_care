@@ -42,90 +42,84 @@ class OrderHistoryDetailScreen extends StatelessWidget {
           listenable: appState,
           builder: (context, _) => Column(
             children: [
-              ScreenHeader(title: 'Đơn ${item.code}'),
+              ScreenHeader(title: 'Chi tiết đơn ${item.code}'),
               Expanded(
                 child: ScrollColumn(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(item.issue, style: appText(17, weight: FontWeight.w800)),
-                        ),
-                        done
-                            ? const StatusBadge.success('Hoàn thành')
-                            : const StatusBadge(
-                                label: 'Đã hủy',
-                                foreground: AppColors.dangerDark,
-                                background: AppColors.dangerSoft,
-                              ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(formatDayTime(item.time), style: appText(14, color: AppColors.textSub)),
-                    const SizedBox(height: 22),
-                    const SectionTitle('Tiến trình đơn'),
-                    const SizedBox(height: 12),
-                    _Timeline(events: item.timeline, cancelled: !done),
-                    const SizedBox(height: 18),
-                    const SectionTitle('Thông tin xe'),
-                    const SizedBox(height: 10),
                     SurfaceCard(
-                      padding: const EdgeInsets.fromLTRB(18, 10, 18, 10),
-                      child: Column(
+                      radius: AppRadius.md,
+                      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+                      child: Row(
                         children: [
-                          KeyValueRow('Khách hàng', item.customerName),
-                          KeyValueRow('Dòng xe', item.vehicle),
-                          KeyValueRow('Biển số', item.plate),
-                          KeyValueRow('Địa chỉ', item.address),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    const SectionTitle('Chi phí'),
-                    const SizedBox(height: 10),
-                    SurfaceCard(
-                      padding: const EdgeInsets.fromLTRB(18, 10, 18, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          KeyValueRow('Giá ban đầu', formatVnd(item.initialPrice)),
-                          KeyValueRow(
-                            'Phụ phí phát sinh',
-                            item.extra == 0
-                                ? '0đ'
-                                : '${item.extra > 0 ? '+' : '-'}${formatVnd(item.extra)}',
-                          ),
-                          if (item.extraReason != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 6),
-                              child: Text(
-                                'Lý do: ${item.extraReason}',
-                                style: appText(13.5, color: AppColors.textSub, height: 1.4),
-                              ),
+                          const Icon(Icons.bolt_outlined, size: 28),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(item.issue, style: appText(17, weight: FontWeight.w600)),
+                                Text(
+                                  '${item.vehicle} · ${item.plate}',
+                                  style: appText(13.5, color: AppColors.textSub),
+                                ),
+                              ],
                             ),
-                          const Divider(height: 18),
-                          KeyValueRow(
-                            'Giá cuối',
-                            formatVnd(item.finalPrice),
-                            labelStyle: appText(16, weight: FontWeight.w800),
-                            valueStyle: appText(20, weight: FontWeight.w900),
                           ),
-                          if (done)
-                            KeyValueRow(
-                              'Thu nhập của bạn',
-                              '+${formatVnd(item.earning)}',
-                              valueStyle:
-                                  appText(15, weight: FontWeight.w800, color: AppColors.success),
-                            ),
+                          done
+                              ? const StatusBadge.success('Hoàn thành')
+                              : const StatusBadge.danger('Đã hủy'),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
+                    ShadowCard(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                      child: _Timeline(events: item.timeline, cancelled: !done),
+                    ),
+                    if (done) ...[
+                      const SizedBox(height: 16),
+                      SurfaceCard(
+                        radius: AppRadius.md,
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            KeyValueRow('Giá ban đầu', formatVnd(item.initialPrice)),
+                            KeyValueRow(
+                              'Phụ phí phát sinh',
+                              item.extra == 0
+                                  ? '0đ'
+                                  : formatSignedVnd(item.extra.abs(), plus: item.extra > 0),
+                            ),
+                            if (item.extraReason != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  'Lý do: ${item.extraReason}',
+                                  style: appText(13.5, color: AppColors.textSub, height: 1.4),
+                                ),
+                              ),
+                            const Divider(height: 22),
+                            KeyValueRow(
+                              'Giá cuối',
+                              formatVnd(item.finalPrice),
+                              labelStyle: appText(16, weight: FontWeight.w600),
+                              valueStyle: appText(20, weight: FontWeight.w700),
+                            ),
+                            KeyValueRow(
+                              'Thu nhập của bạn',
+                              formatSignedVnd(item.earning, plus: true),
+                              valueStyle:
+                                  appText(15, weight: FontWeight.w700, color: AppColors.success),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
                     OutlineActionButton(
-                      label: 'Xem lại chat',
-                      icon: Icons.chat_bubble_outline,
-                      height: 52,
+                      label: 'Xem lại lịch sử chat',
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => OrderChatScreen(
@@ -137,8 +131,29 @@ class OrderHistoryDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    if (done && item.customerRating != null) ...[
+                      const SizedBox(height: 16),
+                      ShadowCard(
+                        padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Đánh giá từ khách', style: appText(16, weight: FontWeight.w600)),
+                            const SizedBox(height: 8),
+                            _Stars(value: item.customerRating!, size: 26),
+                            if (item.customerReview != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                '"${item.customerReview}"',
+                                style: appText(14.5, color: AppColors.textSub, height: 1.45),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                     if (done) ...[
-                      const SizedBox(height: 26),
+                      const SizedBox(height: 24),
                       _RatingSection(
                         item: item,
                         onSubmitted: () =>
@@ -152,6 +167,27 @@ class OrderHistoryDetailScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _Stars extends StatelessWidget {
+  const _Stars({required this.value, this.size = 30});
+  final int value;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 1; i <= 5; i++)
+          Icon(
+            i <= value ? Icons.star_rounded : Icons.star_outline_rounded,
+            size: size,
+            color: i <= value ? AppColors.warning : AppColors.textMuted,
+          ),
+      ],
     );
   }
 }
@@ -171,13 +207,13 @@ class _Timeline extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(
-                  width: 24,
+                  width: 18,
                   child: Column(
                     children: [
                       Container(
                         width: 14,
                         height: 14,
-                        margin: const EdgeInsets.only(top: 3),
+                        margin: const EdgeInsets.only(top: 4),
                         decoration: BoxDecoration(
                           color: cancelled && i == events.length - 1
                               ? AppColors.danger
@@ -186,21 +222,22 @@ class _Timeline extends StatelessWidget {
                         ),
                       ),
                       if (i < events.length - 1)
-                        Expanded(child: Container(width: 2, color: AppColors.border)),
+                        Expanded(child: Container(width: 3, color: AppColors.border)),
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 18),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Text(events[i].label, style: appText(15, weight: FontWeight.w700)),
+                        Text(
+                          formatHm(events[i].time),
+                          style: appText(13, weight: FontWeight.w500, color: AppColors.textSub),
                         ),
-                        Text(formatHm(events[i].time),
-                            style: appText(14, color: AppColors.textSub)),
+                        Text(events[i].label, style: appText(15.5, weight: FontWeight.w500)),
                       ],
                     ),
                   ),
@@ -213,7 +250,7 @@ class _Timeline extends StatelessWidget {
   }
 }
 
-/// Đánh giá khách: hiển thị đánh giá đã gửi, hoặc form nếu chưa đánh giá.
+/// Đánh giá khách (thợ đánh giá): hiển thị đánh giá đã gửi, hoặc form nếu chưa đánh giá.
 class _RatingSection extends StatefulWidget {
   const _RatingSection({required this.item, required this.onSubmitted});
   final OrderHistoryItem item;
@@ -233,25 +270,6 @@ class _RatingSectionState extends State<_RatingSection> {
     super.dispose();
   }
 
-  Widget _starRow(int value, {ValueChanged<int>? onTap}) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 1; i <= 5; i++)
-          IconButton(
-            tooltip: onTap == null ? null : '$i sao',
-            visualDensity: VisualDensity.compact,
-            onPressed: onTap == null ? null : () => onTap(i),
-            icon: Icon(
-              i <= value ? Icons.star_rounded : Icons.star_outline_rounded,
-              size: 34,
-              color: i <= value ? AppColors.warning : AppColors.textMuted,
-            ),
-          ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
@@ -264,13 +282,14 @@ class _RatingSectionState extends State<_RatingSection> {
           'Đánh giá khách',
           subtitle: rated ? null : 'Đánh giá giúp MotoCare bảo vệ thợ khỏi khách không hợp tác.',
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         if (rated)
           SurfaceCard(
+            radius: AppRadius.md,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _starRow(item.rating!),
+                _Stars(value: item.rating!),
                 if (item.ratingComment != null) ...[
                   const SizedBox(height: 6),
                   Text(item.ratingComment!, style: appText(15, height: 1.45)),
@@ -279,7 +298,22 @@ class _RatingSectionState extends State<_RatingSection> {
             ),
           )
         else ...[
-          _starRow(_stars, onTap: (v) => setState(() => _stars = v)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 1; i <= 5; i++)
+                IconButton(
+                  tooltip: '$i sao',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => setState(() => _stars = i),
+                  icon: Icon(
+                    i <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
+                    size: 34,
+                    color: i <= _stars ? AppColors.warning : AppColors.textMuted,
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: _commentController,
@@ -287,7 +321,18 @@ class _RatingSectionState extends State<_RatingSection> {
             maxLines: 4,
             textCapitalization: TextCapitalization.sentences,
             style: appText(15),
-            decoration: const InputDecoration(hintText: 'Nhận xét về khách (không bắt buộc)'),
+            decoration: InputDecoration(
+              hintText: 'Nhận xét về khách (không bắt buộc)',
+              contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderSide: const BorderSide(color: AppColors.ink, width: 1.6),
+              ),
+            ),
           ),
           const SizedBox(height: 14),
           PrimaryButton(

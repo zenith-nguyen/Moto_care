@@ -14,35 +14,44 @@ class MechanicPendingApprovalScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+          padding: const EdgeInsets.fromLTRB(28, 32, 28, 16),
           child: Column(
             children: [
               Expanded(
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        const IconCircle(icon: Icons.schedule, size: 108),
-                        const SizedBox(height: 28),
-                        Text(
-                          'Hồ sơ đang chờ duyệt',
-                          textAlign: TextAlign.center,
-                          style: appText(25, weight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Admin đang xem xét hồ sơ của bạn. Quá trình này thường mất khoảng 24 giờ.',
-                          textAlign: TextAlign.center,
-                          style: appText(15.5, color: AppColors.textSub, height: 1.5),
-                        ),
-                        const SizedBox(height: 36),
-                        const StepProgressBar(
-                          title: 'Đang xét duyệt',
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const IconCircle(
+                        icon: Icons.schedule,
+                        size: 112,
+                        background: AppColors.warningSoft,
+                        color: AppColors.warningDark,
+                      ),
+                      const SizedBox(height: 26),
+                      Text(
+                        'Hồ sơ đang chờ duyệt',
+                        textAlign: TextAlign.center,
+                        style: appText(23, weight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Admin đang xem xét hồ sơ của bạn. Thời gian xử lý thường trong vòng '
+                        '24 giờ làm việc.',
+                        textAlign: TextAlign.center,
+                        style: appText(15, color: AppColors.textSub, height: 1.5),
+                      ),
+                      const SizedBox(height: 28),
+                      const SurfaceCard(
+                        padding: EdgeInsets.fromLTRB(18, 16, 18, 16),
+                        radius: AppRadius.md,
+                        child: StepProgressBar(
                           current: 2,
                           steps: ['Đã gửi', 'Đang xét duyệt', 'Hoàn tất'],
+                          accent: AppColors.warningDark,
+                          centeredSteps: true,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -54,6 +63,7 @@ class MechanicPendingApprovalScreen extends StatelessWidget {
               const SizedBox(height: 6),
               MutedTextButton(
                 label: 'Đăng xuất',
+                color: AppColors.danger,
                 onPressed: () => Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const MechanicLoginScreen()),
                   (_) => false,

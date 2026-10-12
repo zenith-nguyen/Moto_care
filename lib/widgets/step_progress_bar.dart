@@ -2,21 +2,25 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Kiểu progress DUY NHẤT trong app: tiêu đề + "Bước X/Y" + thanh phẳng ngang
-/// + dòng các bước nối bằng mũi tên. Dùng cho chờ duyệt hồ sơ (3 bước) và xử lý đơn (5 bước).
+/// Kiểu progress DUY NHẤT trong app: nhãn "Bước X/Y" + thanh phẳng ngang + dòng các bước
+/// nối bằng dấu mũi tên "›" (bước đã qua đậm, bước chưa tới nhạt).
+/// Dùng cho chờ duyệt hồ sơ (3 bước) và xử lý đơn (5 bước).
 class StepProgressBar extends StatefulWidget {
   const StepProgressBar({
     super.key,
-    required this.title,
     required this.current,
     required this.steps,
+    this.accent = AppColors.ink,
+    this.centeredSteps = false,
   });
-
-  final String title;
 
   /// Bước hiện tại, tính từ 1.
   final int current;
   final List<String> steps;
+
+  /// Màu thanh + chữ các bước đã qua (đen mặc định, nâu vàng ở màn chờ duyệt).
+  final Color accent;
+  final bool centeredSteps;
 
   @override
   State<StepProgressBar> createState() => _StepProgressBarState();
@@ -55,19 +59,30 @@ class _StepProgressBarState extends State<StepProgressBar> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
+    final spans = <InlineSpan>[];
+    for (var i = 0; i < widget.steps.length; i++) {
+      final reached = i < widget.current;
+      if (i > 0) {
+        spans.add(TextSpan(text: ' › ', style: appText(13, color: AppColors.textMuted)));
+      }
+      spans.add(TextSpan(
+        text: widget.steps[i],
+        style: appText(
+          13,
+          weight: reached ? FontWeight.w600 : FontWeight.w500,
+          color: reached ? widget.accent : AppColors.textMuted,
+        ),
+      ));
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(child: Text(widget.title, style: appText(18, weight: FontWeight.w800))),
-            Text(
-              'Bước ${widget.current}/${widget.steps.length}',
-              style: appText(14, weight: FontWeight.w700, color: AppColors.textSub),
-            ),
-          ],
+        Text(
+          'Bước ${widget.current}/${widget.steps.length}',
+          style: appText(15, weight: FontWeight.w600, color: widget.accent),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: AnimatedBuilder(
@@ -75,15 +90,18 @@ class _StepProgressBarState extends State<StepProgressBar> with SingleTickerProv
             builder: (context, _) => LinearProgressIndicator(
               value: _fill.value,
               minHeight: 7,
-              color: AppColors.ink,
-              backgroundColor: AppColors.border,
+              color: widget.accent,
+              backgroundColor: const Color(0xFFE9E9EC),
             ),
           ),
         ),
         const SizedBox(height: 10),
-        Text(
-          widget.steps.join(' → '),
-          style: appText(13, color: AppColors.textSub, height: 1.4),
+        SizedBox(
+          width: double.infinity,
+          child: Text.rich(
+            TextSpan(children: spans),
+            textAlign: widget.centeredSteps ? TextAlign.center : TextAlign.start,
+          ),
         ),
       ],
     );

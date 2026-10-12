@@ -7,18 +7,18 @@ import '../screens/order_history_screen.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 
-/// Bottom nav dùng chung: tab active nền đen bo tròn + icon/text trắng, tab thường xám.
+/// Bottom nav dùng chung: tab active icon + chữ đen đậm, tab thường xám.
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({super.key, required this.currentIndex, required this.onChanged});
 
   final int currentIndex;
   final ValueChanged<int> onChanged;
 
-  static const _items = <(String, IconData)>[
-    ('Trang chủ', Icons.home_outlined),
-    ('Đơn hàng', Icons.receipt_long_outlined),
-    ('Ví', Icons.credit_card_outlined),
-    ('Tài khoản', Icons.person_outline),
+  static const _items = <(String, IconData, IconData)>[
+    ('Trang chủ', Icons.home_outlined, Icons.home),
+    ('Đơn hàng', Icons.layers_outlined, Icons.layers),
+    ('Ví', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet),
+    ('Tài khoản', Icons.person_outline, Icons.person),
   ];
 
   @override
@@ -26,7 +26,7 @@ class AppBottomNav extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: AppColors.border)),
+        border: Border(top: BorderSide(color: Color(0xFFEFEFF1))),
       ),
       child: SafeArea(
         top: false,
@@ -38,7 +38,7 @@ class AppBottomNav extends StatelessWidget {
                 Expanded(
                   child: _NavItem(
                     label: _items[i].$1,
-                    icon: _items[i].$2,
+                    icon: i == currentIndex ? _items[i].$3 : _items[i].$2,
                     active: i == currentIndex,
                     onTap: () => onChanged(i),
                   ),
@@ -52,8 +52,12 @@ class AppBottomNav extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  const _NavItem(
-      {required this.label, required this.icon, required this.active, required this.onTap});
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.active,
+    required this.onTap,
+  });
   final String label;
   final IconData icon;
   final bool active;
@@ -61,7 +65,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? Colors.white : AppColors.textMuted;
+    final color = active ? AppColors.ink : AppColors.textMuted;
     return Semantics(
       selected: active,
       button: true,
@@ -69,25 +73,22 @@ class _NavItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 4),
+        child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: active ? AppColors.ink : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 24),
+              Icon(icon, color: color, size: 26),
               const SizedBox(height: 4),
               Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style:
-                    appText(11.5, weight: active ? FontWeight.w800 : FontWeight.w600, color: color),
+                style: appText(
+                  12,
+                  weight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
               ),
             ],
           ),

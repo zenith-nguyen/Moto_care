@@ -108,38 +108,20 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
   Widget build(BuildContext context) {
     final items = widget.messages.reversed.toList();
     return Scaffold(
+      backgroundColor: AppColors.surface,
       body: SafeArea(
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.border)),
-              ),
-              child: Row(
-                children: [
-                  const BackCircleButton(),
-                  const SizedBox(width: 12),
-                  AvatarCircle(initial: widget.customerName.trim()[0], size: 44),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(widget.customerName, style: appText(16.5, weight: FontWeight.w800)),
-                        Text('Khách hàng · ${maskPhone(widget.customerPhone)}',
-                            style: appText(13, color: AppColors.textSub)),
-                      ],
-                    ),
-                  ),
-                  RoundIconButton(
-                    icon: Icons.call_outlined,
-                    tooltip: 'Gọi khách',
-                    filled: true,
-                    onTap: () => showAppSnack(context,
-                        'Đang gọi ${widget.customerName} (${maskPhone(widget.customerPhone)})...'),
-                  ),
-                ],
+            ScreenHeader(
+              title: widget.customerName,
+              trailing: RoundIconButton(
+                icon: Icons.call_outlined,
+                tooltip: 'Gọi khách',
+                size: 48,
+                onTap: () => showAppSnack(
+                  context,
+                  'Đang gọi ${widget.customerName} (${maskPhone(widget.customerPhone)})...',
+                ),
               ),
             ),
             Expanded(
@@ -152,17 +134,29 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
             ),
             if (!widget.readOnly)
               Container(
-                padding: const EdgeInsets.fromLTRB(8, 8, 12, 10),
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                 decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: AppColors.border)),
+                  color: Colors.white,
+                  border: Border(top: BorderSide(color: Color(0xFFEFEFF1))),
                 ),
                 child: Row(
                   children: [
-                    IconButton(
-                      tooltip: 'Gửi ảnh (camera / thư viện)',
-                      icon: const Icon(Icons.add_photo_alternate_outlined, size: 26),
-                      onPressed: _pickImage,
+                    RoundIconButton(
+                      icon: Icons.photo_camera_outlined,
+                      tooltip: 'Chụp ảnh',
+                      size: 48,
+                      onTap: () => _add(
+                        ChatMessage(fromMechanic: true, time: DateTime.now(), isImage: true),
+                      ),
                     ),
+                    const SizedBox(width: 8),
+                    RoundIconButton(
+                      icon: Icons.image_outlined,
+                      tooltip: 'Gửi ảnh từ thư viện',
+                      size: 48,
+                      onTap: _pickImage,
+                    ),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
                         controller: _textController,
@@ -171,27 +165,18 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                         textCapitalization: TextCapitalization.sentences,
                         style: appText(15),
                         onSubmitted: (_) => _sendText(),
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: 'Nhập tin nhắn...',
-                          fillColor: AppColors.surface,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                            borderSide: const BorderSide(color: AppColors.ink),
-                          ),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    RoundIconButton(
-                      icon: Icons.send_rounded,
+                    const SizedBox(width: 4),
+                    IconButton(
                       tooltip: 'Gửi',
-                      filled: true,
-                      onTap: _sendText,
+                      iconSize: 28,
+                      icon: const Icon(Icons.send_outlined),
+                      onPressed: _sendText,
                     ),
                   ],
                 ),
@@ -221,11 +206,11 @@ class _Bubble extends StatelessWidget {
 
     final Widget content = message.isImage
         ? const Padding(
-            padding: EdgeInsets.all(4),
-            child: PhotoPlaceholder(width: 200, height: 140),
+            padding: EdgeInsets.all(5),
+            child: PhotoPlaceholder(width: 200, height: 140, radius: 16),
           )
         : Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             child: Text(
               message.text ?? '',
               style: appText(15, color: mine ? Colors.white : AppColors.ink, height: 1.4),
@@ -234,22 +219,23 @@ class _Bubble extends StatelessWidget {
 
     final (IconData statusIcon, String statusLabel) = switch (message.status) {
       MessageStatus.sending => (Icons.schedule, 'Đang gửi'),
-      MessageStatus.sent => (Icons.done_all, 'Đã gửi'),
+      MessageStatus.sent => (Icons.check, 'Đã gửi'),
+      MessageStatus.seen => (Icons.done_all, 'Đã xem'),
       MessageStatus.failed => (Icons.error_outline, 'Lỗi · Chạm để gửi lại'),
     };
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: Column(
         crossAxisAlignment: mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.75),
+            constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.72),
             child: GestureDetector(
               onTap: failed ? () => onRetry(message) : null,
               child: Container(
                 decoration: BoxDecoration(
-                  color: mine ? AppColors.ink : AppColors.surface,
+                  color: mine ? AppColors.ink : Colors.white,
                   borderRadius: radius,
                   border: failed ? Border.all(color: AppColors.danger, width: 1.4) : null,
                 ),
@@ -257,26 +243,35 @@ class _Bubble extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(formatHm(message.time), style: appText(11.5, color: AppColors.textMuted)),
-              if (mine) ...[
-                const SizedBox(width: 6),
-                Icon(statusIcon, size: 14, color: failed ? AppColors.danger : AppColors.textMuted),
-                const SizedBox(width: 3),
-                Flexible(
-                  child: Text(
-                    statusLabel,
-                    overflow: TextOverflow.ellipsis,
-                    style: appText(11.5,
-                        weight: failed ? FontWeight.w700 : FontWeight.w500,
-                        color: failed ? AppColors.danger : AppColors.textMuted),
+          const SizedBox(height: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(formatHm(message.time), style: appText(11.5, color: AppColors.textMuted)),
+                if (mine) ...[
+                  const SizedBox(width: 6),
+                  Icon(
+                    statusIcon,
+                    size: 13,
+                    color: failed ? AppColors.danger : AppColors.textMuted,
                   ),
-                ),
+                  const SizedBox(width: 3),
+                  Flexible(
+                    child: Text(
+                      statusLabel,
+                      overflow: TextOverflow.ellipsis,
+                      style: appText(
+                        11.5,
+                        weight: failed ? FontWeight.w600 : FontWeight.w500,
+                        color: failed ? AppColors.danger : AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),

@@ -70,197 +70,165 @@ class _MechanicLoginScreenState extends State<MechanicLoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
-              sliver: SliverToBoxAdapter(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('MotoCare',
-                          style: appText(36, weight: FontWeight.w900, letterSpacing: -1)),
-                      const SizedBox(height: 2),
-                      Text('Đăng nhập dành cho Thợ', style: appText(16, color: AppColors.textSub)),
-                      const SizedBox(height: 28),
-                      const _WelcomeCard(),
-                      const SizedBox(height: 28),
-                      const FieldLabel('Email hoặc số điện thoại'),
-                      TextFormField(
-                        controller: _idController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.email, AutofillHints.telephoneNumber],
-                        style: appText(15),
-                        decoration: const InputDecoration(hintText: 'you@email.com'),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Vui lòng nhập email hoặc số điện thoại'
-                            : null,
-                      ),
-                      const SizedBox(height: 18),
-                      FieldLabel(
-                        'Mật khẩu',
-                        trailing: GestureDetector(
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => MechanicForgotPasswordScreen(
-                                email: _idController.text.contains('@')
-                                    ? _idController.text.trim()
-                                    : MockData.profile().email,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 36, 24, 16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _Brand(),
+                        const SizedBox(height: 44),
+                        const FieldLabel('Email hoặc số điện thoại'),
+                        TextFormField(
+                          controller: _idController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.email, AutofillHints.telephoneNumber],
+                          style: appText(15),
+                          decoration: const InputDecoration(hintText: 'vd. minhkhang@motocare.vn'),
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Vui lòng nhập email hoặc số điện thoại'
+                              : null,
+                        ),
+                        const SizedBox(height: 20),
+                        const FieldLabel('Mật khẩu'),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscure,
+                          textInputAction: TextInputAction.done,
+                          onFieldSubmitted: (_) => _login(),
+                          style: appText(15),
+                          decoration: InputDecoration(
+                            hintText: '••••••••',
+                            suffixIcon: IconButton(
+                              tooltip: _obscure ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
+                              icon: Icon(
+                                _obscure
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: AppColors.textSub,
+                              ),
+                              onPressed: () => setState(() => _obscure = !_obscure),
+                            ),
+                          ),
+                          validator: (v) =>
+                              (v == null || v.isEmpty) ? 'Vui lòng nhập mật khẩu' : null,
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => MechanicForgotPasswordScreen(
+                                  email: _idController.text.contains('@')
+                                      ? _idController.text.trim()
+                                      : appState.profile.email,
+                                ),
                               ),
                             ),
-                          ),
-                          child:
-                              Text('Quên mật khẩu?', style: appText(15, weight: FontWeight.w800)),
-                        ),
-                      ),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscure,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _login(),
-                        style: appText(15),
-                        decoration: InputDecoration(
-                          hintText: '••••••••',
-                          suffixIcon: IconButton(
-                            tooltip: _obscure ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
-                            icon: Icon(
-                              _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                              color: AppColors.textSub,
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.danger,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
                             ),
-                            onPressed: () => setState(() => _obscure = !_obscure),
+                            child: Text(
+                              'Quên mật khẩu?',
+                              style:
+                                  appText(14.5, weight: FontWeight.w600, color: AppColors.danger),
+                            ),
                           ),
                         ),
-                        validator: (v) =>
-                            (v == null || v.length < 6) ? 'Mật khẩu tối thiểu 6 ký tự' : null,
-                      ),
-                      const SizedBox(height: 24),
-                      PrimaryButton(label: 'Đăng nhập', onPressed: _login),
-                      const SizedBox(height: 22),
-                      Row(
-                        children: [
-                          const Expanded(child: Divider()),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: Text('hoặc', style: appText(14, color: AppColors.textMuted)),
-                          ),
-                          const Expanded(child: Divider()),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Center(
-                        child: TextButton(
+                        const Spacer(),
+                        const SizedBox(height: 28),
+                        PrimaryButton(label: 'Đăng nhập', onPressed: _login),
+                        const SizedBox(height: 12),
+                        TextButton(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(builder: (_) => const MechanicRegisterScreen()),
                           ),
                           child: Text.rich(
                             TextSpan(
-                              text: 'Chưa có tài khoản Thợ? ',
+                              text: 'Chưa có tài khoản? ',
                               style: appText(15, color: AppColors.textSub),
                               children: [
                                 TextSpan(
-                                  text: 'Đăng ký ngay',
-                                  style: appText(15, weight: FontWeight.w800),
+                                  text: 'Đăng ký làm thợ',
+                                  style: appText(15, weight: FontWeight.w600),
                                 ),
                               ],
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-                  child: GestureDetector(
-                    onTap: _openTerms,
-                    child: Text.rich(
-                      TextSpan(
-                        text: 'Bằng việc đăng nhập, bạn đồng ý với ',
-                        children: [
-                          TextSpan(
-                            text: 'Điều khoản & Cam kết',
-                            style: appText(13, weight: FontWeight.w700, color: AppColors.textSub),
+                        const Divider(height: 28),
+                        GestureDetector(
+                          onTap: _openTerms,
+                          child: Text.rich(
+                            TextSpan(
+                              text: 'Bằng việc đăng nhập, bạn đồng ý với ',
+                              children: [
+                                TextSpan(
+                                  text: 'Điều khoản sử dụng',
+                                  style: appText(12.5,
+                                      weight: FontWeight.w600, color: AppColors.textSub),
+                                ),
+                                const TextSpan(text: ' & '),
+                                TextSpan(
+                                  text: 'Chính sách bảo mật',
+                                  style: appText(12.5,
+                                      weight: FontWeight.w600, color: AppColors.textSub),
+                                ),
+                                const TextSpan(text: ' của MotoCare'),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                            style: appText(12.5, color: AppColors.textMuted, height: 1.5),
                           ),
-                          const TextSpan(text: ' của MotoCare.'),
-                        ],
-                      ),
-                      textAlign: TextAlign.center,
-                      style: appText(13, color: AppColors.textMuted, height: 1.4),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _WelcomeCard extends StatelessWidget {
-  const _WelcomeCard();
+class _Brand extends StatelessWidget {
+  const _Brand();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 26, 20, 26),
-      decoration: BoxDecoration(
-        color: AppColors.ink,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Chào mừng trở lại',
-                  style: appText(24, weight: FontWeight.w800, color: Colors.white, height: 1.2),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Đăng nhập để tiếp tục nhận đơn cứu hộ.',
-                  style: appText(14.5, color: Colors.white70, height: 1.4),
-                ),
-              ],
-            ),
+    return Row(
+      children: [
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(width: 12),
-          // Logo: ghim vị trí có xe máy.
-          SizedBox(
-            width: 64,
-            height: 76,
-            child: Stack(
-              alignment: Alignment.topCenter,
-              children: [
-                const Icon(Icons.location_on_outlined, color: Colors.white, size: 72),
-                Positioned(
-                  top: 15,
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: const BoxDecoration(color: AppColors.ink, shape: BoxShape.circle),
-                    child: const Icon(Icons.two_wheeler, color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
-            ),
+          child: const Icon(Icons.bolt_outlined, color: Colors.white, size: 32),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('MotoCare', style: appText(26, weight: FontWeight.w600, letterSpacing: -0.5)),
+              Text('Đăng nhập dành cho thợ', style: appText(14, color: AppColors.textSub)),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

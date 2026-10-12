@@ -16,90 +16,103 @@ class OrderCompletedScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: IconButton(
-                  tooltip: 'Về Trang chủ',
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  children: [
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Container(
-                        width: 104,
-                        height: 104,
-                        decoration:
-                            const BoxDecoration(color: AppColors.ink, shape: BoxShape.circle),
-                        child: const Icon(Icons.check, color: Colors.white, size: 52),
-                      ),
+        child: Column(
+          children: [
+            ScreenHeader(
+              title: 'Hoàn thành đơn',
+              onBack: () => Navigator.of(context).pop(),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+                children: [
+                  const Center(
+                    child: IconCircle(
+                      icon: Icons.check,
+                      size: 112,
+                      background: AppColors.successSoft,
+                      color: AppColors.success,
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Hoàn thành đơn',
-                      textAlign: TextAlign.center,
-                      style: appText(26, weight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '${item.code} · ${item.issue}',
-                      textAlign: TextAlign.center,
-                      style: appText(15.5, color: AppColors.textSub),
-                    ),
-                    const SizedBox(height: 26),
-                    SurfaceCard(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
-                      child: Column(
-                        children: [
-                          Text('Giá cuối', style: appText(15, color: AppColors.textSub)),
-                          const SizedBox(height: 4),
-                          Text(
-                            formatVnd(item.finalPrice),
-                            style: appText(40, weight: FontWeight.w900, letterSpacing: -1),
-                          ),
-                          const Divider(height: 30),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text('Trạng thái thanh toán',
-                                    style: appText(15, color: AppColors.textSub)),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    'Hoàn thành đơn ${item.code}',
+                    textAlign: TextAlign.center,
+                    style: appText(23, weight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${item.issue} · ${item.vehicle}',
+                    textAlign: TextAlign.center,
+                    style: appText(15, color: AppColors.textSub),
+                  ),
+                  const SizedBox(height: 26),
+                  ShadowCard(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Giá cuối',
+                                style:
+                                    appText(15, weight: FontWeight.w500, color: AppColors.textSub),
                               ),
-                              const StatusBadge.success('Đã thanh toán', icon: Icons.check),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          KeyValueRow(
-                            'Đã cộng vào Ví của bạn',
-                            '+${formatVnd(item.earning)}',
-                            valueStyle:
-                                appText(17, weight: FontWeight.w900, color: AppColors.success),
-                          ),
-                        ],
-                      ),
+                            ),
+                            const StatusBadge.success('Đã thanh toán'),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          formatVnd(item.finalPrice),
+                          style: appText(34, weight: FontWeight.w700, letterSpacing: -0.5),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Divider(height: 1),
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Đã cộng vào Ví',
+                                style: appText(15, color: AppColors.textSub),
+                              ),
+                            ),
+                            Text(
+                              formatSignedVnd(item.earning, plus: true),
+                              style:
+                                  appText(16.5, weight: FontWeight.w700, color: AppColors.success),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              PrimaryButton(
-                label: 'Đánh giá khách',
-                onPressed: () => showRateCustomerSheet(context, item),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+              child: Column(
+                children: [
+                  PrimaryButton(
+                    label: 'Đánh giá khách',
+                    onPressed: () => showRateCustomerSheet(context, item),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlineActionButton(
+                    label: 'Xem chi tiết đơn',
+                    onPressed: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => OrderHistoryDetailScreen(item: item)),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              OutlineActionButton(
-                label: 'Xem chi tiết đơn',
-                onPressed: () => Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => OrderHistoryDetailScreen(item: item)),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

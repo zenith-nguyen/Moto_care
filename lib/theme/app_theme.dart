@@ -11,10 +11,11 @@ class AppColors {
   /// Alert/Urgent: badge khẩn cấp, lý do từ chối, bị từ chối, số tiền trừ, đăng xuất.
   static const Color danger = Color(0xFFE63946);
   static const Color dangerDark = Color(0xFFC62833); // chữ đỏ trên nền đỏ nhạt
-  static const Color dangerSoft = Color(0xFFFDECEE);
+  static const Color dangerSoft = Color(0xFFFDE8EA);
 
   static const Color bg = Color(0xFFFFFFFF);
   static const Color surface = Color(0xFFF5F5F5);
+  static const Color surfaceSoft = Color(0xFFF7F7F7);
   static const Color border = Color(0xFFE5E7EB);
   static const Color textSub = Color(0xFF6B7280);
   static const Color textMuted = Color(0xFF9CA3AF);
@@ -26,24 +27,28 @@ class AppColors {
   /// Warning/Pending: chờ xác minh, đang chờ duyệt.
   static const Color warning = Color(0xFFF2A93B);
   static const Color warningDark = Color(0xFF8A5A00); // chữ vàng trên nền vàng nhạt
-  static const Color warningSoft = Color(0xFFFDF1DC);
+  static const Color warningSoft = Color(0xFFFDF0DA);
 
   /// Map placeholder.
-  static const Color mapBlock = Color(0xFFEEF0F2);
+  static const Color mapBase = Color(0xFFEDEFF1);
+  static const Color mapPark = Color(0xFFDCE8DA);
+  static const Color mapWater = Color(0xFFD6E6F2);
 }
 
-/// Bo góc nhất quán 16–24px.
+/// Bo góc nhất quán 16–28px.
 class AppRadius {
   AppRadius._();
   static const double sm = 16;
   static const double md = 20;
   static const double lg = 24;
+  static const double input = 28;
+  static const double pill = 999;
 }
 
 class AppShadows {
   AppShadows._();
   static const List<BoxShadow> soft = [
-    BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x14000000), blurRadius: 18, offset: Offset(0, 4)),
   ];
 }
 
@@ -78,8 +83,8 @@ ThemeData buildAppTheme() {
   );
 
   final inputBorder = OutlineInputBorder(
-    borderRadius: BorderRadius.circular(AppRadius.sm),
-    borderSide: const BorderSide(color: AppColors.border),
+    borderRadius: BorderRadius.circular(AppRadius.input),
+    borderSide: const BorderSide(color: AppColors.border, width: 1.5),
   );
 
   return base.copyWith(
@@ -103,24 +108,21 @@ ThemeData buildAppTheme() {
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
-      hintStyle: appText(15, color: AppColors.textMuted),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      hintStyle: appText(15, color: const Color(0xFFB8BDC6)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       border: inputBorder,
       enabledBorder: inputBorder,
+      disabledBorder: inputBorder,
       focusedBorder: inputBorder.copyWith(
-        borderSide: const BorderSide(color: AppColors.ink, width: 1.5),
+        borderSide: const BorderSide(color: AppColors.ink, width: 1.6),
       ),
       errorBorder: inputBorder.copyWith(
-        borderSide: const BorderSide(color: AppColors.danger),
-      ),
-      focusedErrorBorder: inputBorder.copyWith(
         borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
       ),
+      focusedErrorBorder: inputBorder.copyWith(
+        borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
+      ),
       errorStyle: appText(12, color: AppColors.danger),
-    ),
-    checkboxTheme: CheckboxThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-      side: const BorderSide(color: AppColors.textMuted, width: 1.5),
     ),
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       color: AppColors.ink,

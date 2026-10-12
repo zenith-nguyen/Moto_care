@@ -22,30 +22,29 @@ class _TermsAndCommitmentScreenState extends State<TermsAndCommitmentScreen> {
   static const _sections = <(String, IconData, List<String>)>[
     (
       'Trách nhiệm của Thợ',
-      Icons.build_outlined,
+      Icons.person_outline,
       [
-        'Chỉ nhận đơn thuộc đúng dịch vụ đã đăng ký và đủ năng lực thực hiện.',
-        'Có mặt đúng thời gian đã báo, thông báo sớm nếu phát sinh trễ hẹn.',
-        'Báo giá rõ ràng trước khi sửa, không thu thêm phí ngoài thỏa thuận.',
-        'Giữ gìn tài sản, phương tiện của khách trong suốt quá trình sửa chữa.',
+        'Xác nhận đúng vị trí, mã đơn trước khi sửa',
+        'Báo giá phát sinh rõ ràng, có lý do cụ thể',
+        'Giữ thông tin khách hàng bảo mật',
       ],
     ),
     (
       'Trách nhiệm của Khách hàng',
-      Icons.person_outline,
+      Icons.location_on_outlined,
       [
-        'Cung cấp thông tin vị trí, tình trạng xe chính xác khi đặt đơn.',
-        'Thanh toán đầy đủ chi phí đã xác nhận sau khi hoàn tất dịch vụ.',
-        'Đối xử tôn trọng, không yêu cầu Thợ làm việc ngoài phạm vi đơn.',
+        'Cung cấp mã xác nhận đúng khi thợ đến',
+        'Thanh toán đầy đủ giá cuối đã duyệt',
+        'Đánh giá trung thực sau khi hoàn thành',
       ],
     ),
     (
       'Trách nhiệm của Nền tảng',
       Icons.shield_outlined,
       [
-        'Xác minh danh tính, chứng chỉ của Thợ trước khi cho phép nhận đơn.',
-        'Hỗ trợ xử lý tranh chấp và bảo vệ quyền lợi hợp lý cho cả hai bên.',
-        'Bảo mật thông tin cá nhân của Thợ và Khách hàng theo quy định.',
+        'Ghép đơn minh bạch, không ưu tiên không rõ lý do',
+        'Xử lý tranh chấp công bằng qua Admin',
+        'Bảo vệ dữ liệu cá nhân hai bên',
       ],
     ),
   ];
@@ -59,96 +58,76 @@ class _TermsAndCommitmentScreenState extends State<TermsAndCommitmentScreen> {
             const ScreenHeader(title: 'Điều khoản & Cam kết'),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
                 children: [
                   Text(
-                    'Khi tham gia MotoCare với vai trò Thợ sửa xe, bạn đồng ý tuân thủ các cam kết '
-                    'dưới đây giữa ba bên: Thợ, Khách hàng và Nền tảng, nhằm bảo đảm chất lượng '
-                    'dịch vụ và an toàn cho tất cả mọi người.',
+                    'Trước khi hoạt động trên MotoCare, vui lòng đọc và đồng ý các cam kết '
+                    'trách nhiệm sau giữa các bên.',
                     style: appText(14.5, color: AppColors.textSub, height: 1.5),
                   ),
                   for (final (title, icon, items) in _sections) ...[
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        IconCircle(
-                          icon: icon,
-                          size: 40,
-                          background: AppColors.ink,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text(title, style: appText(18, weight: FontWeight.w800))),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(color: AppColors.border),
-                      ),
+                    const SizedBox(height: 16),
+                    SurfaceCard(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (var i = 0; i < items.length; i++) ...[
-                            if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+                          Row(
+                            children: [
+                              Icon(icon, size: 24),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(title, style: appText(16.5, weight: FontWeight.w600)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          for (final item in items)
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                              padding: const EdgeInsets.symmetric(vertical: 7),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.check, color: AppColors.success, size: 20),
-                                  const SizedBox(width: 12),
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 2),
+                                    child: Icon(Icons.check, color: AppColors.success, size: 19),
+                                  ),
+                                  const SizedBox(width: 10),
                                   Expanded(
-                                    child: Text(items[i], style: appText(14.5, height: 1.4)),
+                                    child: Text(item, style: appText(14.5, height: 1.4)),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
                         ],
                       ),
                     ),
                   ],
+                  const SizedBox(height: 22),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppCheckbox(value: _agreed, onChanged: (v) => setState(() => _agreed = v)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _agreed = !_agreed),
+                          child: Text(
+                            'Tôi đã đọc và đồng ý với toàn bộ Điều khoản & Cam kết trên',
+                            style: appText(14, color: AppColors.textSub, height: 1.45),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            Container(
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.border)),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-              child: Column(
-                children: [
-                  InkWell(
-                    onTap: () => setState(() => _agreed = !_agreed),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Checkbox(
-                          value: _agreed,
-                          activeColor: AppColors.ink,
-                          onChanged: (v) => setState(() => _agreed = v ?? false),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Text(
-                              'Tôi đã đọc và đồng ý với các cam kết trách nhiệm giữa '
-                              'Thợ – Khách hàng – Nền tảng nêu trên.',
-                              style: appText(14, color: AppColors.textSub, height: 1.4),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  PrimaryButton(
-                    label: 'Đồng ý & Tiếp tục',
-                    onPressed: _agreed ? () => Navigator.of(context).pop(true) : null,
-                  ),
-                ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+              child: PrimaryButton(
+                label: 'Đồng ý & Tiếp tục',
+                onPressed: _agreed ? () => Navigator.of(context).pop(true) : null,
               ),
             ),
           ],

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../data/mock_data.dart';
 import '../models/models.dart';
+import '../utils/format.dart';
 
 /// Trạng thái dùng chung toàn app (mock, lưu trong RAM).
 /// Màn hình lắng nghe bằng `ListenableBuilder(listenable: appState, ...)`.
@@ -18,18 +19,21 @@ class AppState extends ChangeNotifier {
   int tabIndex = 0;
   ActiveOrder? activeOrder;
 
+  /// "Lần đăng nhập sau tự vào giao diện Thợ" (công tắc trong sheet đã duyệt hồ sơ).
+  bool autoOpenMechanic = true;
+
   // ---------- Ví & thống kê ----------
-  int available = 1240000;
-  int locked = 350000;
-  int todayIncome = 350000;
-  int weekIncome = 2450000;
-  int weekWithdrawn = 1800000;
-  int weekOrders = 18;
+  int balance = 4250000;
+  int todayIncome = 185000;
+  int weekIncome = 1850000;
+  int weekWithdrawn = 800000;
+  int weekOrders = 12;
+  final List<int> dailyIncome = MockData.dailyIncome();
 
-  int get totalBalance => available + locked;
+  /// Thu nhập 7 ngày T2..CN.
+  List<int> get last7Days => List.unmodifiable(dailyIncome);
 
-  /// Thu nhập 7 ngày qua, phần tử cuối là hôm nay.
-  List<int> get last7Days => [...MockData.previousSixDays, todayIncome];
+  int get highestDayIncome => dailyIncome.reduce((a, b) => a > b ? a : b);
 
   int _offerSeq = 0;
   int _withdrawSeq = 33;
@@ -42,6 +46,11 @@ class AppState extends ChangeNotifier {
 
   void setTab(int index) {
     tabIndex = index;
+    notifyListeners();
+  }
+
+  void setAutoOpenMechanic(bool value) {
+    autoOpenMechanic = value;
     notifyListeners();
   }
 
@@ -58,9 +67,8 @@ class AppState extends ChangeNotifier {
   }
 
   /// Đăng ký kỹ năng mới -> luôn ở trạng thái chờ Admin xác minh.
-  void registerSkill(Skill skill) {
-    skill.status = VerificationStatus.pending;
-    profile.skills.add(skill);
+  void registerSkill(String name) {
+    profile.skills.add(Skill(name: name, status: VerificationStatus.pending));
     notifyListeners();
   }
 
@@ -73,13 +81,15 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------- Đơn hàng ----------
+  /// Số offer đã gửi tới thợ (dùng để mock tình huống mất kết nối ở offer thứ hai).
+  int get offerSeq => _offerSeq;
+
   OrderOffer nextOffer() {
     final base = MockData.offers[_offerSeq % MockData.offers.length];
     final seq = _offerSeq++;
     if (seq < MockData.offers.length) return base;
     return OrderOffer(
-      code: '#MC${105 + seq}',
-      service: base.service,
+      code: '#MC${2341 + seq}',
       issue: base.issue,
       description: base.description,
       vehicle: base.vehicle,
@@ -90,6 +100,7 @@ class AppState extends ChangeNotifier {
       distanceKm: base.distanceKm,
       etaMinutes: base.etaMinutes,
       price: base.price,
+      platformFee: base.platformFee,
     );
   }
 
@@ -158,9 +169,10 @@ class AppState extends ChangeNotifier {
     _quoteTimer?.cancel();
     final now = DateTime.now();
     final offer = o.offer;
+    final accepted = o.quoteStatus == QuoteStatus.accepted;
+    final extra = o.finalPrice - offer.price;
     final item = OrderHistoryItem(
       code: offer.code,
-      service: offer.service,
       issue: offer.issue,
       vehicle: offer.vehicle,
       plate: offer.plate,
@@ -171,14 +183,17 @@ class AppState extends ChangeNotifier {
       time: now,
       initialPrice: offer.price,
       finalPrice: o.finalPrice,
-      extraReason: o.quoteStatus == QuoteStatus.accepted ? o.quoteReason : null,
+      fee: o.finalFee,
+      extraReason: accepted ? o.quoteReason : null,
       messages: o.messages,
+      customerRating: 5,
+      customerReview: 'Thợ tới nhanh, nhiệt tình, giá hợp lý!',
       timeline: [
         TimelineEvent('Đã nhận đơn', o.acceptedAt),
         if (o.arrivedAt != null) TimelineEvent('Đã đến nơi', o.arrivedAt!),
-        if (o.repairStartedAt != null) TimelineEvent('Bắt đầu sửa chữa', o.repairStartedAt!),
-        if (o.quoteSentAt != null && o.quoteStatus == QuoteStatus.accepted)
-          TimelineEvent('Khách duyệt giá mới', o.quoteSentAt!),
+        if (o.repairStartedAt != null) TimelineEvent('Bắt đầu sửa', o.repairStartedAt!),
+        if (o.quoteSentAt != null && accepted)
+          TimelineEvent('Báo giá cuối: +${formatVnd(extra)}', o.quoteSentAt!),
         TimelineEvent('Hoàn thành', now),
       ],
     );
@@ -187,7 +202,7 @@ class AppState extends ChangeNotifier {
       0,
       WalletTransaction(
         code: offer.code,
-        txnId: 'TXN-${88213050 + history.length}',
+        txnId: 'TX-${88213 + history.length}',
         type: TxType.credit,
         amount: item.earning,
         time: now,
@@ -195,14 +210,15 @@ class AppState extends ChangeNotifier {
         serviceName: offer.issue,
         customerName: offer.customerName,
         customerPhone: offer.customerPhone,
-        customerArea: offer.address,
-        platformFee: item.platformFee,
+        finalPrice: item.finalPrice,
+        platformFee: item.fee,
       ),
     );
-    available += item.earning;
+    balance += item.earning;
     todayIncome += item.earning;
     weekIncome += item.earning;
     weekOrders += 1;
+    dailyIncome[now.weekday - 1] += item.earning;
     profile.tierOrders += 1;
     activeOrder = null;
     notifyListeners();
@@ -217,16 +233,15 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------- Ví ----------
-  /// Sandbox: ghi nhận yêu cầu rút, tiền chuyển từ Khả dụng sang Đang khóa chờ Admin duyệt.
+  /// Sandbox: ghi nhận yêu cầu rút, trừ ngay khỏi số dư và chờ Admin duyệt.
   bool requestWithdraw(int amount) {
-    if (amount <= 0 || amount > available) return false;
-    available -= amount;
-    locked += amount;
+    if (amount <= 0 || amount > balance) return false;
+    balance -= amount;
     transactions.insert(
       0,
       WalletTransaction(
         code: '#RT${(_withdrawSeq++).toString().padLeft(4, '0')}',
-        txnId: 'TXN-${88213100 + _withdrawSeq}',
+        txnId: 'TX-${88300 + _withdrawSeq}',
         type: TxType.debit,
         amount: amount,
         time: DateTime.now(),

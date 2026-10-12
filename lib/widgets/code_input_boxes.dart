@@ -111,17 +111,19 @@ class _Box extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       width: size,
-      height: size * 1.22,
+      height: size * 1.2,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(size * 0.36),
         border: Border.all(
-          color: active || filled ? AppColors.ink : AppColors.border,
-          width: active ? 2 : (filled ? 1.2 : 1.4),
+          color: active ? AppColors.ink : AppColors.border,
+          width: active ? 1.8 : 1.5,
         ),
       ),
-      child: Text(digit, style: appText(size * 0.46, weight: FontWeight.w800)),
+      child: filled
+          ? Text(digit, style: appText(size * 0.4, weight: FontWeight.w600))
+          : Text('•', style: appText(size * 0.34, weight: FontWeight.w700, color: AppColors.ink)),
     );
   }
 }

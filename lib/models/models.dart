@@ -1,17 +1,4 @@
-import 'package:flutter/material.dart';
-
-/// Loại dịch vụ cứu hộ — quyết định icon hiển thị trong danh sách.
-enum ServiceType { tire, battery, tow, oil, electric }
-
-extension ServiceTypeX on ServiceType {
-  IconData get icon => switch (this) {
-        ServiceType.tire => Icons.adjust,
-        ServiceType.battery => Icons.bolt_outlined,
-        ServiceType.tow => Icons.local_shipping_outlined,
-        ServiceType.oil => Icons.water_drop_outlined,
-        ServiceType.electric => Icons.power_outlined,
-      };
-}
+import '../utils/format.dart';
 
 /// Trạng thái xác minh do Admin quyết định — thợ chỉ xem, không tự bật/tắt.
 enum VerificationStatus { verified, pending, rejected }
@@ -20,18 +7,16 @@ enum VerificationStatus { verified, pending, rejected }
 enum AccountStatus { approved, pending, rejected }
 
 class Skill {
-  Skill({required this.name, required this.icon, required this.status});
+  Skill({required this.name, required this.status});
 
   final String name;
-  final IconData icon;
   VerificationStatus status;
 }
 
 class VerificationDoc {
-  const VerificationDoc({required this.name, required this.icon, required this.status});
+  const VerificationDoc({required this.name, required this.status});
 
   final String name;
-  final IconData icon;
   final VerificationStatus status;
 }
 
@@ -58,7 +43,7 @@ class MechanicProfile {
   String bio;
   final String tierName; // "Bạc"
   final String nextTierName; // "Vàng"
-  int tierOrders; // số đơn trong 30 ngày tính hạng
+  int tierOrders; // số đơn tính hạng trong kỳ
   final int nextTierTarget;
   final int experienceYears;
   final int radiusKm;
@@ -68,7 +53,7 @@ class MechanicProfile {
   final List<Skill> skills;
   final List<VerificationDoc> documents;
 
-  String get initial => name.trim().isEmpty ? '?' : name.trim()[0].toUpperCase();
+  String get initials => initialsOf(name);
   int get ordersToNextTier => (nextTierTarget - tierOrders).clamp(0, nextTierTarget);
   double get tierProgress => (tierOrders / nextTierTarget).clamp(0.0, 1.0);
 }
@@ -77,7 +62,6 @@ class MechanicProfile {
 class OrderOffer {
   const OrderOffer({
     required this.code,
-    required this.service,
     required this.issue,
     required this.description,
     required this.vehicle,
@@ -88,36 +72,40 @@ class OrderOffer {
     required this.distanceKm,
     required this.etaMinutes,
     required this.price,
+    required this.platformFee,
   });
 
-  final String code; // "#MC105"
-  final ServiceType service;
-  final String issue; // "Hết bình, cần kích bình"
-  final String description; // nội dung sự cố chi tiết
-  final String vehicle; // "Honda Vario 150"
-  final String plate; // "59S1-123.45"
+  final String code; // "#MC2341"
+  final String issue; // "Hết xăng"
+  final String description; // nội dung sự cố khách mô tả
+  final String vehicle; // "Honda Vision"
+  final String plate; // "59-X1 123.45"
   final String customerName;
   final String customerPhone;
   final String address;
   final double distanceKm;
   final int etaMinutes;
-  final int price; // giá tạm tính
-
-  int get platformFee => feeOf(price);
+  final int price; // giá ban đầu
+  final int platformFee; // chiết khấu sàn trên giá ban đầu
 }
 
-/// Chiết khấu sàn 10%.
-int feeOf(int price) => (price * 0.1).round();
+/// Chiết khấu sàn trên giá cuối: giữ chiết khấu gốc, phần phụ phí phát sinh chịu thêm 4,5%
+/// (làm tròn nghìn). Vd: 74.000đ -> 140.000đ: 6.000đ + 3.000đ = 9.000đ.
+int orderFee({required int baseFee, required int basePrice, required int price}) {
+  final extra = price - basePrice;
+  if (extra <= 0) return baseFee;
+  return baseFee + (extra * 0.045 / 1000).round() * 1000;
+}
 
 /// 5 bước xử lý đơn.
 enum OrderStep { received, arrived, repairing, quoting, completed }
 
 const List<String> orderStepLabels = [
-  'Đã nhận đơn',
-  'Đã đến nơi',
-  'Đang sửa chữa',
-  'Đề xuất giá',
-  'Hoàn thành',
+  'Đã nhận',
+  'Đã đến',
+  'Đang sửa',
+  'Báo giá cuối',
+  'Hoàn tất',
 ];
 
 enum QuoteStatus { none, pending, accepted }
@@ -140,6 +128,9 @@ class ActiveOrder {
   QuoteStatus quoteStatus = QuoteStatus.none;
 
   int get finalPrice => quoteStatus == QuoteStatus.accepted ? proposedPrice! : offer.price;
+
+  int get finalFee =>
+      orderFee(baseFee: offer.platformFee, basePrice: offer.price, price: finalPrice);
 }
 
 enum OrderStatus { active, completed, cancelled }
@@ -153,7 +144,6 @@ class TimelineEvent {
 class OrderHistoryItem {
   OrderHistoryItem({
     required this.code,
-    required this.service,
     required this.issue,
     required this.vehicle,
     required this.plate,
@@ -164,15 +154,17 @@ class OrderHistoryItem {
     required this.time,
     required this.initialPrice,
     required this.finalPrice,
+    required this.fee,
     required this.timeline,
     this.extraReason,
     this.messages = const [],
+    this.customerRating,
+    this.customerReview,
     this.rating,
     this.ratingComment,
   });
 
   final String code;
-  final ServiceType service;
   final String issue;
   final String vehicle;
   final String plate;
@@ -183,17 +175,21 @@ class OrderHistoryItem {
   final DateTime time; // thời điểm hoàn thành / hủy
   final int initialPrice;
   final int finalPrice;
+  final int fee; // chiết khấu sàn
   final String? extraReason;
   final List<TimelineEvent> timeline;
   final List<ChatMessage> messages;
 
-  /// Đánh giá thợ dành cho khách (null = chưa đánh giá).
+  /// Đánh giá của khách dành cho thợ.
+  final int? customerRating;
+  final String? customerReview;
+
+  /// Đánh giá của thợ dành cho khách (null = chưa đánh giá).
   int? rating;
   String? ratingComment;
 
   int get extra => finalPrice - initialPrice;
-  int get platformFee => feeOf(finalPrice);
-  int get earning => finalPrice - platformFee;
+  int get earning => status == OrderStatus.completed ? finalPrice - fee : 0;
 }
 
 enum TxType { credit, debit }
@@ -213,12 +209,12 @@ class WalletTransaction {
     this.serviceName,
     this.customerName,
     this.customerPhone,
-    this.customerArea,
+    this.finalPrice = 0,
     this.platformFee = 0,
   });
 
-  final String code; // "#MC104" hoặc "#RT0032"
-  final String txnId; // "TXN-88213049"
+  final String code; // "#MC2341" hoặc "#RT0032"
+  final String txnId; // "TX-88213"
   final TxType type;
   final int amount;
   final DateTime time;
@@ -227,14 +223,14 @@ class WalletTransaction {
   final String? serviceName;
   final String? customerName;
   final String? customerPhone;
-  final String? customerArea;
+  final int finalPrice;
   final int platformFee;
 
   bool get isCredit => type == TxType.credit;
-  String get title => isCredit ? 'Cộng tiền từ đơn hoàn thành' : 'Yêu cầu rút tiền';
+  String get title => isCredit ? 'Đơn $orderCode hoàn thành' : 'Yêu cầu rút tiền';
 }
 
-enum MessageStatus { sending, sent, failed }
+enum MessageStatus { sending, sent, seen, failed }
 
 class ChatMessage {
   ChatMessage({

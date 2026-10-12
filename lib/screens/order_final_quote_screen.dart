@@ -6,10 +6,11 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../utils/format.dart';
 import '../widgets/countdown_ring.dart';
+import '../widgets/step_progress_bar.dart';
 import '../widgets/ui.dart';
 import 'order_received_screen.dart';
 
-/// Bước 4/5: Đề xuất giá cuối khác giá ban đầu. Khách có 10 phút để đồng ý / từ chối.
+/// Bước 4/5: Báo giá cuối khác giá ban đầu. Khách có 10 phút để đồng ý / từ chối.
 class OrderFinalQuoteScreen extends StatefulWidget {
   const OrderFinalQuoteScreen({super.key, required this.order});
 
@@ -56,20 +57,29 @@ class _OrderFinalQuoteScreenState extends State<OrderFinalQuoteScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Hủy đề xuất giá?', style: appText(19, weight: FontWeight.w800)),
-        content: Text('Đơn sẽ giữ nguyên giá ban đầu ${formatVnd(_order.offer.price)}.',
-            style: appText(15, color: AppColors.textSub, height: 1.45)),
+        title: Text('Hủy đề xuất giá?', style: appText(19, weight: FontWeight.w600)),
+        content: Text(
+          'Đơn sẽ giữ nguyên giá ban đầu ${formatVnd(_order.offer.price)}.',
+          style: appText(15, color: AppColors.textSub, height: 1.45),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Không',
-                style: appText(15, weight: FontWeight.w700, color: AppColors.textSub)),
+            child: Text(
+              'Không',
+              style: appText(15, weight: FontWeight.w600, color: AppColors.textSub),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.ink),
-            child: Text('Hủy đề xuất',
-                style: appText(15, weight: FontWeight.w800, color: Colors.white)),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.ink,
+              shape: const StadiumBorder(),
+            ),
+            child: Text(
+              'Hủy đề xuất',
+              style: appText(15, weight: FontWeight.w700, color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -95,8 +105,10 @@ class _OrderFinalQuoteScreenState extends State<OrderFinalQuoteScreen> {
                   child: Form(
                     key: _formKey,
                     child: ScrollColumn(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
                       children: [
+                        const StepProgressBar(current: 4, steps: orderStepLabels),
+                        const SizedBox(height: 20),
                         _PriceCard(
                           initial: _order.offer.price,
                           proposed: editing ? _proposed : _order.proposedPrice!,
@@ -112,37 +124,62 @@ class _OrderFinalQuoteScreenState extends State<OrderFinalQuoteScreen> {
                           minLines: 3,
                           maxLines: 5,
                           textCapitalization: TextCapitalization.sentences,
-                          style: appText(16, height: 1.45),
-                          decoration: const InputDecoration(
-                            hintText: 'VD: Phuộc trước bị gãy, cần thay phụ tùng mới...',
+                          style: appText(15, height: 1.45),
+                          decoration: InputDecoration(
+                            hintText: 'vd. Lốp rách nặng cần thay ruột mới, phát sinh phụ tùng...',
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: const BorderSide(color: AppColors.ink, width: 1.6),
+                            ),
+                            errorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
+                            ),
+                            focusedErrorBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: const BorderSide(color: AppColors.danger, width: 1.6),
+                            ),
                           ),
                           validator: (v) => (v == null || v.trim().length < 10)
                               ? 'Vui lòng ghi rõ lý do (tối thiểu 10 ký tự)'
                               : null,
                         ),
-                        const SizedBox(height: 22),
+                        const SizedBox(height: 20),
                         if (status == QuoteStatus.pending) ...[
                           _WaitingBlock(sentAt: _order.quoteSentAt!),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nếu khách từ chối, đơn sẽ chuyển sang trạng thái tranh chấp để Admin '
-                            'xem xét và quyết định mức giá cuối cùng.',
-                            style: appText(14, color: AppColors.textMuted, height: 1.5),
+                          const SizedBox(height: 14),
+                          const Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
+                            children: [
+                              StatusBadge.success('Khách đồng ý', icon: Icons.check),
+                              StatusBadge.danger('Từ chối / Admin xem xét', icon: Icons.close),
+                            ],
                           ),
                         ],
                         if (status == QuoteStatus.accepted)
                           SurfaceCard(
                             color: AppColors.successSoft,
+                            radius: AppRadius.md,
                             child: Row(
                               children: [
-                                const Icon(Icons.check_circle_outline,
-                                    color: AppColors.success, size: 32),
+                                const Icon(
+                                  Icons.check_circle_outline,
+                                  color: AppColors.success,
+                                  size: 30,
+                                ),
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: Text(
                                     'Khách đã đồng ý giá mới ${formatVnd(_order.proposedPrice!)}. '
                                     'Bạn có thể hoàn thành công việc.',
-                                    style: appText(15, weight: FontWeight.w600, height: 1.4),
+                                    style: appText(14.5, weight: FontWeight.w500, height: 1.45),
                                   ),
                                 ),
                               ],
@@ -155,8 +192,10 @@ class _OrderFinalQuoteScreenState extends State<OrderFinalQuoteScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
                   child: switch (status) {
-                    QuoteStatus.none =>
-                      PrimaryButton(label: 'Gửi đề xuất cho khách', onPressed: _send),
+                    QuoteStatus.none => PrimaryButton(
+                        label: 'Gửi đề xuất cho khách',
+                        onPressed: _send,
+                      ),
                     QuoteStatus.pending => Column(
                         children: [
                           OutlineActionButton(
@@ -164,7 +203,11 @@ class _OrderFinalQuoteScreenState extends State<OrderFinalQuoteScreen> {
                             onPressed: () => openOrderChat(context, _order),
                           ),
                           const SizedBox(height: 4),
-                          MutedTextButton(label: 'Hủy đề xuất', onPressed: _cancelQuote),
+                          MutedTextButton(
+                            label: 'Hủy đề xuất',
+                            color: AppColors.danger,
+                            onPressed: _cancelQuote,
+                          ),
                         ],
                       ),
                     QuoteStatus.accepted => PrimaryButton(
@@ -200,33 +243,35 @@ class _PriceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final diff = proposed - initial;
-    final diffText = proposed == 0 ? '—' : '${diff >= 0 ? '+' : '-'}${formatVnd(diff)}';
+    final diffText = proposed == 0 ? '—' : formatSignedVnd(diff.abs(), plus: diff >= 0);
     return SurfaceCard(
+      radius: AppRadius.md,
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
       child: Column(
         children: [
           KeyValueRow('Giá ban đầu', formatVnd(initial)),
           editing
               ? Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: [
                       Expanded(
-                          child: Text('Giá đề xuất mới',
-                              style: appText(15, color: AppColors.textSub))),
+                        child:
+                            Text('Giá đề xuất mới', style: appText(15, color: AppColors.textSub)),
+                      ),
                       SizedBox(
-                        width: 150,
+                        width: 160,
                         child: TextFormField(
                           controller: controller,
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           textAlign: TextAlign.right,
-                          style: appText(15, weight: FontWeight.w800),
+                          style: appText(15, weight: FontWeight.w700),
                           decoration: const InputDecoration(
-                            hintText: '230000',
+                            hintText: '140000',
                             suffixText: 'đ',
                             isDense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                           ),
                           onChanged: (_) => onChanged(),
                           validator: (v) {
@@ -241,11 +286,19 @@ class _PriceCard extends StatelessWidget {
                   ),
                 )
               : KeyValueRow('Giá đề xuất mới', formatVnd(proposed)),
-          const Divider(height: 20),
+          const Divider(height: 22),
           Row(
             children: [
-              Expanded(child: Text('Chênh lệch', style: appText(17, weight: FontWeight.w800))),
-              Text(diffText, style: appText(28, weight: FontWeight.w900, letterSpacing: -0.5)),
+              Expanded(
+                child: Text(
+                  'Chênh lệch',
+                  style: appText(16, weight: FontWeight.w600, color: AppColors.danger),
+                ),
+              ),
+              Text(
+                diffText,
+                style: appText(20, weight: FontWeight.w700, color: AppColors.danger),
+              ),
             ],
           ),
         ],
@@ -254,23 +307,28 @@ class _PriceCard extends StatelessWidget {
   }
 }
 
+/// Chờ khách duyệt: vòng đếm ngược 10 phút màu vàng cam.
 class _WaitingBlock extends StatelessWidget {
   const _WaitingBlock({required this.sentAt});
   final DateTime sentAt;
 
   @override
   Widget build(BuildContext context) {
-    return SurfaceCard(
-      color: AppColors.surface,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      decoration: BoxDecoration(
+        color: AppColors.warningSoft,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
       child: Row(
         children: [
           CountdownRing(
             total: OrderFinalQuoteScreen.responseWindow,
             startedAt: sentAt,
             color: AppColors.warning,
-            size: 84,
+            size: 72,
             strokeWidth: 6,
-            fontSize: 17,
+            fontSize: 15,
             labelBuilder: formatMSs,
             onFinished: () => showAppSnack(
               context,
@@ -282,19 +340,14 @@ class _WaitingBlock extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Đang chờ khách duyệt', style: appText(17, weight: FontWeight.w800)),
-                const SizedBox(height: 4),
-                StreamBuilder<int>(
-                  stream: Stream.periodic(const Duration(seconds: 1), (i) => i),
-                  builder: (context, _) {
-                    final left =
-                        OrderFinalQuoteScreen.responseWindow - DateTime.now().difference(sentAt);
-                    return Text(
-                      'Còn ${formatMSs(left)} để khách đồng ý hoặc từ chối giá mới. '
-                      'Bạn sẽ nhận thông báo ngay khi khách phản hồi.',
-                      style: appText(14, color: AppColors.textSub, height: 1.4),
-                    );
-                  },
+                Text(
+                  'Đang chờ khách duyệt',
+                  style: appText(16.5, weight: FontWeight.w600, color: AppColors.warningDark),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Tự hết hạn nếu không phản hồi kịp',
+                  style: appText(13.5, color: AppColors.warningDark, height: 1.4),
                 ),
               ],
             ),

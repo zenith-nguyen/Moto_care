@@ -14,6 +14,7 @@ class CountdownRing extends StatefulWidget {
     this.size = 72,
     this.strokeWidth = 6,
     this.fontSize = 20,
+    this.textColor = AppColors.ink,
     this.onFinished,
   });
 
@@ -26,6 +27,7 @@ class CountdownRing extends StatefulWidget {
   final double size;
   final double strokeWidth;
   final double fontSize;
+  final Color textColor;
   final VoidCallback? onFinished;
 
   @override
@@ -80,7 +82,7 @@ class _CountdownRingState extends State<CountdownRing> with SingleTickerProvider
               Center(
                 child: Text(
                   widget.labelBuilder(remaining),
-                  style: appText(widget.fontSize, weight: FontWeight.w900, color: widget.color),
+                  style: appText(widget.fontSize, weight: FontWeight.w700, color: widget.textColor),
                 ),
               ),
             ],
