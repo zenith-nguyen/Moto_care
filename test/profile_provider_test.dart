@@ -15,14 +15,17 @@ void main() {
       final json = {
         ...profileFixture.toJson(),
         'avatarUrl': 'https://example.com/avatar.jpg',
+        'isVerified': true,
       };
       final decoded = UserProfile.fromJson(json);
       expect(decoded.toJson(), json);
+      expect(decoded.copyWith(fullName: 'Tên mới').isVerified, isTrue);
       final minimal = UserProfile.fromJson({'id': '1', 'fullName': 'An'});
       expect(minimal.defaultVehicle, isNull);
       expect(minimal.emergencyContactPhone, isEmpty);
       expect(minimal.memberTier, 'Chưa có hạng');
       expect(minimal.rewardPoints, 0);
+      expect(minimal.isVerified, isFalse);
     },
   );
 

@@ -13,9 +13,10 @@ import '../models/chat_conversation.dart';
 import '../theme/chat_theme.dart';
 
 class TinNhanScreen extends ConsumerWidget {
-  const TinNhanScreen({super.key, this.launchPhone});
+  const TinNhanScreen({super.key, this.launchPhone, this.initialTabIndex = 0});
 
   final Future<bool> Function(Uri)? launchPhone;
+  final int initialTabIndex;
 
   Future<void> _callMechanic(
     BuildContext context,
@@ -49,7 +50,7 @@ class TinNhanScreen extends ConsumerWidget {
       data: ChatTheme.light,
       child: DefaultTabController(
         length: 3,
-        initialIndex: 0,
+        initialIndex: initialTabIndex,
         child: Scaffold(
           backgroundColor: ChatTheme.background,
           appBar: AppBar(

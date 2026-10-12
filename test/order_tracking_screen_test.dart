@@ -1,17 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image/image.dart' as images;
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
 import 'package:moto_care/features/activity/models/rescue_order.dart';
 import 'package:moto_care/features/activity/providers/activity_provider.dart';
 import 'package:moto_care/features/activity/services/activity_actions.dart';
 import 'package:moto_care/features/activity/widgets/order_summary.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
 import 'package:moto_care/features/rescue/models/order_tracking_journey.dart';
+import 'package:moto_care/features/rescue/models/tracking_update.dart';
+import 'package:moto_care/features/rescue/models/tracking_mechanic.dart';
+import 'package:moto_care/features/rescue/services/order_tracking_feed.dart';
 import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
 import 'package:moto_care/features/rescue/widgets/order_tracking_map.dart';
 
@@ -56,6 +61,45 @@ class _MapRecorder {
   }
 }
 
+class _TrackingFeed implements OrderTrackingFeed {
+  int subscriptions = 0;
+  final watchedOrders = <String>[];
+  late final controller = StreamController<TrackingUpdate>.broadcast(
+    onListen: () => subscriptions++,
+    onCancel: () => subscriptions--,
+  );
+  @override
+  Stream<TrackingUpdate> watchOrder(String orderId) {
+    watchedOrders.add(orderId);
+    return controller.stream;
+  }
+}
+
+TrackingUpdate _update({
+  int minute = 0,
+  String orderId = 'tracking-001',
+  LatLng mechanic = const LatLng(10.761, 106.661),
+  List<LatLng>? route,
+  double distance = 1.2,
+  int eta = 5,
+  bool arrived = false,
+}) => TrackingUpdate(
+  orderId: orderId,
+  observedAt: DateTime.utc(2026, 10, 9, 9, minute),
+  mechanic: mechanic,
+  route:
+      route ??
+      [mechanic, const LatLng(10.759, 106.665), const LatLng(10.757, 106.668)],
+  remainingDistanceKm: distance,
+  etaMinutes: eta,
+  arrived: arrived,
+  mechanicDetails: const TrackingMechanic(
+    name: 'Trần Minh Hải',
+    plate: '59-B2 567.89',
+    phoneNumber: '0901234567',
+  ),
+);
+
 Future<GoRouter> _open(
   WidgetTester tester, {
   required _MapRecorder map,
@@ -63,6 +107,7 @@ Future<GoRouter> _open(
   bool motion = false,
   Future<bool> Function(Uri)? launcher,
   String path = '/order-tracking?id=tracking-001',
+  OrderTrackingFeed? feed,
 }) async {
   final router = createAppRouter();
   addTearDown(router.dispose);
@@ -72,6 +117,7 @@ Future<GoRouter> _open(
       overrides: [
         initialRescueOrdersProvider.overrideWithValue([order ?? _order()]),
         orderTrackingMapBuilderProvider.overrideWithValue(map.build),
+        orderTrackingFeedProvider.overrideWithValue(feed),
         activityUrlLauncherProvider.overrideWithValue(
           launcher ?? (_) async => true,
         ),
@@ -122,6 +168,175 @@ Future<void> _tap(
 }
 
 void main() {
+  testWidgets(
+    'Backend route and GPS update the card even with reduced motion',
+    (tester) async {
+      final feed = _TrackingFeed();
+      addTearDown(feed.controller.close);
+      final map = _MapRecorder();
+      await _open(tester, map: map, feed: feed);
+      expect(feed.watchedOrders, ['tracking-001']);
+      expect(map.data!.mechanic, isNull);
+      expect(map.data!.markers().length, 1);
+      expect(find.text('Đang kết nối'), findsOneWidget);
+      expect(find.text('Nguyễn Minh Tuấn'), findsNothing);
+      final event = _update();
+      feed.controller.add(event);
+      await tester.pumpAndSettle();
+      expect(map.data!.customer, const LatLng(10.757, 106.668));
+      expect(map.data!.mechanic, event.mechanic);
+      expect(map.data!.route, event.route);
+      expect(map.data!.isSimulated, isFalse);
+      expect(find.text('Trần Minh Hải'), findsOneWidget);
+      expect(find.text('59-B2 567.89'), findsOneWidget);
+      expect(find.text('1.2 km'), findsOneWidget);
+      expect(find.text('5 phút'), findsOneWidget);
+      expect(find.text('Lộ trình mô phỏng'), findsNothing);
+      final next = _update(
+        minute: 1,
+        mechanic: const LatLng(10.758, 106.666),
+        distance: .4,
+        eta: 2,
+      );
+      feed.controller.add(next);
+      await tester.pumpAndSettle();
+      expect(map.data!.mechanic, next.mechanic);
+      expect(map.data!.polylines.single.points, next.route);
+      expect(find.text('0.4 km'), findsOneWidget);
+      expect(find.text('2 phút'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 30));
+      expect(map.data!.mechanic, next.mechanic);
+      expect(
+        _state(tester).read(activityProvider).orders.single.status,
+        RescueOrderStatus.pending,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'Stale and other-order updates are ignored; disconnection retains the last position',
+    (tester) async {
+      final feed = _TrackingFeed();
+      addTearDown(feed.controller.close);
+      final map = _MapRecorder();
+      await _open(tester, map: map, feed: feed, motion: true);
+      feed.controller.add(_update(minute: 2));
+      await tester.pumpAndSettle();
+      final last = map.data!.mechanic;
+      feed.controller.add(
+        _update(minute: 1, mechanic: const LatLng(10.8, 106.7)),
+      );
+      feed.controller.add(
+        _update(
+          minute: 3,
+          orderId: 'other',
+          mechanic: const LatLng(10.9, 106.8),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(map.data!.mechanic, last);
+      feed.controller.addError(StateError('offline'));
+      await tester.pumpAndSettle();
+      expect(map.data!.mechanic, last);
+      expect(find.textContaining('Mất kết nối'), findsOneWidget);
+      feed.controller.add(
+        _update(
+          minute: 4,
+          mechanic: const LatLng(10.757, 106.668),
+          distance: 0,
+          eta: 0,
+          arrived: true,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Thợ đã đến'), findsOneWidget);
+      expect(find.text('0.0 km'), findsOneWidget);
+      expect(find.textContaining('Mất kết nối'), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      expect(feed.subscriptions, 0);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'Cancelling an order unsubscribes from GPS and preserves its last location',
+    (tester) async {
+      final feed = _TrackingFeed();
+      addTearDown(feed.controller.close);
+      final map = _MapRecorder();
+      await _open(tester, map: map, feed: feed);
+      feed.controller.add(_update());
+      await tester.pumpAndSettle();
+      final last = map.data!.mechanic;
+      await _tap(tester, _key('tracking-cancel'));
+      await _tap(tester, find.byKey(const ValueKey('cancel-reason-long_wait')));
+      await _tap(tester, find.byKey(const ValueKey('cancel-confirm')));
+      expect(feed.subscriptions, 0);
+      feed.controller.add(
+        _update(minute: 3, mechanic: const LatLng(10.8, 106.7)),
+      );
+      await tester.pumpAndSettle();
+      expect(map.data!.mechanic, last);
+      expect(find.text('Đã hủy đơn thành công'), findsOneWidget);
+      expect(find.byType(OrderTrackingScreen), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Live contacts open the selected mechanic chat and dial the feed phone',
+    (tester) async {
+      final feed = _TrackingFeed();
+      addTearDown(feed.controller.close);
+      final launched = <Uri>[];
+      final router = await _open(
+        tester,
+        map: _MapRecorder(),
+        feed: feed,
+        launcher: (uri) async {
+          launched.add(uri);
+          return true;
+        },
+      );
+      feed.controller.add(_update());
+      await tester.pumpAndSettle();
+      await _tap(tester, _key('tracking-call'));
+      expect(launched.single, Uri(scheme: 'tel', path: '0901234567'));
+      await _tap(tester, _key('tracking-chat'));
+      expect(router.state.uri.path, '/chat-detail');
+      expect(find.text('Trần Minh Hải'), findsOneWidget);
+      expect(find.textContaining('MC-TRACK-001'), findsOneWidget);
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Theo dõi trực tiếp'), findsOneWidget);
+    },
+  );
+
+  test(
+    'Empty service routes still fit both people and route lists are immutable',
+    () {
+      final route = <LatLng>[const LatLng(10.758, 106.665)];
+      final update = _update(route: route);
+      route.clear();
+      expect(update.route.length, 1);
+      expect(() => update.route.clear(), throwsUnsupportedError);
+      for (final points in [<LatLng>[], update.route]) {
+        final data = OrderTrackingMapData(
+          customer: const LatLng(10.757, 106.668),
+          mechanic: update.mechanic,
+          route: points,
+          fullRoute: points,
+          isSimulated: false,
+        );
+        expect(data.cameraBounds.contains(data.customer), isTrue);
+        expect(data.cameraBounds.contains(update.mechanic), isTrue);
+        expect(data.polylines, isEmpty);
+      }
+      expect(() => _update(distance: -1), throwsArgumentError);
+      expect(() => _update(eta: -1), throwsArgumentError);
+    },
+  );
   testWidgets('An active order can reopen tracking from its invoice', (
     tester,
   ) async {
@@ -158,38 +373,65 @@ void main() {
     },
   );
 
-  test(
-    'Native map data keeps two identified markers and a red route to SOS',
-    () {
-      final journey = OrderTrackingJourney.fromOrder(_order(), null)!;
-      final data = OrderTrackingMapData(
-        customer: journey.customer,
-        mechanic: journey.positionAt(1, .5),
-        route: journey.remainingRoute(1, .5),
-        fullRoute: journey.points,
-      );
-      final markers = data.markers();
-      expect(markers.length, 2);
-      expect(
+  test('Native map data keeps both markers and a red width-5 route to SOS', () {
+    final journey = OrderTrackingJourney.fromOrder(_order(), null)!;
+    final data = OrderTrackingMapData(
+      customer: journey.customer,
+      mechanic: journey.positionAt(1, .5),
+      route: journey.remainingRoute(1, .5),
+      fullRoute: journey.points,
+    );
+    final markers = data.markers();
+    expect(markers.length, 2);
+    expect(
+      markers
+          .singleWhere((marker) => marker.markerId.value == 'customer-sos')
+          .position,
+      journey.customer,
+    );
+    expect(
+      markers
+          .singleWhere((marker) => marker.markerId.value == 'mechanic-bike')
+          .position,
+      data.mechanic,
+    );
+    for (final marker in markers.where(
+      (marker) => marker.markerId.value == 'customer-sos',
+    )) {
+      final icon = marker.icon as BytesMapBitmap;
+      final bitmap = images.decodePng(icon.byteData)!;
+      var hasBlack = false;
+      for (final pixel in bitmap) {
+        if (pixel.a == 0) continue;
+        expect(pixel.r, pixel.g);
+        expect(pixel.g, pixel.b);
+        hasBlack |= pixel.r == 0;
+      }
+      expect(hasBlack, isTrue);
+    }
+    expect(data.polylines.single.color, const Color(0xFFE53935));
+    expect(data.polylines.single.width, 5);
+    final bike =
         markers
-            .singleWhere((marker) => marker.markerId.value == 'customer-sos')
-            .position,
-        journey.customer,
-      );
-      expect(
-        markers
-            .singleWhere((marker) => marker.markerId.value == 'mechanic-bike')
-            .position,
-        data.mechanic,
-      );
-      expect(data.polylines.single.color, const Color(0xFFCC0001));
-      expect(data.polylines.single.points.first, data.mechanic);
-      expect(data.polylines.single.points.last, data.customer);
-    },
-  );
+                .singleWhere(
+                  (marker) => marker.markerId.value == 'mechanic-bike',
+                )
+                .icon
+            as BytesMapBitmap;
+    final bikeBitmap = images.decodePng(bike.byteData)!;
+    expect(
+      bikeBitmap.any(
+        (pixel) =>
+            pixel.r == 229 && pixel.g == 57 && pixel.b == 53 && pixel.a > 0,
+      ),
+      isTrue,
+    );
+    expect(data.polylines.single.points.first, data.mechanic);
+    expect(data.polylines.single.points.last, data.customer);
+  });
 
   testWidgets(
-    'Tracking shows white/red status, mechanic, services and the exact checkout total',
+    'Tracking keeps the map full screen, with compact status and the exact checkout total',
     (tester) async {
       final map = _MapRecorder();
       await _open(tester, map: map);
@@ -197,9 +439,16 @@ void main() {
       expect(find.text('Thợ đang trên đường đến'), findsOneWidget);
       expect(find.text('Lộ trình mô phỏng'), findsOneWidget);
       expect(find.textContaining('Dự kiến đến trong 5 phút'), findsOneWidget);
-      expect(find.text('Nguyễn Văn A'), findsOneWidget);
+      expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
       expect(find.text('Tiệm sửa xe Siêu Tốc'), findsOneWidget);
-      expect(find.text('59-P1 688.99 (Honda Wave)'), findsOneWidget);
+      expect(find.text('59-X1 123.45'), findsOneWidget);
+      expect(find.text('Theo dõi trực tiếp'), findsOneWidget);
+      expect(find.text('Cứu hộ xe máy'), findsOneWidget);
+      expect(find.text('Đang trên đường đến'), findsOneWidget);
+      expect(
+        tester.getSize(_key('order-tracking-schematic')),
+        tester.getSize(find.byType(Scaffold)),
+      );
       await tester.ensureVisible(_key('tracking-total'));
       expect(find.text('Vá lốp không ruột'), findsOneWidget);
       expect(
@@ -208,7 +457,7 @@ void main() {
       );
       expect(
         tester.widget<Text>(_key('tracking-total')).style!.color,
-        HomeColors.red,
+        Colors.black,
       );
       expect(
         tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
@@ -285,13 +534,22 @@ void main() {
       );
       await _tap(tester, _key('tracking-cancel'), settle: false);
       await tester.pump(const Duration(milliseconds: 300));
-      await _tap(tester, find.text('Xác nhận hủy'), settle: false);
+      await _tap(
+        tester,
+        find.byKey(const ValueKey('cancel-reason-long_wait')),
+        settle: false,
+      );
+      await _tap(
+        tester,
+        find.byKey(const ValueKey('cancel-confirm')),
+        settle: false,
+      );
       await tester.pump(const Duration(milliseconds: 300));
       expect(
         _state(tester).read(activityProvider).orders.single.status,
         RescueOrderStatus.cancelled,
       );
-      expect(find.text('Đơn cứu hộ đã hủy'), findsOneWidget);
+      expect(find.text('Đã hủy đơn thành công'), findsOneWidget);
       final stopped = map.data!.mechanic;
       await tester.pump(const Duration(seconds: 5));
       expect(map.data!.mechanic, stopped);
@@ -379,7 +637,14 @@ void main() {
     expect(find.text('Cứu hộ đã hoàn tất'), findsOneWidget);
     await tester.ensureVisible(_key('tracking-chat'));
     expect(
-      tester.widget<FilledButton>(_key('tracking-chat')).onPressed,
+      tester
+          .widget<IconButton>(
+            find.descendant(
+              of: _key('tracking-chat'),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .onPressed,
       isNull,
     );
     expect(_key('tracking-cancel'), findsNothing);
@@ -406,7 +671,7 @@ void main() {
       await tester.pumpAndSettle();
       await _tap(tester, find.byTooltip('Đóng trò chuyện'));
       await _tap(tester, _key('tracking-cancel'));
-      expect(find.text('Hủy đơn cứu hộ?'), findsOneWidget);
+      expect(find.text('Lý do bạn muốn hủy đơn?'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

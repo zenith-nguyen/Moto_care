@@ -1,9 +1,16 @@
 # Vehicles and rescue stations
 
-Account opens `/xe-cua-toi`; Services and Home’s nearby section open
-`/tram-cuu-ho`. Both screens use the shared light service scaffold and retain
-the five Home navigation tabs. The garage highlights Account and the station
-directory highlights Services. Returning to Home preserves the current account.
+Account opens `/xe-cua-toi`; the “Bản đồ trạm” tab opens
+`/tram-cuu-ho?view=map` directly in map mode. Services can still open the station
+directory in list mode. Both screens use the shared light service scaffold and
+the four floating tabs: Home, Station map, Activity and Account. The garage
+highlights Account and the directory highlights Station map. Returning to Home
+preserves the current account and Home search.
+The directory is a main tab: its centered 18px title has no Back button;
+other service screens retain their existing Back navigation.
+The directory uses `assets/images/Background.png` behind the transparent header
+and scrolling content in both list and map modes. Text stays opaque and dark;
+search fields and station cards retain their white surfaces for readability.
 
 ## Vehicle module
 
@@ -34,12 +41,17 @@ Riverpod controller, garage screen, vehicle card and add/edit bottom sheet.
 `lib/features/rescue_station/` separates the immutable model, sample data,
 filtering provider, screen, list/map widgets and native actions.
 
+Tapping a station card in either mode now opens the
+[station detail screen](STATION_DETAILS.md), passing its typed model and preserving
+the selected station ID. The card's existing call and direction buttons remain
+independent actions.
+
 - Model fields match the requested station data. `stationType` is a typed enum
   serialized as `partner`, `official_dealer` or `mobile_team`. An additional
   `isOpen` flag distinguishes closed non-24-hour stations without inferring hours.
 - Names, addresses, contacts, coordinates, distances, ratings, counts and badges
   are demonstration data. There is no live location, verification service, opening
-  schedule lookup or Google Maps SDK. The screen labels this sample information.
+  schedule lookup or Google Maps SDK. The map retains its simulation label.
 - `rescueStationsProvider` is injectable for API integration/tests. Address/name
   search accepts Vietnamese without accents. 24-hour, verified and official-dealer
   filters intersect. `Gần nhất` sorts by ascending mock distance; otherwise results
@@ -47,11 +59,24 @@ filtering provider, screen, list/map widgets and native actions.
 - The list uses `ListView.builder`. The mock map projects sample coordinates to
   clickable markers and shows the selected station card. Zero results have a
   shared empty state, including in map mode.
+- Home tiles and list/map cards share `StationCardPhoto`, the existing Home image
+  assets, crop, gradient, blue verification badge and response/rating pills.
+  `AppTextStyles` and `AppCardLayout` in `app_theme.dart` supply the shared 16px
+  card title, 13px body, 12px caption, line heights, spacing and 16px photo radius.
+  Directory cards retain station type, verification, full address, opening status,
+  completed rescue count, distance, detail navigation and both native action buttons.
+  Review counts come from Home metadata and are distinct from completed rescues.
+  Search, all filters (including nearest sorting) and the list/map toggle are retained;
+  only the result/sort summary and the directory's sample-information sentence are removed.
 - Call opens `tel:phoneNumber`; Directions opens a Google Maps URL with station
   latitude/longitude. `serviceUrlLauncherProvider` is the existing injectable
   `url_launcher` boundary. Failed launches show contact/address information.
   Sample phone numbers and positions must be replaced with real directory data
   before offering production rescue service.
+
+Review capture: [restored station map](screenshots/station-map-restored.png).
+Directory card capture: [shared Home photo and typography](screenshots/station-directory-home-style.png).
+Background capture: [station directory over the blue image](screenshots/station-directory-background.png).
 
 ## Validation
 

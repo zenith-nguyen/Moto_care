@@ -187,6 +187,18 @@ void main() {
         Theme.of(tester.element(_address)).scaffoldBackgroundColor,
         HomeColors.background,
       );
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.location_on_rounded).first).color,
+        Colors.black,
+      );
+      expect(
+        Theme.of(tester.element(find.text('Chọn trên bản đồ')))
+            .textButtonTheme
+            .style!
+            .foregroundColor!
+            .resolve({}),
+        Colors.black,
+      );
       expect(_state(tester).read(rescueLocationProvider), isNull);
       expect(tester.takeException(), isNull);
     },
@@ -267,7 +279,7 @@ void main() {
     'Draft notes survive back navigation; cancelling leaves the saved location unchanged',
     (tester) async {
       final router = await _open(tester, path: '/trang-chu', saved: _saved);
-      await _tap(tester, find.text('Sửa vị trí'));
+      await _tap(tester, find.byKey(const ValueKey('home-location')));
       await tester.enterText(_address, 'abc');
       await _tap(tester, find.text('Chọn trên bản đồ'));
       expect(
@@ -360,7 +372,7 @@ void main() {
     'Complete flow creates one order with selected service, vehicle, address and both notes',
     (tester) async {
       final router = await _open(tester, path: '/trang-chu');
-      await _tap(tester, find.text('Sửa vị trí'));
+      await _tap(tester, find.byKey(const ValueKey('home-location')));
       await tester.enterText(_address, ' 118 Bùi Văn Ba, Tân Thuận, Q.7 ');
       await tester.enterText(_landmark, ' Cạnh cổng trường ');
       await _tap(tester, find.text('Chọn trên bản đồ'));

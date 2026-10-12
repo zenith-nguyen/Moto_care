@@ -41,7 +41,7 @@ class _Device extends ProfileDeviceService {
     if (error != null) throw ProfileDeviceException(error!);
     return cancelPhoto
         ? null
-        : (await rootBundle.load('assets/images/Logo_motocare.png')).buffer
+        : (await rootBundle.load('assets/images/Logo_Revo.png')).buffer
               .asUint8List();
   }
 
@@ -191,7 +191,7 @@ void main() {
         '0900000003',
       );
       await _tap(tester, find.text('Trang chủ'));
-      expect(find.text('Chào Nguyễn An'), findsOneWidget);
+      expect(find.byTooltip('Tài khoản Nguyễn An'), findsOneWidget);
       await _tap(tester, find.text('Tài khoản'));
       await _tap(tester, find.byTooltip('Chỉnh sửa tài khoản'));
       expect(find.text('Nguyễn An'), findsOneWidget);
@@ -449,11 +449,12 @@ void main() {
     (tester) async {
       final router = await _open(tester, profile: UserProfile.empty);
       expect(find.text('Hồ sơ của bạn'), findsOneWidget);
+      expect(find.text('Chưa có hạng'), findsNothing);
       expect(find.text('Chưa cập nhật số điện thoại'), findsOneWidget);
       expect(find.text('Nguyễn Văn An'), findsNothing);
       await _tap(tester, find.byTooltip('Quay lại'));
       expect(router.state.uri.path, '/trang-chu');
-      expect(find.text('Chào bạn'), findsOneWidget);
+      expect(find.byTooltip('Tài khoản của bạn'), findsOneWidget);
     },
   );
 

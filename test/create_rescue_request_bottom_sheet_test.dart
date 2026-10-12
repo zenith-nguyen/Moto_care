@@ -163,7 +163,7 @@ void main() {
   testWidgets(
     'Vehicle categories and captured photo are retained with the request',
     (tester) async {
-      final photo = (await rootBundle.load('assets/images/Logo_motocare.png'))
+      final photo = (await rootBundle.load('assets/images/Logo_Revo.png'))
           .buffer
           .asUint8List();
       final container = await _open(

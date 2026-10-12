@@ -5,11 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../activity/services/activity_actions.dart';
+import '../../chat/services/chat_service.dart';
 import '../../home/theme/home_theme.dart';
 import '../providers/order_tracking_provider.dart';
 import '../providers/tracking_chat_provider.dart';
 import '../services/order_tracking_service.dart';
 import '../widgets/order_tracking_chat_sheet.dart';
+import '../widgets/order_tracking_header.dart';
 import '../widgets/order_tracking_map.dart';
 import '../widgets/order_tracking_status_card.dart';
 
@@ -96,34 +98,52 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
     super.dispose();
   }
 
-  Future<void> _call(RescueOrder order) async {
-    if (order.providerPhone?.trim().isNotEmpty == true) {
-      await ActivityActions.call(context, ref, order);
+  Future<void> _call(TrackingSnapshot snapshot) async {
+    final phone = snapshot.mechanic.phoneNumber?.trim();
+    if (phone != null && phone.isNotEmpty) {
+      final opened = await ref
+          .read(chatServiceProvider)
+          .call(phone, launcher: ref.read(activityUrlLauncherProvider));
+      if (mounted && !opened) {
+        ActivityActions.feedback(
+          context,
+          'Không thể mở ứng dụng gọi điện. Số thợ: $phone',
+        );
+      }
     } else {
       ActivityActions.feedback(
         context,
-        'Thợ mô phỏng chưa có số điện thoại. Cuộc gọi sẽ khả dụng khi có thông tin thợ thực tế.',
+        snapshot.isSimulated
+            ? 'Thợ mô phỏng chưa có số điện thoại. Cuộc gọi sẽ khả dụng khi có thông tin thợ thực tế.'
+            : 'Thợ chưa cập nhật số điện thoại.',
       );
     }
   }
 
-  Future<void> _chat(RescueOrder order) async {
+  Future<void> _chat(RescueOrder order, TrackingSnapshot snapshot) async {
     if (_chatOpen) return;
     setState(() => _chatOpen = true);
     _syncMotion();
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (context) => OrderTrackingChatSheet(
-        mechanicName: order.hasProvider
-            ? order.providerName!
-            : ref.read(trackingMechanicProvider).name,
-        orderCode: order.orderCode,
-        sessionKey: _key,
-      ),
-    );
+    if (order.hasProvider || !snapshot.isSimulated) {
+      await context.push(
+        '/chat-detail',
+        extra: ref
+            .read(orderTrackingServiceProvider)
+            .conversation(order, snapshot),
+      );
+    } else {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        useSafeArea: true,
+        builder: (context) => OrderTrackingChatSheet(
+          mechanicName: snapshot.mechanic.name,
+          orderCode: order.orderCode,
+          sessionKey: _key,
+        ),
+      );
+    }
     if (!mounted) return;
     setState(() => _chatOpen = false);
     _syncMotion();
@@ -145,6 +165,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
     final order = ref.watch(activityProvider).orderById(widget.orderId);
     ref.watch(orderTrackingProvider(_key));
     ref.watch(trackingChatProvider(_key));
+    ref.watch(trackingMechanicProvider);
     ref.listen(orderTrackingProvider(_key), (previous, next) {
       if (previous?.step != next.step) {
         if (next.arrived) {
@@ -165,62 +186,34 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
       data: HomeTheme.light,
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          leading: BackButton(onPressed: _back),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Theo dõi đơn hàng',
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-              ),
-              if (order != null)
-                Text(
-                  order.orderCode,
-                  style: const TextStyle(
-                    color: HomeColors.secondary,
-                    fontSize: 11,
-                  ),
-                ),
-            ],
-          ),
-          actions: [
-            if (order != null)
-              IconButton(
-                tooltip: 'Chi tiết đơn hàng',
-                onPressed: () => context.push(
-                  '/chi-tiet-don-hang?id=${Uri.encodeComponent(order.id)}',
-                ),
-                icon: const Icon(Icons.receipt_long_outlined),
-              ),
-          ],
-        ),
         body: order == null
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.receipt_long_outlined,
-                      color: HomeColors.red,
-                      size: 48,
+            ? Stack(
+                children: [
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.receipt_long_outlined,
+                          color: HomeColors.text,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text('Không tìm thấy đơn cứu hộ.'),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () => context.go('/hoat-dong'),
+                          child: const Text('Xem đơn hàng'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    const Text('Không tìm thấy đơn cứu hộ.'),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () => context.go('/hoat-dong'),
-                      child: const Text('Xem đơn hàng'),
-                    ),
-                  ],
-                ),
+                  ),
+                  OrderTrackingHeader(onBack: _back),
+                ],
               )
-            : SafeArea(
-                top: false,
-                child: AnimatedBuilder(
-                  animation: _motion,
-                  builder: (context, _) => _trackingBody(context, order),
-                ),
+            : AnimatedBuilder(
+                animation: _motion,
+                builder: (context, _) => _trackingBody(context, order),
               ),
       ),
     );
@@ -228,68 +221,100 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
 
   Widget _trackingBody(BuildContext context, RescueOrder order) {
     final state = ref.read(orderTrackingProvider(_key));
-    final journey = state.journey;
     final snapshot = ref
         .read(orderTrackingServiceProvider)
-        .snapshot(order, journey, state.step, _motion.value);
-    final displayStep = snapshot.displayStep;
+        .snapshot(
+          order,
+          state.journey,
+          state.step,
+          _motion.value,
+          liveMode: state.liveMode,
+          update: state.update,
+          feedError: state.feedError,
+          fallbackMechanic: ref.read(trackingMechanicProvider),
+        );
     return LayoutBuilder(
       builder: (context, constraints) {
         final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
-        final initial = ((490 + (scale - 1) * 180) / constraints.maxHeight)
-            .clamp(.5, .68);
+        final safe = MediaQuery.paddingOf(context);
+        final initial =
+            ((282 + (scale - 1) * 220 + safe.bottom) / constraints.maxHeight)
+                .clamp(.32, .64);
         return Stack(
           children: [
-            AnimatedBuilder(
-              animation: _sheet,
-              builder: (context, _) => Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height:
-                    constraints.maxHeight *
-                    (1 - (_sheet.isAttached ? _sheet.size : initial)),
-                child: journey == null
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Text(
-                            'Chưa có tọa độ sự cố. Địa chỉ đơn hàng vẫn được giữ bên dưới.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      )
-                    : ref.read(orderTrackingMapBuilderProvider)(
-                        context,
-                        OrderTrackingMapData(
-                          customer: journey.customer,
-                          mechanic: journey.positionAt(
-                            displayStep,
-                            _motion.value,
-                          ),
-                          route: journey.remainingRoute(
-                            displayStep,
-                            _motion.value,
-                          ),
-                          fullRoute: journey.points,
+            Positioned.fill(
+              key: const ValueKey('tracking-map-layer'),
+              child: AnimatedBuilder(
+                animation: _sheet,
+                builder: (context, _) {
+                  final route = snapshot.map;
+                  if (route == null) {
+                    return Align(
+                      alignment: const Alignment(0, -.45),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: const Text(
+                          'Chưa có tọa độ sự cố. Địa chỉ đơn hàng vẫn được giữ bên dưới.',
+                          textAlign: TextAlign.center,
                         ),
                       ),
+                    );
+                  }
+                  // Map stays full size; padding keeps markers and attribution above the card.
+                  final bottom =
+                      constraints.maxHeight *
+                      (_sheet.isAttached ? _sheet.size : initial);
+                  return ref.read(orderTrackingMapBuilderProvider)(
+                    context,
+                    OrderTrackingMapData(
+                      customer: route.customer,
+                      mechanic: route.mechanic,
+                      route: route.points,
+                      fullRoute: route.fullRoute,
+                      isSimulated: snapshot.isSimulated,
+                      padding: EdgeInsets.only(
+                        top: safe.top + 78,
+                        bottom: bottom + 12,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xEFFFFFFF), Color(0x00FFFFFF)],
+                  ),
+                ),
+                child: OrderTrackingHeader(
+                  onBack: _back,
+                  onDetails: () => context.push(
+                    '/order-details?id=${Uri.encodeComponent(order.id)}',
+                  ),
+                ),
               ),
             ),
             DraggableScrollableSheet(
               key: const ValueKey('order-tracking-sheet'),
               controller: _sheet,
               initialChildSize: initial,
-              minChildSize: .38,
-              maxChildSize: .96,
+              minChildSize: initial,
+              maxChildSize: .94,
               builder: (context, scrollController) => Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0x12000000),
-                      blurRadius: 16,
+                      color: Color(0x16000000),
+                      blurRadius: 24,
                       offset: Offset(0, -4),
                     ),
                   ],
@@ -297,15 +322,21 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                 clipBehavior: Clip.antiAlias,
                 child: ListView(
                   controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                  padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + safe.bottom),
                   children: [
                     OrderTrackingStatusCard(
                       order: order,
-                      heading: snapshot.heading,
-                      subtitle: snapshot.subtitle,
-                      badge: snapshot.badge,
-                      onCall: order.status.isActive ? () => _call(order) : null,
-                      onChat: order.status.isActive ? () => _chat(order) : null,
+                      snapshot: snapshot,
+                      onCall: order.status.isActive
+                          ? () => _call(snapshot)
+                          : null,
+                      onChat:
+                          order.status.isActive &&
+                              (snapshot.isSimulated ||
+                                  state.update != null ||
+                                  order.hasProvider)
+                          ? () => _chat(order, snapshot)
+                          : null,
                       onCancel: order.status.isActive && !_cancelling
                           ? () => _cancel(order)
                           : null,

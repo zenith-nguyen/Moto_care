@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moto_care/core/widgets/photo_attachment_field.dart';
+import 'package:moto_care/core/services/service_actions.dart';
 import 'package:moto_care/features/chat/models/chat_message.dart';
 import 'package:moto_care/features/chat/providers/chat_messages_provider.dart';
 import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';
@@ -20,6 +21,7 @@ Future<ProviderContainer> _open(
   WidgetTester tester, {
   Future<Uint8List?> Function()? camera,
   Future<Uint8List?> Function()? gallery,
+  Future<bool> Function(Uri)? launchPhone,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -28,6 +30,9 @@ Future<ProviderContainer> _open(
           camera ?? () async => null,
         ),
         attachmentPickerProvider.overrideWithValue(gallery ?? () async => null),
+        serviceUrlLauncherProvider.overrideWithValue(
+          launchPhone ?? (_) async => false,
+        ),
       ],
       child: MaterialApp(
         locale: const Locale('vi'),
@@ -58,6 +63,16 @@ void main() {
     'Text sends immediately and receives one reply after two seconds',
     (tester) async {
       final container = await _open(tester);
+      final conversation = mockRescueConversations.first;
+      expect(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.text(conversation.mechanicName),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(conversation.status.label), findsOneWidget);
+      expect(find.text(conversation.lastMessage), findsOneWidget);
       expect(tester.widget<IconButton>(_key('chat-send')).onPressed, isNull);
       await tester.enterText(_key('chat-input'), '   ');
       await tester.testTextInput.receiveAction(TextInputAction.send);
@@ -68,10 +83,9 @@ void main() {
       await tester.enterText(_key('chat-input'), '  Xe ở cổng màu xanh  ');
       await tester.pump();
       expect(tester.widget<IconButton>(_key('chat-send')).onPressed, isNotNull);
-      expect(
-        tester.widget<IconButton>(_key('chat-send')).color,
-        ChatTheme.messageRed,
-      );
+      final sendButton = tester.widget<IconButton>(_key('chat-send'));
+      expect(sendButton.color, Colors.white);
+      expect(sendButton.style!.backgroundColor!.resolve({}), Colors.black);
       await tester.tap(_key('chat-send'));
       await tester.pump();
       expect(_messages(container), hasLength(2));
@@ -92,7 +106,7 @@ void main() {
       );
       expect(
         (customerContainer.decoration! as BoxDecoration).color,
-        ChatTheme.messageRed,
+        Colors.black,
       );
 
       await tester.pump(const Duration(milliseconds: 1999));
@@ -121,8 +135,25 @@ void main() {
                   )
                   .decoration!
               as BoxDecoration;
-      expect(mechanicDecoration.color, Colors.white);
-      expect(mechanicDecoration.border, Border.all(color: ChatTheme.border));
+      expect(mechanicDecoration.color, ChatTheme.incomingBackground);
+      expect(mechanicDecoration.border, isNull);
+      expect(
+        find.descendant(
+          of: find.descendant(
+            of: mechanicBubble,
+            matching: find.byType(Container),
+          ),
+          matching: find.text(_messages(container).last.timeLabel),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: mechanicBubble,
+          matching: find.text(_messages(container).last.timeLabel),
+        ),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -146,7 +177,10 @@ void main() {
     tester,
   ) async {
     final container = await _open(tester);
+    expect(find.byType(ActionChip), findsNothing);
     await tester.enterText(_key('chat-input'), 'Tin nhắn đang soạn');
+    await tester.tap(_key('chat-quick-toggle'));
+    await tester.pumpAndSettle();
     for (final text in [
       'Tôi đang ở đúng vị trí ghim',
       'Anh đến đâu rồi?',
@@ -174,14 +208,89 @@ void main() {
           .scrollDirection,
       Axis.horizontal,
     );
+    await tester.tap(_key('chat-quick-toggle'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ActionChip), findsNothing);
+    expect(
+      tester.widget<TextField>(_key('chat-input')).controller!.text,
+      'Tin nhắn đang soạn',
+    );
     expect(tester.takeException(), isNull);
   });
+
+  for (final opened in [true, false]) {
+    testWidgets('Header call preserves messages and handles result $opened', (
+      tester,
+    ) async {
+      final calls = <Uri>[];
+      final container = await _open(
+        tester,
+        launchPhone: (uri) async {
+          calls.add(uri);
+          return opened;
+        },
+      );
+      final before = List<ChatMessage>.of(_messages(container));
+      await tester.enterText(_key('chat-input'), 'Tin nhắn đang soạn');
+      await tester.tap(_key('chat-call'));
+      await tester.pumpAndSettle();
+      expect(calls, [
+        Uri(scheme: 'tel', path: mockRescueConversations.first.phoneNumber),
+      ]);
+      expect(_messages(container), orderedEquals(before));
+      expect(
+        tester.widget<TextField>(_key('chat-input')).controller!.text,
+        'Tin nhắn đang soạn',
+      );
+      expect(
+        find.text(
+          'Không thể mở ứng dụng gọi điện. Bạn có thể gọi số ${mockRescueConversations.first.phoneNumber}.',
+        ),
+        opened ? findsNothing : findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'Conversation details retain contact data, messages and the draft',
+    (tester) async {
+      final container = await _open(tester);
+      final before = List<ChatMessage>.of(_messages(container));
+      final conversation = mockRescueConversations.first;
+      await tester.enterText(_key('chat-input'), 'Tin nhắn đang soạn');
+      await tester.tap(_key('chat-more'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Thông tin cuộc trò chuyện'));
+      await tester.pumpAndSettle();
+      final sheet = _key('chat-details-sheet');
+      for (final text in [
+        conversation.mechanicName,
+        conversation.licensePlate,
+        conversation.phoneNumber,
+        conversation.status.label,
+      ]) {
+        expect(
+          find.descendant(of: sheet, matching: find.text(text)),
+          findsOneWidget,
+        );
+      }
+      await tester.tap(find.byTooltip('Đóng'));
+      await tester.pumpAndSettle();
+      expect(_messages(container), orderedEquals(before));
+      expect(
+        tester.widget<TextField>(_key('chat-input')).controller!.text,
+        'Tin nhắn đang soạn',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   for (final source in ['Chụp ảnh', 'Chọn từ thư viện']) {
     testWidgets('$source sends an image and receives an automatic reply', (
       tester,
     ) async {
-      final bytes = (await rootBundle.load('assets/images/Logo_motocare.png'))
+      final bytes = (await rootBundle.load('assets/images/Logo_Revo.png'))
           .buffer
           .asUint8List();
       var cameraCalls = 0;

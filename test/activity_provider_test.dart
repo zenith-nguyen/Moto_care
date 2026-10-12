@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:moto_care/features/activity/data/mock_rescue_orders.dart';
 import 'package:moto_care/features/activity/models/rescue_order.dart';
+import 'package:moto_care/features/activity/models/order_cancellation_reason.dart';
 import 'package:moto_care/features/activity/providers/activity_provider.dart';
+import 'package:moto_care/features/activity/services/rescue_order_service.dart';
 
 ProviderContainer _container() {
   final container = ProviderContainer();
@@ -12,6 +14,30 @@ ProviderContainer _container() {
 }
 
 void main() {
+  test('Cancellation records a validated reason and one timestamped event', () {
+    final now = DateTime(2026, 10, 12, 10, 15);
+    final container = ProviderContainer(
+      overrides: [rescueOrderClockProvider.overrideWithValue(() => now)],
+    );
+    addTearDown(container.dispose);
+    final controller = container.read(activityProvider.notifier);
+    final reason = OrderCancellationReason.tryCreate(
+      selectedReason: 'long_wait',
+      details: '  Đã chờ hơn 30 phút  ',
+    )!;
+    expect(controller.cancelOrder('active-001', reason: reason), isTrue);
+    final cancelled = container.read(activityProvider).orderById('active-001')!;
+    expect(cancelled.cancellationReason!.toJson(), reason.toJson());
+    expect(cancelled.statusEvents.last.occurredAt, now);
+    expect(cancelled.statusEvents.last.description, reason.description);
+    expect(controller.cancelOrder('active-001', reason: reason), isFalse);
+    expect(
+      container.read(activityProvider).orderById('active-001'),
+      same(cancelled),
+    );
+    expect(mockRescueOrders.first.cancellationReason, isNull);
+  });
+
   test('Cancellation moves only the selected active order into history', () {
     final container = _container();
     final controller = container.read(activityProvider.notifier);

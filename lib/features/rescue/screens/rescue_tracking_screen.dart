@@ -98,7 +98,7 @@ class RescueTrackingScreen extends ConsumerWidget {
           ],
           OutlinedButton(
             onPressed: () => context.push(
-              '/chi-tiet-don-hang?id=${Uri.encodeComponent(order.id)}',
+              '/order-details?id=${Uri.encodeQueryComponent(order.id)}',
             ),
             child: const Text('Xem chi tiết đơn'),
           ),

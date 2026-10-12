@@ -1,7 +1,7 @@
 # Incident location: Places search and Google Maps
 
 Home's “Sửa vị trí” opens `/incident-location`. The two screens use MotoCare's
-white/gray surfaces, dark text and red `#CC0001` primary controls.
+white/gray surfaces, dark text and black `#000000` primary controls.
 
 ## Search and camera flow
 

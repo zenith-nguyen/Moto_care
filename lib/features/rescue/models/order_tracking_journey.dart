@@ -51,6 +51,10 @@ class OrderTrackingJourney {
 
   double remainingKm(int step, double t) {
     final remaining = remainingRoute(step, t);
+    return routeDistanceKm(remaining);
+  }
+
+  static double routeDistanceKm(List<LatLng> remaining) {
     var meters = 0.0;
     for (var index = 1; index < remaining.length; index++) {
       meters += Geolocator.distanceBetween(

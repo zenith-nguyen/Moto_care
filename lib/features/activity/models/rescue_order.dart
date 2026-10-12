@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'order_cancellation_reason.dart';
 import 'rescue_order_item.dart';
 export 'rescue_order_item.dart';
 
@@ -42,6 +43,33 @@ enum RescueServiceType {
   );
 }
 
+/// A confirmed lifecycle event supplied by the order service/backend.
+@immutable
+class RescueOrderEvent {
+  const RescueOrderEvent({
+    required this.status,
+    required this.occurredAt,
+    this.description = '',
+  });
+
+  final RescueOrderStatus status;
+  final DateTime occurredAt;
+  final String description;
+
+  factory RescueOrderEvent.fromJson(Map<String, dynamic> json) =>
+      RescueOrderEvent(
+        status: RescueOrderStatus.fromValue(json['status'] as String),
+        occurredAt: DateTime.parse(json['occurredAt'] as String),
+        description: json['description'] as String? ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+    'status': status.value,
+    'occurredAt': occurredAt.toIso8601String(),
+    'description': description,
+  };
+}
+
 /// Prices are whole VND amounts. basePrice includes travel and repair labor.
 @immutable
 class RescueOrder {
@@ -74,8 +102,13 @@ class RescueOrder {
     this.partnerName,
     this.paymentMethod = RescuePaymentMethod.cash,
     this.voucherCode = '',
+    this.requesterName = '',
+    this.requesterPhone = '',
+    this.cancellationReason,
+    List<RescueOrderEvent> statusEvents = const [],
     List<RescueOrderItem> items = const [],
-  }) : items = List.unmodifiable(items) {
+  }) : items = List.unmodifiable(items),
+       statusEvents = List.unmodifiable(statusEvents) {
     if (basePrice < 0 ||
         extraPartPrice < 0 ||
         discount < 0 ||
@@ -120,6 +153,10 @@ class RescueOrder {
   final String? partnerName;
   final RescuePaymentMethod paymentMethod;
   final String voucherCode;
+  final String requesterName;
+  final String requesterPhone;
+  final OrderCancellationReason? cancellationReason;
+  final List<RescueOrderEvent> statusEvents;
   final List<RescueOrderItem> items;
   // Incident photos stay in memory for the current session.
   final Uint8List? incidentPhotoBytes;
@@ -148,38 +185,46 @@ class RescueOrder {
     RescueOrderStatus.cancelled => 0,
   };
 
-  RescueOrder copyWith({RescueOrderStatus? status, double? rating}) =>
-      RescueOrder(
-        id: id,
-        orderCode: orderCode,
-        status: status ?? this.status,
-        serviceType: serviceType,
-        userVehicle: userVehicle,
-        locationAddress: locationAddress,
-        locationLandmark: locationLandmark,
-        incidentDescription: incidentDescription,
-        serviceOption: serviceOption,
-        vehicleType: vehicleType,
-        partnerId: partnerId,
-        partnerName: partnerName,
-        paymentMethod: paymentMethod,
-        voucherCode: voucherCode,
-        items: items,
-        incidentPhotoBytes: incidentPhotoBytes,
-        providerName: providerName,
-        providerPhone: providerPhone,
-        providerPlate: providerPlate,
-        basePrice: basePrice,
-        extraPartPrice: extraPartPrice,
-        discount: discount,
-        travelFee: travelFee,
-        providerDistanceKm: providerDistanceKm,
-        etaMinutes: etaMinutes,
-        createdAt: createdAt,
-        rating: rating ?? this.rating,
-        locationLatitude: locationLatitude,
-        locationLongitude: locationLongitude,
-      );
+  RescueOrder copyWith({
+    RescueOrderStatus? status,
+    double? rating,
+    List<RescueOrderEvent>? statusEvents,
+    OrderCancellationReason? cancellationReason,
+  }) => RescueOrder(
+    id: id,
+    orderCode: orderCode,
+    status: status ?? this.status,
+    serviceType: serviceType,
+    userVehicle: userVehicle,
+    locationAddress: locationAddress,
+    locationLandmark: locationLandmark,
+    incidentDescription: incidentDescription,
+    serviceOption: serviceOption,
+    vehicleType: vehicleType,
+    partnerId: partnerId,
+    partnerName: partnerName,
+    paymentMethod: paymentMethod,
+    voucherCode: voucherCode,
+    requesterName: requesterName,
+    requesterPhone: requesterPhone,
+    cancellationReason: cancellationReason ?? this.cancellationReason,
+    statusEvents: statusEvents ?? this.statusEvents,
+    items: items,
+    incidentPhotoBytes: incidentPhotoBytes,
+    providerName: providerName,
+    providerPhone: providerPhone,
+    providerPlate: providerPlate,
+    basePrice: basePrice,
+    extraPartPrice: extraPartPrice,
+    discount: discount,
+    travelFee: travelFee,
+    providerDistanceKm: providerDistanceKm,
+    etaMinutes: etaMinutes,
+    createdAt: createdAt,
+    rating: rating ?? this.rating,
+    locationLatitude: locationLatitude,
+    locationLongitude: locationLongitude,
+  );
 
   factory RescueOrder.fromJson(Map<String, dynamic> json) => RescueOrder(
     id: json['id'] as String,
@@ -198,6 +243,20 @@ class RescueOrder {
       json['paymentMethod'] as String? ?? 'cash',
     ),
     voucherCode: json['voucherCode'] as String? ?? '',
+    requesterName: json['requesterName'] as String? ?? '',
+    requesterPhone: json['requesterPhone'] as String? ?? '',
+    cancellationReason: json['cancellationReason'] == null
+        ? null
+        : OrderCancellationReason.fromJson(
+            Map<String, dynamic>.from(json['cancellationReason'] as Map),
+          ),
+    statusEvents: (json['statusEvents'] as List<dynamic>? ?? const [])
+        .map(
+          (event) => RescueOrderEvent.fromJson(
+            Map<String, dynamic>.from(event as Map),
+          ),
+        )
+        .toList(),
     items: (json['items'] as List<dynamic>? ?? const [])
         .map(
           (item) =>
@@ -234,6 +293,10 @@ class RescueOrder {
     'partnerName': partnerName,
     'paymentMethod': paymentMethod.value,
     'voucherCode': voucherCode,
+    'requesterName': requesterName,
+    'requesterPhone': requesterPhone,
+    'cancellationReason': cancellationReason?.toJson(),
+    'statusEvents': statusEvents.map((event) => event.toJson()).toList(),
     'items': items.map((item) => item.toJson()).toList(),
     'providerName': providerName,
     'providerPhone': providerPhone,

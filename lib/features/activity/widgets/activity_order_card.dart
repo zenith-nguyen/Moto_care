@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../home/theme/home_theme.dart';
 import '../models/rescue_order.dart';
+import '../theme/activity_theme.dart';
 import 'order_summary.dart';
 
 class ActivityOrderCard extends StatelessWidget {
@@ -41,10 +42,7 @@ class ActivityOrderCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   DateFormat('HH:mm, dd/MM').format(order.createdAt.toLocal()),
-                  style: const TextStyle(
-                    color: HomeColors.secondary,
-                    fontSize: 12,
-                  ),
+                  style: ActivityTextStyles.metadata,
                 ),
               ),
               const SizedBox(width: 8),
@@ -56,16 +54,14 @@ class ActivityOrderCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.07),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     order.status == RescueOrderStatus.completed
                         ? 'Hoàn thành'
                         : order.status.label,
-                    style: TextStyle(
+                    style: ActivityTextStyles.statusBadge.copyWith(
                       color: statusColor,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
                     ),
                   ),
                 ),
@@ -95,10 +91,7 @@ class ActivityOrderCard extends StatelessWidget {
                   children: [
                     Text(
                       order.serviceType.label,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: ActivityTextStyles.serviceTitle,
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -106,18 +99,14 @@ class ActivityOrderCard extends StatelessWidget {
                           (active
                               ? 'Đang tìm thợ gần bạn'
                               : 'Chưa có thợ nhận đơn'),
-                      style: const TextStyle(fontSize: 13),
+                      style: ActivityTextStyles.mechanic,
                     ),
                     const SizedBox(height: 5),
                     Text(
                       order.locationAddress,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: HomeColors.secondary,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
+                      style: ActivityTextStyles.address,
                     ),
                   ],
                 ),
@@ -132,21 +121,12 @@ class ActivityOrderCard extends StatelessWidget {
               runSpacing: 8,
               alignment: WrapAlignment.spaceBetween,
               children: [
-                Text(
-                  order.orderCode,
-                  style: const TextStyle(
-                    color: HomeColors.secondary,
-                    fontSize: 11,
-                  ),
-                ),
+                Text(order.orderCode, style: ActivityTextStyles.metadata),
                 Text(
                   cancelled
                       ? 'Chưa thanh toán'
                       : '${active ? 'Dự kiến: ' : ''}${formatOrderPrice(order.totalPrice)}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  style: ActivityTextStyles.payment,
                 ),
               ],
             ),
@@ -158,7 +138,8 @@ class ActivityOrderCard extends StatelessWidget {
                 child: TextButton(
                   onPressed: onDetails,
                   style: TextButton.styleFrom(
-                    foregroundColor: HomeColors.text,
+                    foregroundColor: Colors.black87,
+                    textStyle: ActivityTextStyles.detailsAction,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
                       vertical: 12,
@@ -167,7 +148,6 @@ class ActivityOrderCard extends StatelessWidget {
                   child: const Text(
                     'Chi tiết đơn',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12),
                   ),
                 ),
               ),
@@ -176,6 +156,9 @@ class ActivityOrderCard extends StatelessWidget {
                 child: FilledButton(
                   onPressed: active ? null : onRebook,
                   style: FilledButton.styleFrom(
+                    backgroundColor: ActivityTheme.primaryAction,
+                    foregroundColor: Colors.white,
+                    textStyle: ActivityTextStyles.rebookAction,
                     minimumSize: const Size(0, 44),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -185,7 +168,6 @@ class ActivityOrderCard extends StatelessWidget {
                   child: const Text(
                     'Gọi lại đơn này',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),

@@ -9,41 +9,42 @@ import 'package:moto_care/main.dart';
 Future<void> openRegister(WidgetTester tester) async {
   await tester.pumpWidget(const MyApp());
   await tester.pumpAndSettle();
+  await tester.tap(find.text('Tiếp'));
+  await tester.pumpAndSettle();
   await tester.ensureVisible(find.text('Đăng ký'));
   await tester.tap(find.text('Đăng ký'));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets(
-    'Registration shows MotoCare branding and the requested hotline',
-    (tester) async {
-      await openRegister(tester);
+  testWidgets('Registration shows Revo branding and the requested hotline', (
+    tester,
+  ) async {
+    await openRegister(tester);
 
-      expect(find.text('Đăng ký tài khoản MotoCare'), findsOneWidget);
-      expect(
-        find.image(const AssetImage('assets/images/Logo_motocare.png')),
-        findsOneWidget,
-      );
-      expect(find.text('+84'), findsOneWidget);
-      expect(find.text('Email'), findsOneWidget);
-      expect(find.text('Nhập email của bạn'), findsOneWidget);
-      expect(
-        tester.getTopLeft(find.text('Email')).dy,
-        lessThan(tester.getTopLeft(find.text('Số điện thoại')).dy),
-      );
-      expect(
-        find.textContaining('hotline 1130', findRichText: true),
-        findsOneWidget,
-      );
-      expect(find.byIcon(Icons.close_rounded), findsNWidgets(4));
-      expect(
-        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
-        isNull,
-      );
-      expect(tester.takeException(), isNull);
-    },
-  );
+    expect(find.text('Đăng ký tài khoản Revo'), findsOneWidget);
+    expect(
+      find.image(const AssetImage('assets/images/Logo_Revo.png')),
+      findsOneWidget,
+    );
+    expect(find.text('+84'), findsOneWidget);
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Nhập email của bạn'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Email')).dy,
+      lessThan(tester.getTopLeft(find.text('Số điện thoại')).dy),
+    );
+    expect(
+      find.textContaining('hotline 1130', findRichText: true),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.close_rounded), findsNWidgets(4));
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('Password requirements update as the password changes', (
     tester,

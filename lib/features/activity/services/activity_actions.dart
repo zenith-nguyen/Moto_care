@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../chat/models/chat_conversation.dart';
+import '../models/order_cancellation_reason.dart';
 import '../models/rescue_order.dart';
 import '../providers/activity_provider.dart';
+import '../widgets/cancel_order_dialog.dart';
 import '../widgets/order_dialogs.dart';
 import '../widgets/order_summary.dart';
 
@@ -107,33 +109,20 @@ abstract final class ActivityActions {
     WidgetRef ref,
     RescueOrder order,
   ) async {
-    final confirmed = await _dialog<bool>(
+    final reason = await _dialog<OrderCancellationReason>(
       context,
-      AlertDialog(
-        title: const Text('Hủy đơn cứu hộ?'),
-        content: Text('Bạn muốn hủy đơn ${order.orderCode}?'),
-        actions: [
-          TextButton(
-            onPressed: () =>
-                Navigator.of(context, rootNavigator: true).pop(false),
-            child: const Text('Tiếp tục cứu hộ'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.of(context, rootNavigator: true).pop(true),
-            child: const Text('Xác nhận hủy'),
-          ),
-        ],
-      ),
+      const CancelOrderDialog(),
     );
-    if (!context.mounted || confirmed != true) return;
-    final cancelled = ref.read(activityProvider.notifier).cancelOrder(order.id);
-    feedback(
-      context,
-      cancelled
-          ? 'Đã hủy đơn trong phiên dùng thử.'
-          : 'Đơn không còn ở trạng thái có thể hủy.',
-    );
+    if (!context.mounted || reason == null) return;
+    final cancelled = ref
+        .read(activityProvider.notifier)
+        .cancelOrder(order.id, reason: reason);
+    if (!cancelled) {
+      feedback(context, 'Đơn không còn ở trạng thái có thể hủy.');
+      return;
+    }
+    feedback(context, 'Đã hủy đơn thành công');
+    context.go('/trang-chu');
   }
 
   static Future<bool> rebook(

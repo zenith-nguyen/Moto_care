@@ -15,7 +15,7 @@ import 'package:moto_care/features/activity/screens/chi_tiet_don_hang_screen.dar
 import 'package:moto_care/features/activity/screens/hoat_dong_screen.dart';
 import 'package:moto_care/features/activity/services/activity_actions.dart';
 import 'package:moto_care/features/activity/widgets/activity_order_card.dart';
-import 'package:moto_care/features/services/screens/services_screen.dart';
+import 'package:moto_care/features/rescue_station/screens/tram_cuu_ho_screen.dart';
 import 'package:moto_care/features/profile/screens/profile_screen.dart';
 import 'package:moto_care/features/activity/widgets/order_summary.dart';
 import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';
@@ -156,18 +156,32 @@ void main() {
   testWidgets(
     'Cancellation requires confirmation and moves the order to history',
     (tester) async {
-      await _open(tester, location: '/chi-tiet-don-hang?id=active-001');
+      final router = await _open(
+        tester,
+        location: '/chi-tiet-don-hang?id=active-001',
+      );
       await _tap(tester, find.text('Hủy đơn'));
       await _tap(tester, find.text('Tiếp tục cứu hộ'));
       expect(_state(tester).read(activityProvider).activeOrders.length, 1);
       await _tap(tester, find.text('Hủy đơn'));
-      await _tap(tester, find.text('Xác nhận hủy'));
+      await _tap(tester, find.byKey(const ValueKey('cancel-reason-long_wait')));
+      await _tap(tester, find.byKey(const ValueKey('cancel-confirm')));
       expect(find.byType(Stepper), findsNothing);
       expect(
         _state(tester).read(activityProvider).orderById('active-001')!.status,
         RescueOrderStatus.cancelled,
       );
-      await _tap(tester, find.byTooltip('Quay lại'));
+      expect(router.state.uri.path, '/trang-chu');
+      expect(find.text('Đã hủy đơn thành công'), findsOneWidget);
+      expect(
+        _state(tester)
+            .read(activityProvider)
+            .orderById('active-001')!
+            .cancellationReason!
+            .code,
+        'long_wait',
+      );
+      await _tap(tester, _bottom('Hoạt động'));
       expect(find.text('MC-261002-001'), findsOneWidget);
       expect(find.text('Đã hủy'), findsWidgets);
       expect(tester.takeException(), isNull);
@@ -361,20 +375,20 @@ void main() {
   );
 
   testWidgets(
-    'Bottom navigation connects Home, Activity, Services and Account and preserves account',
+    'Bottom navigation connects Home, Activity, station map and Account and preserves account',
     (tester) async {
       await _open(tester, location: '/trang-chu');
       await _tap(tester, _bottom('Hoạt động'));
       expect(find.byType(HoatDongScreen), findsOneWidget);
-      await _tap(tester, _bottom('Dịch vụ'));
-      expect(find.byType(ServicesScreen), findsOneWidget);
+      await _tap(tester, _bottom('Bản đồ trạm'));
+      expect(find.byType(TramCuuHoScreen), findsOneWidget);
       await _tap(tester, _bottom('Tài khoản'));
       expect(find.byType(ProfileScreen), findsOneWidget);
       await _tap(tester, _bottom('Hoạt động'));
       expect(find.byType(HoatDongScreen), findsOneWidget);
       await _tap(tester, _bottom('Trang chủ'));
       expect(find.byType(TrangChu), findsOneWidget);
-      expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
+      expect(find.byTooltip('Tài khoản Nguyễn Văn An'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
@@ -414,6 +428,7 @@ void main() {
       await _tap(tester, find.byTooltip('Quay lại'));
       await _tap(tester, find.text('Chi tiết đơn').first);
       expect(tester.takeException(), isNull);
+      await _tap(tester, find.text('Xem chi phí & thông tin đơn'));
       await _tap(tester, find.text('Báo cáo / Khiếu nại'));
       expect(tester.takeException(), isNull);
       await _tap(tester, find.text('Đóng'));

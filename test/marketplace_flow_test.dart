@@ -8,14 +8,21 @@ import 'package:go_router/go_router.dart';
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
 import 'package:moto_care/features/activity/models/rescue_order.dart';
+import 'package:moto_care/features/activity/data/mock_rescue_orders.dart';
+import 'package:moto_care/features/activity/screens/order_details_screen.dart';
 import 'package:moto_care/features/activity/providers/activity_provider.dart';
+import 'package:moto_care/features/activity/theme/activity_theme.dart';
 import 'package:moto_care/features/activity/widgets/order_summary.dart';
+import 'package:moto_care/features/auth/theme/auth_theme.dart';
+import 'package:moto_care/features/chat/theme/chat_theme.dart';
 import 'package:moto_care/features/home/models/rescue_location.dart';
 import 'package:moto_care/features/home/providers/home_provider.dart';
 import 'package:moto_care/features/home/theme/home_theme.dart';
+import 'package:moto_care/features/home/theme/revo_home_theme.dart';
 import 'package:moto_care/features/location/services/device_location_service.dart';
 import 'package:moto_care/features/partner/models/marketplace_catalog.dart';
 import 'package:moto_care/features/partner/providers/partner_provider.dart';
+import 'package:moto_care/features/profile/theme/profile_theme.dart';
 import 'package:moto_care/features/rescue/models/marketplace_booking.dart';
 import 'package:moto_care/features/rescue/screens/checkout_screen.dart';
 import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
@@ -46,6 +53,7 @@ Future<GoRouter> _open(
   RescueLocation? location = _location,
   Future<RescueLocation> Function()? gps,
   bool emptyPartners = false,
+  List<RescueOrder> orders = const [],
 }) async {
   final router = createAppRouter();
   addTearDown(router.dispose);
@@ -54,7 +62,7 @@ Future<GoRouter> _open(
       overrides: [
         initialVehiclesProvider.overrideWithValue([_vehicle]),
         initialRescueLocationProvider.overrideWithValue(location),
-        initialRescueOrdersProvider.overrideWithValue([]),
+        initialRescueOrdersProvider.overrideWithValue(orders),
         if (emptyPartners) rescueStationsProvider.overrideWithValue([]),
         deviceLocationProvider.overrideWithValue(
           gps ??
@@ -100,6 +108,33 @@ Future<void> _checkout(WidgetTester tester) async {
 Finder get _place => find.byKey(const ValueKey('marketplace-place-order'));
 
 void main() {
+  testWidgets(
+    'Checkout opens progress for the existing active order and retains the cart',
+    (tester) async {
+      final order = mockRescueOrders.first;
+      final router = await _open(tester, orders: [order]);
+      await _checkout(tester);
+      final booking = tester
+          .widget<CheckoutScreen>(find.byType(CheckoutScreen))
+          .booking;
+      expect(tester.widget<FilledButton>(_place).onPressed, isNull);
+      await tapMarketplace(tester, find.text('Xem đơn đang diễn ra'));
+      expect(router.state.uri.path, '/order-details');
+      expect(router.state.uri.queryParameters['id'], order.id);
+      expect(find.byType(OrderDetailsScreen), findsOneWidget);
+      expect(find.text(order.orderCode), findsOneWidget);
+      expect(_state(tester).read(activityProvider).orders.length, 1);
+      await tapMarketplace(tester, find.byTooltip('Quay lại'));
+      expect(router.state.uri.path, '/checkout');
+      expect(
+        tester.widget<CheckoutScreen>(find.byType(CheckoutScreen)).booking,
+        same(booking),
+      );
+      expect(tester.widget<FilledButton>(_place).onPressed, isNull);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'Search and vehicle filter narrow shops and show a useful empty state',
     (tester) async {
@@ -205,12 +240,20 @@ void main() {
         order.items.map((item) => item.toJson()),
       );
       await tapMarketplace(tester, find.text('Hủy đơn hàng'));
-      await tapMarketplace(tester, find.text('Xác nhận hủy'));
+      await tapMarketplace(
+        tester,
+        find.byKey(const ValueKey('cancel-reason-resolved_elsewhere')),
+      );
+      await tapMarketplace(
+        tester,
+        find.byKey(const ValueKey('cancel-confirm')),
+      );
       expect(
         _state(tester).read(activityProvider).orders.single.status,
         RescueOrderStatus.cancelled,
       );
-      expect(find.text('Đơn cứu hộ đã hủy'), findsOneWidget);
+      expect(find.text('Đã hủy đơn thành công'), findsOneWidget);
+      expect(router.state.uri.path, '/trang-chu');
     },
   );
 
@@ -400,7 +443,7 @@ void main() {
   });
 
   test('Global palette and primary actions use the requested exact colors', () {
-    expect(HomeColors.primary, const Color(0xFFCC0001));
+    expect(HomeColors.primary, Colors.black);
     expect(HomeColors.text, const Color(0xFF111827));
     expect(HomeColors.secondary, const Color(0xFF4B5563));
     final scheme = AppTheme.light.colorScheme;
@@ -411,11 +454,37 @@ void main() {
       scheme.error,
       scheme.inversePrimary,
     ]) {
-      expect(accent, const Color(0xFFCC0001));
+      expect(accent, Colors.black);
     }
     expect(
       AppTheme.light.filledButtonTheme.style!.backgroundColor!.resolve({}),
-      const Color(0xFFCC0001),
+      Colors.black,
     );
+    for (final theme in [
+      AppTheme.light,
+      HomeTheme.light,
+      HomeTheme.red,
+      ActivityTheme.light,
+      ProfileTheme.light,
+      ChatTheme.light,
+      AuthTheme.light,
+      RevoHomeTheme.light,
+    ]) {
+      final colors = theme.colorScheme;
+      for (final accent in [
+        colors.primary,
+        colors.primaryContainer,
+        colors.secondary,
+        colors.secondaryContainer,
+        colors.tertiary,
+        colors.tertiaryContainer,
+        colors.error,
+        colors.errorContainer,
+        colors.onErrorContainer,
+      ]) {
+        expect(accent.r, accent.g);
+        expect(accent.g, accent.b);
+      }
+    }
   });
 }

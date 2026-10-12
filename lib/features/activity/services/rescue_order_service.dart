@@ -34,6 +34,8 @@ class RescueOrderService {
     String? partnerName,
     RescuePaymentMethod paymentMethod = RescuePaymentMethod.cash,
     String voucherCode = '',
+    String requesterName = '',
+    String requesterPhone = '',
     List<RescueOrderItem> items = const [],
   }) {
     if (hasActiveOrder) {
@@ -71,6 +73,11 @@ class RescueOrderService {
       voucherCode: voucherCode,
       items: items,
       createdAt: now,
+      requesterName: requesterName.trim(),
+      requesterPhone: requesterPhone.trim(),
+      statusEvents: [
+        RescueOrderEvent(status: RescueOrderStatus.pending, occurredAt: now),
+      ],
       locationLatitude: locationLatitude,
       locationLongitude: locationLongitude,
     );

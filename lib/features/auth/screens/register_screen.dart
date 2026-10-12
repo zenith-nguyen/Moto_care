@@ -4,9 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/revo_logo.dart';
 import '../../../core/config/support_contact.dart';
-import '../../home/theme/home_theme.dart';
+import '../theme/auth_theme.dart';
+import '../widgets/auth_scaffold.dart';
 import '../models/auth_validation.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -76,11 +77,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: HomeColors.background,
+    return AuthScaffold(
       appBar: AppBar(
-        backgroundColor: HomeColors.background,
-        foregroundColor: HomeColors.text,
+        backgroundColor: AuthColors.background,
+        foregroundColor: AuthColors.text,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         toolbarHeight: MediaQuery.textScalerOf(context).scale(56),
@@ -88,7 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           tooltip: 'Quay lại',
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: AppTheme.link,
+            color: AuthColors.primary,
             size: 24,
           ),
           onPressed: () {
@@ -101,7 +101,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         centerTitle: true,
         title: const Text(
-          'Đăng ký tài khoản MotoCare',
+          'Đăng ký tài khoản Revo',
           maxLines: 2,
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
@@ -182,7 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: HomeColors.border,
+                    color: AuthColors.border,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Text('+84', style: TextStyle(fontSize: 16)),
@@ -315,7 +315,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ],
               ),
               style: TextStyle(
-                color: AppTheme.mutedText,
+                color: AuthColors.secondary,
                 fontSize: 15,
                 height: 1.25,
               ),
@@ -323,8 +323,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             const SizedBox(height: 22),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.link,
-                disabledBackgroundColor: HomeColors.redSelected,
+                backgroundColor: AuthColors.primary,
+                disabledBackgroundColor: AuthColors.disabled,
                 disabledForegroundColor: const Color(0xFF909090),
               ),
               onPressed: _canSubmit ? _submit : null,
@@ -345,9 +345,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           height: 40,
           child: Checkbox(
             value: _acceptedTerms,
-            activeColor: AppTheme.link,
+            activeColor: AuthColors.primary,
             checkColor: Colors.white,
-            side: const BorderSide(color: AppTheme.link, width: 2),
+            side: const BorderSide(color: AuthColors.primary, width: 2),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),
@@ -364,13 +364,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 TextSpan(
                   text: 'Điều khoản',
-                  style: const TextStyle(color: AppTheme.link),
+                  style: const TextStyle(color: AuthColors.primary),
                   recognizer: _termsRecognizer,
                 ),
                 const TextSpan(text: ' và '),
                 TextSpan(
                   text: 'Chính sách quyền riêng tư',
-                  style: const TextStyle(color: AppTheme.link),
+                  style: const TextStyle(color: AuthColors.primary),
                   recognizer: _privacyRecognizer,
                 ),
               ],
@@ -388,15 +388,7 @@ class _RegisterLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Image.asset(
-        'assets/images/Logo_motocare.png',
-        width: 112,
-        height: 112,
-        fit: BoxFit.contain,
-        semanticLabel: 'Logo Moto Care',
-      ),
-    );
+    return const Center(child: RevoLogo());
   }
 }
 
@@ -431,7 +423,7 @@ class _PasswordRequirement extends StatelessWidget {
           Icon(
             satisfied ? Icons.check_rounded : Icons.close_rounded,
             size: 18,
-            color: satisfied ? const Color(0xFF66BB6A) : AppTheme.link,
+            color: satisfied ? AuthColors.primary : AuthColors.secondary,
           ),
           const SizedBox(width: 6),
           Expanded(

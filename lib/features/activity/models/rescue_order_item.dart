@@ -46,6 +46,7 @@ class RescueOrderItem {
 enum RescuePaymentMethod {
   cash('cash', 'Tiền mặt'),
   momo('momo', 'Ví MoMo'),
+  vnpay('vnpay', 'VNPay'),
   motoCare('motocare', 'Ví MotoCare');
 
   const RescuePaymentMethod(this.value, this.label);

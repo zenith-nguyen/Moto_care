@@ -25,18 +25,19 @@ Widget freezeMarketplaceMotion(BuildContext context, Widget? child) =>
 
 Future<void> tapMarketplace(WidgetTester tester, Finder finder) async {
   if (finder.evaluate().isEmpty) {
-    await tester.scrollUntilVisible(
-      finder,
-      120,
-      scrollable: find
-          .byWidgetPredicate(
-            (widget) =>
-                widget is Scrollable &&
-                widget.axisDirection == AxisDirection.down,
-          )
-          .hitTestable()
-          .last,
-    );
+    final checkout = find.byKey(const ValueKey('checkout-scroll'));
+    // Scroll the page, rather than the address field's nested Scrollable.
+    final scrollable = checkout.evaluate().isNotEmpty
+        ? find.descendant(of: checkout, matching: find.byType(Scrollable)).first
+        : find
+              .byWidgetPredicate(
+                (widget) =>
+                    widget is Scrollable &&
+                    widget.axisDirection == AxisDirection.down,
+              )
+              .hitTestable()
+              .last;
+    await tester.scrollUntilVisible(finder, 120, scrollable: scrollable);
   }
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();

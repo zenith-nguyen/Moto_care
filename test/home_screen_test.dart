@@ -22,8 +22,10 @@ import 'package:moto_care/features/rescue/screens/checkout_screen.dart';
 import 'package:moto_care/features/location/services/device_location_service.dart';
 
 import 'fixtures/marketplace_router_fixture.dart';
+import 'fixtures/home_scroll_helpers.dart';
 
 import 'package:moto_care/features/rescue_station/providers/rescue_station_provider.dart';
+import 'package:moto_care/features/rescue_station/screens/station_detail_screen.dart';
 import 'package:moto_care/features/vehicle/models/vehicle.dart';
 import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
 
@@ -51,6 +53,56 @@ const _location = RescueLocation(
   latitude: 10.757,
   longitude: 106.668,
 );
+
+void _expectSelectedNavigation(
+  WidgetTester tester,
+  HomeDestination selectedDestination, {
+  Color activeColor = const Color(0xFF3478D4),
+}) {
+  final nav = find.byType(HomeBottomNavigation);
+  expect(
+    tester.widget<HomeBottomNavigation>(nav).selectedDestination,
+    selectedDestination,
+  );
+  expect(
+    tester
+        .widgetList<Text>(find.descendant(of: nav, matching: find.byType(Text)))
+        .map((label) => label.data),
+    ['Trang chủ', 'Bản đồ trạm', 'Hoạt động', 'Tài khoản'],
+  );
+  for (final destination in HomeDestination.homeNavigationItems) {
+    final selected = destination == selectedDestination;
+    final color = selected ? activeColor : const Color(0xFF77777C);
+    final icon = find.descendant(
+      of: nav,
+      matching: find.byIcon(destination.navigationIcon),
+    );
+    final label = find.descendant(
+      of: nav,
+      matching: find.text(destination.navigationLabel),
+    );
+    expect(tester.widget<Icon>(icon).color, color);
+    expect(tester.widget<Text>(label).style!.color, color);
+    expect(
+      tester
+          .widget<Semantics>(
+            find
+                .ancestor(
+                  of: icon,
+                  matching: find.byWidgetPredicate(
+                    (widget) =>
+                        widget is Semantics &&
+                        widget.properties.selected != null,
+                  ),
+                )
+                .first,
+          )
+          .properties
+          .selected,
+      selected,
+    );
+  }
+}
 
 Future<ProviderContainer> _open(
   WidgetTester tester, {
@@ -105,6 +157,14 @@ Future<ProviderContainer> _open(
 }
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isEmpty &&
+      find.byType(HomeScreen).evaluate().isNotEmpty) {
+    final services = find.byKey(const ValueKey('home-services'));
+    await tester.ensureVisible(services);
+    await tester.pumpAndSettle();
+    await tester.tap(services);
+    await tester.pumpAndSettle();
+  }
   if (finder.evaluate().isEmpty) {
     await tester.scrollUntilVisible(
       finder,
@@ -118,6 +178,7 @@ Future<void> _tap(WidgetTester tester, Finder finder) async {
           .last,
     );
   }
+  finder = finder.last;
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
@@ -150,9 +211,9 @@ void main() {
     tester,
   ) async {
     final container = await _open(tester);
-    expect(find.text('Chào Nguyễn An'), findsOneWidget);
+    expect(find.byTooltip('Tài khoản Nguyễn An'), findsOneWidget);
     expect(find.text('Tên cũ'), findsNothing);
-    expect(find.text('Honda Vision (59-A1 123.45)'), findsOneWidget);
+    expect(container.read(defaultVehicleProvider)!.id, 'vision');
     expect(find.text('720 xu'), findsNothing);
     expect(find.text('Thành viên Vàng'), findsNothing);
     container
@@ -178,7 +239,7 @@ void main() {
         .position
         .jumpTo(0);
     await tester.pumpAndSettle();
-    expect(find.text('Chào Lê Bình'), findsOneWidget);
+    expect(find.byTooltip('Tài khoản Lê Bình'), findsOneWidget);
     expect(find.text('Thành viên Bạch Kim'), findsNothing);
     expect(find.text('1200 xu'), findsNothing);
   });
@@ -187,7 +248,7 @@ void main() {
     'Location validates, cancels without changes and clears stale GPS on save',
     (tester) async {
       final container = await _open(tester, routed: true);
-      await _tap(tester, find.text('Sửa vị trí'));
+      await _tap(tester, find.byKey(const ValueKey('home-location')));
       await tester.enterText(
         find.byKey(const ValueKey('incident-address')),
         'abc',
@@ -199,7 +260,7 @@ void main() {
       );
       await _tap(tester, find.byTooltip('Quay lại'));
       expect(container.read(rescueLocationProvider), same(_location));
-      await _tap(tester, find.text('Sửa vị trí'));
+      await _tap(tester, find.byKey(const ValueKey('home-location')));
       await tester.enterText(
         find.byKey(const ValueKey('incident-address')),
         '  45 Lê Văn Sỹ, TP. Hồ Chí Minh  ',
@@ -217,10 +278,7 @@ void main() {
         '45 Lê Văn Sỹ, TP. Hồ Chí Minh',
       );
       expect(container.read(rescueLocationProvider)!.hasCoordinates, isFalse);
-      expect(
-        find.text('Vị trí sự cố: 45 Lê Văn Sỹ, TP. Hồ Chí Minh'),
-        findsOneWidget,
-      );
+      expect(find.text('45 Lê Văn Sỹ, TP. Hồ Chí Minh'), findsOneWidget);
     },
   );
 
@@ -256,7 +314,8 @@ void main() {
       expect(order.locationLongitude, _location.longitude);
       expect(order.partnerId, isNotNull);
       expect(order.items.single.name, 'Kích bình ắc quy');
-      for (var step = 0; step < 3; step++) {
+      await _tap(tester, find.byTooltip('Quay lại'));
+      for (var step = 0; step < 2; step++) {
         await _tap(tester, find.byType(BackButton));
       }
       await _checkout(tester, HomeService.fuel);
@@ -318,11 +377,19 @@ void main() {
       final selected = <HomeDestination>[];
       final container = await _open(tester, onSelected: selected.add);
       final station = container.read(homeNearbyStationsProvider).first;
+      await scrollHomeToStations(tester);
       await _tap(tester, find.text(station.name));
       expect(find.text(station.address), findsOneWidget);
-      await _tap(tester, find.text('Xem danh sách trạm cứu hộ'));
-      expect(selected, [HomeDestination.rescueStations]);
-      expect(find.byTooltip('Đóng'), findsNothing);
+      expect(
+        tester
+            .widget<StationDetailScreen>(find.byType(StationDetailScreen))
+            .station
+            .id,
+        station.id,
+      );
+      await _tap(tester, find.byKey(const ValueKey('station-back')));
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(selected, isEmpty);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpWidget(
         ProviderScope(
@@ -331,10 +398,9 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.ensureVisible(
-        find.text('Chưa có trạm cứu hộ trong khu vực.'),
-      );
-      expect(find.text('Chưa có trạm cứu hộ trong khu vực.'), findsOneWidget);
+      await scrollHomeToStations(tester);
+      await tester.ensureVisible(find.text('Không tìm thấy trạm phù hợp'));
+      expect(find.text('Không tìm thấy trạm phù hợp'), findsOneWidget);
     },
   );
 
@@ -350,7 +416,7 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await _open(tester, routed: true);
       expect(tester.takeException(), isNull);
-      await _tap(tester, find.text('Sửa vị trí'));
+      await _tap(tester, find.byKey(const ValueKey('home-location')));
       await _tap(tester, find.byKey(const ValueKey('incident-address')));
       tester.view.viewInsets = const FakeViewPadding(bottom: 250);
       await tester.pumpAndSettle();
@@ -374,7 +440,7 @@ void main() {
   );
 
   testWidgets(
-    'Four home tabs route and returning preserves session selection',
+    'Four tabs keep their scoped active colors and preserve session selection',
     (tester) async {
       final router = createAppRouter();
       addTearDown(router.dispose);
@@ -395,18 +461,24 @@ void main() {
         extra: const HomeUser(displayName: 'Nguyễn An', memberId: 'test-user'),
       );
       await tester.pumpAndSettle();
-      for (final (label, path) in [
-        ('Hoạt động', '/hoat-dong'),
-        ('Dịch vụ', '/dich-vu'),
-        ('Tài khoản', '/tai-khoan'),
+      _expectSelectedNavigation(tester, HomeDestination.home);
+      for (final (destination, path) in [
+        (HomeDestination.activity, '/hoat-dong'),
+        (HomeDestination.rescueStations, '/tram-cuu-ho'),
+        (HomeDestination.account, '/tai-khoan'),
       ]) {
-        await _tap(tester, find.text(label));
+        await _tap(tester, find.text(destination.navigationLabel));
         expect(router.state.uri.path, path);
+        _expectSelectedNavigation(tester, destination);
         router.pop();
         await tester.pumpAndSettle();
-        expect(find.text('Chào Nguyễn An'), findsOneWidget);
-        expect(find.text('Honda Vision (59-A1 123.45)'), findsOneWidget);
-        expect(find.text('Vị trí sự cố: ${_location.address}'), findsOneWidget);
+        _expectSelectedNavigation(tester, HomeDestination.home);
+        expect(find.byTooltip('Tài khoản Nguyễn An'), findsOneWidget);
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(HomeScreen)),
+        );
+        expect(container.read(defaultVehicleProvider)!.id, 'vision');
+        expect(find.text(_location.address), findsOneWidget);
       }
     },
   );
@@ -434,18 +506,18 @@ void main() {
     router.pop();
     await tester.pumpAndSettle();
     expect(router.state.uri.path, '/trang-chu');
-    expect(find.text('Chào Nguyễn An'), findsOneWidget);
+    expect(find.byTooltip('Tài khoản Nguyễn An'), findsOneWidget);
     router.push('/bang-gia');
     await tester.pumpAndSettle();
     await _tap(
       tester,
-      find.descendant(of: nav, matching: find.text('Dịch vụ')),
+      find.descendant(of: nav, matching: find.text('Bản đồ trạm')),
     );
-    expect(router.state.uri.path, '/dich-vu');
+    expect(router.state.uri.path, '/tram-cuu-ho');
     router.pop();
     await tester.pumpAndSettle();
     expect(router.state.uri.path, '/trang-chu');
-    expect(find.text('Chào Nguyễn An'), findsOneWidget);
+    expect(find.byTooltip('Tài khoản Nguyễn An'), findsOneWidget);
     expect(router.canPop(), isFalse);
   });
 }

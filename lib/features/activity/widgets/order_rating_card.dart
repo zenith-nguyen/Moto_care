@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/rescue_order.dart';
 import '../providers/activity_provider.dart';
@@ -86,6 +87,15 @@ class _OrderRatingCardState extends ConsumerState<OrderRatingCard> {
                         );
                       },
                 child: const Text('Lưu đánh giá'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                key: const ValueKey('open-service-rating'),
+                onPressed: () => context.push(
+                  '/service-rating?id=${Uri.encodeComponent(widget.order.id)}',
+                ),
+                icon: const Icon(Icons.rate_review_outlined),
+                label: const Text('Đánh giá chi tiết'),
               ),
             ],
           ],

@@ -61,6 +61,15 @@ class ChiTietDonHangScreen extends ConsumerWidget {
                   : ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
+                        OutlinedButton.icon(
+                          key: const ValueKey('open-order-details'),
+                          onPressed: () => context.push(
+                            '/order-details?id=${Uri.encodeQueryComponent(order.id)}',
+                          ),
+                          icon: const Icon(Icons.timeline_rounded),
+                          label: const Text('Xem tiến trình cứu hộ'),
+                        ),
+                        const SizedBox(height: 12),
                         const Text(
                           'Dữ liệu mẫu',
                           style: TextStyle(

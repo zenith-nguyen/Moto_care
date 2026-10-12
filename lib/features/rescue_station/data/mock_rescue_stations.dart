@@ -32,7 +32,7 @@ final mockRescueStations = List<RescueStation>.unmodifiable([
   ),
   RescueStation(
     id: 'station-mobile',
-    name: 'Đội cứu hộ lưu động MotoCare',
+    name: 'Trạm cứu hộ Revo Q.1',
     address: 'Nguyễn Đình Chiểu, TP. Hồ Chí Minh',
     rating: 4.7,
     completedRescues: 512,

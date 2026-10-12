@@ -2,10 +2,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/activity/models/rescue_order.dart';
 import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
+import '../../features/activity/screens/order_details_screen.dart';
 import '../../features/activity/screens/hoat_dong_screen.dart';
 import '../../features/auth/screens/forgot_password_screen.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/register_screen.dart';
+import '../../features/auth/screens/welcome_screen.dart';
 import '../../features/chat/models/chat_conversation.dart';
 import '../../features/chat/screens/chat_detail_screen.dart';
 import '../../features/chat/screens/tin_nhan_screen.dart';
@@ -22,6 +24,7 @@ import '../../features/rescue/models/marketplace_booking.dart';
 import '../../features/rescue/screens/checkout_screen.dart';
 import '../../features/rescue/screens/rescue_tracking_screen.dart';
 import '../../features/rescue/screens/order_tracking_screen.dart';
+import '../../features/rescue/screens/service_rating_screen.dart';
 import '../../features/places/screens/tram_sac_tiem_sua_screen.dart';
 import '../../features/policy/screens/cam_ket_dich_vu_screen.dart';
 import '../../features/pricing/screens/bang_gia_screen.dart';
@@ -31,11 +34,33 @@ import '../../features/services/screens/services_screen.dart';
 import '../../features/tips/screens/meo_xu_ly_screen.dart';
 import '../../features/vehicle/screens/xe_cua_toi_screen.dart';
 import '../../features/rescue_station/screens/tram_cuu_ho_screen.dart';
+import '../../features/rescue_station/models/station_model.dart';
+import '../../features/rescue_station/screens/station_detail_screen.dart';
 
 GoRouter createAppRouter() {
   return GoRouter(
     initialLocation: '/',
     routes: [
+      GoRoute(
+        path: '/stations/:stationId',
+        builder: (context, state) => StationDetailRoute(
+          stationId: state.pathParameters['stationId']!,
+          station: state.extra is StationModel
+              ? state.extra as StationModel
+              : null,
+          serviceType: state.uri.queryParameters['service'] ?? 'Tất cả dịch vụ',
+        ),
+      ),
+      GoRoute(
+        path: '/stations/:stationId/reviews',
+        builder: (context, state) => StationDetailRoute(
+          stationId: state.pathParameters['stationId']!,
+          station: state.extra is StationModel
+              ? state.extra as StationModel
+              : null,
+          showReviews: true,
+        ),
+      ),
       GoRoute(
         path: '/partners',
         builder: (context, state) => PartnerListScreen(
@@ -67,7 +92,17 @@ GoRouter createAppRouter() {
         builder: (context, state) =>
             RescueTrackingScreen(orderId: state.uri.queryParameters['id']),
       ),
-      GoRoute(path: '/', redirect: (context, state) => '/login'),
+      GoRoute(
+        path: '/service-rating',
+        builder: (context, state) =>
+            ServiceRatingScreen(orderId: state.uri.queryParameters['id']),
+      ),
+      GoRoute(path: '/', redirect: (context, state) => '/welcome'),
+      GoRoute(
+        path: '/welcome',
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: WelcomeScreen()),
+      ),
       GoRoute(
         path: '/login',
         pageBuilder: (context, state) =>
@@ -99,6 +134,16 @@ GoRouter createAppRouter() {
             const NoTransitionPage(child: ServicesScreen()),
       ),
       GoRoute(
+        path: '/order-details',
+        builder: (context, state) => OrderDetailsScreen(
+          orderId:
+              state.uri.queryParameters['id'] ??
+              (state.extra is RescueOrder
+                  ? (state.extra as RescueOrder).id
+                  : null),
+        ),
+      ),
+      GoRoute(
         path: '/chi-tiet-don-hang',
         builder: (context, state) => ChiTietDonHangScreen(
           orderId:
@@ -110,8 +155,13 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/tin-nhan',
-        pageBuilder: (context, state) =>
-            const NoTransitionPage(child: TinNhanScreen()),
+        pageBuilder: (context, state) => NoTransitionPage(
+          child: TinNhanScreen(
+            initialTabIndex: state.uri.queryParameters['tab'] == 'notifications'
+                ? 2
+                : 0,
+          ),
+        ),
       ),
       GoRoute(
         path: '/chat-detail',
@@ -154,7 +204,9 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/tram-cuu-ho',
-        builder: (context, state) => const TramCuuHoScreen(),
+        builder: (context, state) => TramCuuHoScreen(
+          initialMapView: state.uri.queryParameters['view'] == 'map',
+        ),
       ),
       GoRoute(
         path: '/incident-location',

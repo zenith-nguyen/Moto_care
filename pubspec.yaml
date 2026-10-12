@@ -50,10 +50,14 @@ dependencies:
   geocoding: ^5.0.0
   google_maps_flutter: ^2.18.2
   google_maps_flutter_ios_sdk9: ^2.19.0
+  carousel_slider: ^5.1.2
+  share_plus: ^13.3.1
+  video_player: ^2.14.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  video_player_platform_interface: ^6.9.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -78,18 +82,39 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/Logo_motocare.png
-    - assets/images/Banner1.png
-    - assets/images/Banner2.png
-    - assets/images/Banner3.png
+    - assets/images/Logo_Revo.png
+    - assets/images/Background.png
+    - "assets/images/Ảnh.png"
+    - "assets/images/Thời tiết.png"
+
+    - assets/images/rescue-tow.png
+    - assets/images/rescue-team.png
+    - assets/images/rescue-garage.png
+    - assets/images/Tiemsua1.png
+    - assets/images/Tiemsua2.png
+    - assets/images/Tiemsua3.png
+    - assets/images/Tiemsua4.png
+    - assets/fonts/Montserrat_LICENSE.txt
 
   fonts:
-    - family: Roboto
+    - family: Montserrat
       fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Montserrat-Regular.ttf
           weight: 400
-        - asset: assets/fonts/Roboto-Bold.ttf
+        - asset: assets/fonts/Montserrat-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Montserrat-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Montserrat-Bold.ttf
           weight: 700
+        - asset: assets/fonts/Montserrat-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Montserrat-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: assets/fonts/Montserrat-BoldItalic.ttf
+          weight: 700
+          style: italic
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -39,10 +39,18 @@ enum HomeDestination {
     messages,
   ];
 
-  static const homeNavigationItems = [home, activity, services, account];
+  static const homeNavigationItems = [home, rescueStations, activity, account];
 
   String get navigationLabel => switch (this) {
     personalInfo => 'Tài khoản',
+    rescueStations => 'Bản đồ trạm',
     _ => label,
+  };
+
+  IconData get navigationIcon => switch (this) {
+    rescueStations => Icons.map_outlined,
+    account => Icons.person_outline_rounded,
+    activity => Icons.receipt_long_outlined,
+    _ => icon,
   };
 }

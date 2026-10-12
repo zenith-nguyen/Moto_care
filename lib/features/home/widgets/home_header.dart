@@ -34,8 +34,8 @@ class HomeHeader extends StatelessWidget {
             width: double.infinity,
             child: const BrandBackdrop(
               colors: [
-                Color(0xFFF09A9E),
-                Color(0xFFF8CFD1),
+                HomeColors.tintStrong,
+                HomeColors.selected,
                 HomeColors.background,
               ],
               child: SizedBox.expand(),

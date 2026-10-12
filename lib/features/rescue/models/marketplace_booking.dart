@@ -33,5 +33,6 @@ class MarketplaceBooking {
     return true;
   }
 
-  static int travelFee(double distanceKm) => 10000 + distanceKm.ceil() * 5000;
+  // Quote in whole-kilometer bands: 1.2 km costs 10,000 + 5,000 VND.
+  static int travelFee(double distanceKm) => 10000 + distanceKm.round() * 5000;
 }

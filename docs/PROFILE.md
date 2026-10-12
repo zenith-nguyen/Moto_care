@@ -1,11 +1,21 @@
 # Profile module
 
-`/tai-khoan` opens the light `ProfileScreen` from the four-tab navigation. Its
-centered avatar, name, phone and static 5.0 rating presentation follow the
-supplied Be reference. Name, phone and avatar watch the shared
-`profileProvider`; missing identity stays neutral. Club, rewards and membership
-features have been removed from the mobile app. The menu is divided into
-vehicle/emergency, partner/shop, and system/help groups.
+`/tai-khoan` opens the stateful customer dashboard at
+`lib/features/customer/profile/profile_screen.dart`; the former profile screen
+path re-exports it to preserve existing imports and routes. The MoMo-inspired
+layout uses a pale-blue-to-white header, a white profile card, four quick actions,
+a 2x2 vehicle/address utility grid, partner links, and grouped security/support
+rows. Its scoped theme uses white, black and the shared navigation blue
+`#3478D4`, with `#EAF1FC` accent surfaces. Avatar controls, shortcut icons,
+utility icons and actions use this palette. The active Account tab uses the
+same icon, label and background colors as Activity through `HomeBottomNavigation`.
+
+Name, phone and avatar watch the shared `profileProvider`; missing identity stays
+neutral. The existing static 5.0 rating presentation is retained. A green
+verification tick appears only when `UserProfile.isVerified` is supplied as true;
+the default is false. Reference names and phone numbers do not replace account
+data. The dashboard has no membership badge, and the detailed profile suppresses
+the unranked badge. Club and reward features remain removed.
 
 The edit action opens `/thong-tin-ca-nhan` (`ThongTinCaNhanScreen`), which retains
 its detailed profile and security functions. The Account menu also opens this route. Optional `HomeUser` route data supplies name and account ID;
@@ -15,17 +25,30 @@ both the Home greeting and Account header.
 Account menu links reuse the garage, partner, FAQ and commitment routes.
 The spending sheet totals completed orders only, using derived order prices.
 The contact sheet shows the stored emergency contact and opens profile settings
-for protected editing. Payment, shop registration and insurance sheets disclose
+for protected editing. Vehicle information and saved-address tiles show the
+stored profile values; vehicle management still opens the garage. The email row
+shows the linked email. Payment, shop registration and insurance sheets disclose
 their currently available functions; they do not create payment methods, submit
 shop applications or sell insurance. The settings sheet links to profile security,
-service terms and FAQ. `test/be_screens_test.dart` covers these new interactions
-and reactive data, plus 320px layouts with 1.5x text.
+service terms and FAQ. Password changes, biometric preferences, logout and
+account deletion are available directly from the dashboard. Its
+`profileActionsProvider` coordinates pending device/account operations, prevents
+duplicate requests and ignores avatar results after the account changes. The
+presentation adapter owns confirmations and navigation. Existing detail-screen
+security checks and service error handling remain available.
+
+`test/profile_dashboard_test.dart` and `test/be_screens_test.dart` cover the
+dashboard actions, reactive data, protected operations, cancellation/failure,
+session cleanup and 320px layouts with 1.5x text.
 
 The detailed edit screen uses the shared light background, white cards, orange
 account controls and four-tab bottom navigation with Account selected. Its scroll view and modal edit sheet support narrow screens,
 larger text and the keyboard.
 
-[Account preview](screenshots/no-offers-account.png).
+[Blue dashboard preview](screenshots/profile-dashboard-blue.png),
+[earlier dashboard preview](screenshots/profile-dashboard.png),
+[utilities and security](screenshots/profile-dashboard-utilities.png), and
+[support and session actions](screenshots/profile-dashboard-settings.png).
 
 [Personal information preview](screenshots/light-personal-info.png).
 

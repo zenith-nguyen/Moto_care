@@ -5,14 +5,23 @@ export '../models/home_service.dart';
 import '../theme/home_theme.dart';
 
 class HomeServiceGrid extends StatelessWidget {
-  const HomeServiceGrid({super.key, required this.onSelected});
+  const HomeServiceGrid({
+    super.key,
+    required this.onSelected,
+    this.monochrome = false,
+  });
   final ValueChanged<HomeService> onSelected;
+  final bool monochrome;
 
   @override
   Widget build(BuildContext context) {
     final scale = MediaQuery.textScalerOf(context).scale(12) / 12;
     return GridView.count(
-      crossAxisCount: 4,
+      crossAxisCount: monochrome && scale > 1.3
+          ? 2
+          : monochrome
+          ? 3
+          : 4,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
@@ -25,7 +34,8 @@ class HomeServiceGrid extends StatelessWidget {
             key: ValueKey('home-service-${service.name}'),
             label: service.label,
             icon: service.icon,
-            color: service.color,
+            color: monochrome ? const Color(0xFF111111) : service.color,
+            cornerRadius: monochrome ? 20 : 12,
             onTap: () => onSelected(service),
           ),
       ],
@@ -40,16 +50,18 @@ class ServiceTile extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.color = HomeColors.red,
+    this.cornerRadius = 12,
   });
   final String label;
   final IconData icon;
   final Color color;
+  final double cornerRadius;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) => Material(
     color: HomeColors.surface,
-    borderRadius: BorderRadius.circular(12),
+    borderRadius: BorderRadius.circular(cornerRadius),
     clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onTap,

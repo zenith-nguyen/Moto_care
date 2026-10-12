@@ -10,6 +10,7 @@ import '../models/activity_filter.dart';
 import '../models/rescue_order.dart';
 import '../providers/activity_provider.dart';
 import '../services/activity_actions.dart';
+import '../theme/activity_theme.dart';
 import '../widgets/activity_order_card.dart';
 
 class ActivityScreen extends ConsumerStatefulWidget {
@@ -31,7 +32,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   Future<void> _details(BuildContext context, RescueOrder order) async {
     final created = await context.push<bool>(
-      '/chi-tiet-don-hang?id=${Uri.encodeQueryComponent(order.id)}',
+      '${order.status.isActive ? '/order-details' : '/chi-tiet-don-hang'}?id=${Uri.encodeQueryComponent(order.id)}',
     );
     if (mounted && created == true) _showLatest();
   }
@@ -50,6 +51,8 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         builder: (context) => Scaffold(
           appBar: AppBar(
             automaticallyImplyLeading: false,
+            centerTitle: true,
+            titleTextStyle: ActivityTextStyles.pageTitle,
             title: const Text('Hoạt động'),
           ),
           body: SafeArea(
@@ -77,12 +80,9 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                   selected: _filter == filter,
                                   showCheckmark: false,
                                   backgroundColor: const Color(0xFFF1F1F1),
-                                  selectedColor: HomeColors.selected,
-                                  labelStyle: TextStyle(
-                                    color: HomeColors.text,
-                                    fontWeight: _filter == filter
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
+                                  selectedColor: ActivityTheme.primaryAction,
+                                  labelStyle: ActivityTextStyles.filterLabel(
+                                    selected: _filter == filter,
                                   ),
                                   side: BorderSide(
                                     color: _filter == filter
@@ -97,16 +97,6 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                 ),
                               ),
                           ],
-                        ),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
-                      child: Text(
-                        'Dữ liệu mẫu • Lịch sử trong phiên dùng thử',
-                        style: TextStyle(
-                          color: HomeColors.secondary,
-                          fontSize: 11,
                         ),
                       ),
                     ),
@@ -128,10 +118,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                           ? 'Chưa có hoạt động nào'
                                           : 'Chưa có hoạt động ${_filter.label.toLowerCase()}',
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: HomeColors.secondary,
-                                        height: 1.5,
-                                      ),
+                                      style: ActivityTextStyles.emptyMessage,
                                     ),
                                   ],
                                 ),
@@ -158,16 +145,13 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                                   children: [
                                     if (newMonth)
                                       Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 18,
+                                        padding: const EdgeInsets.only(
+                                          top: 12,
+                                          bottom: 8,
                                         ),
                                         child: Text(
                                           'Tháng ${date.month}/${date.year}',
-                                          style: const TextStyle(
-                                            color: HomeColors.secondary,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                          style: ActivityTextStyles.monthTitle,
                                         ),
                                       ),
                                     Padding(

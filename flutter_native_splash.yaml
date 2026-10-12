@@ -1,7 +1,8 @@
 flutter_native_splash:
   color: "#FFFFFF"
   color_dark: "#FFFFFF"
-  image: assets/images/logo-motocare-splash.png
+  # Temporary source images are created by dart run tool/generate_splash.dart.
+  image: .dart_tool/revo_splash/logo.png
   android: true
   ios: true
   web: false
@@ -11,4 +12,4 @@ flutter_native_splash:
   android_12:
     color: "#FFFFFF"
     color_dark: "#FFFFFF"
-    image: assets/images/logo-motocare-splash-android12.png
+    image: .dart_tool/revo_splash/logo_android12.png

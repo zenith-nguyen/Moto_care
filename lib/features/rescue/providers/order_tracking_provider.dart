@@ -8,10 +8,23 @@ import '../../partner/providers/partner_provider.dart';
 import '../models/order_tracking_journey.dart';
 import '../models/order_tracking_state.dart';
 import '../services/order_tracking_service.dart';
+import '../services/order_tracking_feed.dart';
+import '../models/tracking_update.dart';
 
 export '../models/order_tracking_state.dart';
 
 typedef TrackingKey = (Object, String?);
+final orderTrackingUpdatesProvider = StreamProvider.autoDispose
+    .family<TrackingUpdate, TrackingKey>((ref, key) {
+      final feed = ref.watch(orderTrackingFeedProvider);
+      final order = ref.watch(
+        activityProvider.select((state) => state.orderById(key.$2)),
+      );
+      if (feed == null || order == null || !order.status.isActive) {
+        return const Stream.empty();
+      }
+      return feed.watchOrder(order.id);
+    });
 final orderTrackingProvider = NotifierProvider.autoDispose
     .family<OrderTrackingController, OrderTrackingState, TrackingKey>(
       OrderTrackingController.new,
@@ -24,6 +37,7 @@ class OrderTrackingController extends Notifier<OrderTrackingState> {
   bool _enabled = false;
   @override
   OrderTrackingState build() {
+    final liveMode = ref.watch(orderTrackingFeedProvider) != null;
     final order = ref.read(activityProvider).orderById(key.$2);
     final shops = ref
         .read(partnerShopsProvider)
@@ -32,13 +46,42 @@ class OrderTrackingController extends Notifier<OrderTrackingState> {
     ref.listen(activityProvider, (_, next) {
       if (!_active(next.orderById(key.$2))) stop();
     });
+    ref.listen(orderTrackingUpdatesProvider(key), (_, next) {
+      if (!ref.mounted ||
+          !liveMode ||
+          ref.read(activityProvider).orderById(key.$2)?.status.isActive !=
+              true) {
+        return;
+      }
+      if (next.hasError) {
+        state = OrderTrackingState(
+          state.journey,
+          step: state.step,
+          liveMode: true,
+          update: state.update,
+          feedError: 'Mất kết nối · Đang hiển thị vị trí gần nhất',
+        );
+      } else if (next.value case final update?) {
+        if (update.orderId != key.$2 ||
+            (state.update != null &&
+                update.observedAt.isBefore(state.update!.observedAt))) {
+          return;
+        }
+        state = OrderTrackingState(
+          state.journey,
+          liveMode: true,
+          update: update,
+        );
+      }
+    });
     return OrderTrackingState(
-      order == null
+      liveMode || order == null
           ? null
           : OrderTrackingJourney.fromOrder(
               order,
               shops.isEmpty ? null : shops.first,
             ),
+      liveMode: liveMode,
     );
   }
 
@@ -47,6 +90,7 @@ class OrderTrackingController extends Notifier<OrderTrackingState> {
       order?.status == RescueOrderStatus.enRoute;
   bool get canMove =>
       _enabled &&
+      !state.liveMode &&
       !state.arrived &&
       state.journey != null &&
       _active(ref.read(activityProvider).orderById(key.$2));

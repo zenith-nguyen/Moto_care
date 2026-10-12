@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../home/theme/home_theme.dart';
+import '../../../core/widgets/revo_logo.dart';
+import '../theme/auth_theme.dart';
+import '../widgets/auth_scaffold.dart';
 import '../models/auth_validation.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -33,11 +34,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: HomeColors.background,
+    return AuthScaffold(
       appBar: AppBar(
-        backgroundColor: HomeColors.background,
-        foregroundColor: HomeColors.text,
+        backgroundColor: AuthColors.background,
+        foregroundColor: AuthColors.text,
         surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 0,
         toolbarHeight: MediaQuery.textScalerOf(context).scale(56),
@@ -45,7 +45,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           tooltip: 'Quay lại',
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: AppTheme.link,
+            color: AuthColors.primary,
             size: 24,
           ),
           onPressed: () {
@@ -89,15 +89,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 children: [
                   SizedBox(
                     height: logoHeight,
-                    child: Center(
-                      child: Image.asset(
-                        'assets/images/Logo_motocare.png',
-                        width: 112,
-                        height: 112,
-                        fit: BoxFit.contain,
-                        semanticLabel: 'Logo Moto Care',
-                      ),
-                    ),
+                    child: Center(child: const RevoLogo()),
                   ),
                   const Text(
                     'Quên mật khẩu?',
@@ -152,9 +144,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           const SizedBox(height: 28),
                           FilledButton(
                             style: FilledButton.styleFrom(
-                              backgroundColor: AppTheme.link,
-                              disabledBackgroundColor: HomeColors.redSelected,
-                              disabledForegroundColor: AppTheme.mutedText,
+                              backgroundColor: AuthColors.primary,
+                              disabledBackgroundColor: AuthColors.disabled,
+                              disabledForegroundColor: AuthColors.secondary,
                             ),
                             onPressed: AuthValidation.email(_email) == null
                                 ? _submit

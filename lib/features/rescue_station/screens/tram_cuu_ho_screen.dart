@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/service_scaffold.dart';
+import '../../home/models/home_destination.dart';
 import '../providers/rescue_station_provider.dart';
 import '../widgets/rescue_station_card.dart';
 import '../widgets/rescue_station_mock_map.dart';
@@ -9,7 +11,8 @@ import '../widgets/rescue_station_mock_map.dart';
 enum _StationView { list, map }
 
 class TramCuuHoScreen extends ConsumerStatefulWidget {
-  const TramCuuHoScreen({super.key});
+  const TramCuuHoScreen({super.key, this.initialMapView = false});
+  final bool initialMapView;
 
   @override
   ConsumerState<TramCuuHoScreen> createState() => _TramCuuHoScreenState();
@@ -20,7 +23,9 @@ class _TramCuuHoScreenState extends ConsumerState<TramCuuHoScreen> {
   final _filters = <StationFilter>{};
   String _query = '';
   String? _selectedId;
-  _StationView _view = _StationView.list;
+  late _StationView _view = widget.initialMapView
+      ? _StationView.map
+      : _StationView.list;
 
   @override
   void dispose() {
@@ -43,6 +48,15 @@ class _TramCuuHoScreenState extends ConsumerState<TramCuuHoScreen> {
           );
     return ServiceScaffold(
       title: 'Trạm cứu hộ',
+      showBackButton: false,
+      centerTitle: true,
+      titleStyle: AppTextStyles.pageTitle,
+      backgroundImage: const DecorationImage(
+        image: AssetImage('assets/images/Background.png'),
+        fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
+      ),
+      selectedDestination: HomeDestination.rescueStations,
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
           SliverToBoxAdapter(
@@ -118,16 +132,6 @@ class _TramCuuHoScreenState extends ConsumerState<TramCuuHoScreen> {
                     showSelectedIcon: false,
                     onSelectionChanged: (values) =>
                         setState(() => _view = values.single),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    '${stations.length} trạm • ${_filters.contains(StationFilter.nearest) ? 'Gần nhất trước' : 'Đánh giá cao trước'}',
-                    style: const TextStyle(color: ServiceColors.muted),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Thông tin trạm và khoảng cách minh họa',
-                    style: TextStyle(color: ServiceColors.muted, fontSize: 12),
                   ),
                 ],
               ),

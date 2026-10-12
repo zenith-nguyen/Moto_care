@@ -5,14 +5,10 @@ import 'package:image/image.dart' as img;
 
 /// Run from the repository root: dart run tool/generate_splash.dart
 Future<void> main() async {
-  final jpgSource = File('assets/images/logo-motocare.jpg');
-  final sourceFile = jpgSource.existsSync()
-      ? jpgSource
-      : File('assets/images/Logo_motocare.png');
+  final sourceFile = File('assets/images/Logo_Revo.png');
   if (!sourceFile.existsSync()) {
     throw StateError(
-      'Add assets/images/logo-motocare.jpg or assets/images/Logo_motocare.png '
-      'before generating the splash.',
+      'Add assets/images/Logo_Revo.png before generating the splash.',
     );
   }
   final source = img.decodeImage(sourceFile.readAsBytesSync());
@@ -21,14 +17,23 @@ Future<void> main() async {
   }
   stdout.writeln('Splash source: ${sourceFile.path}');
 
-  final cropped = _trimWhiteBorder(source);
+  final output = Directory('.dart_tool/revo_splash')
+    ..createSync(recursive: true);
+  final cropped = _trimTransparentBorder(source);
+  // Revo is supplied as a white mark on transparency. Render it in black
+  // against the native white background, preserving the original asset.
+  for (final pixel in cropped) {
+    pixel
+      ..r = 0
+      ..g = 0
+      ..b = 0;
+  }
   final splash = img.copyResize(
     cropped,
     width: 768,
     interpolation: img.Interpolation.average,
   );
-  File('assets/images/logo-motocare-splash.png')
-      .writeAsBytesSync(img.encodePng(splash));
+  File('${output.path}/logo.png').writeAsBytesSync(img.encodePng(splash));
 
   // Android 12 masks a 1152px image to a circle with a 768px diameter.
   // Fit the entire crop inside that circle, with 16px of space on each side.
@@ -48,7 +53,7 @@ Future<void> main() async {
     dstX: (androidSplash.width - androidLogo.width) ~/ 2,
     dstY: (androidSplash.height - androidLogo.height) ~/ 2,
   );
-  File('assets/images/logo-motocare-splash-android12.png')
+  File('${output.path}/logo_android12.png')
       .writeAsBytesSync(img.encodePng(androidSplash));
   stdout.writeln(
     'Cropped ${source.width}x${source.height} to '
@@ -62,15 +67,15 @@ Future<void> main() async {
   exitCode = await generator.exitCode;
 }
 
-img.Image _trimWhiteBorder(img.Image source) {
+img.Image _trimTransparentBorder(img.Image source) {
   var left = source.width;
   var top = source.height;
   var right = -1;
   var bottom = -1;
 
-  // Ignore near-white JPEG compression noise when locating the logo.
+  // Ignore the transparent padding in the canonical Revo PNG.
   for (final pixel in source) {
-    if (pixel.r >= 240 && pixel.g >= 240 && pixel.b >= 240) continue;
+    if (pixel.a <= 20) continue;
     left = math.min(left, pixel.x);
     top = math.min(top, pixel.y);
     right = math.max(right, pixel.x);

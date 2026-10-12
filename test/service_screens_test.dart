@@ -51,8 +51,7 @@ Future<GoRouter> _open(
         attachmentPickerProvider.overrideWithValue(
           picker ??
               () async =>
-                  (await rootBundle.load('assets/images/Logo_motocare.png'))
-                      .buffer
+                  (await rootBundle.load('assets/images/Logo_Revo.png')).buffer
                       .asUint8List(),
         ),
         if (places != null) servicePlacesProvider.overrideWithValue(places),
@@ -148,7 +147,7 @@ void main() {
       expect(router.state.uri.path, '/tai-khoan');
     }
     await _tap(tester, find.text('Trang chủ'));
-    expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
+    expect(find.byTooltip('Tài khoản Nguyễn Văn An'), findsOneWidget);
   });
 
   test('Retired offers and membership routes are absent', () {

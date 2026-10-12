@@ -6,28 +6,46 @@ import 'package:go_router/go_router.dart';
 import 'package:moto_care/features/auth/screens/forgot_password_screen.dart';
 import 'package:moto_care/features/auth/screens/login_screen.dart';
 import 'package:moto_care/features/auth/screens/register_screen.dart';
+import 'package:moto_care/features/auth/screens/welcome_screen.dart';
 import 'package:moto_care/features/home/screens/trang_chu.dart';
 import 'package:moto_care/main.dart';
+import 'package:moto_care/core/widgets/revo_logo.dart';
 
 Future<void> openLogin(WidgetTester tester) async {
   await tester.pumpWidget(const ProviderScope(child: MyApp()));
   await tester.pumpAndSettle();
+  await tester.tap(find.text('Tiếp'));
+  await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('App opens login immediately after the native splash', (
-    tester,
-  ) async {
+  testWidgets('App opens welcome after the native splash', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: MyApp()));
 
     await tester.pump();
+    expect(find.byType(WelcomeScreen), findsOneWidget);
+    expect(
+      find.image(const AssetImage(WelcomeScreen.imageAsset)),
+      findsOneWidget,
+    );
+    expect(find.text('Tiếp'), findsOneWidget);
+    expect(find.byType(Text), findsOneWidget);
+    expect(find.byType(RevoLogo), findsNothing);
+    expect(find.byType(TextFormField), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Welcome opens login with the Revo logo above the form', (
+    tester,
+  ) async {
+    await openLogin(tester);
     expect(find.byType(LoginScreen), findsOneWidget);
     final loginLogo = find.image(
-      const AssetImage('assets/images/Logo_motocare.png'),
+      const AssetImage('assets/images/Logo_Revo.png'),
     );
     expect(loginLogo, findsOneWidget);
     expect(
-      tester.getBottomLeft(loginLogo).dy,
+      tester.getBottomLeft(find.byType(RevoLogo)).dy,
       lessThan(tester.getTopLeft(find.byType(TextFormField).first).dy),
     );
     expect(find.text('Email hoặc số điện thoại'), findsOneWidget);
@@ -39,7 +57,7 @@ void main() {
     expect(find.text('[DEV] Vào nhanh Trang chủ'), findsNothing);
     expect(
       GoRouter.of(tester.element(find.byType(LoginScreen))).canPop(),
-      false,
+      true,
     );
     expect(tester.takeException(), isNull);
   });
@@ -174,7 +192,7 @@ void main() {
     await tester.tap(find.text('Đăng ký'));
     await tester.pumpAndSettle();
     expect(find.byType(RegisterScreen), findsOneWidget);
-    expect(find.text('Đăng ký tài khoản MotoCare'), findsOneWidget);
+    expect(find.text('Đăng ký tài khoản Revo'), findsOneWidget);
     await tester.tap(find.byTooltip('Quay lại'));
     await tester.pumpAndSettle();
     expect(find.byType(LoginScreen), findsOneWidget);

@@ -124,7 +124,7 @@ void main() {
   ) async {
     await _open(tester, '/tai-khoan');
     expect(find.text(profileFixture.fullName), findsOneWidget);
-    expect(find.text(profileFixture.phoneNumber), findsOneWidget);
+    expect(find.text('SĐT: ${profileFixture.phoneNumber}'), findsOneWidget);
     expect(find.text('5.0'), findsOneWidget);
     expect(find.text('350 xu'), findsNothing);
     expect(find.text('Thành viên Vàng'), findsNothing);
@@ -187,7 +187,7 @@ void main() {
     await _tap(tester, find.byKey(const ValueKey('account-emergency')));
     expect(find.text('Người thân\n0900000002'), findsOneWidget);
     await _tap(tester, find.byTooltip('Đóng'));
-    for (final id in ['payment', 'shop', 'insurance', 'settings']) {
+    for (final id in ['payment', 'insurance', 'shop', 'settings']) {
       await _tap(tester, find.byKey(ValueKey('account-$id')));
       expect(find.byTooltip('Đóng'), findsOneWidget);
       await _tap(tester, find.byTooltip('Đóng'));
@@ -210,6 +210,7 @@ void main() {
       ]) {
         router.go('/trang-chu');
         await tester.pumpAndSettle();
+        await _tap(tester, find.byKey(const ValueKey('home-services')));
         await _tap(
           tester,
           find.byKey(ValueKey('home-service-${service.name}')),

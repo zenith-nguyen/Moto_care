@@ -142,7 +142,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.byType(TrangChu), findsOneWidget);
-      expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
+      expect(find.byTooltip('Tài khoản Nguyễn Văn An'), findsOneWidget);
       expect(find.byType(TinNhanScreen), findsNothing);
       expect(tester.takeException(), isNull);
     },

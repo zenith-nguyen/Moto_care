@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_theme.dart';
-import '../../home/theme/home_theme.dart';
+import '../../../core/widgets/revo_logo.dart';
+import '../theme/auth_theme.dart';
+import '../widgets/auth_scaffold.dart';
 import '../models/auth_validation.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -25,8 +26,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: HomeColors.background,
+    return AuthScaffold(
+      appBar: AppBar(
+        toolbarHeight: 48,
+        leading: IconButton(
+          tooltip: 'Quay lại',
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/welcome');
+            }
+          },
+        ),
+      ),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -51,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 24),
                           const _LoginHeader(),
                           const SizedBox(height: 32),
                           _buildForm(),
@@ -67,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const Text(
                               'Chưa có tài khoản?',
                               style: TextStyle(
-                                color: AppTheme.mutedText,
+                                color: AuthColors.secondary,
                                 fontSize: 16,
                               ),
                             ),
@@ -175,15 +189,7 @@ class _LoginHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Image.asset(
-        'assets/images/Logo_motocare.png',
-        width: 150,
-        height: 150,
-        fit: BoxFit.contain,
-        semanticLabel: 'Logo Moto Care',
-      ),
-    );
+    return const SizedBox(height: 132, child: Center(child: RevoLogo()));
   }
 }
 

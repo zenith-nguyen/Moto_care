@@ -3,15 +3,15 @@ import 'package:flutter/material.dart';
 abstract final class HomeColors {
   static const background = Color(0xFFF8F9FA);
   static const surface = Colors.white;
-  static const primary = Color(0xFFCC0001);
+  static const primary = Colors.black;
   static const text = Color(0xFF111827);
   static const secondary = Color(0xFF4B5563);
   static const red = primary;
-  // Keep subtle backgrounds and borders in the same brand color.
-  static const tint = Color(0x0ACC0001);
-  static const selected = Color(0x14CC0001);
-  static const tintStrong = Color(0x26CC0001);
-  static const accentBorder = Color(0x33CC0001);
+  // Keep subtle backgrounds and borders in the same monochrome palette.
+  static const tint = Color(0x0A000000);
+  static const selected = Color(0x14000000);
+  static const tintStrong = Color(0x26000000);
+  static const accentBorder = Color(0x33000000);
   static const redSelected = selected;
   static const border = Color(0xFFEEEEEE);
 
@@ -29,7 +29,7 @@ abstract final class HomeTheme {
   static ThemeData _createLight(Color accentColor) => ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    fontFamily: 'Roboto',
+    fontFamily: 'Montserrat',
     scaffoldBackgroundColor: HomeColors.background,
     colorScheme: ColorScheme.fromSeed(
       seedColor: accentColor,
@@ -80,7 +80,7 @@ abstract final class HomeTheme {
       surfaceTint: Colors.transparent,
     ),
     textTheme: ThemeData.light().textTheme.apply(
-      fontFamily: 'Roboto',
+      fontFamily: 'Montserrat',
       bodyColor: HomeColors.text,
       displayColor: HomeColors.text,
     ),
@@ -96,7 +96,10 @@ abstract final class HomeTheme {
     chipTheme: ChipThemeData(
       selectedColor: HomeColors.redSelected,
       checkmarkColor: HomeColors.red,
-      labelStyle: const TextStyle(fontFamily: 'Roboto', color: HomeColors.text),
+      labelStyle: const TextStyle(
+        fontFamily: 'Montserrat',
+        color: HomeColors.text,
+      ),
       side: const BorderSide(color: HomeColors.border),
     ),
     dividerTheme: const DividerThemeData(
@@ -110,7 +113,7 @@ abstract final class HomeTheme {
       elevation: 0,
       centerTitle: false,
       titleTextStyle: TextStyle(
-        fontFamily: 'Roboto',
+        fontFamily: 'Montserrat',
         fontSize: 26,
         fontWeight: FontWeight.w700,
         color: HomeColors.text,

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/main_navigation.dart';
-import '../../../core/widgets/service_scaffold.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/models/rescue_location.dart';
@@ -113,7 +112,11 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
       onPressed: draft.openingMap || draft.resolving
           ? null
           : () => _openMap(null, true),
-      child: const Text('Chọn trên bản đồ', style: TextStyle(fontSize: 13)),
+      style: TextButton.styleFrom(foregroundColor: const Color(0xFF1976D2)),
+      child: const Text(
+        'Chọn trên bản đồ',
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      ),
     );
     return Theme(
       data: HomeTheme.light,
@@ -137,8 +140,8 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                     child: Text(
                       'Vị trí gặp sự cố?',
                       style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
@@ -171,7 +174,11 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                       maxLines: 3,
                       maxLength: 240,
                       textInputAction: TextInputAction.next,
-                      style: const TextStyle(fontSize: 15, height: 1.5),
+                      style: const TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w500,
+                        height: 1.5,
+                      ),
                       decoration:
                           _inputDecoration(
                             hint: 'Nhập địa chỉ gặp sự cố',
@@ -210,7 +217,7 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                           Text(
                             'Google Maps',
                             style: TextStyle(
-                              fontFamily: 'Roboto',
+                              fontFamily: 'Montserrat',
                               fontSize: 12,
                               color: Color(0xFF1F1F1F),
                             ),
@@ -277,11 +284,18 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                       maxLength: 240,
                       textInputAction: TextInputAction.done,
                       style: const TextStyle(fontSize: 14, height: 1.5),
-                      decoration: _inputDecoration(
-                        hint: 'Mô tả điểm nhận diện (VD: Đối diện cây xăng, cổng trường...)',
-                        icon: Icons.edit_outlined,
-                        iconColor: HomeColors.secondary,
-                      ).copyWith(counterText: ''),
+                      decoration:
+                          _inputDecoration(
+                            hint: 'Mô tả điểm nhận diện (VD: Đối diện cây xăng, cổng trường...)',
+                            icon: Icons.edit_outlined,
+                            iconColor: HomeColors.secondary,
+                          ).copyWith(
+                            counterText: '',
+                            hintStyle: const TextStyle(
+                              fontSize: 13.5,
+                              color: Colors.black45,
+                            ),
+                          ),
                       onFieldSubmitted: draft.resolving || draft.openingMap
                           ? null
                           : (_) => _openMap(),
@@ -300,7 +314,10 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                         ),
                         title: const Text(
                           'Sử dụng vị trí hiện tại của tôi',
-                          style: TextStyle(fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         trailing: const Icon(
                           Icons.chevron_right_rounded,
@@ -311,22 +328,27 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                             : _useGps,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Tìm theo tên địa điểm, đường hoặc địa chỉ đầy đủ.',
-                      style: TextStyle(
-                        color: HomeColors.secondary,
-                        fontSize: 12,
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Tìm theo tên địa điểm, đường hoặc địa chỉ đầy đủ.',
+                        style: TextStyle(color: Colors.black45, fontSize: 12),
                       ),
                     ),
-                    const ServiceSectionTitle('Địa điểm quen thuộc'),
+                    const _LocationSectionTitle('Địa điểm quen thuộc'),
                     Wrap(
                       spacing: 10,
                       runSpacing: 8,
                       children: [
                         ActionChip(
                           avatar: const Icon(Icons.home_outlined, size: 20),
-                          label: const Text('Gần Nhà'),
+                          label: const Text(
+                            'Gần Nhà',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           backgroundColor: HomeColors.surface,
                           side: const BorderSide(color: HomeColors.border),
                           onPressed:
@@ -342,7 +364,13 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                         ),
                         ActionChip(
                           avatar: const Icon(Icons.business_outlined, size: 20),
-                          label: const Text('Gần Công ty'),
+                          label: const Text(
+                            'Gần Công ty',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           backgroundColor: HomeColors.surface,
                           side: const BorderSide(color: HomeColors.border),
                           onPressed:
@@ -357,7 +385,7 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                       ],
                     ),
                     if (draft.query.isEmpty) ...[
-                      const ServiceSectionTitle('Địa điểm gần đây'),
+                      const _LocationSectionTitle('Địa điểm gần đây'),
                       if (places.isEmpty)
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 20),
@@ -375,24 +403,32 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                             vertical: 6,
                           ),
                           leading: const CircleAvatar(
-                            backgroundColor: Color(0xFFE9ECEF),
+                            backgroundColor: Color(0xFFF5F5F5),
                             child: Icon(
                               Icons.history_rounded,
                               color: HomeColors.secondary,
+                              size: 20,
                             ),
                           ),
                           title: Text(
                             place.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
                             ),
                           ),
                           subtitle: Text(
                             place.location.address,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: HomeColors.secondary,
-                              height: 1.5,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w400,
+                              color: Colors.black54,
+                              height: 1.3,
                             ),
                           ),
                           onTap: draft.openingMap || draft.resolving
@@ -438,6 +474,25 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: const BorderSide(color: HomeColors.primary, width: 1.5),
+    ),
+  );
+}
+
+class _LocationSectionTitle extends StatelessWidget {
+  const _LocationSectionTitle(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 16, bottom: 8),
+    child: Text(
+      title,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Colors.black87,
+      ),
     ),
   );
 }

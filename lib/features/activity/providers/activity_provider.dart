@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/mock_rescue_orders.dart';
+import '../models/order_cancellation_reason.dart';
 import '../models/rescue_order.dart';
 import '../models/activity_state.dart';
 export '../models/activity_state.dart';
 import '../models/activity_filter.dart';
 import '../services/rescue_order_service.dart';
+import '../../profile/providers/profile_provider.dart';
 
 final initialRescueOrdersProvider = Provider<List<RescueOrder>>(
   (ref) => mockRescueOrders,
@@ -21,10 +23,23 @@ class ActivityController extends Notifier<ActivityState> {
   ActivityState build() =>
       ActivityState(orders: ref.watch(initialRescueOrdersProvider));
 
-  bool cancelOrder(String id) {
+  bool cancelOrder(String id, {OrderCancellationReason? reason}) {
     final order = state.orderById(id);
     if (order == null || !order.status.isActive) return false;
-    _replaceOrder(order.copyWith(status: RescueOrderStatus.cancelled));
+    _replaceOrder(
+      order.copyWith(
+        status: RescueOrderStatus.cancelled,
+        cancellationReason: reason,
+        statusEvents: [
+          ...order.statusEvents,
+          RescueOrderEvent(
+            status: RescueOrderStatus.cancelled,
+            occurredAt: ref.read(rescueOrderClockProvider)(),
+            description: reason?.description ?? '',
+          ),
+        ],
+      ),
+    );
     return true;
   }
 
@@ -64,6 +79,7 @@ class ActivityController extends Notifier<ActivityState> {
     String voucherCode = '',
     List<RescueOrderItem> items = const [],
   }) {
+    final requester = ref.read(profileProvider).profile;
     final order = ref
         .read(rescueOrderServiceProvider)
         .createOrder(
@@ -86,6 +102,8 @@ class ActivityController extends Notifier<ActivityState> {
           paymentMethod: paymentMethod,
           voucherCode: voucherCode,
           items: items,
+          requesterName: requester.fullName,
+          requesterPhone: requester.phoneNumber,
         );
     state = ActivityState(
       orders: [order, ...state.orders],

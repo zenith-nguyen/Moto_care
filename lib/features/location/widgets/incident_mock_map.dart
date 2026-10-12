@@ -187,7 +187,7 @@ class _IncidentMapPainter extends CustomPainter {
       text: TextSpan(
         text: text,
         style: const TextStyle(
-          fontFamily: 'Roboto',
+          fontFamily: 'Montserrat',
           color: Color(0xFF88939B),
           fontSize: 12,
         ),

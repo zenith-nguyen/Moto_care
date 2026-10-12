@@ -1,6 +1,7 @@
 export '../services/search_service.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/home/models/home_destination.dart';
@@ -28,7 +29,11 @@ class ServiceScaffold extends StatelessWidget {
     this.bottomBar,
     this.actions = const [],
     this.background = HomeColors.background,
+    this.backgroundImage,
     this.selectedDestination = HomeDestination.services,
+    this.showBackButton = true,
+    this.centerTitle = false,
+    this.titleStyle,
   });
 
   final String title;
@@ -36,7 +41,11 @@ class ServiceScaffold extends StatelessWidget {
   final Widget? bottomBar;
   final List<Widget> actions;
   final Color background;
+  final DecorationImage? backgroundImage;
   final HomeDestination selectedDestination;
+  final bool showBackButton;
+  final bool centerTitle;
+  final TextStyle? titleStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +62,7 @@ class ServiceScaffold extends StatelessWidget {
             foregroundColor: Colors.white,
             minimumSize: const Size(48, 48),
             textStyle: const TextStyle(
-              fontFamily: 'Roboto',
+              fontFamily: 'Montserrat',
               fontSize: 15,
               fontWeight: FontWeight.w700,
             ),
@@ -91,65 +100,89 @@ class ServiceScaffold extends StatelessWidget {
           showDragHandle: true,
         ),
       ),
-      child: Scaffold(
-        backgroundColor: background,
-        appBar: AppBar(
-          actions: actions,
-          backgroundColor: background,
-          surfaceTintColor: Colors.transparent,
-          foregroundColor: HomeColors.text,
-          flexibleSpace: const BrandBackdrop(child: SizedBox.expand()),
-          toolbarHeight: MediaQuery.textScalerOf(context).scale(80),
-          leading: IconButton(
-            tooltip: 'Quay lại',
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-            onPressed: () {
-              final router = GoRouter.of(context);
-              if (router.canPop()) {
-                router.pop();
-              } else {
-                router.go('/trang-chu');
-              }
-            },
-          ),
-          title: Text(
-            title,
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
-          ),
-        ),
-        body: SafeArea(
-          top: false,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 700),
-              child: body,
+      child: DecoratedBox(
+        decoration: BoxDecoration(color: background, image: backgroundImage),
+        child: Scaffold(
+          backgroundColor: backgroundImage == null
+              ? background
+              : Colors.transparent,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            centerTitle: centerTitle,
+            actions: actions,
+            backgroundColor: backgroundImage == null
+                ? background
+                : Colors.transparent,
+            surfaceTintColor: Colors.transparent,
+            foregroundColor: HomeColors.text,
+            flexibleSpace: backgroundImage == null
+                ? const BrandBackdrop(child: SizedBox.expand())
+                : null,
+            scrolledUnderElevation: backgroundImage == null ? null : 0,
+            systemOverlayStyle: backgroundImage == null
+                ? null
+                : SystemUiOverlayStyle.dark.copyWith(
+                    statusBarColor: Colors.transparent,
+                  ),
+            toolbarHeight: MediaQuery.textScalerOf(context).scale(80),
+            leading: showBackButton
+                ? IconButton(
+                    tooltip: 'Quay lại',
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      final router = GoRouter.of(context);
+                      if (router.canPop()) {
+                        router.pop();
+                      } else {
+                        router.go('/trang-chu');
+                      }
+                    },
+                  )
+                : null,
+            title: Text(
+              title,
+              style:
+                  titleStyle ??
+                  const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
             ),
           ),
-        ),
-        bottomNavigationBar: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (bottomBar != null)
-              SafeArea(
-                top: false,
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                  child: Center(
-                    heightFactor: 1,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 668),
-                      child: bottomBar,
+          body: SafeArea(
+            top: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 700),
+                child: body,
+              ),
+            ),
+          ),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (bottomBar != null)
+                SafeArea(
+                  top: false,
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                    child: Center(
+                      heightFactor: 1,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 668),
+                        child: bottomBar,
+                      ),
                     ),
                   ),
                 ),
+              HomeBottomNavigation(
+                selectedDestination: selectedDestination,
+                onSelected: (destination) =>
+                    navigateMainTab(context, destination),
               ),
-            HomeBottomNavigation(
-              selectedDestination: selectedDestination,
-              onSelected: (destination) =>
-                  navigateMainTab(context, destination),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

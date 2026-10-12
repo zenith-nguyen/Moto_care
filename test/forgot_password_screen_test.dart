@@ -19,7 +19,7 @@ Future<GoRouter> openRecovery(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('Recovery shows the MotoCare logo and an email-only form', (
+  testWidgets('Recovery shows the Revo logo and an email-only form', (
     tester,
   ) async {
     await openRecovery(tester);
@@ -27,7 +27,7 @@ void main() {
     expect(find.text('Quên mật khẩu'), findsOneWidget);
     expect(find.text('Quên mật khẩu?'), findsOneWidget);
     expect(
-      find.image(const AssetImage('assets/images/Logo_motocare.png')),
+      find.image(const AssetImage('assets/images/Logo_Revo.png')),
       findsOneWidget,
     );
     expect(
@@ -35,6 +35,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Mã xác thực sẽ được gửi qua email.'), findsOneWidget);
+    expect(find.text('Nhận mã xác thực'), findsOneWidget);
     expect(find.text('Số điện thoại'), findsNothing);
     expect(find.text('+84'), findsNothing);
     expect(find.byType(TextFormField), findsOneWidget);

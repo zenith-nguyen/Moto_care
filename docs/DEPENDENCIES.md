@@ -20,10 +20,13 @@ Treat the application and bundle IDs as permanent after the first store release.
 | `google_maps_flutter` | Native Google Maps and camera control | Selecting incident coordinates and animating to a Places result. |
 | `google_maps_flutter_ios_sdk9` | iOS 15 / Swift Package Manager Maps implementation | Replacing the legacy default iOS adapter in this SwiftPM project. |
 | `image_picker` | Select images from the device photo library or capture with the camera | Changing the profile avatar or photographing a rescue incident; keep local bytes in session state until an upload API exists. |
+| `carousel_slider` | Swipeable station photo carousel | Browsing the selected station's gallery without automatic playback. |
+| `share_plus` | Open the platform share sheet | Sharing the selected station's name, address, phone and map coordinates. |
+| `video_player` | Native/web asset video playback | The muted, looping Home hero background. `video_player_platform_interface` is a development dependency for native-boundary tests. |
 | `local_auth` | Device biometric authentication | Verifying Face ID / fingerprint before editing profile information when the option is enabled. |
 | `font_awesome_flutter` | Font Awesome icons | Displaying icons, including password visibility controls. |
 | `flutter_native_splash` | Generate native Android and iOS splash screens (development only). | Regenerating launch resources after a logo or splash configuration change. |
-| `image` | Crop the source JPG (or PNG when JPG is absent) and export splash PNGs (development only). | Running `dart run tool/generate_splash.dart`. |
+| `image` | Trim the Revo PNG and export temporary native splash images (development only). | Running `dart run tool/generate_splash.dart`. |
 | `intl` and `flutter_localizations` | Locale-aware dates, currency, and translated UI | Presenting dates, VND amounts, or more than one language. |
 | `dio` | HTTP client | Calling the Moto Care backend. Configure timeouts and interceptors in one client. |
 | `flutter_secure_storage` | Encrypted device storage | Persisting credentials, access tokens, or refresh tokens. Never use it for non-sensitive UI preferences. |

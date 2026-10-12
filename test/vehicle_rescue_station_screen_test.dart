@@ -156,7 +156,7 @@ void main() {
       final router = await _open(tester, path: '/trang-chu');
       for (final (label, path, selected) in [
         ('Hoạt động', '/hoat-dong', HomeDestination.activity),
-        ('Dịch vụ', '/dich-vu', HomeDestination.services),
+        ('Bản đồ trạm', '/tram-cuu-ho', HomeDestination.rescueStations),
         ('Tài khoản', '/tai-khoan', HomeDestination.account),
         ('Hoạt động', '/hoat-dong', HomeDestination.activity),
       ]) {
@@ -172,7 +172,7 @@ void main() {
         expect(router.state.uri.path, path);
       }
       await _tap(tester, _bottom('Trang chủ'));
-      expect(find.text('Chào Nguyễn Văn An'), findsOneWidget);
+      expect(find.byTooltip('Tài khoản Nguyễn Văn An'), findsOneWidget);
       expect(router.canPop(), isFalse);
     },
   );
@@ -237,8 +237,7 @@ void main() {
         state.read(defaultVehicleProvider)!.engineType,
         EngineType.electric,
       );
-      await _tap(tester, _bottom('Dịch vụ'));
-      await _tap(tester, find.text('Tìm trạm cứu hộ'));
+      await _tap(tester, _bottom('Bản đồ trạm'));
       await _tap(tester, _bottom('Tài khoản'));
       await _tap(tester, find.byKey(const ValueKey('account-vehicles')));
       expect(router.state.uri.path, '/xe-cua-toi');
@@ -313,7 +312,14 @@ void main() {
       );
       await _tap(tester, find.text('Đã xác thực'));
       await _tap(tester, find.text('Chính hãng'));
-      expect(find.text('1 trạm • Gần nhất trước'), findsOneWidget);
+      expect(find.byType(RescueStationCard), findsOneWidget);
+      expect(
+        tester
+            .widget<RescueStationCard>(find.byType(RescueStationCard))
+            .station
+            .id,
+        'station-dealer',
+      );
       await _tap(tester, find.text('Mở 24/7'));
       expect(
         find.text(
@@ -342,7 +348,14 @@ void main() {
       await _open(tester, path: '/tram-cuu-ho');
       await tester.enterText(find.byType(TextField), 'thanh cong');
       await tester.pumpAndSettle();
-      expect(find.text('1 trạm • Đánh giá cao trước'), findsOneWidget);
+      expect(find.byType(RescueStationCard), findsOneWidget);
+      expect(
+        tester
+            .widget<RescueStationCard>(find.byType(RescueStationCard))
+            .station
+            .id,
+        'station-thanh',
+      );
       await _reveal(tester, find.text('Đóng cửa'));
       expect(find.text('Đóng cửa'), findsOneWidget);
       expect(find.text('Xác thực MotoCare'), findsNothing);
@@ -389,7 +402,7 @@ void main() {
   );
 
   testWidgets(
-    'Empty station data works in both viewing modes and deep routes return to home',
+    'Empty station data works in both viewing modes and the main tab returns home',
     (tester) async {
       final router = await _open(tester, path: '/tram-cuu-ho', stations: []);
       await _tap(tester, find.text('Bản đồ'));
@@ -399,7 +412,8 @@ void main() {
         ),
         findsOneWidget,
       );
-      await _tap(tester, find.byTooltip('Quay lại'));
+      expect(find.byTooltip('Quay lại'), findsNothing);
+      await _tap(tester, _bottom('Trang chủ'));
       expect(router.state.uri.path, '/trang-chu');
     },
   );
@@ -432,8 +446,8 @@ void main() {
       expect(tester.takeException(), isNull);
       tester.view.resetViewInsets();
       await _tap(tester, find.byTooltip('Đóng thông tin xe'));
-      await _tap(tester, _bottom('Dịch vụ'));
-      await _tap(tester, find.text('Tìm trạm cứu hộ'));
+      await _tap(tester, _bottom('Bản đồ trạm'));
+      await _tap(tester, find.text('Danh sách'));
       await _reveal(tester, find.text('Gọi ngay'));
       expect(tester.takeException(), isNull);
       final outer = find.byType(Scrollable).first;
@@ -443,7 +457,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(
         tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
-        HomeColors.background,
+        Colors.transparent,
       );
     },
   );

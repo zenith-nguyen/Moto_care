@@ -9,6 +9,7 @@ import '../../home/models/home_destination.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
 import '../models/chat_conversation.dart';
 import '../providers/chat_messages_provider.dart';
+import '../services/chat_service.dart';
 import '../theme/chat_theme.dart';
 import '../widgets/chat_input_bar.dart';
 import '../widgets/chat_message_bubble.dart';
@@ -75,6 +76,100 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     if (sent && quickReply == null) _textController.clear();
   }
 
+  Future<void> _callMechanic() async {
+    final chat = widget.conversation;
+    if (chat == null || chat.phoneNumber.trim().isEmpty) return;
+    final opened = await ref.read(chatServiceProvider).call(chat.phoneNumber);
+    if (!mounted || opened) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'Không thể mở ứng dụng gọi điện. '
+            'Bạn có thể gọi số ${chat.phoneNumber}.',
+          ),
+        ),
+      );
+  }
+
+  void _showConversationDetails() {
+    final chat = widget.conversation;
+    if (chat == null) return;
+    FocusScope.of(context).unfocus();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: ChatTheme.surface,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => Theme(
+        data: ChatTheme.light,
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            key: const ValueKey('chat-details-sheet'),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Thông tin cuộc trò chuyện',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Đóng',
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  chat.mechanicName,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  chat.statusLabel ?? chat.status.label,
+                  style: const TextStyle(color: ChatTheme.mutedText),
+                ),
+                const SizedBox(height: 16),
+                const Divider(),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.two_wheeler_outlined),
+                  title: const Text('Biển số xe'),
+                  subtitle: Text(chat.licensePlate),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.phone_outlined),
+                  title: const Text('Số điện thoại'),
+                  subtitle: Text(
+                    chat.phoneNumber.isEmpty
+                        ? 'Chưa có số điện thoại'
+                        : chat.phoneNumber,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickPhoto() async {
     final chat = widget.conversation;
     if (_selectingPhoto || chat == null) return;
@@ -83,6 +178,8 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     try {
       source = await showModalBottomSheet<ImageSource>(
         context: context,
+        backgroundColor: ChatTheme.surface,
+        showDragHandle: true,
         builder: (sheetContext) => SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -149,7 +246,14 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     return Theme(
       data: ChatTheme.light,
       child: Scaffold(
+        backgroundColor: ChatTheme.surface,
         appBar: AppBar(
+          backgroundColor: ChatTheme.inputBackground,
+          foregroundColor: ChatTheme.messageText,
+          scrolledUnderElevation: 0,
+          toolbarHeight: chat == null ? 56 : 72,
+          leadingWidth: 44,
+          titleSpacing: 0,
           leading: IconButton(
             tooltip: 'Quay lại',
             onPressed: () {
@@ -159,9 +263,52 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                 context.go('/tin-nhan');
               }
             },
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(Icons.chevron_left_rounded, size: 28),
           ),
-          title: const Text('Chi tiết Chat'),
+          title: chat == null
+              ? const Text('Tin nhắn')
+              : _ConversationHeader(conversation: chat),
+          actions: [
+            if (chat != null) ...[
+              IconButton(
+                key: const ValueKey('chat-call'),
+                tooltip: 'Gọi cho thợ',
+                onPressed: chat.phoneNumber.trim().isEmpty
+                    ? null
+                    : _callMechanic,
+                icon: const Icon(Icons.phone_outlined, size: 22),
+              ),
+              PopupMenuButton<_ConversationAction>(
+                key: const ValueKey('chat-more'),
+                tooltip: 'Tùy chọn cuộc trò chuyện',
+                color: ChatTheme.surface,
+                icon: const Icon(Icons.more_vert_rounded, size: 22),
+                onSelected: (action) {
+                  if (action == _ConversationAction.details) {
+                    _showConversationDetails();
+                  } else {
+                    _callMechanic();
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: _ConversationAction.details,
+                    child: Text('Thông tin cuộc trò chuyện'),
+                  ),
+                  PopupMenuItem(
+                    value: _ConversationAction.call,
+                    enabled: chat.phoneNumber.trim().isNotEmpty,
+                    child: const Text('Gọi cho thợ'),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 4),
+            ],
+          ],
+          bottom: const PreferredSize(
+            preferredSize: Size.fromHeight(1),
+            child: Divider(height: 1, thickness: 1, color: ChatTheme.border),
+          ),
         ),
         body: SafeArea(
           bottom: false,
@@ -191,10 +338,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
                               controller: _scrollController,
                               keyboardDismissBehavior:
                                   ScrollViewKeyboardDismissBehavior.onDrag,
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
                               itemCount: messages!.length + 1,
                               itemBuilder: (context, index) => index == 0
-                                  ? _ConversationHeader(conversation: chat)
+                                  ? _ConversationContext(conversation: chat)
                                   : ChatMessageBubble(
                                       key: ValueKey(
                                         'chat-message-${index - 1}',
@@ -228,57 +375,77 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
   }
 }
 
+enum _ConversationAction { details, call }
+
 class _ConversationHeader extends StatelessWidget {
   const _ConversationHeader({required this.conversation});
 
   final ChatConversation conversation;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 24),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+  Widget build(BuildContext context) => Row(
+    children: [
+      CircleAvatar(
+        radius: 18,
+        backgroundColor: const Color(0xFFE5E5E8),
+        foregroundColor: ChatTheme.messageText,
+        child: Text(
+          conversation.avatarInitials,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: ChatTheme.surface,
-              foregroundColor: ChatTheme.orange,
-              child: Text(conversation.avatarInitials),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    conversation.mechanicName,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    conversation.licensePlate,
-                    style: const TextStyle(color: ChatTheme.mutedText),
-                  ),
-                ],
+            Text(
+              conversation.mechanicName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: ChatTheme.messageText,
               ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              conversation.statusLabel ?? conversation.status.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: ChatTheme.mutedText, fontSize: 11),
             ),
           ],
         ),
-        const SizedBox(height: 16),
-        Text(
-          conversation.statusLabel ?? conversation.status.label,
-          style: TextStyle(
-            color: conversation.status == RescueStatus.completed
-                ? ChatTheme.green
-                : ChatTheme.orange,
+      ),
+    ],
+  );
+}
+
+class _ConversationContext extends StatelessWidget {
+  const _ConversationContext({required this.conversation});
+
+  final ChatConversation conversation;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 20),
+    child: Center(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: ChatTheme.incomingBackground,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          child: Text(
+            conversation.licensePlate,
+            style: const TextStyle(color: ChatTheme.mutedText, fontSize: 10),
           ),
         ),
-      ],
+      ),
     ),
   );
 }

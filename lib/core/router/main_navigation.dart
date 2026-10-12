@@ -41,9 +41,13 @@ Future<void> navigateMainTab(
           (item) => _mainTabPaths[item] == currentPath,
         ) &&
         currentPath != '/trang-chu') {
-      router.replace(path);
+      router.replace(
+        destination == HomeDestination.rescueStations ? '$path?view=map' : path,
+      );
     } else {
-      router.push(path);
+      router.push(
+        destination == HomeDestination.rescueStations ? '$path?view=map' : path,
+      );
     }
   }
 }

@@ -33,6 +33,7 @@ class UserProfile {
     this.phoneNumber = '',
     this.email = '',
     this.avatarUrl,
+    this.isVerified = false,
     this.memberTier = 'Chưa có hạng',
     this.rewardPoints = 0,
     this.emergencyContactName = '',
@@ -50,6 +51,7 @@ class UserProfile {
   final String phoneNumber;
   final String email;
   final String? avatarUrl;
+  final bool isVerified;
   final String memberTier;
   final int rewardPoints;
   final String emergencyContactName;
@@ -71,6 +73,7 @@ class UserProfile {
     phoneNumber: phoneNumber ?? this.phoneNumber,
     email: email,
     avatarUrl: avatarUrl,
+    isVerified: isVerified,
     memberTier: memberTier,
     rewardPoints: rewardPoints,
     emergencyContactName: emergencyContactName ?? this.emergencyContactName,
@@ -87,6 +90,7 @@ class UserProfile {
     phoneNumber: json['phoneNumber'] as String? ?? '',
     email: json['email'] as String? ?? '',
     avatarUrl: json['avatarUrl'] as String?,
+    isVerified: json['isVerified'] as bool? ?? false,
     memberTier: json['memberTier'] as String? ?? 'Chưa có hạng',
     rewardPoints: (json['rewardPoints'] as num?)?.toInt() ?? 0,
     emergencyContactName: json['emergencyContactName'] as String? ?? '',
@@ -107,6 +111,7 @@ class UserProfile {
     'phoneNumber': phoneNumber,
     'email': email,
     'avatarUrl': avatarUrl,
+    'isVerified': isVerified,
     'memberTier': memberTier,
     'rewardPoints': rewardPoints,
     'emergencyContactName': emergencyContactName,

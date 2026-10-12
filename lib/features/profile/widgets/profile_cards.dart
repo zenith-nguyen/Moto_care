@@ -90,34 +90,38 @@ class ProfileHeader extends StatelessWidget {
           style: const TextStyle(color: ProfileTheme.muted, fontSize: 15),
         ),
         const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: ProfileTheme.gold.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: ProfileTheme.gold.withValues(alpha: 0.4)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.workspace_premium_rounded,
-                color: ProfileTheme.gold,
-                size: 20,
+        if (profile.memberTier.trim().isNotEmpty &&
+            profile.memberTier != 'Chưa có hạng')
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: ProfileTheme.gold.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: ProfileTheme.gold.withValues(alpha: 0.4),
               ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  profile.memberTier,
-                  style: const TextStyle(
-                    color: ProfileTheme.gold,
-                    fontWeight: FontWeight.w700,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.workspace_premium_rounded,
+                  color: ProfileTheme.gold,
+                  size: 20,
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    profile.memberTier,
+                    style: const TextStyle(
+                      color: ProfileTheme.gold,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         const SizedBox(height: 4),
         TextButton.icon(
           onPressed: onEdit,
