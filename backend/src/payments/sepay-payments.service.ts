@@ -143,9 +143,9 @@ export class SepayPaymentsService {
     });
 
     if (result.changed && result.orderId && result.status) {
-      this.realtime?.orderStatusChanged(result.orderId, result.status);
+      await this.realtime?.orderStatusChanged(result.orderId, result.status);
       if (result.offer) {
-        this.realtime?.offerCreated(result.offer.providerId, result.orderId, result.offer.id, result.offer.expiresAt);
+        await this.realtime?.offerCreated(result.offer.providerId, result.orderId, result.offer.id, result.offer.expiresAt);
       }
     }
     return { success: true };

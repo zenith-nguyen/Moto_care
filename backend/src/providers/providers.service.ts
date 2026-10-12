@@ -56,7 +56,7 @@ export class ProvidersService {
       throw new NotFoundException('Active order not found for provider');
     }
     const result = await this.updateLocation(userId, location);
-    this.realtime?.providerLocation(orderId, provider.id, location.latitude, location.longitude, result.lastSeenAt);
+    await this.realtime?.providerLocation(orderId, provider.id, location.latitude, location.longitude, result.lastSeenAt);
     return { orderId, providerId: provider.id, ...result };
   }
 

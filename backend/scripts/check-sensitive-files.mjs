@@ -22,6 +22,10 @@ const forbiddenPaths = [
     matches: (path) => /\.(?:pem|key|p12|pfx|jks|keystore)$/i.test(path),
   },
   {
+    rule: "Firebase service-account credential",
+    matches: (path) => /(?:firebase-adminsdk|service[-_]?account).*\.json$/i.test(path),
+  },
+  {
     rule: "runtime upload",
     matches: (path) => /(^|\/)storage\//i.test(path),
   },
@@ -33,6 +37,7 @@ const forbiddenPaths = [
 
 const secretSignatures = [
   { rule: "private key block", pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
+  { rule: "service-account private key", pattern: /"private_key"\s*:\s*"-----BEGIN/i },
   { rule: "GitHub token", pattern: /\bgh(?:p|o|u|s|r)_[A-Za-z0-9]{30,}\b/ },
   { rule: "Google API key", pattern: /\bAIza[0-9A-Za-z_-]{35}\b/ },
   { rule: "AWS access key", pattern: /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/ },

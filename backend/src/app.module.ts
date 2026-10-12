@@ -20,6 +20,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { ServiceLocationsModule } from './service-locations/service-locations.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { ServiceLocationsModule } from './service-locations/service-locations.mo
     UsersModule,
     VehiclesModule,
     ServiceLocationsModule,
+    NotificationsModule,
     HealthModule,
     IncidentTypesModule,
     OrdersModule,

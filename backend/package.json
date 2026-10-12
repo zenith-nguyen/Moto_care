@@ -2,6 +2,12 @@
   "name": "motocare-backend",
   "version": "1.0.0",
   "description": "MotoCare NestJS backend",
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "handlebars": "^4.7.10"
+  },
   "scripts": {
     "build": "nest build",
     "start": "nest start",
@@ -20,7 +26,11 @@
     "test:smoke-load": "node scripts/smoke-load.mjs",
     "security:check-files": "node scripts/check-sensitive-files.mjs",
     "backup:check": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-demo-storage.ps1",
-    "backup:create": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup-demo.ps1"
+    "backup:create": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/backup-demo.ps1",
+    "email:check": "node scripts/check-smtp.mjs",
+    "email:test": "node scripts/check-smtp.mjs --send",
+    "push:check": "node scripts/check-firebase.mjs",
+    "push:test": "node scripts/check-firebase.mjs --send"
   },
   "keywords": [],
   "author": "",
@@ -43,6 +53,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "dotenv": "^18.0.4",
+    "firebase-admin": "^14.5.0",
     "helmet": "^8.3.0",
     "joi": "^18.2.9",
     "nodemailer": "^10.0.15",

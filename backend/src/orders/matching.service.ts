@@ -142,10 +142,10 @@ export class MatchingService {
       return { orderId: order.id, providerId: offer.providerId, offerId: offer.id, status: order.status, nextOffer: null };
     });
     if (!event) return;
-    this.realtime?.offerExpired(event.providerId, event.orderId, event.offerId);
-    this.realtime?.orderStatusChanged(event.orderId, event.status);
+    await this.realtime?.offerExpired(event.providerId, event.orderId, event.offerId);
+    await this.realtime?.orderStatusChanged(event.orderId, event.status);
     if (event.nextOffer) {
-      this.realtime?.offerCreated(event.nextOffer.providerId, event.orderId, event.nextOffer.id, event.nextOffer.expiresAt);
+      await this.realtime?.offerCreated(event.nextOffer.providerId, event.orderId, event.nextOffer.id, event.nextOffer.expiresAt);
     }
   }
 }

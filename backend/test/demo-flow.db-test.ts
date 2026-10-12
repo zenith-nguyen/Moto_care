@@ -1,5 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -37,6 +37,14 @@ import { WalletTransactionType } from '../src/common/enums/wallet-transaction-ty
 import { Review } from '../src/reviews/review.entity';
 import { Order } from '../src/orders/order.entity';
 import { OrderStatus } from '../src/common/enums/order-status.enum';
+import { Notification } from '../src/notifications/notification.entity';
+import { NotificationType } from '../src/notifications/notification-type.enum';
+import { NotificationsService } from '../src/notifications/notifications.service';
+import { NotificationDeliveryService } from '../src/notifications/notification-delivery.service';
+import { NotificationDelivery } from '../src/notifications/notification-delivery.entity';
+import { NotificationDeliveryStatus } from '../src/notifications/notification-delivery-status.enum';
+import { PushGateway, PushMessage } from '../src/notifications/push-gateway.port';
+import { DevicePlatform } from '../src/notifications/device-platform.enum';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -907,5 +915,107 @@ describe('Sandbox demo flow over HTTP', () => {
     await request(app.getHttpServer())
       .get('/service-locations/nearby?latitude=10.7769&longitude=106.7009')
       .expect(401);
+  });
+
+  it('keeps device tokens private and notification inboxes isolated by user', async () => {
+    const customer = await createActor(
+      'Notification Customer', 'notification.customer@motocare.test', UserRole.CUSTOMER, UserStatus.ACTIVE,
+    );
+    const stranger = await createActor(
+      'Notification Stranger', 'notification.stranger@motocare.test', UserRole.CUSTOMER, UserStatus.ACTIVE,
+    );
+    const token = 'fcm-test-token-that-is-long-enough-and-must-never-be-returned';
+    await request(app.getHttpServer())
+      .put('/notifications/devices')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .send({ installationId: 'notification-installation-0001', fcmToken: token, platform: 'ANDROID' })
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toMatchObject({ installationId: 'notification-installation-0001', isEnabled: true });
+        expect(body).not.toHaveProperty('fcmToken');
+        expect(JSON.stringify(body)).not.toContain(token);
+      });
+
+    const notification = await database.getRepository(Notification).save(
+      database.getRepository(Notification).create({
+        userId: customer.userId,
+        type: NotificationType.SYSTEM,
+        title: 'MotoCare',
+        body: 'Thông báo kiểm thử',
+        data: { route: 'home' },
+        dedupeKey: 'http-test-notification',
+        readAt: null,
+        expiresAt: null,
+      }),
+    );
+
+    await request(app.getHttpServer())
+      .get('/notifications?limit=10')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.unreadCount).toBe(1);
+        expect(body.items).toEqual([expect.objectContaining({ id: notification.id, type: 'SYSTEM' })]);
+      });
+    await request(app.getHttpServer())
+      .get('/notifications?unreadOnly=not-a-boolean')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(400);
+    await request(app.getHttpServer())
+      .patch(`/notifications/${notification.id}/read`)
+      .set('Authorization', `Bearer ${stranger.token}`)
+      .expect(404);
+    await request(app.getHttpServer())
+      .patch(`/notifications/${notification.id}/read`)
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body.readAt).not.toBeNull());
+    await request(app.getHttpServer())
+      .delete('/notifications/devices/notification-installation-0001')
+      .set('Authorization', `Bearer ${customer.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body.isEnabled).toBe(false));
+  });
+
+  it('deduplicates durable notifications and delivers queued push once', async () => {
+    const customer = await createActor(
+      'Push Customer', 'push.customer@motocare.test', UserRole.CUSTOMER, UserStatus.ACTIVE,
+    );
+    const sent: Array<{ token: string; message: PushMessage }> = [];
+    const push = {
+      enabled: true,
+      async send(token: string, message: PushMessage) {
+        sent.push({ token, message });
+        return { success: true };
+      },
+    } as PushGateway;
+    const notifications = new NotificationsService(database, push, app.get(ConfigService));
+    await notifications.registerDevice(customer.userId, {
+      installationId: 'push-installation-0001',
+      fcmToken: 'fcm-push-token-that-is-long-enough-for-validation',
+      platform: DevicePlatform.ANDROID,
+    });
+
+    const input = {
+      userId: customer.userId,
+      type: NotificationType.SYSTEM,
+      title: 'MotoCare',
+      body: 'Delivery test',
+      dedupeKey: 'delivery-dedupe-test',
+    };
+    const first = await notifications.create(input);
+    const duplicate = await notifications.create(input);
+    expect(duplicate.id).toBe(first.id);
+    expect(await database.getRepository(Notification).countBy({ dedupeKey: input.dedupeKey })).toBe(1);
+    expect(await database.getRepository(NotificationDelivery).countBy({ notificationId: first.id })).toBe(1);
+
+    await new NotificationDeliveryService(database, push).deliverPending();
+
+    expect(sent).toHaveLength(1);
+    expect(sent[0].token).toBe('fcm-push-token-that-is-long-enough-for-validation');
+    expect(sent[0].message.data.notificationId).toBe(String(first.id));
+    const delivery = await database.getRepository(NotificationDelivery).findOneByOrFail({ notificationId: first.id });
+    expect(delivery.status).toBe(NotificationDeliveryStatus.SENT);
+    expect(delivery.sentAt).not.toBeNull();
   });
 });

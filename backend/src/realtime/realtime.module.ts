@@ -12,6 +12,8 @@ import { MessagesController } from '../messages/messages.controller';
 import { MessagesService } from '../messages/messages.service';
 import { ChatImageStorageService } from '../messages/chat-image-storage.service';
 import { RealtimePublisher } from './realtime-publisher.port';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { RealtimeNotificationPublisher } from './realtime-notification.publisher';
 
 @Module({
   imports: [
@@ -32,11 +34,13 @@ import { RealtimePublisher } from './realtime-publisher.port';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({ secret: config.getOrThrow<string>('JWT_SECRET') }),
     }),
+    NotificationsModule,
   ],
   controllers: [MessagesController],
   providers: [
     RealtimeGateway,
-    { provide: RealtimePublisher, useExisting: RealtimeGateway },
+    RealtimeNotificationPublisher,
+    { provide: RealtimePublisher, useExisting: RealtimeNotificationPublisher },
     MessagesService,
     ChatImageStorageService,
   ],

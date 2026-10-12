@@ -55,9 +55,9 @@ export class DemoPaymentsService {
       const offer = await this.matching.matchLockedOrder(manager, order);
       return { orderId, status: order.status, paymentStatus: payment.status, matched: offer !== null, offer, changed: true };
     });
-    if (result.changed) this.realtime?.orderStatusChanged(orderId, result.status);
+    if (result.changed) await this.realtime?.orderStatusChanged(orderId, result.status);
     if (result.offer) {
-      this.realtime?.offerCreated(result.offer.providerId, orderId, result.offer.id, result.offer.expiresAt);
+      await this.realtime?.offerCreated(result.offer.providerId, orderId, result.offer.id, result.offer.expiresAt);
     }
     return { orderId: result.orderId, status: result.status, paymentStatus: result.paymentStatus, matched: result.matched };
   }
@@ -86,7 +86,7 @@ export class DemoPaymentsService {
       await manager.getRepository(Order).save(order);
       return { orderId, status: order.status, paymentStatus: payment.status, amount: payment.amount };
     });
-    this.realtime?.orderStatusChanged(orderId, result.status);
+    await this.realtime?.orderStatusChanged(orderId, result.status);
     return result;
   }
 
@@ -135,7 +135,7 @@ export class DemoPaymentsService {
       await manager.getRepository(Order).save(order);
       return { orderId, status: order.status, adjustment, changed: true };
     });
-    if (result.changed) this.realtime?.orderStatusChanged(orderId, result.status);
+    if (result.changed) await this.realtime?.orderStatusChanged(orderId, result.status);
     return {
       orderId,
       status: result.status,

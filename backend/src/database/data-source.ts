@@ -19,6 +19,9 @@ import { Vehicle } from '../vehicles/vehicle.entity';
 import { ProviderSkill } from '../providers/provider-skill.entity';
 import { Skill } from '../providers/skill.entity';
 import { ServiceLocation } from '../service-locations/service-location.entity';
+import { Notification } from '../notifications/notification.entity';
+import { NotificationDelivery } from '../notifications/notification-delivery.entity';
+import { UserDevice } from '../notifications/user-device.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -47,6 +50,9 @@ export default new DataSource({
     Skill,
     ProviderSkill,
     ServiceLocation,
+    Notification,
+    NotificationDelivery,
+    UserDevice,
   ],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   migrationsTransactionMode: 'each',

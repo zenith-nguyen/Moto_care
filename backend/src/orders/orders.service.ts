@@ -112,13 +112,13 @@ export class OrdersService {
       await manager.getRepository(Order).save(order);
       return { orderId: order.id, status: order.status, refundAmount: cancellation.refundAmount };
     });
-    this.realtime?.orderStatusChanged(orderId, result.status);
+    await this.realtime?.orderStatusChanged(orderId, result.status);
     return result;
   }
 
   async retry(orderId: number, customerId: number) {
     const { order, offer } = await this.matching.retry(orderId, customerId);
-    if (offer) this.realtime?.offerCreated(offer.providerId, order.id, offer.id, offer.expiresAt);
+    if (offer) await this.realtime?.offerCreated(offer.providerId, order.id, offer.id, offer.expiresAt);
     return presentOrderMatch(order, offer);
   }
 
@@ -156,7 +156,7 @@ export class OrdersService {
       await manager.getRepository(Order).save(order);
       return { orderId: order.id, providerId: provider.id, status: order.status, offerStatus: offer.status };
     });
-    this.realtime?.orderStatusChanged(orderId, result.status);
+    await this.realtime?.orderStatusChanged(orderId, result.status);
     return result;
   }
 
@@ -175,8 +175,8 @@ export class OrdersService {
       const nextOffer = await this.matching.matchLockedOrder(manager, order);
       return { response: { orderId: order.id, offerStatus: offer.status, ...presentOrderMatch(order, nextOffer) }, nextOffer };
     });
-    this.realtime?.orderStatusChanged(orderId, response.status);
-    if (nextOffer) this.realtime?.offerCreated(nextOffer.providerId, orderId, nextOffer.id, nextOffer.expiresAt);
+    await this.realtime?.orderStatusChanged(orderId, response.status);
+    if (nextOffer) await this.realtime?.offerCreated(nextOffer.providerId, orderId, nextOffer.id, nextOffer.expiresAt);
     return response;
   }
 
@@ -192,7 +192,7 @@ export class OrdersService {
       await manager.getRepository(Order).save(order);
       return { orderId, status: order.status };
     });
-    this.realtime?.orderStatusChanged(orderId, result.status);
+    await this.realtime?.orderStatusChanged(orderId, result.status);
     return result;
   }
 
@@ -226,7 +226,7 @@ export class OrdersService {
       await manager.getRepository(Order).save(order);
       return { orderId, status: order.status };
     });
-    this.realtime?.orderStatusChanged(orderId, result.status);
+    await this.realtime?.orderStatusChanged(orderId, result.status);
     return result;
   }
 
@@ -248,7 +248,7 @@ export class OrdersService {
       await manager.getRepository(Order).save(order);
       return { orderId, status: order.status, finalPrice: order.finalPrice, settlement: 'DEMO_ONLY' };
     });
-    this.realtime?.orderStatusChanged(orderId, result.status);
+    await this.realtime?.orderStatusChanged(orderId, result.status);
     return result;
   }
 
