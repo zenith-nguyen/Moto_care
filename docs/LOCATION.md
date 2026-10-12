@@ -1,6 +1,7 @@
 # Incident location: Places search and Google Maps
 
-Home's “Sửa vị trí” opens `/incident-location`. The two screens use MotoCare's
+Home's “Vị trí của tôi” label and address open `/incident-map-picker` directly.
+The two location screens use MotoCare's
 white/gray surfaces, dark text and black `#000000` primary controls.
 
 ## Search and camera flow
@@ -27,9 +28,10 @@ uses `deviceLocationProvider`, including real foreground permission handling,
 GPS timeouts and a coordinate fallback when native address resolution fails.
 Recent locations are confirmed user selections held in session memory.
 
-`IncidentLocationScreen` (`incident_location_screen.dart`) uses
+`ConfirmLocationScreen` (`incident_location_screen.dart`) uses
 `google_maps_flutter`; `incident_map_picker_screen.dart` retains the old class
-alias. Its search button pushes `/incident-location?pick=1`. Selecting a result
+alias, as does `IncidentLocationScreen`. Its search button pushes
+`/incident-location?pick=1`. Selecting a result
 pops a `RescueLocation` back to that existing map. The screen updates its address
 draft and calls `GoogleMapController.animateCamera` with
 `CameraUpdate.newCameraPosition(CameraPosition(target: newLatLng, zoom: 17))`.
@@ -115,18 +117,27 @@ Official references: [Autocomplete](https://developers.google.com/maps/documenta
 ## Confirmation and rescue request
 
 “XÁC NHẬN VỊ TRÍ SỰ CỐ” saves the address, landmark and coordinate pair through
-`RescueLocationController.confirmLocation`, remembers the location, then opens
-`CreateRescueRequestBottomSheet`. Closing that modal retains the confirmed
-location and creates no order. Search cancellation does not save its draft.
+`RescueLocationController.confirmLocation`, remembers the location, then calls
+`Navigator.pop` with the confirmed location. When opened from Home, this returns
+directly to the same Home route without replacing its State or scroll position.
+It opens no booking modal and creates no order. A standalone map entry without
+a parent route returns to `/trang-chu`. The standalone search route propagates
+the confirmed location to its caller; search cancellation does not save its draft.
 
-The supporting request modal retains the shared garage vehicle, service selection,
+Home search and service chips separately open `EmergencyBookingBottomSheet`.
+The request modal retains the shared garage vehicle, service selection,
 notes and optional in-memory incident photo. Submission is blocked without a
 vehicle/location or while another active order exists. Saved notes and GPS
 coordinates round-trip through order JSON and remain when the status changes.
-Requests are session-only: mechanic dispatch and payment still require a backend.
+Only successful SOS submission closes the form and opens order tracking.
+Selecting a location from inside the form returns to the retained form without
+submitting it. Requests are session-only: mechanic dispatch and payment still require a backend.
 Marketplace checkout continues to use the shared confirmed location.
 
 ## Validation
+
+The [location-only confirmation preview](screenshots/location-confirmation-only.png)
+uses a confirmed test location and the unavailable-map fallback at 390 × 844.
 
 `test/places_service_test.dart` exercises actual Dio requests through a controlled
 HTTP adapter: methods, endpoints, Vietnamese/session/bias parameters, coordinates,

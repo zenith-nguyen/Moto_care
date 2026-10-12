@@ -219,7 +219,7 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/incident-map-picker',
-        builder: (context, state) => IncidentLocationScreen(
+        builder: (context, state) => ConfirmLocationScreen(
           initialLocation: state.extra is RescueLocation
               ? state.extra as RescueLocation
               : null,

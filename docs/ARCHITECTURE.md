@@ -177,8 +177,10 @@ weather and quick actions in `models/`, forecast loading and shared selection in
 Riverpod providers, and risk evaluation in `WeatherRescueService`. The injectable
 `HomeWeatherService` currently supplies a labeled demo forecast; an HTTP adapter
 can replace it independently of the view. `SmartWeatherRescueCard` owns only
-Flutter focus/scroll controllers, and `HomeDiscoveryService` filters quick actions
-against actual station capabilities. The header uses a blank account placeholder
+horizontal scrolling and forwards search/chip callbacks to the separate emergency
+booking flow. `HomeDiscoveryService` supplies station discovery filters.
+Location confirmation pops to its caller after updating shared location; only
+successful booking submission opens tracking. The header uses a blank account placeholder
 and preserves shared location/account/notification routes. The standalone legacy
 `HomeVideoHero` remains available with its playback lifecycle tests.
 

@@ -21,12 +21,15 @@ import 'package:moto_care/features/location/services/places_service.dart';
 import 'package:moto_care/features/location/widgets/incident_google_map.dart';
 
 import 'fixtures/location_fixture.dart';
+import 'fixtures/marketplace_router_fixture.dart';
 
 import 'package:moto_care/features/location/screens/incident_location_search_screen.dart';
 import 'package:moto_care/features/location/screens/incident_map_picker_screen.dart';
 import 'package:moto_care/features/profile/models/user_profile.dart';
 import 'package:moto_care/features/profile/providers/profile_provider.dart';
 import 'package:moto_care/features/rescue/widgets/create_rescue_request_bottom_sheet.dart';
+import 'package:moto_care/features/home/screens/home_screen.dart';
+import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
 import 'package:moto_care/features/vehicle/models/vehicle.dart';
 import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
 
@@ -104,6 +107,7 @@ Future<GoRouter> _open(
         supportedLocales: const [Locale('vi')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         routerConfig: router,
+        builder: freezeMarketplaceMotion,
       ),
     ),
   );
@@ -280,6 +284,7 @@ void main() {
     (tester) async {
       final router = await _open(tester, path: '/trang-chu', saved: _saved);
       await _tap(tester, find.byKey(const ValueKey('home-location')));
+      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await tester.enterText(_address, 'abc');
       await _tap(tester, find.text('Chọn trên bản đồ'));
       expect(
@@ -291,11 +296,12 @@ void main() {
       await _tap(tester, find.text('Chọn trên bản đồ'));
       expect(find.text('Đối diện cây xăng'), findsOneWidget);
       expect(_state(tester).read(rescueLocationProvider), same(_saved));
-      await _tap(tester, find.byTooltip('Quay lại'));
+      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       expect(
         tester.widget<TextFormField>(_landmark).controller!.text,
         'Đối diện cây xăng',
       );
+      await _tap(tester, find.byTooltip('Quay lại'));
       await _tap(tester, find.byTooltip('Quay lại'));
       expect(router.state.uri.path, '/trang-chu');
       expect(_state(tester).read(rescueLocationProvider), same(_saved));
@@ -346,13 +352,14 @@ void main() {
   );
 
   testWidgets(
-    'Confirming opens request details and retains the location even when the modal is cancelled',
+    'Confirming from standalone search returns to Home without opening request details',
     (tester) async {
       await _open(tester);
       await tester.enterText(_landmark, 'Cổng trường bên phải');
       await _tap(tester, find.text('Chọn trên bản đồ'));
       await _tap(tester, _confirm);
-      expect(find.byType(CreateRescueRequestBottomSheet), findsOneWidget);
+      expect(find.byType(EmergencyBookingBottomSheet), findsNothing);
+      expect(find.byType(HomeScreen), findsOneWidget);
       expect(
         _state(tester).read(rescueLocationProvider)!.landmark,
         'Cổng trường bên phải',
@@ -361,10 +368,90 @@ void main() {
         _state(tester).read(rescueLocationProvider)!.hasCoordinates,
         isFalse,
       );
-      await _tap(tester, find.byTooltip('Đóng'));
-      expect(find.byType(CreateRescueRequestBottomSheet), findsNothing);
-      expect(find.byType(IncidentMapPickerScreen), findsOneWidget);
+      expect(find.byType(IncidentMapPickerScreen), findsNothing);
       expect(_state(tester).read(activityProvider).orders, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'Home location confirmation preserves its State and scroll offset without booking',
+    (tester) async {
+      final router = await _open(tester, path: '/trang-chu', saved: _saved);
+      final homeState = tester.state(find.byType(HomeScreen));
+      final scroll = tester.state<ScrollableState>(
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('home-scroll')),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      scroll.position.jumpTo(20);
+      await tester.pump();
+      final offset = scroll.position.pixels;
+      await tester.tap(find.byKey(const ValueKey('home-location')));
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/incident-map-picker');
+      expect(find.byType(IncidentLocationSearchScreen), findsNothing);
+      await tester.dragFrom(const Offset(400, 140), const Offset(150, 120));
+      await tester.pumpAndSettle();
+      expect(_state(tester).read(rescueLocationProvider), same(_saved));
+      await _tap(tester, _confirm);
+      expect(router.state.uri.path, '/trang-chu');
+      expect(tester.state(find.byType(HomeScreen)), same(homeState));
+      expect(scroll.position.pixels, offset);
+      expect(find.text(testPannedAddress), findsOneWidget);
+      expect(
+        _state(tester).read(rescueLocationProvider)!.latitude,
+        testPannedPoint.latitude,
+      );
+      expect(
+        _state(tester).read(rescueLocationProvider)!.longitude,
+        testPannedPoint.longitude,
+      );
+      expect(find.byType(EmergencyBookingBottomSheet), findsNothing);
+      expect(find.byType(OrderTrackingScreen), findsNothing);
+      expect(_state(tester).read(activityProvider).orders, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'A booking without a location keeps its draft when selecting a location and returns to the same sheet',
+    (tester) async {
+      final router = await _open(tester, path: '/trang-chu', current: _saved);
+      await _tap(tester, find.byKey(const ValueKey('home-search')));
+      final sheetState = tester.state(find.byType(EmergencyBookingBottomSheet));
+      expect(tester.widget<FilledButton>(_submit).onPressed, isNull);
+      final description = find.byKey(
+        const ValueKey('incident-request-description'),
+      );
+      await _tap(tester, description);
+      await tester.enterText(description, 'Xe không đề được');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await _tap(
+        tester,
+        find.byKey(const ValueKey('emergency-change-location')),
+      );
+      expect(router.state.uri.path, '/incident-map-picker');
+      await _tap(tester, find.byKey(const ValueKey('incident-map-gps')));
+      await _tap(tester, _confirm);
+      expect(router.state.uri.path, '/trang-chu');
+      expect(
+        tester.state(find.byType(EmergencyBookingBottomSheet)),
+        same(sheetState),
+      );
+      await _tap(tester, description);
+      expect(
+        tester.widget<TextFormField>(description).controller!.text,
+        'Xe không đề được',
+      );
+      await tester.ensureVisible(_submit);
+      expect(tester.widget<FilledButton>(_submit).onPressed, isNotNull);
+      expect(_state(tester).read(activityProvider).orders, isEmpty);
+      await _tap(tester, find.byTooltip('Đóng'));
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byType(OrderTrackingScreen), findsNothing);
     },
   );
 
@@ -373,10 +460,15 @@ void main() {
     (tester) async {
       final router = await _open(tester, path: '/trang-chu');
       await _tap(tester, find.byKey(const ValueKey('home-location')));
+      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await tester.enterText(_address, ' 118 Bùi Văn Ba, Tân Thuận, Q.7 ');
       await tester.enterText(_landmark, ' Cạnh cổng trường ');
       await _tap(tester, find.text('Chọn trên bản đồ'));
       await _tap(tester, _confirm);
+      expect(router.state.uri.path, '/trang-chu');
+      expect(find.byType(EmergencyBookingBottomSheet), findsNothing);
+      expect(_state(tester).read(activityProvider).orders, isEmpty);
+      await _tap(tester, find.byKey(const ValueKey('home-search')));
       await _tap(
         tester,
         find.byKey(const ValueKey('incident-request-service')),
@@ -390,10 +482,12 @@ void main() {
       await tester.ensureVisible(description);
       await tester.enterText(description, ' Xe hết xăng giữa đường ');
       await _tap(tester, _submit);
-      expect(router.state.uri.path, '/trang-chu');
+      expect(router.state.uri.path, '/order-tracking');
+      expect(find.byType(OrderTrackingScreen), findsOneWidget);
       final orders = _state(tester).read(activityProvider).orders;
       expect(orders, hasLength(1));
       final order = orders.single;
+      expect(router.state.uri.queryParameters['id'], order.id);
       expect(order.serviceType, RescueServiceType.outOfFuel);
       expect(order.serviceOption, 'Giao 4 Lít A95 (85k)');
       expect(order.totalPrice, 85000);
@@ -414,12 +508,13 @@ void main() {
       (tester) async {
         await _open(
           tester,
-          path: '/incident-map-picker',
+          path: '/trang-chu',
+          saved: _saved,
           hasVehicle: hasVehicle,
           active: active,
         );
         final count = _state(tester).read(activityProvider).orders.length;
-        await _tap(tester, _confirm);
+        await _tap(tester, find.byKey(const ValueKey('home-search')));
         expect(tester.widget<FilledButton>(_submit).onPressed, isNull);
         expect(_state(tester).read(activityProvider).orders, hasLength(count));
         if (!hasVehicle) {
@@ -439,7 +534,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(tester.view.resetViewInsets);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      await _open(tester);
+      await _open(tester, path: '/trang-chu');
+      await _tap(tester, find.byKey(const ValueKey('home-location')));
+      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await _tap(tester, _address);
       tester.view.viewInsets = const FakeViewPadding(bottom: 250);
       await tester.pumpAndSettle();
@@ -452,6 +549,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       await _tap(tester, _confirm);
+      expect(find.byType(EmergencyBookingBottomSheet), findsNothing);
+      await _tap(tester, find.byKey(const ValueKey('home-search')));
       final description = find.byKey(
         const ValueKey('incident-request-description'),
       );

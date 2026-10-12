@@ -7,6 +7,7 @@ import '../../../core/router/main_navigation.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../chat/providers/chat_directory_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../rescue/widgets/create_rescue_request_bottom_sheet.dart';
 import '../../rescue_station/providers/station_details_provider.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
 import '../data/home_media_assets.dart';
@@ -36,7 +37,8 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _search = TextEditingController();
+  bool _bookingOpen = false;
+  bool _locationOpen = false;
 
   @override
   void initState() {
@@ -51,12 +53,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           .read(profileProvider.notifier)
           .initializeFromHome(widget.user, onlyIfUninitialized: true);
     });
-  }
-
-  @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
   }
 
   void _selectDestination(HomeDestination destination) {
@@ -96,17 +92,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _changeLocation(BuildContext context) async {
-    final order = await context.push<RescueOrder>('/incident-location');
-    if (context.mounted && order != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã lưu yêu cầu thử nghiệm ${order.orderCode}'),
-          action: SnackBarAction(
-            label: 'Hoạt động',
-            onPressed: () => _selectDestination(HomeDestination.activity),
-          ),
+    if (_locationOpen) return;
+    _locationOpen = true;
+    FocusScope.of(context).unfocus();
+    try {
+      await context.push('/incident-map-picker');
+    } finally {
+      _locationOpen = false;
+    }
+  }
+
+  Future<void> _bookEmergency(
+    BuildContext context, [
+    HomeRescueQuickAction action = HomeRescueQuickAction.all,
+  ]) async {
+    if (_bookingOpen) return;
+    _bookingOpen = true;
+    FocusScope.of(context).unfocus();
+    try {
+      final order = await showHomeSheet<RescueOrder>(
+        context,
+        EmergencyBookingBottomSheet(
+          serviceType:
+              (action.serviceType ?? RescueServiceType.engineFailure).label,
+          allowServiceSelection: true,
+          onChangeLocation: () => _changeLocation(this.context),
         ),
       );
+      if (!mounted || order == null) return;
+      await this.context.push(
+        '/order-tracking?id=${Uri.encodeQueryComponent(order.id)}',
+      );
+    } finally {
+      _bookingOpen = false;
     }
   }
 
@@ -162,14 +180,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         },
       ),
     );
-  }
-
-  void _selectQuickAction(HomeRescueQuickAction action) {
-    _search.value = TextEditingValue(
-      text: action.searchQuery,
-      selection: TextSelection.collapsed(offset: action.searchQuery.length),
-    );
-    ref.read(homeDiscoveryProvider.notifier).selectQuickAction(action);
   }
 
   void _openStation(BuildContext context, HomeStationListing listing) {
@@ -273,15 +283,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   hasWeatherError: weather.hasError,
                                   onRetryWeather: () =>
                                       ref.invalidate(homeWeatherProvider),
-                                  searchController: _search,
-                                  onSearchChanged: (value) => ref
-                                      .read(homeDiscoveryProvider.notifier)
-                                      .search(value),
+                                  onSearch: () => _bookEmergency(context),
                                   onFilter: () => _showFilters(context),
                                   activeFilterCount:
                                       discovery.filters.activeCount,
                                   selectedAction: discovery.quickAction,
-                                  onQuickAction: _selectQuickAction,
+                                  onQuickAction: (action) =>
+                                      _bookEmergency(context, action),
                                 ),
                               ),
                             ),
@@ -425,7 +433,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      _search.clear();
                                       ref
                                           .read(homeDiscoveryProvider.notifier)
                                           .reset();

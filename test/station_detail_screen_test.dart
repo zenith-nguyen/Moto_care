@@ -13,6 +13,8 @@ import 'package:moto_care/features/activity/models/rescue_order.dart';
 import 'package:moto_care/features/activity/providers/activity_provider.dart';
 import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';
 import 'package:moto_care/features/home/screens/home_screen.dart';
+import 'package:moto_care/features/home/models/home_discovery.dart';
+import 'package:moto_care/features/home/providers/home_discovery_provider.dart';
 import 'package:moto_care/features/partner/screens/partner_detail_screen.dart';
 import 'package:moto_care/features/partner/providers/partner_cart_provider.dart';
 import 'package:moto_care/features/rescue/providers/service_rating_provider.dart';
@@ -92,8 +94,7 @@ void main() {
     'Home opens a typed station profile and Back preserves browsing',
     (tester) async {
       final router = await _open(tester, path: '/trang-chu');
-      await tester.enterText(_key('home-search'), 'Revo');
-      await tester.pumpAndSettle();
+      await _tap(tester, _key('home-category-fastest'));
       await scrollHomeToStations(tester);
       await _tap(tester, _key('home-station-station-mobile'));
       expect(router.state.uri.path, '/stations/station-mobile');
@@ -108,8 +109,10 @@ void main() {
       await _tap(tester, _key('station-back'));
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(
-        tester.widget<TextField>(_key('home-search')).controller!.text,
-        'Revo',
+        ProviderScope.containerOf(tester.element(find.byType(HomeScreen)))
+            .read(homeDiscoveryProvider)
+            .category,
+        HomeStationCategory.fastest,
       );
     },
   );

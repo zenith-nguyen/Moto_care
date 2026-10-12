@@ -278,10 +278,15 @@ class IncidentMapController extends Notifier<IncidentMapState> {
     _publish(() => _searchOpen = false);
     if (selected == null) return;
     if (!selected.hasCoordinates) {
-      _publish(
-        () => _error =
-            'Địa chỉ chưa có tọa độ. Hãy chọn kết quả tìm kiếm hoặc dùng GPS.',
-      );
+      _publish(() {
+        _location = selected;
+        _programmaticTarget = null;
+        _programmaticMoving = false;
+        _moving = false;
+        _error = ref.read(locationApiConfigProvider).mapConfigured
+            ? 'Địa chỉ chưa có tọa độ. Hãy chọn kết quả tìm kiếm hoặc dùng GPS.'
+            : null;
+      });
       return;
     }
     _applyLocation(selected);

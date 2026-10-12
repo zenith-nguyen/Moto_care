@@ -18,6 +18,10 @@ import 'package:moto_care/features/home/widgets/smart_weather_rescue_card.dart';
 import 'package:moto_care/features/home/models/home_rescue_quick_action.dart';
 import 'package:moto_care/features/partner/screens/partner_list_screen.dart';
 import 'package:moto_care/features/partner/screens/partner_detail_screen.dart';
+import 'package:moto_care/features/activity/providers/activity_provider.dart';
+import 'package:moto_care/features/activity/models/rescue_order.dart';
+import 'package:moto_care/features/home/models/home_discovery.dart';
+import 'package:moto_care/features/rescue/widgets/create_rescue_request_bottom_sheet.dart';
 import 'package:moto_care/features/rescue_station/widgets/rescue_station_mock_map.dart';
 
 import 'fixtures/marketplace_router_fixture.dart';
@@ -119,24 +123,27 @@ void main() {
   );
 
   testWidgets(
-    'Search finds Vietnamese names and services and reset restores results',
+    'Search opens emergency details and dismissal preserves Home and station filters',
     (tester) async {
       await _openHome(tester);
       expect(find.byTooltip('Mở menu'), findsNothing);
       expect(tester.widget<Scaffold>(find.byType(Scaffold)).endDrawer, isNull);
-      await tester.enterText(_search, 'MINH TUAN');
-      await tester.pumpAndSettle();
-      await scrollHomeToStations(tester);
-      expect(find.byType(HomeStationGridCard), findsOneWidget);
-      expect(find.text('Cứu hộ Minh Tuấn'), findsOneWidget);
-      await scrollHomeToSearch(tester);
-      await tester.enterText(_search, 'khong co tram nay');
-      await tester.pumpAndSettle();
-      await scrollHomeToStations(tester);
-      expect(find.text('Không tìm thấy trạm phù hợp'), findsOneWidget);
-      await _tap(tester, find.text('Xóa tìm kiếm và bộ lọc'));
-      expect(find.byType(HomeStationGridCard), findsNWidgets(4));
-      expect(_state(tester).read(homeDiscoveryProvider).query, isEmpty);
+      final homeState = tester.state(find.byType(HomeScreen));
+      final container = _state(tester);
+      final filters = container.read(homeDiscoveryProvider);
+      final orders = container.read(activityProvider).orders;
+      await _tap(tester, _search);
+      expect(find.byType(EmergencyBookingBottomSheet), findsOneWidget);
+      expect(find.text('Chi tiết sự cố cứu hộ'), findsOneWidget);
+      expect(find.text('Loại xe'), findsOneWidget);
+      expect(find.text('Sự cố cần hỗ trợ'), findsOneWidget);
+      expect(find.text('Chụp ảnh hiện trường khẩn cấp'), findsOneWidget);
+      expect(find.byType(PartnerDetailScreen), findsNothing);
+      expect(container.read(homeDiscoveryProvider), same(filters));
+      expect(container.read(activityProvider).orders, orders);
+      await _tap(tester, find.byTooltip('Đóng'));
+      expect(tester.state(find.byType(HomeScreen)), same(homeState));
+      expect(container.read(activityProvider).orders, orders);
     },
   );
 
@@ -203,7 +210,7 @@ void main() {
   });
 
   testWidgets(
-    'Blank avatar, My Location and notifications share the header above weather',
+    'Blank avatar, Vietnamese location label and notifications share the header above weather',
     (tester) async {
       tester.view.padding = FakeViewPadding(
         top: 24 * tester.view.devicePixelRatio,
@@ -232,7 +239,11 @@ void main() {
       expect(avatar.right, lessThan(location.left));
       expect(location.right, lessThan(notifications.left));
       expect(header.bottom, lessThan(hero.top));
-      expect(find.text('My Location'), findsOneWidget);
+      final label = tester.widget<Text>(find.text('Vị trí của tôi'));
+      expect(label.style!.fontSize, 12.0);
+      expect(label.style!.fontWeight, FontWeight.w500);
+      expect(label.style!.color, Colors.black54);
+      expect(find.text('My Location'), findsNothing);
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('home-avatar')),
@@ -259,35 +270,30 @@ void main() {
   );
 
   testWidgets(
-    'Quick service chips fill search, filter capabilities and reset',
+    'Every quick service chip opens details with its incident preselected',
     (tester) async {
       await _openHome(tester);
       final container = _state(tester);
-      await _tap(tester, find.byKey(const ValueKey('weather-action-battery')));
-      expect(tester.widget<TextField>(_search).controller!.text, 'Kích bình');
-      expect(
-        container.read(homeDiscoveryProvider).quickAction,
-        HomeRescueQuickAction.battery,
-      );
-      final stations = container.read(homeDiscoveryStationsProvider);
-      expect(stations, isNotEmpty);
-      expect(
-        stations.every(
-          (listing) => listing.services.contains(
-            HomeRescueQuickAction.battery.serviceType,
-          ),
-        ),
-        isTrue,
-      );
-      await tester.enterText(_search, 'MINH TUAN');
-      await tester.pumpAndSettle();
-      expect(
-        container.read(homeDiscoveryProvider).quickAction,
-        HomeRescueQuickAction.all,
-      );
-      await _tap(tester, find.byKey(const ValueKey('weather-action-all')));
-      expect(tester.widget<TextField>(_search).controller!.text, isEmpty);
-      expect(container.read(homeDiscoveryStationsProvider), hasLength(4));
+      final filters = container.read(homeDiscoveryProvider);
+      final orders = container.read(activityProvider).orders;
+      for (final action in HomeRescueQuickAction.values) {
+        await _tap(
+          tester,
+          find.byKey(ValueKey('weather-action-${action.name}')),
+        );
+        expect(find.byType(EmergencyBookingBottomSheet), findsOneWidget);
+        expect(
+          tester
+              .widget<DropdownButtonFormField<RescueServiceType>>(
+                find.byKey(const ValueKey('incident-request-service')),
+              )
+              .initialValue,
+          action.serviceType ?? RescueServiceType.engineFailure,
+        );
+        expect(container.read(homeDiscoveryProvider), same(filters));
+        expect(container.read(activityProvider).orders, orders);
+        await _tap(tester, find.byTooltip('Đóng'));
+      }
     },
   );
 
@@ -309,37 +315,42 @@ void main() {
     },
   );
 
-  testWidgets('Map tab opens the map and returning preserves the home search', (
-    tester,
-  ) async {
-    final router = createAppRouter();
-    addTearDown(router.dispose);
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
-      ),
-    );
-    router.go('/trang-chu', extra: _user);
-    await tester.pumpAndSettle();
-    await tester.enterText(_search, 'revo');
-    await tester.pumpAndSettle();
-    final nav = find.byType(HomeBottomNavigation);
-    await _tap(
-      tester,
-      find.descendant(of: nav, matching: find.text('Bản đồ trạm')),
-    );
-    expect(router.state.uri.path, '/tram-cuu-ho');
-    expect(router.state.uri.queryParameters['view'], 'map');
-    expect(find.byType(RescueStationMockMap), findsOneWidget);
-    await _tap(
-      tester,
-      find.descendant(of: nav, matching: find.text('Trang chủ')),
-    );
-    expect(router.state.uri.path, '/trang-chu');
-    await scrollHomeToStations(tester);
-    expect(find.byType(HomeStationGridCard), findsOneWidget);
-    expect(_state(tester).read(homeDiscoveryProvider).query, 'revo');
-  });
+  testWidgets(
+    'Map tab opens the map and returning preserves station selection',
+    (tester) async {
+      final router = createAppRouter();
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp.router(
+            theme: AppTheme.light,
+            routerConfig: router,
+          ),
+        ),
+      );
+      router.go('/trang-chu', extra: _user);
+      await tester.pumpAndSettle();
+      await _tap(tester, find.byKey(const ValueKey('home-category-towing')));
+      final nav = find.byType(HomeBottomNavigation);
+      await _tap(
+        tester,
+        find.descendant(of: nav, matching: find.text('Bản đồ trạm')),
+      );
+      expect(router.state.uri.path, '/tram-cuu-ho');
+      expect(router.state.uri.queryParameters['view'], 'map');
+      expect(find.byType(RescueStationMockMap), findsOneWidget);
+      await _tap(
+        tester,
+        find.descendant(of: nav, matching: find.text('Trang chủ')),
+      );
+      expect(router.state.uri.path, '/trang-chu');
+      await scrollHomeToStations(tester);
+      expect(
+        _state(tester).read(homeDiscoveryProvider).category,
+        HomeStationCategory.towing,
+      );
+    },
+  );
 
   testWidgets(
     'Towing card opens the selected station with its service packages',

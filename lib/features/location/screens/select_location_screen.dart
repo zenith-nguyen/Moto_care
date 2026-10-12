@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/main_navigation.dart';
-import '../../activity/models/rescue_order.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/models/rescue_location.dart';
 import '../../home/theme/home_theme.dart';
@@ -61,7 +60,10 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
 
   Future<void> _openMap([RescueLocation? place, bool pickOnMap = false]) async {
     if (ref.read(locationSearchProvider(_key)).openingMap) return;
-    if (pickOnMap && widget.returnSelection && context.canPop()) {
+    if (pickOnMap &&
+        widget.returnSelection &&
+        _address.text.trim().isEmpty &&
+        context.canPop()) {
       context.pop();
       return;
     }
@@ -84,17 +86,17 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
       context.pop(location);
       return;
     }
-    final order = await context.push<RescueOrder>(
+    final confirmed = await context.push<RescueLocation>(
       '/incident-map-picker',
       extra: location,
     );
     if (!mounted) return;
     _controller.closeMap();
-    if (order != null) {
+    if (confirmed != null) {
       if (context.canPop()) {
-        context.pop(order);
+        context.pop(confirmed);
       } else {
-        context.go('/hoat-dong');
+        context.go('/trang-chu');
       }
     }
   }

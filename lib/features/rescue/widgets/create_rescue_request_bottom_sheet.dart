@@ -12,23 +12,28 @@ import '../../home/widgets/home_sheets.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
 import '../../vehicle/widgets/them_sua_xe_bottom_sheet.dart';
 
-class CreateRescueRequestBottomSheet extends ConsumerStatefulWidget {
-  const CreateRescueRequestBottomSheet({
+/// Compatibility name for existing service request callers.
+typedef CreateRescueRequestBottomSheet = EmergencyBookingBottomSheet;
+
+class EmergencyBookingBottomSheet extends ConsumerStatefulWidget {
+  const EmergencyBookingBottomSheet({
     super.key,
     required this.serviceType,
     this.allowServiceSelection = false,
+    this.onChangeLocation,
   });
 
   final String serviceType;
   final bool allowServiceSelection;
+  final VoidCallback? onChangeLocation;
 
   @override
-  ConsumerState<CreateRescueRequestBottomSheet> createState() =>
-      _CreateRescueRequestBottomSheetState();
+  ConsumerState<EmergencyBookingBottomSheet> createState() =>
+      _EmergencyBookingBottomSheetState();
 }
 
-class _CreateRescueRequestBottomSheetState
-    extends ConsumerState<CreateRescueRequestBottomSheet> {
+class _EmergencyBookingBottomSheetState
+    extends ConsumerState<EmergencyBookingBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _description = TextEditingController();
   final _draftKey = Object();
@@ -127,6 +132,15 @@ class _CreateRescueRequestBottomSheetState
                 ],
               ),
             ),
+            if (widget.onChangeLocation != null)
+              TextButton.icon(
+                key: const ValueKey('emergency-change-location'),
+                onPressed: widget.onChangeLocation,
+                icon: const Icon(Icons.edit_location_alt_outlined),
+                label: Text(
+                  location == null ? 'Chọn vị trí sự cố' : 'Sửa vị trí',
+                ),
+              ),
             const SizedBox(height: 20),
             if (vehicles.isNotEmpty)
               DropdownButtonFormField<String>(

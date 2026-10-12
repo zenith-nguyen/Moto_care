@@ -8,14 +8,8 @@ import 'package:moto_care/features/home/widgets/smart_weather_rescue_card.dart';
 import 'package:moto_care/features/home/widgets/weather_condition_icon.dart';
 
 void main() {
-  late TextEditingController search;
-  setUp(() {
-    search = TextEditingController();
-    addTearDown(search.dispose);
-  });
-
   Widget card({
-    ValueChanged<String>? onSearch,
+    VoidCallback? onSearch,
     ValueChanged<HomeRescueQuickAction>? onAction,
     VoidCallback? onFilter,
     VoidCallback? onRetry,
@@ -33,8 +27,7 @@ void main() {
                 : const WeatherRescueService().evaluate(demoHomeWeather),
             isLoading: loading,
             hasWeatherError: error,
-            searchController: search,
-            onSearchChanged: onSearch ?? (_) {},
+            onSearch: onSearch ?? () {},
             onFilter: onFilter ?? () {},
             onQuickAction: onAction ?? (_) {},
             onRetryWeather: onRetry ?? () {},
@@ -73,27 +66,25 @@ void main() {
     (tester) async {
       var filters = 0;
       var retries = 0;
-      var query = '';
+      var searches = 0;
       HomeRescueQuickAction? action;
       await tester.pumpWidget(
         card(
           error: true,
           onFilter: () => filters++,
           onRetry: () => retries++,
-          onSearch: (value) => query = value,
+          onSearch: () => searches++,
           onAction: (value) => action = value,
         ),
       );
       expect(find.byKey(const ValueKey('weather-temperature')), findsNothing);
       expect(find.text('Chưa tải được thời tiết'), findsOneWidget);
-      await tester.enterText(
-        find.byKey(const ValueKey('home-search')),
-        'Thủng lốp',
-      );
+      await tester.tap(find.byKey(const ValueKey('home-search')));
+      expect(searches, 1);
       await tester.tap(find.byTooltip('Bộ lọc'));
       await tester.tap(find.byTooltip('Tải lại thời tiết'));
       await tester.tap(find.byKey(const ValueKey('weather-action-battery')));
-      expect(query, 'Thủng lốp');
+      expect(searches, 1);
       expect(filters, 1);
       expect(retries, 1);
       expect(action, HomeRescueQuickAction.battery);
@@ -129,10 +120,7 @@ void main() {
         lessThan(tester.getTopLeft(find.byType(WeatherConditionIcon)).dx),
       );
       expect(tester.takeException(), isNull);
-      await tester.enterText(
-        find.byKey(const ValueKey('home-search')),
-        'Chết máy',
-      );
+      await tester.tap(find.byKey(const ValueKey('home-search')));
       tester.view.viewInsets = const FakeViewPadding(bottom: 220);
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byTooltip('Bộ lọc'));

@@ -24,11 +24,11 @@ control with 10px corners; and horizontally scrolling quick-service chips.
 The selected chip uses dark blue (`#175D91`), white text and a checkmark;
 other chips use a translucent blue fill without borders. Narrow screens and
 larger text wrap the subtitle below the temperature in the same header row.
-The stateful widget owns only search focus and horizontal scrolling; providers
-own the service selection and weather request.
+The stateful widget owns horizontal scrolling. Search and quick-service taps
+forward booking callbacks; providers own the booking draft and weather request.
 
 The header follows the reference's order: a blank circular account placeholder
-on the left, “My Location” and the black location capsule in the middle, and the
+on the left, “Vị trí của tôi” (12px, medium, black54) and the black location capsule in the middle, and the
 notification bell on the right. The placeholder still opens Account and retains
 the reactive account tooltip. The bell opens the Notifications tab of `/tin-nhan`.
 The “Dịch vụ” action below the card opens the existing emergency-service sheet.
@@ -52,13 +52,13 @@ Location changes refresh the auto-disposed provider, and Riverpod discards late
 results from earlier requests. Loading and error states preserve search,
 filters and quick services; a failed weather request has an explicit retry.
 
+The “Bạn cần hỗ trợ gì? (Thủng lốp, hết bình...)” search control and
 “Tất cả ⚡”, “🔋 Kích bình”, “🌊 Ngập nước”, “🚚 Xe kéo” and “🔧 Sửa tại chỗ”
-fill the shared search controller and select a typed rescue capability.
-`HomeDiscoveryService` filters the actual station offerings, and opening a
-station passes that service to its existing booking flow. “Sửa tại chỗ” selects
-engine-failure assistance. Typing a new search clears the chip's service filter;
-“Tất cả” clears the service query/category while retaining the explicit filter
-sheet options. Quick chips do not create orders before a station/package is chosen.
+chips open `EmergencyBookingBottomSheet` directly. Battery, flood and towing
+chips preselect their incident type; “Tất cả”, search and “Sửa tại chỗ” start
+with engine-failure assistance. The form keeps incident selection editable.
+These actions preserve station filters and create no order until submission.
+The adjacent filter button continues to open station discovery filters.
 
 ## Station listing
 
@@ -109,9 +109,11 @@ in [HOME_ASSETS.md](HOME_ASSETS.md).
   integration boundary for an address and optional GPS coordinates. Without a
   confirmed location, the header displays “Quận 1, TP.HCM” as a browsing area;
   this does not populate the rescue address/GPS state or enable checkout.
-  Tapping the location capsule opens the [incident location flow](LOCATION.md): address and landmark search,
-  a draggable map confirmation sheet, then rescue request details. Drafts do not
-  update the shared location until confirmation. Typed address changes clear
+  Tapping the location label or capsule pushes `/incident-map-picker` and opens
+  `ConfirmLocationScreen`. Its search button opens address and landmark search.
+  Confirmation saves shared location and pops directly to the retained Home
+  route; it opens no booking sheet and creates no order. Drafts do not update
+  shared location until confirmation. Typed address changes clear
   stale coordinates. The map and current-location shortcut use configured native Maps, GPS and
   Places/geocoding services; see LOCATION.md for unavailable-key fallbacks.
 - The shared light bottom bar contains four tabs: Home, Station map
@@ -132,8 +134,9 @@ in [HOME_ASSETS.md](HOME_ASSETS.md).
 
 ## Supporting request sheets and nearby stations
 
-Home booking uses the [marketplace flow](MARKETPLACE.md). The existing supporting
-request sheet used by location/catalog entry points is described below.
+Home search and quick-service chips use `EmergencyBookingBottomSheet` (the
+existing `CreateRescueRequestBottomSheet` name remains an alias). Service tiles
+and station cards retain the [marketplace flow](MARKETPLACE.md).
 
 The dynamic request sheet offers service-specific choice chips: tire repair at
 30k/50k/90k, battery assistance at 40k/280k, fuel delivery at 45k/85k and flooded
@@ -146,12 +149,15 @@ underbone and manual/large-displacement bikes), an optional camera attachment
 with preview/removal, and the incident description. It watches the current
 address, optional coordinates and active orders. The black “TÌM THỢ CỨU HỘ NGAY”
 button is disabled without vehicle/location or while an active request exists.
+The location action can open the map above the sheet; returning retains the
+same form, selections, photo and description.
 
 Confirmation calls `ActivityController.createOrder` and retains the service,
 vehicle, selected option/category, selected price, address, landmark and optional
 coordinates in a pending `RescueOrder`. Camera bytes remain in memory for the
 session and survive status changes, but are not serialized to JSON. The order
-appears in Activity. Cancelling/dismissing the sheet creates nothing; an active
+appears in Activity, the sheet closes, and Home pushes `/order-tracking?id=...`
+for that order. Cancelling/dismissing the sheet creates nothing; an active
 order prevents duplicate requests. Maintenance currently records a service
 request; appointment slots and scheduling are not connected.
 
@@ -168,6 +174,11 @@ has a dedicated message.
 
 ## Validation
 
+Controlled 390 × 844 previews with bundled Montserrat and test session data:
+[Home](screenshots/home-separated-navigation.png),
+[emergency details](screenshots/home-emergency-booking.png), and
+[SOS submission](screenshots/home-emergency-booking-submit.png).
+
 The current [smart weather Home preview](screenshots/smart-weather-sky-background.png)
 is rendered at 390 × 844 with bundled Montserrat, a blank avatar and demo weather.
 
@@ -175,8 +186,9 @@ is rendered at 390 × 844 with bundled Montserrat, a blank avatar and demo weath
 confirmed-location refresh, stale responses and failure/retry.
 `test/smart_weather_rescue_card_test.dart` covers usable rescue controls during
 weather failure/loading and 320px layouts with 1.5x text and a keyboard.
-Home tests cover chip search/reset, typed service filtering, blank-avatar/header
-placement, account/notification navigation and the existing booking flows.
+Home tests cover search/chip booking entry, preselected incidents, location-only
+confirmation, retained Home State/scroll position and booking drafts,
+blank-avatar/header placement, account/notification navigation and booking flows.
 `test/home_video_hero_test.dart` continues to verify the separate legacy video widget.
 
 Current Montserrat previews: [Home](screenshots/montserrat-home.png),

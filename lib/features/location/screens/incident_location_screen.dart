@@ -5,34 +5,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/main_navigation.dart';
-import '../../activity/models/rescue_order.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/models/rescue_location.dart';
 import '../../home/theme/home_theme.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
-import '../../home/widgets/home_sheets.dart';
-import '../../rescue/widgets/create_rescue_request_bottom_sheet.dart';
 import '../providers/incident_map_provider.dart';
 import '../widgets/incident_google_map.dart';
 import '../widgets/incident_sos_pin.dart';
 
-class IncidentLocationScreen extends ConsumerStatefulWidget {
-  const IncidentLocationScreen({super.key, this.initialLocation});
+/// Compatibility name for existing location callers.
+typedef IncidentLocationScreen = ConfirmLocationScreen;
+
+class ConfirmLocationScreen extends ConsumerStatefulWidget {
+  const ConfirmLocationScreen({super.key, this.initialLocation});
   final RescueLocation? initialLocation;
 
   @override
-  ConsumerState<IncidentLocationScreen> createState() =>
-      _IncidentLocationScreenState();
+  ConsumerState<ConfirmLocationScreen> createState() =>
+      _ConfirmLocationScreenState();
 }
 
-class _IncidentLocationScreenState
-    extends ConsumerState<IncidentLocationScreen> {
+class _ConfirmLocationScreenState extends ConsumerState<ConfirmLocationScreen> {
   final _sheetController = DraggableScrollableController();
   final _draftKey = Object();
   (Object, RescueLocation?) get _key => (_draftKey, widget.initialLocation);
   IncidentMapController get _controller =>
       ref.read(incidentMapProvider(_key).notifier);
-  bool _confirming = false;
+  bool _confirmed = false;
 
   @override
   void initState() {
@@ -49,7 +48,7 @@ class _IncidentLocationScreenState
   }
 
   Future<void> _searchLocation() async {
-    if (_confirming || !_controller.beginSearch()) return;
+    if (!_controller.beginSearch()) return;
     final selected = await context.push<RescueLocation>(
       '/incident-location?pick=1',
       extra: ref.read(incidentMapProvider(_key)).location,
@@ -57,8 +56,8 @@ class _IncidentLocationScreenState
     if (mounted) _controller.endSearch(selected);
   }
 
-  Future<void> _confirmLocation() async {
-    if (_confirming) return;
+  void _confirmLocation() {
+    if (_confirmed) return;
     final confirmed = _controller.confirm();
     if (!confirmed) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,22 +67,11 @@ class _IncidentLocationScreenState
       );
       return;
     }
-    setState(() => _confirming = true);
-    final order = await showHomeSheet<RescueOrder>(
-      context,
-      const CreateRescueRequestBottomSheet(
-        serviceType: 'Kiểm tra & Cứu hộ tận nơi',
-        allowServiceSelection: true,
-      ),
-    );
-    if (!mounted) return;
-    setState(() => _confirming = false);
-    if (order != null) {
-      if (context.canPop()) {
-        context.pop(order);
-      } else {
-        context.go('/hoat-dong');
-      }
+    _confirmed = true;
+    if (context.canPop()) {
+      Navigator.pop(context, ref.read(incidentMapProvider(_key)).location);
+    } else {
+      context.go('/trang-chu');
     }
   }
 
@@ -176,8 +164,7 @@ class _IncidentLocationScreenState
                     child: IconButton(
                       key: const ValueKey('incident-map-search'),
                       tooltip: 'Tìm địa điểm',
-                      onPressed:
-                          draft.searchOpen || draft.locating || _confirming
+                      onPressed: draft.searchOpen || draft.locating
                           ? null
                           : _searchLocation,
                       icon: const Icon(Icons.search, color: HomeColors.text),
@@ -202,9 +189,7 @@ class _IncidentLocationScreenState
                     child: IconButton(
                       key: const ValueKey('incident-map-gps'),
                       tooltip: 'Sử dụng vị trí hiện tại của tôi',
-                      onPressed: draft.locating || _confirming
-                          ? null
-                          : _controller.recenter,
+                      onPressed: draft.locating ? null : _controller.recenter,
                       icon: const Icon(
                         Icons.my_location_rounded,
                         color: HomeColors.text,
@@ -329,7 +314,7 @@ class _IncidentLocationScreenState
                         const SizedBox(height: 20),
                         FilledButton(
                           key: const ValueKey('incident-confirm-location'),
-                          onPressed: _confirming || !_controller.canConfirm
+                          onPressed: !_controller.canConfirm
                               ? null
                               : _confirmLocation,
                           style: FilledButton.styleFrom(

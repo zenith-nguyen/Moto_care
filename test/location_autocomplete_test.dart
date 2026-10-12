@@ -101,6 +101,46 @@ Future<void> _query(WidgetTester tester, String query) async {
 }
 
 void main() {
+  for (final configured in [false, true]) {
+    testWidgets(
+      'Map search accepts a manual address without stale GPS when map configured is $configured',
+      (tester) async {
+        final map = TestIncidentMap();
+        await _open(
+          tester,
+          map: map,
+          service: TestPlacesService(),
+          configured: configured,
+          onMap: true,
+        );
+        await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
+        await tester.enterText(_address, '45 Lê Văn Sỹ, TP. Hồ Chí Minh');
+        await tester.enterText(
+          find.byKey(const ValueKey('incident-landmark')),
+          'Đối diện cây xăng',
+        );
+        await _tap(tester, find.text('Chọn trên bản đồ'));
+        expect(find.text('45 Lê Văn Sỹ, TP. Hồ Chí Minh'), findsOneWidget);
+        expect(find.text('Đối diện cây xăng'), findsOneWidget);
+        expect(find.byKey(const ValueKey('incident-sos-pin')), findsNothing);
+        expect(_state(tester).read(rescueLocationProvider), same(_saved));
+        final confirm = find.byKey(const ValueKey('incident-confirm-location'));
+        if (configured) {
+          expect(tester.widget<FilledButton>(confirm).onPressed, isNull);
+          map.pan(testPannedPoint);
+          await tester.pumpAndSettle();
+          expect(tester.widget<FilledButton>(confirm).onPressed, isNotNull);
+        } else {
+          await _tap(tester, confirm);
+          final saved = _state(tester).read(rescueLocationProvider)!;
+          expect(saved.address, '45 Lê Văn Sỹ, TP. Hồ Chí Minh');
+          expect(saved.landmark, 'Đối diện cây xăng');
+          expect(saved.hasCoordinates, isFalse);
+        }
+      },
+    );
+  }
+
   testWidgets(
     '300ms debounce sends only the newest keyword and clearing cancels work',
     (tester) async {

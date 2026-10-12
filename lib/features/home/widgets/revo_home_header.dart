@@ -43,10 +43,11 @@ class RevoHomeHeader extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'My Location',
+                      'Vị trí của tôi',
                       style: TextStyle(
-                        fontSize: 10,
-                        color: RevoHomeColors.muted,
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black54,
                       ),
                     ),
                     const SizedBox(height: 5),

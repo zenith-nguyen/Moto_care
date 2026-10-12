@@ -248,7 +248,10 @@ void main() {
     'Location validates, cancels without changes and clears stale GPS on save',
     (tester) async {
       final container = await _open(tester, routed: true);
+      final homeState = tester.state(find.byType(HomeScreen));
       await _tap(tester, find.byKey(const ValueKey('home-location')));
+      expect(find.text('Xác nhận vị trí gặp sự cố'), findsOneWidget);
+      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await tester.enterText(
         find.byKey(const ValueKey('incident-address')),
         'abc',
@@ -259,8 +262,10 @@ void main() {
         findsOneWidget,
       );
       await _tap(tester, find.byTooltip('Quay lại'));
+      await _tap(tester, find.byTooltip('Quay lại'));
       expect(container.read(rescueLocationProvider), same(_location));
       await _tap(tester, find.byKey(const ValueKey('home-location')));
+      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await tester.enterText(
         find.byKey(const ValueKey('incident-address')),
         '  45 Lê Văn Sỹ, TP. Hồ Chí Minh  ',
@@ -271,8 +276,12 @@ void main() {
         tester,
         find.byKey(const ValueKey('incident-confirm-location')),
       );
-      await _tap(tester, find.byTooltip('Đóng'));
-      await _tap(tester, find.text('Trang chủ'));
+      expect(tester.state(find.byType(HomeScreen)), same(homeState));
+      expect(container.read(activityProvider).orders, isEmpty);
+      expect(
+        find.byKey(const ValueKey('incident-request-submit')),
+        findsNothing,
+      );
       expect(
         container.read(rescueLocationProvider)!.address,
         '45 Lê Văn Sỹ, TP. Hồ Chí Minh',
@@ -417,6 +426,7 @@ void main() {
       await _open(tester, routed: true);
       expect(tester.takeException(), isNull);
       await _tap(tester, find.byKey(const ValueKey('home-location')));
+      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await _tap(tester, find.byKey(const ValueKey('incident-address')));
       tester.view.viewInsets = const FakeViewPadding(bottom: 250);
       await tester.pumpAndSettle();
@@ -431,8 +441,7 @@ void main() {
         tester,
         find.byKey(const ValueKey('incident-confirm-location')),
       );
-      await _tap(tester, find.byTooltip('Đóng'));
-      await _tap(tester, find.text('Trang chủ'));
+      expect(find.byType(HomeScreen), findsOneWidget);
       await _checkout(tester, HomeService.tire);
       await tester.ensureVisible(_confirm);
       expect(tester.takeException(), isNull);

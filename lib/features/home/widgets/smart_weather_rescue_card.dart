@@ -7,8 +7,7 @@ import 'weather_condition_icon.dart';
 class SmartWeatherRescueCard extends StatefulWidget {
   const SmartWeatherRescueCard({
     super.key,
-    required this.searchController,
-    required this.onSearchChanged,
+    required this.onSearch,
     required this.onFilter,
     required this.onQuickAction,
     required this.onRetryWeather,
@@ -22,8 +21,7 @@ class SmartWeatherRescueCard extends StatefulWidget {
   final WeatherRescueSnapshot? weather;
   final bool isLoading;
   final bool hasWeatherError;
-  final TextEditingController searchController;
-  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onSearch;
   final VoidCallback onFilter;
   final ValueChanged<HomeRescueQuickAction> onQuickAction;
   final VoidCallback onRetryWeather;
@@ -38,12 +36,10 @@ class SmartWeatherRescueCard extends StatefulWidget {
 }
 
 class _SmartWeatherRescueCardState extends State<SmartWeatherRescueCard> {
-  final _focus = FocusNode();
   final _chips = ScrollController();
 
   @override
   void dispose() {
-    _focus.dispose();
     _chips.dispose();
     super.dispose();
   }
@@ -120,10 +116,7 @@ class _SmartWeatherRescueCardState extends State<SmartWeatherRescueCard> {
                             'Segoe UI Emoji',
                           ],
                         ),
-                        onSelected: (_) {
-                          _focus.unfocus();
-                          widget.onQuickAction(action);
-                        },
+                        onSelected: (_) => widget.onQuickAction(action),
                       ),
                     ),
                 ],
@@ -232,36 +225,38 @@ class _SmartWeatherRescueCardState extends State<SmartWeatherRescueCard> {
     padding: const EdgeInsets.fromLTRB(12, 2, 4, 2),
     child: Row(
       children: [
-        const Icon(Icons.search_rounded, color: Color(0xFF8693A0), size: 22),
-        const SizedBox(width: 8),
         Expanded(
-          child: TextField(
+          child: InkWell(
             key: const ValueKey('home-search'),
-            controller: widget.searchController,
-            focusNode: _focus,
-            onChanged: widget.onSearchChanged,
-            textInputAction: TextInputAction.search,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF243C53)),
-            decoration: const InputDecoration(
-              hintText: SmartWeatherRescueCard.searchHint,
-              hintMaxLines: 1,
-              hintStyle: TextStyle(fontSize: 11, color: Color(0xFF8794A1)),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              filled: false,
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(vertical: 12),
+            onTap: widget.onSearch,
+            borderRadius: BorderRadius.circular(12),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.search_rounded,
+                    color: Color(0xFF8693A0),
+                    size: 22,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      SmartWeatherRescueCard.searchHint,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: Color(0xFF8794A1)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         IconButton(
           key: const ValueKey('weather-filter'),
           tooltip: 'Bộ lọc',
-          onPressed: () {
-            _focus.unfocus();
-            widget.onFilter();
-          },
+          onPressed: widget.onFilter,
           style: IconButton.styleFrom(
             backgroundColor: const Color(0xFFEAF4FD),
             foregroundColor: SmartWeatherRescueCard.blue,
