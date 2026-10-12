@@ -1,6 +1,6 @@
 # MotoCare API handoff cho Flutter
 
-Cập nhật: 2026-10-07. Đây là hợp đồng tích hợp cho UI Khách, Thợ và Admin. Backend hiện tại là **sandbox demo**: không nhận, chuyển hoặc hoàn tiền ngân hàng thật. Bảng màn hình/nút theo trạng thái nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
+Cập nhật: 2026-10-12. Đây là hợp đồng tích hợp cho UI Khách, Thợ và Admin. Backend hiện tại là **sandbox demo**: không nhận, chuyển hoặc hoàn tiền ngân hàng thật. Bảng màn hình/nút theo trạng thái nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
 
 ## Cấu hình ứng dụng
 
@@ -58,6 +58,13 @@ filter và attribution: [SERVICE_LOCATION_MARKERS.md](SERVICE_LOCATION_MARKERS.m
 3. Màn hình nhập mã gửi `{ "email": "...", "code": "123456", "newPassword": "..." }` tới `POST /auth/password/reset`.
 4. Mã có sáu chữ số, hết hạn sau 10 phút và dùng một lần. Sau khi thành công, xóa JWT đang lưu và đưa người dùng về màn hình đăng nhập.
 5. Tài khoản chỉ có số điện thoại chưa thể nhận mã email; UI nên giải thích rõ và khuyến khích đăng ký email trong bản demo.
+
+### Notification inbox và push
+
+- Sau khi đăng nhập, foundation tự xin quyền Android notification, lấy FCM token và `PUT /notifications/devices`. Token rotation được đăng ký lại; logout gọi `DELETE /notifications/devices/:installationId` rồi xóa token cục bộ.
+- Màn hình chuông thông báo đọc `GET /notifications`, hiển thị `unreadCount`, gọi `PATCH /notifications/:id/read` hoặc `/notifications/read-all`. Widget chỉ dùng repository/controller, không thao tác FCM/Dio trực tiếp.
+- Dữ liệu `route` chỉ là gợi ý điều hướng. Trước khi mở nội dung, UI phải tải lại REST snapshot; không tin payload push để accept offer, thanh toán hay thay đổi trạng thái.
+- Push nền/đóng app dùng FCM; khi app đang mở, Socket.IO và REST resync vẫn là luồng chính. Hướng dẫn build/cấu hình: [NOTIFICATIONS_EMAIL.md](NOTIFICATIONS_EMAIL.md).
 
 ## Luồng Khách
 

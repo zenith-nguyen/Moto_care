@@ -1,6 +1,6 @@
 # MotoCare Backend — bảo mật secret, API và webhook
 
-Cập nhật: 2026-10-08. Tài liệu này áp dụng cho code dùng chung trong nhóm và bản demo công khai tạm thời.
+Cập nhật: 2026-10-12. Tài liệu này áp dụng cho code dùng chung trong nhóm và bản demo công khai tạm thời.
 
 ## Ranh giới tin cậy
 
@@ -18,6 +18,15 @@ Cập nhật: 2026-10-08. Tài liệu này áp dụng cho code dùng chung trong
 - REST có rate limit mặc định 120 request/phút/client. Register 5, login/reset 10, forgot-password 3 và upload chat 20 request/phút. Đây là lớp bảo vệ demo trong một process, không thay WAF hay rate limiter phân tán.
 - Chat chỉ nhận một JPEG/PNG/WebP thật tối đa 5 MiB; số part/field multipart cũng bị giới hạn. Ảnh nằm ngoài public web root và chỉ người tham gia đơn được tải bằng JWT.
 - Socket.IO xác thực JWT và quyền theo order, không nhận token trong URL; handshake bị giới hạn kích thước và thời gian kết nối.
+
+## SMTP và Firebase
+
+- Gmail chỉ dùng App Password riêng sau khi bật xác minh hai bước; không dùng mật khẩu Gmail chính. Khi `EMAIL_ENABLED=true`, backend xác minh SMTP lúc khởi động và fail-fast nếu sai.
+- Firebase Admin dùng Application Default Credentials qua `GOOGLE_APPLICATION_CREDENTIALS` và xác minh credential khi backend khởi động. File service-account JSON phải nằm ngoài repository; CI security scan chặn tên file service-account và private-key payload phổ biến.
+- APK chỉ nhận Firebase client configuration qua `--dart-define`; private key/service-account không bao giờ nằm trong Dart/APK. FCM token được coi là credential thiết bị: không log, không trả qua API và bị vô hiệu khi logout/token hỏng.
+- Push không thay thế phân quyền. Sau khi bấm notification, Flutter phải gọi REST bằng JWT và backend kiểm tra quyền lại trước khi trả order/offer/message.
+
+Chi tiết cấu hình và thu hồi credential: [NOTIFICATIONS_EMAIL.md](NOTIFICATIONS_EMAIL.md).
 
 ## Webhook SePay Test mode hiện tại
 
@@ -44,6 +53,7 @@ Các endpoint `/payments/demo/...` chỉ mô phỏng nội bộ khi `DEMO_MODE=t
 Trước commit chạy:
 
 ```powershell
+npm audit --omit=dev --audit-level=moderate
 npm run security:check-files
 npm run lint
 npm test

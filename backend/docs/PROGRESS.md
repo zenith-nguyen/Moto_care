@@ -1,6 +1,6 @@
 # MotoCare Backend — Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-10-11
+Cập nhật lần cuối: 2026-10-12
 
 ## Đã xong
 
@@ -31,19 +31,19 @@ Cập nhật lần cuối: 2026-10-11
 - PR #33 đã merge vào `main`: Flutter Admin có dashboard/timeseries, đối soát, duyệt thợ, tranh chấp, hoàn tiền và rút tiền sandbox; quyết định tài chính không tự retry. 67 tests, analyze, APK và CI xanh. Nền repository/controller cho cả ba vai trò đã hoàn tất.
 - PR #34 đã merge vào `main`: Flutter có GPS foreground cho thợ ở trạng thái chờ/đang làm đơn và chọn ảnh chat từ camera/thư viện với kiểm tra dung lượng/chữ ký; không xin quyền vị trí nền.
 - PR #35 đã merge vào `main`: sửa hồ sơ tên/điện thoại an toàn, CRUD xe Customer, snapshot xe vào order và endpoint bấm Gọi chỉ cho hai người tham gia đơn active; CI Backend/Flutter/branch policy đều xanh.
-- Nhánh `feat/zenith/provider-directory-locations`: hồ sơ nghề nghiệp, skill claim/xác minh, tier chỉ Admin sửa, thống kê tuần tính từ dữ liệu nguồn; `service_locations` PostGIS và importer snapshot OSM TP.HCM. Lần chạy local ngày 2026-10-11 import 482 marker có tên (127 repair, 9 charging, 328 fuel, 18 parts); GiST được xác nhận bằng `EXPLAIN`.
+- PR #36 đã merge vào `main`: hồ sơ nghề nghiệp, skill claim/xác minh, tier chỉ Admin sửa, thống kê tuần tính từ dữ liệu nguồn; `service_locations` PostGIS và importer snapshot OSM TP.HCM. Lần chạy local ngày 2026-10-11 import 482 marker có tên (127 repair, 9 charging, 328 fuel, 18 parts); GiST được xác nhận bằng `EXPLAIN`.
+- Nhánh `feat/zenith/notifications-email` đã hoàn tất chờ PR: Gmail SMTP thật có kiểm tra credential/fail-fast; notification inbox bền vững; Firebase Cloud Messaging qua Admin SDK/ADC; đăng ký, rotation và revoke token theo installation; delivery worker có `SKIP LOCKED`, retry/backoff và vô hiệu token chết; thông báo offer/trạng thái đơn/chat/thợ ở gần; Flutter push foundation và inbox controller. Đã qua 59 unit tests backend, 44 PostgreSQL/PostGIS/HTTP tests, 78 Flutter tests, lint, strict typecheck, build backend, Flutter analyze, APK debug, secret scan và production audit 0 vulnerability. Migration hiện có 18 bước.
 
 ## Đang làm / Tiếp theo
 
-1. Hoàn tất kiểm chứng và PR cho nhánh `feat/zenith/provider-directory-locations`.
-2. PR #22 UI Customer hiện conflict với `main`, không có CI và chứa nhiều generated/cache duplicate; chưa merge nguyên nhánh. Tích hợp lại từng feature từ `main` mới theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md).
-3. Sau khi UI Customer sạch và ổn định: nối profile/vehicles, service-location marker, order/realtime/chat vào repository/controller hiện có; không giữ mock làm nguồn dữ liệu runtime.
-4. Tiếp theo backend: marketplace/phụ tùng read-only catalog; checkout/stock/payment chỉ làm sau khi chốt delivery/refund và payment purpose riêng.
-5. Test ba vai trò end-to-end: vòng đời đơn, offer hết hạn, GPS/reconnect, chat ảnh, giá cuối, thanh toán/hoàn tiền/rút tiền sandbox và các hàng đợi Admin.
+1. Mở và merge PR của nhánh `feat/zenith/notifications-email`; sau đó chạy migration `0016–0017` trên DB demo.
+2. Chủ repo cấu hình Gmail App Password và Firebase Spark/ADC theo [NOTIFICATIONS_EMAIL.md](NOTIFICATIONS_EMAIL.md), rồi chạy bốn lệnh kiểm tra thật `email:check`, `email:test`, `push:check`, `push:test`. Không commit/chụp/gửi credential.
+3. PR #22 UI Customer sẽ được đóng và team UI sẽ mở PR mới từ `main`; không merge lại nhánh cũ conflict/generated duplicate. Khi PR mới sẵn sàng, tích hợp từng màn hình theo [UI integration guardrails](../../docs/UI_INTEGRATION_GUARDRAILS.md).
+4. Sau khi UI Customer/Provider/Admin sạch và ổn định: nối profile/vehicles, service-location marker, order/realtime/chat/notification vào repository/controller hiện có; không giữ mock làm nguồn dữ liệu runtime.
+5. Test ba vai trò end-to-end trên thiết bị thật: vòng đời đơn, offer hết hạn, GPS/reconnect, chat ảnh, push nền, email reset, giá cuối, thanh toán/hoàn tiền/rút tiền sandbox và các hàng đợi Admin.
 6. Hoàn thiện release signing cục bộ, DB demo tách biệt, secret rotation và HTTPS/WSS Funnel; chạy checklist thiết bị thật trước khi tạo APK nộp bài.
-7. Chủ repo có thể tạo tài khoản/webhook SePay Test mode để kiểm thử end-to-end theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md). Không cần secret/tài khoản để review hoặc merge code; tuyệt đối chưa bật Live.
-8. Cấu hình SMTP Gmail demo bằng App Password trong `.env` cục bộ; không commit/chụp/gửi secret.
-9. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ. Adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`; không quảng cáo Test mode là xử lý tiền thật.
+7. Chủ repo có thể tạo webhook SePay Test mode theo [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md); tuyệt đối chưa bật Live. Thanh toán Live còn thiếu quy trình merchant, hoàn tiền thật và đối soát ngân hàng định kỳ; adapter hiện cố ý chỉ chấp nhận `SEPAY_MODE=test`.
+8. Tiếp theo backend sau mốc thiết bị thật: marketplace/phụ tùng read-only catalog; checkout/stock/payment chỉ làm sau khi chốt delivery/refund và payment purpose riêng.
 
 ## Quyết định đã chốt
 
@@ -58,6 +58,7 @@ Cập nhật lần cuối: 2026-10-11
 - Chat dùng PostgreSQL cho lịch sử/metadata, Socket.IO để báo realtime, REST để đồng bộ lại. Ảnh lưu local có URL bảo vệ; backup DB phải đi kèm backup thư mục ảnh.
 - Secret public/production tách theo mục đích: JWT, HMAC mã bắt đầu sửa và HMAC mã reset mật khẩu; không đưa vào Flutter. Webhook thanh toán thật phải xác thực chữ ký raw body, chống replay và idempotent trước khi được mở.
 - Adapter SePay đầu tiên chỉ hỗ trợ Test mode, mặc định tắt và từ chối mọi account không đúng VA giả `SBSEPAY` + 12 chữ/số. Flutter chỉ nhận chỉ dẫn QR có `simulationOnly=true`; `SEPAY_WEBHOOK_SECRET` không bao giờ đi xuống app. Transaction webhook chỉ áp dụng một lần khi account/code/amount/status cùng khớp.
+- Email khôi phục dùng Gmail SMTP thật khi môi trường có App Password; push dùng FCM Spark + Firebase Admin ADC. Hai adapter fail-closed/mặc định tắt trên máy/CI chưa có credential, nhưng không có mock delivery khi đã bật. Socket.IO + REST inbox vẫn hoạt động độc lập khi FCM bị gián đoạn.
 
 ## Không dùng nữa / ghi chú vận hành
 

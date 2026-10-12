@@ -6,6 +6,8 @@ The backend is a modular monolith. Module ownership, dependency direction, curre
 
 ## Local development
 
+Prerequisite: Node.js 22 or newer, Flutter SDK, Docker Desktop and PostgreSQL client tooling only when needed for manual inspection.
+
 1. Copy `.env.example` to `.env` and replace `JWT_SECRET` with a unique value of at least 32 characters.
 2. Install packages: `npm ci`.
 3. Start Postgres with PostGIS: `docker compose up -d`.
@@ -27,7 +29,11 @@ Run `npm run security:check-files` before pushing. It rejects tracked environmen
 
 `POST /auth/password/forgot` accepts an email and always returns a generic response. For registered email accounts, it creates a six-digit, one-time code that expires after 10 minutes. `POST /auth/password/reset` accepts the email, code and a new password. A successful reset invalidates all JWTs issued before it. Five consecutive failed login attempts temporarily lock the account for 15 minutes.
 
-Email delivery is disabled by default. To test with a dedicated Gmail demo account, enable two-step verification, create an App Password and set `EMAIL_ENABLED=true`, `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_SECURE=false`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM` in the untracked `.env`. Never paste the App Password into chat, screenshots or committed files. Accounts registered only by phone cannot use email recovery. See [AUTH_SECURITY.md](docs/AUTH_SECURITY.md) for the complete flow and Flutter contract.
+Email delivery uses real SMTP when enabled. Use a dedicated Gmail demo account, enable two-step verification, create an App Password and keep it only in the untracked `.env`. Run `npm run email:check` before starting the API; the API also verifies SMTP on startup and fails fast on invalid credentials. Accounts registered only by phone cannot use email recovery. See [AUTH_SECURITY.md](docs/AUTH_SECURITY.md) and [NOTIFICATIONS_EMAIL.md](docs/NOTIFICATIONS_EMAIL.md).
+
+## Notifications
+
+MotoCare stores a per-user notification inbox in PostgreSQL and can deliver real Android push notifications through Firebase Cloud Messaging. Socket.IO remains the low-latency foreground channel; FCM handles background/terminated delivery and REST reloads the authoritative state. `user_devices` keeps private FCM registrations, `notifications` keeps inbox rows, and `notification_deliveries` provides bounded retry/idempotent delivery. Push is disabled until local Firebase credentials are configured; this is a security switch, not a mock implementation. Setup and APK build commands are in [NOTIFICATIONS_EMAIL.md](docs/NOTIFICATIONS_EMAIL.md).
 
 ## Orders and provider availability
 
@@ -139,7 +145,7 @@ npm run migration:run
 npm run seed
 ```
 
-The migration sequence enables PostGIS, creates the core schema, protects matching/wallet invariants, adds chat/password recovery/weather snapshots, final-price/payment-adjustment ledgers, withdrawal reservations, the minimal SePay webhook audit, Customer vehicles, Provider skills and service-location markers. Migrations run transactionally one at a time because a later migration expands a partial index with newly committed PostgreSQL enum values. Enum additions cannot be automatically removed; take a backup before applying them to any important database.
+The migration sequence enables PostGIS, creates the core schema, protects matching/wallet invariants, adds chat/password recovery/weather snapshots, final-price/payment-adjustment ledgers, withdrawal reservations, the minimal SePay webhook audit, Customer vehicles, Provider skills, service-location markers and durable notification delivery. Migrations run transactionally one at a time because a later migration expands a partial index with newly committed PostgreSQL enum values. Enum additions cannot be automatically removed; take a backup before applying them to any important database.
 
 The seed creates five selectable incident types, five Provider skills, three approved online Providers with verified sample skills around Ho Chi Minh City, one development Customer with a default motorbike, one development Admin, and a wallet for each seeded Provider. By default all seeded accounts use the development-only password `MotoCareDev123!`; **never run this default seed against a publicly accessible or production database**. The script rejects `NODE_ENV=production`. For a separate demo database set `DEMO_MODE=true` and distinct `SEED_CUSTOMER_PASSWORD`, `SEED_PROVIDER_PASSWORD`, `SEED_ADMIN_PASSWORD` (each 16+ characters) before `npm run seed`. Existing users' passwords are not changed by reseeding. Never expose a database containing default-password accounts.
 

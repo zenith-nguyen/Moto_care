@@ -32,17 +32,17 @@ Ngoại lệ: không có thợ rảnh -> báo khách, thử lại/mở rộng b�
 - Mobile: Flutter/Dart (do 2 thành viên FE làm, không thuộc phạm vi backend).
 - Backend: NestJS (TypeScript), REST + WebSocket (Socket.io), JWT.
 - DB: PostgreSQL + PostGIS. ORM TypeORM + migrations; query địa lý bằng SQL thô (`ST_DWithin`, `ST_Distance`, chỉ mục GiST); không dùng Prisma.
-- Push: chưa tích hợp FCM; bản demo ưu tiên Socket.IO + REST polling. Bản đồ Flutter ưu tiên `flutter_map` với nguồn tile tuân thủ chính sách OSM vì yêu cầu không phát sinh phí; Google Maps cần billing nên không tự đưa vào. Đã có adapter QR/webhook SePay Test mode mặc định tắt; thanh toán Live chưa tích hợp.
+- Push: FCM adapter chạy thật bằng Firebase Admin/Application Default Credentials, mặc định tắt khi môi trường chưa có secret. Socket.IO cập nhật tức thời, PostgreSQL giữ inbox bền vững và REST là fallback. Bản đồ Flutter ưu tiên `flutter_map` với nguồn tile tuân thủ chính sách OSM vì yêu cầu không phát sinh phí; Google Maps cần billing nên không tự đưa vào. Đã có adapter QR/webhook SePay Test mode mặc định tắt; thanh toán Live chưa tích hợp.
 - Admin: API đã có duyệt thợ, danh sách đơn/refund; UI do Cam Thu/Vy làm.
 - Demo không phí: NestJS + Docker/PostGIS trên laptop, HTTPS/WSS công khai tạm qua Tailscale Funnel (cần máy luôn bật). Không dùng Railway/Render trả phí ở mốc này; chưa có server 24/7. Xem `docs/DEMO_RUNBOOK.md`.
 
 ## 5. Module backend (NestJS)
 
-`auth`, `users` (khách/thợ/hồ sơ, duyệt thợ), `orders` (tạo đơn, giá tạm tính theo loại sự cố, matching, trạng thái), `realtime` (gateway: vị trí thợ, chat, sự kiện đơn), `payments` (SePay webhook, ví thợ, rút tiền), `reviews`, `admin` (thống kê, duyệt), `common` (DTO, guard, pipe).
+`auth`, `users` (khách/thợ/hồ sơ, duyệt thợ), `orders` (tạo đơn, giá tạm tính theo loại sự cố, matching, trạng thái), `realtime` (gateway: vị trí thợ, chat, sự kiện đơn), `notifications` (inbox, device, retry worker, FCM), `payments` (SePay webhook, ví thợ, rút tiền), `reviews`, `admin` (thống kê, duyệt), `common` (DTO, guard, pipe).
 
 ## 6. Mô hình dữ liệu
 
-`users` | `providers` | `incident_types` | `orders` | `order_offers` | `order_price_proposals` | `messages` | `reviews` | `payments` | `payment_adjustments` | `wallets` | `wallet_transactions` | `withdrawal_requests`. `orders` giữ snapshot giá cơ bản/thời tiết, giá tạm tính, chi phí thêm, giảm giá và giá cuối. `payments` giữ nguyên khoản trả trước gốc; `payment_adjustments` giữ khoản `CHARGE`/`REFUND` dương để không sửa mất lịch sử.
+`users` | `providers` | `incident_types` | `orders` | `order_offers` | `order_price_proposals` | `messages` | `reviews` | `payments` | `payment_adjustments` | `wallets` | `wallet_transactions` | `withdrawal_requests` | `user_devices` | `notifications` | `notification_deliveries`. `orders` giữ snapshot giá cơ bản/thời tiết, giá tạm tính, chi phí thêm, giảm giá và giá cuối. `payments` giữ nguyên khoản trả trước gốc; `payment_adjustments` giữ khoản `CHARGE`/`REFUND` dương để không sửa mất lịch sử. Notification lưu inbox và delivery audit; FCM token chỉ được backend chọn khi gửi, không trả qua API.
 
 ## 7. Quy tắc nghiệp vụ cốt lõi
 

@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-11. Có 72 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
+Cập nhật: 2026-10-12. Có 77 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
 
 ## Auth, tài khoản và health
 
@@ -20,6 +20,18 @@ Cập nhật: 2026-10-11. Có 72 REST endpoints và 5 Socket.IO events. Mặc đ
 | GET | `/health/ready` | Public | API gọi được PostgreSQL |
 
 Mã đặt lại mật khẩu hết hạn sau 10 phút, giới hạn năm lần nhập sai và chỉ gửi lại sau 60 giây. Sau năm lần đăng nhập sai liên tiếp, tài khoản tạm khóa 15 phút. Chưa có refresh token, xác minh email và đăng xuất server-side.
+
+## Thông báo
+
+| Method | Path | Quyền | Trạng thái / mục đích |
+| --- | --- | --- | --- |
+| PUT | `/notifications/devices` | Đã đăng nhập | Đăng ký/cập nhật installation và FCM token; response không trả token |
+| DELETE | `/notifications/devices/:installationId` | Chủ installation | Vô hiệu push khi logout/thu hồi token |
+| GET | `/notifications` | Đã đăng nhập | Inbox phân trang cursor; hỗ trợ `unreadOnly` và trả `unreadCount` |
+| PATCH | `/notifications/:notificationId/read` | Chủ notification | Đánh dấu một thông báo đã đọc |
+| PATCH | `/notifications/read-all` | Đã đăng nhập | Đánh dấu toàn bộ inbox của chính user đã đọc |
+
+Socket.IO vẫn là kênh nhanh khi app đang mở; PostgreSQL inbox là nguồn bền vững; FCM là kênh push khi app ở nền/đã đóng. Chi tiết vận hành: [NOTIFICATIONS_EMAIL.md](NOTIFICATIONS_EMAIL.md).
 
 ## Danh mục sự cố và thợ
 
