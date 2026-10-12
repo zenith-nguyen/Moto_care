@@ -11,6 +11,10 @@ import '../core/network/json_api.dart';
 import '../core/realtime/realtime_client.dart';
 import '../core/realtime/realtime_transport.dart';
 import '../core/realtime/socket_io_realtime_transport.dart';
+import '../core/notifications/installation_id_store.dart';
+import '../core/notifications/push_registration_service.dart';
+import '../core/notifications/push_token_source.dart';
+import '../core/notifications/secure_installation_id_store.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/admin/data/admin_repository.dart';
 import '../features/incidents/data/incident_types_repository.dart';
@@ -21,6 +25,7 @@ import '../features/payments/data/payments_repository.dart';
 import '../features/providers/data/providers_repository.dart';
 import '../features/reviews/data/reviews_repository.dart';
 import '../features/wallet/data/wallet_repository.dart';
+import '../features/notifications/data/notifications_repository.dart';
 
 final appConfigProvider = Provider<AppConfig>((ref) {
   return AppConfig.fromEnvironment();
@@ -28,6 +33,14 @@ final appConfigProvider = Provider<AppConfig>((ref) {
 
 final tokenStoreProvider = Provider<TokenStore>((ref) {
   return SecureTokenStore();
+});
+
+final pushTokenSourceProvider = Provider<PushTokenSource>((ref) {
+  return const DisabledPushTokenSource();
+});
+
+final installationIdStoreProvider = Provider<InstallationIdStore>((ref) {
+  return SecureInstallationIdStore();
 });
 
 final sessionInvalidationBusProvider = Provider<SessionInvalidationBus>((ref) {
@@ -102,6 +115,24 @@ final providersRepositoryProvider = Provider<ProvidersRepository>((ref) {
 
 final walletRepositoryProvider = Provider<WalletRepository>((ref) {
   return HttpWalletRepository(ref.watch(jsonApiProvider));
+});
+
+final notificationsRepositoryProvider = Provider<NotificationsRepository>((
+  ref,
+) {
+  return HttpNotificationsRepository(ref.watch(jsonApiProvider));
+});
+
+final pushRegistrationServiceProvider = Provider<PushRegistrationService>((
+  ref,
+) {
+  final service = PushRegistrationService(
+    ref.watch(pushTokenSourceProvider),
+    ref.watch(installationIdStoreProvider),
+    ref.watch(notificationsRepositoryProvider),
+  );
+  ref.onDispose(service.dispose);
+  return service;
 });
 
 final realtimeTransportProvider = Provider<RealtimeTransport>((ref) {

@@ -109,6 +109,16 @@ class ApiClient implements JsonApi {
     return _requestObject(() => _dio.patch<Object?>(path, data: data));
   }
 
+  @override
+  Future<Map<String, dynamic>> putObject(String path, {Object? data}) {
+    return _requestObject(() => _dio.put<Object?>(path, data: data));
+  }
+
+  @override
+  Future<Map<String, dynamic>> deleteObject(String path, {Object? data}) {
+    return _requestObject(() => _dio.delete<Object?>(path, data: data));
+  }
+
   Future<Map<String, dynamic>> _requestObject(
     Future<Response<Object?>> Function() request,
   ) async {

@@ -40,5 +40,30 @@ void main() {
         );
       }
     });
+
+    test(
+      'requires complete Firebase build values only when push is enabled',
+      () {
+        expect(
+          () => AppConfig.fromRaw(
+            'https://api.example.test',
+            isRelease: true,
+            pushNotificationsEnabled: true,
+          ),
+          throwsFormatException,
+        );
+
+        final config = AppConfig.fromRaw(
+          'https://api.example.test',
+          isRelease: true,
+          pushNotificationsEnabled: true,
+          firebaseApiKey: 'public-client-api-key',
+          firebaseAppId: '1:123:android:abc',
+          firebaseMessagingSenderId: '123',
+          firebaseProjectId: 'motocare-demo',
+        );
+        expect(config.pushNotificationsEnabled, isTrue);
+      },
+    );
   });
 }

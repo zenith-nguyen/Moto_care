@@ -2,8 +2,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/moto_care_app.dart';
+import 'app/app_dependencies.dart';
+import 'core/config/app_config.dart';
+import 'core/notifications/firebase_push_token_source.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: MotoCareApp()));
+  final pushTokens = await FirebasePushTokenSource.initialize(
+    AppConfig.fromEnvironment(),
+  );
+  runApp(
+    ProviderScope(
+      overrides: [pushTokenSourceProvider.overrideWithValue(pushTokens)],
+      child: const MotoCareApp(),
+    ),
+  );
 }
