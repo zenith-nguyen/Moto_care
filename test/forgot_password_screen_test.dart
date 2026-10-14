@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,13 +7,26 @@ import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
 import 'package:moto_care/features/auth/screens/forgot_password_screen.dart';
 import 'package:moto_care/features/auth/screens/login_screen.dart';
+import 'package:moto_care/app/app_dependencies.dart';
 
-Future<GoRouter> openRecovery(WidgetTester tester) async {
+import 'support/recording_auth_repository.dart';
+
+Future<GoRouter> openRecovery(
+  WidgetTester tester, {
+  RecordingAuthRepository? repository,
+}) async {
   final router = createAppRouter();
   addTearDown(router.dispose);
   router.go('/forgot-password');
   await tester.pumpWidget(
-    MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+    ProviderScope(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(
+          repository ?? RecordingAuthRepository(),
+        ),
+      ],
+      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+    ),
   );
   await tester.pumpAndSettle();
   return router;
@@ -27,7 +41,7 @@ void main() {
     expect(find.text('Quên mật khẩu'), findsOneWidget);
     expect(find.text('Quên mật khẩu?'), findsOneWidget);
     expect(
-      find.image(const AssetImage('assets/images/Logo_Revo.png')),
+      find.image(const AssetImage('assets/images/logo-revo.png')),
       findsOneWidget,
     );
     expect(
@@ -89,18 +103,24 @@ void main() {
   testWidgets('Keyboard submission reports recovery availability', (
     tester,
   ) async {
-    await openRecovery(tester);
+    final repository = RecordingAuthRepository();
+    await openRecovery(tester, repository: repository);
     await tester.enterText(find.byType(TextFormField), 'rider@example.com');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Tính năng gửi mã xác thực qua email sẽ sớm được hỗ trợ.'),
+      find.text('Nếu email tồn tại, mã xác thực đã được gửi.'),
       findsOneWidget,
     );
+    expect(repository.requestedResetEmail, 'rider@example.com');
+    expect(find.text('Mã xác thực'), findsOneWidget);
     expect(find.byType(ForgotPasswordScreen), findsOneWidget);
     expect(
-      tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus,
+      tester
+          .widget<EditableText>(find.byType(EditableText).first)
+          .focusNode
+          .hasFocus,
       isFalse,
     );
     expect(tester.takeException(), isNull);
@@ -109,6 +129,7 @@ void main() {
   testWidgets('Recovery supports large text and scrolling above the keyboard', (
     tester,
   ) async {
+    final repository = RecordingAuthRepository();
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     tester.platformDispatcher.textScaleFactorTestValue = 1.5;
@@ -116,7 +137,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetViewInsets);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    await openRecovery(tester);
+    await openRecovery(tester, repository: repository);
     expect(tester.takeException(), isNull);
 
     await tester.enterText(find.byType(TextFormField), 'rider@example.com');
@@ -127,9 +148,10 @@ void main() {
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
     expect(
-      find.text('Tính năng gửi mã xác thực qua email sẽ sớm được hỗ trợ.'),
+      find.text('Nếu email tồn tại, mã xác thực đã được gửi.'),
       findsOneWidget,
     );
+    expect(repository.requestedResetEmail, 'rider@example.com');
     expect(tester.takeException(), isNull);
   });
 

@@ -206,7 +206,7 @@ adapters. No reference identity is stored as application data.
 
 The startup redirect is `/welcome`, with `/login`, `/register` and
 `/forgot-password` retaining their existing form behavior. Welcome uses the auth
-feature's `AuthScaffold` and light `AuthTheme`, displaying only `Ảnh.png` and
+feature's `AuthScaffold` and light `AuthTheme`, displaying only `welcome-background.png` and
 a bottom “Tiếp” button that pushes `/login`. The three authentication forms use
 `AuthScaffold` and `AuthTheme.light` with white backgrounds, gray inputs and black
 primary buttons. Each screen retains its original safe-area, scroll and keyboard
@@ -226,7 +226,7 @@ Black-accent review captures: [incident location](screenshots/black-accent-locat
 [chat](screenshots/black-accent-chat.png) and
 [tracking](screenshots/black-accent-tracking.png).
 
-`RevoLogo` uses the canonical transparent `Logo_Revo.png` asset and crops its
+`RevoLogo` uses the canonical transparent `logo-revo.png` asset and crops its
 padding only at render time. Native splash generation derives temporary PNGs
 in `.dart_tool/revo_splash/` from that same source. See the root README for
 regeneration instructions.

@@ -33,7 +33,7 @@ class _Device extends ProfileDeviceService {
 
   @override
   Future<Uint8List?> pickAvatar() async => pendingPhoto == null
-      ? (await rootBundle.load('assets/images/Logo_Revo.png')).buffer
+      ? (await rootBundle.load('assets/images/logo-revo.png')).buffer
             .asUint8List()
       : pendingPhoto!.future;
 

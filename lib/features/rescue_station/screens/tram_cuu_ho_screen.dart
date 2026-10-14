@@ -52,7 +52,7 @@ class _TramCuuHoScreenState extends ConsumerState<TramCuuHoScreen> {
       centerTitle: true,
       titleStyle: AppTextStyles.pageTitle,
       backgroundImage: const DecorationImage(
-        image: AssetImage('assets/images/Background.png'),
+        image: AssetImage('assets/images/background.png'),
         fit: BoxFit.cover,
         alignment: Alignment.topCenter,
       ),

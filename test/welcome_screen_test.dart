@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -18,7 +19,9 @@ Future<GoRouter> _openWelcome(WidgetTester tester) async {
   final router = createAppRouter();
   addTearDown(router.dispose);
   await tester.pumpWidget(
-    MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+    ProviderScope(
+      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+    ),
   );
   await tester.pumpAndSettle();
   return router;

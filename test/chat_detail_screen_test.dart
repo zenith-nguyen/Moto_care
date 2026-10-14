@@ -290,7 +290,7 @@ void main() {
     testWidgets('$source sends an image and receives an automatic reply', (
       tester,
     ) async {
-      final bytes = (await rootBundle.load('assets/images/Logo_Revo.png'))
+      final bytes = (await rootBundle.load('assets/images/logo-revo.png'))
           .buffer
           .asUint8List();
       var cameraCalls = 0;

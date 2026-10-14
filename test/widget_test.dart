@@ -1,232 +1,87 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
-import 'package:moto_care/features/auth/screens/forgot_password_screen.dart';
-import 'package:moto_care/features/auth/screens/login_screen.dart';
-import 'package:moto_care/features/auth/screens/register_screen.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:moto_care/app/app_dependencies.dart';
+import 'package:moto_care/app/moto_care_app.dart';
+import 'package:moto_care/features/auth/data/auth_repository.dart';
+import 'package:moto_care/features/auth/domain/app_user.dart';
+import 'package:moto_care/features/auth/domain/auth_session.dart';
 import 'package:moto_care/features/auth/screens/welcome_screen.dart';
-import 'package:moto_care/features/home/screens/trang_chu.dart';
-import 'package:moto_care/main.dart';
-import 'package:moto_care/core/widgets/revo_logo.dart';
 
-Future<void> openLogin(WidgetTester tester) async {
-  await tester.pumpWidget(const ProviderScope(child: MyApp()));
-  await tester.pumpAndSettle();
-  await tester.tap(find.text('Tiếp'));
-  await tester.pumpAndSettle();
-}
+import 'support/memory_token_store.dart';
 
 void main() {
-  testWidgets('App opens welcome after the native splash', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: MyApp()));
+  testWidgets('boots into the integration sign-in slot', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [tokenStoreProvider.overrideWithValue(MemoryTokenStore())],
+        child: const MotoCareApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    await tester.pump();
     expect(find.byType(WelcomeScreen), findsOneWidget);
-    expect(
-      find.image(const AssetImage(WelcomeScreen.imageAsset)),
-      findsOneWidget,
-    );
     expect(find.text('Tiếp'), findsOneWidget);
-    expect(find.byType(Text), findsOneWidget);
-    expect(find.byType(RevoLogo), findsNothing);
-    expect(find.byType(TextFormField), findsNothing);
-    expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Welcome opens login with the Revo logo above the form', (
-    tester,
+  testWidgets('restores an admin session into the admin integration slot', (
+    WidgetTester tester,
   ) async {
-    await openLogin(tester);
-    expect(find.byType(LoginScreen), findsOneWidget);
-    final loginLogo = find.image(
-      const AssetImage('assets/images/Logo_Revo.png'),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStoreProvider.overrideWithValue(MemoryTokenStore('admin-token')),
+          authRepositoryProvider.overrideWithValue(_AdminAuthRepository()),
+        ],
+        child: const MotoCareApp(),
+      ),
     );
-    expect(loginLogo, findsOneWidget);
-    expect(
-      tester.getBottomLeft(find.byType(RevoLogo)).dy,
-      lessThan(tester.getTopLeft(find.byType(TextFormField).first).dy),
-    );
-    expect(find.text('Email hoặc số điện thoại'), findsOneWidget);
-    expect(find.text('Nhập email hoặc số điện thoại của bạn'), findsOneWidget);
-    expect(find.text('Mật khẩu'), findsOneWidget);
-    expect(find.text('Đăng nhập'), findsOneWidget);
-    expect(find.text('Quên mật khẩu?'), findsOneWidget);
-    expect(find.text('Đăng ký'), findsOneWidget);
-    expect(find.text('[DEV] Vào nhanh Trang chủ'), findsNothing);
-    expect(
-      GoRouter.of(tester.element(find.byType(LoginScreen))).canPop(),
-      true,
-    );
-    expect(tester.takeException(), isNull);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Đã kết nối vai trò Admin'), findsOneWidget);
   });
+}
 
-  testWidgets('Password visibility toggles without clearing the password', (
-    tester,
-  ) async {
-    await openLogin(tester);
-    final passwordField = find.byType(TextFormField).last;
-    final passwordInput = find.byType(EditableText).last;
-    await tester.enterText(passwordField, 'my-password');
-    expect(tester.widget<EditableText>(passwordInput).obscureText, isTrue);
-
-    await tester.tap(find.byTooltip('Hiện mật khẩu'));
-    await tester.pump();
-    expect(tester.widget<EditableText>(passwordInput).obscureText, isFalse);
-    expect(
-      tester.widget<EditableText>(passwordInput).controller.text,
-      'my-password',
-    );
-
-    await tester.tap(find.byTooltip('Ẩn mật khẩu'));
-    await tester.pump();
-    expect(tester.widget<EditableText>(passwordInput).obscureText, isTrue);
-  });
-
-  testWidgets(
-    'Login accepts email and phone without filtering their characters',
-    (tester) async {
-      await openLogin(tester);
-      final identifier = find.byKey(const ValueKey('login-identifier'));
-      final input = find.descendant(
-        of: identifier,
-        matching: find.byType(EditableText),
-      );
-      await tester.enterText(find.byType(TextFormField).last, 'MotoCare1!');
-      for (final value in [
-        'rider+test@example.com',
-        '0912345678',
-        '+84912345678',
-      ]) {
-        await tester.enterText(identifier, value);
-        await tester.pump();
-        expect(tester.widget<EditableText>(input).controller.text, value);
-        expect(tester.state<FormState>(find.byType(Form)).validate(), isTrue);
-      }
-      await tester.enterText(identifier, 'rider@');
-      await tester.pump();
-      expect(tester.state<FormState>(find.byType(Form)).validate(), isFalse);
-      await tester.pump();
-      expect(
-        find.text('Email hoặc số điện thoại không hợp lệ'),
-        findsOneWidget,
-      );
-    },
+class _AdminAuthRepository implements AuthRepository {
+  static const user = AppUser(
+    id: 99,
+    name: 'Admin Test',
+    email: 'admin@example.com',
+    phone: null,
+    role: AppRole.admin,
+    status: AppUserStatus.active,
   );
 
-  testWidgets('Temporary login bypass opens home without credentials', (
-    tester,
-  ) async {
-    await openLogin(tester);
-    await tester.ensureVisible(find.text('Đăng nhập'));
-    await tester.tap(find.text('Đăng nhập'));
-    await tester.pumpAndSettle();
-    expect(find.byType(TrangChu), findsOneWidget);
-    expect(find.byType(LoginScreen), findsNothing);
-    expect(GoRouter.of(tester.element(find.byType(TrangChu))).canPop(), false);
-    expect(find.byType(SnackBar), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+  @override
+  Future<AppUser> currentUser() async => user;
 
-  testWidgets('Temporary login bypass opens home with malformed credentials', (
-    tester,
-  ) async {
-    await openLogin(tester);
-    await tester.enterText(find.byType(TextFormField).first, '123');
-    await tester.enterText(find.byType(TextFormField).last, 'my-password');
-    await tester.ensureVisible(find.text('Đăng nhập'));
-    await tester.tap(find.text('Đăng nhập'));
-    await tester.pumpAndSettle();
-    expect(find.byType(TrangChu), findsOneWidget);
-    expect(find.byType(LoginScreen), findsNothing);
-    expect(find.byType(SnackBar), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+  @override
+  Future<void> requestPasswordReset(String email) async {}
 
-  testWidgets('Keyboard submit also uses the temporary login bypass', (
-    tester,
-  ) async {
-    await openLogin(tester);
-    await tester.enterText(find.byType(TextFormField).first, '0912345678');
-    await tester.testTextInput.receiveAction(TextInputAction.next);
-    await tester.pump();
-    expect(
-      tester
-          .widget<EditableText>(find.byType(EditableText).last)
-          .focusNode
-          .hasFocus,
-      isTrue,
-    );
-    await tester.enterText(find.byType(TextFormField).last, 'my-password');
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-    expect(find.byType(TrangChu), findsOneWidget);
-    expect(find.byType(LoginScreen), findsNothing);
-    expect(find.byType(SnackBar), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+  @override
+  Future<AuthSession> register({
+    required String name,
+    required String password,
+    required AppRole role,
+    String? email,
+    String? phone,
+  }) {
+    throw UnimplementedError();
+  }
 
-  testWidgets('Recovery and registration return to the existing login form', (
-    tester,
-  ) async {
-    await openLogin(tester);
-    await tester.enterText(find.byType(TextFormField).first, '0912345678');
-    await tester.enterText(find.byType(TextFormField).last, 'my-password');
-    await tester.ensureVisible(find.text('Quên mật khẩu?'));
-    await tester.tap(find.text('Quên mật khẩu?'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ForgotPasswordScreen), findsOneWidget);
-    await tester.tap(find.byTooltip('Quay lại'));
-    await tester.pumpAndSettle();
-    expect(find.byType(LoginScreen), findsOneWidget);
-    expect(find.text('0912345678'), findsOneWidget);
-    expect(
-      tester
-          .widget<EditableText>(find.byType(EditableText).last)
-          .controller
-          .text,
-      'my-password',
-    );
-    await tester.ensureVisible(find.text('Đăng ký'));
-    await tester.tap(find.text('Đăng ký'));
-    await tester.pumpAndSettle();
-    expect(find.byType(RegisterScreen), findsOneWidget);
-    expect(find.text('Đăng ký tài khoản Revo'), findsOneWidget);
-    await tester.tap(find.byTooltip('Quay lại'));
-    await tester.pumpAndSettle();
-    expect(find.byType(LoginScreen), findsOneWidget);
-  });
+  @override
+  Future<void> resetPassword({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {}
 
-  testWidgets('Small screens support large text and scrolling above keyboard', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(320, 568);
-    tester.view.devicePixelRatio = 1;
-    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    addTearDown(tester.view.resetViewInsets);
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    await openLogin(tester);
-    expect(tester.takeException(), isNull);
-
-    await tester.enterText(find.byType(TextFormField).last, 'my-password');
-    tester.view.viewInsets = const FakeViewPadding(bottom: 260);
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    await tester.ensureVisible(find.text('Đăng ký'));
-    await tester.tap(find.text('Đăng ký'));
-    await tester.pumpAndSettle();
-    expect(find.byType(RegisterScreen), findsOneWidget);
-    expect(tester.takeException(), isNull);
-
-    await tester.tap(find.byTooltip('Quay lại'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Đăng nhập'));
-    await tester.tap(find.text('Đăng nhập'));
-    await tester.pumpAndSettle();
-    expect(find.byType(TrangChu), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  @override
+  Future<AuthSession> signIn({
+    required String identity,
+    required String password,
+  }) async {
+    return const AuthSession(accessToken: 'admin-token', user: user);
+  }
 }

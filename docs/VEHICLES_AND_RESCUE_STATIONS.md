@@ -8,7 +8,7 @@ highlights Account and the directory highlights Station map. Returning to Home
 preserves the current account and Home search.
 The directory is a main tab: its centered 18px title has no Back button;
 other service screens retain their existing Back navigation.
-The directory uses `assets/images/Background.png` behind the transparent header
+The directory uses `assets/images/background.png` behind the transparent header
 and scrolling content in both list and map modes. Text stays opaque and dark;
 search fields and station cards retain their white surfaces for readability.
 

@@ -1,31 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/revo_logo.dart';
+import '../application/session_controller.dart';
+import '../application/session_state.dart';
 import '../theme/auth_theme.dart';
 import '../widgets/auth_scaffold.dart';
 import '../models/auth_validation.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _identityController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
-  void _submit() {
+  @override
+  void dispose() {
+    _identityController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    // Temporary DEV bypass: restore validation and authentication here later.
-    context.go('/trang-chu');
+    await ref
+        .read(sessionControllerProvider.notifier)
+        .signIn(
+          identity: _identityController.text,
+          password: _passwordController.text,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
+    final sessionState = ref.watch(sessionControllerProvider);
+    final isLoading = sessionState is SessionAuthenticating;
+    final failure = sessionState is SessionSignedOut
+        ? sessionState.failure
+        : null;
+
     return AuthScaffold(
       appBar: AppBar(
         toolbarHeight: 48,
@@ -68,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(height: 24),
                           const _LoginHeader(),
                           const SizedBox(height: 32),
-                          _buildForm(),
+                          _buildForm(isLoading, failure?.message),
                         ],
                       ),
                       Padding(
@@ -103,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildForm() {
+  Widget _buildForm(bool isLoading, String? failureMessage) {
     return AutofillGroup(
       child: Form(
         key: _formKey,
@@ -117,6 +140,8 @@ class _LoginScreenState extends State<LoginScreen> {
               label: 'Email hoặc số điện thoại',
               child: TextFormField(
                 key: const ValueKey('login-identifier'),
+                controller: _identityController,
+                enabled: !isLoading,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
                 enableSuggestions: false,
@@ -135,6 +160,8 @@ class _LoginScreenState extends State<LoginScreen> {
             Semantics(
               label: 'Mật khẩu',
               child: TextFormField(
+                controller: _passwordController,
+                enabled: !isLoading,
                 obscureText: _obscurePassword,
                 autocorrect: false,
                 enableSuggestions: false,
@@ -165,11 +192,31 @@ class _LoginScreenState extends State<LoginScreen> {
                 validator: (value) => value == null || value.isEmpty
                     ? 'Vui lòng nhập mật khẩu'
                     : null,
-                onFieldSubmitted: (_) => _submit(),
+                onFieldSubmitted: (_) {
+                  if (!isLoading) _submit();
+                },
               ),
             ),
+            if (failureMessage != null) ...[
+              const SizedBox(height: 20),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  failureMessage,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            ],
             const SizedBox(height: 52),
-            FilledButton(onPressed: _submit, child: const Text('Đăng nhập')),
+            FilledButton(
+              onPressed: isLoading ? null : _submit,
+              child: isLoading
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Đăng nhập'),
+            ),
             const SizedBox(height: 16),
             Center(
               child: TextButton(

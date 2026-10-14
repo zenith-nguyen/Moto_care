@@ -424,8 +424,8 @@ void main() {
           'station-mobile': StationProfile(
             description: 'Trạm có hai ảnh',
             imageAssets: [
-              'assets/images/Tiemsua1.png',
-              'assets/images/Tiemsua2.png',
+              'assets/images/repair-shop-1.png',
+              'assets/images/repair-shop-2.png',
             ],
           ),
         },

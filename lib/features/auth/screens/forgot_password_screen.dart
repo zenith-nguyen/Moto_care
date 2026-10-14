@@ -1,35 +1,92 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../../core/widgets/revo_logo.dart';
 import '../theme/auth_theme.dart';
 import '../widgets/auth_scaffold.dart';
 import '../models/auth_validation.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _codeController = TextEditingController();
+  final _newPasswordController = TextEditingController();
   String _email = '';
+  bool _codeSent = false;
+  bool _isSubmitting = false;
+  String? _failureMessage;
 
-  void _submit() {
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _newPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     FocusScope.of(context).unfocus();
-    // Connect the recovery API before reporting that a code was sent.
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Tính năng gửi mã xác thực qua email sẽ sớm được hỗ trợ.',
+    setState(() {
+      _isSubmitting = true;
+      _failureMessage = null;
+    });
+    try {
+      await ref.read(authRepositoryProvider).requestPasswordReset(_email);
+      if (!mounted) return;
+      setState(() => _codeSent = true);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Nếu email tồn tại, mã xác thực đã được gửi.'),
           ),
-        ),
-      );
+        );
+    } catch (error) {
+      if (mounted) setState(() => _failureMessage = error.toString());
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    if (_codeController.text.trim().isEmpty ||
+        _newPasswordController.text.length < 8) {
+      setState(() {
+        _failureMessage = 'Nhập mã xác thực và mật khẩu mới ít nhất 8 ký tự.';
+      });
+      return;
+    }
+    setState(() {
+      _isSubmitting = true;
+      _failureMessage = null;
+    });
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .resetPassword(
+            email: _email,
+            code: _codeController.text,
+            newPassword: _newPasswordController.text,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Đổi mật khẩu thành công.')));
+      context.go('/login');
+    } catch (error) {
+      if (mounted) setState(() => _failureMessage = error.toString());
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -117,6 +174,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           Semantics(
                             label: 'Email',
                             child: TextFormField(
+                              enabled: !_isSubmitting && !_codeSent,
                               keyboardType: TextInputType.emailAddress,
                               textInputAction: TextInputAction.done,
                               autofillHints: const [AutofillHints.email],
@@ -148,11 +206,65 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               disabledBackgroundColor: AuthColors.disabled,
                               disabledForegroundColor: AuthColors.secondary,
                             ),
-                            onPressed: AuthValidation.email(_email) == null
+                            onPressed:
+                                AuthValidation.email(_email) == null &&
+                                    !_isSubmitting &&
+                                    !_codeSent
                                 ? _submit
                                 : null,
-                            child: const Text('Nhận mã xác thực'),
+                            child: _isSubmitting && !_codeSent
+                                ? const SizedBox.square(
+                                    dimension: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text('Nhận mã xác thực'),
                           ),
+                          if (_codeSent) ...[
+                            const SizedBox(height: 24),
+                            TextFormField(
+                              controller: _codeController,
+                              enabled: !_isSubmitting,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Mã xác thực',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _newPasswordController,
+                              enabled: !_isSubmitting,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Mật khẩu mới',
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            FilledButton(
+                              onPressed: _isSubmitting ? null : _resetPassword,
+                              child: _isSubmitting
+                                  ? const SizedBox.square(
+                                      dimension: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text('Đặt mật khẩu mới'),
+                            ),
+                          ],
+                          if (_failureMessage != null) ...[
+                            const SizedBox(height: 16),
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                _failureMessage!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

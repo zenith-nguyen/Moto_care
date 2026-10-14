@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class RevoLogo extends StatelessWidget {
   const RevoLogo({super.key, this.width = 150, this.color = Colors.black});
 
-  static const asset = 'assets/images/Logo_Revo.png';
+  static const asset = 'assets/images/logo-revo.png';
 
   final double width;
   final Color color;

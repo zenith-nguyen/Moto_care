@@ -1,13 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
 import 'package:moto_care/features/auth/screens/register_screen.dart';
-import 'package:moto_care/main.dart';
+import 'package:moto_care/app/app_dependencies.dart';
 
-Future<void> openRegister(WidgetTester tester) async {
-  await tester.pumpWidget(const MyApp());
+import 'support/memory_token_store.dart';
+import 'support/recording_auth_repository.dart';
+
+Future<void> openRegister(
+  WidgetTester tester, {
+  RecordingAuthRepository? repository,
+}) async {
+  final router = createAppRouter();
+  addTearDown(router.dispose);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        authRepositoryProvider.overrideWithValue(
+          repository ?? RecordingAuthRepository(),
+        ),
+        tokenStoreProvider.overrideWithValue(MemoryTokenStore()),
+      ],
+      child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+    ),
+  );
   await tester.pumpAndSettle();
   await tester.tap(find.text('Tiếp'));
   await tester.pumpAndSettle();
@@ -24,7 +44,7 @@ void main() {
 
     expect(find.text('Đăng ký tài khoản Revo'), findsOneWidget);
     expect(
-      find.image(const AssetImage('assets/images/Logo_Revo.png')),
+      find.image(const AssetImage('assets/images/logo-revo.png')),
       findsOneWidget,
     );
     expect(find.text('+84'), findsOneWidget);
@@ -95,13 +115,18 @@ void main() {
   testWidgets('Submission requires valid credentials and consent', (
     tester,
   ) async {
-    await openRegister(tester);
+    final repository = RecordingAuthRepository();
+    await openRegister(tester, repository: repository);
     final phoneField = find.byKey(const ValueKey('register-phone'));
     final passwordField = find.byType(TextFormField).last;
     final submit = find.byType(FilledButton);
     await tester.enterText(
       find.byKey(const ValueKey('register-email')),
       'rider@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-name')),
+      'Customer Test',
     );
     await tester.enterText(phoneField, '123');
     await tester.enterText(passwordField, 'MotoCare1!');
@@ -135,14 +160,19 @@ void main() {
     await tester.ensureVisible(submit);
     await tester.tap(submit);
     await tester.pumpAndSettle();
-    expect(find.text('Đăng ký tài khoản sẽ sớm được hỗ trợ.'), findsOneWidget);
-    expect(find.byType(RegisterScreen), findsOneWidget);
+    expect(repository.registeredName, 'Customer Test');
+    expect(repository.registeredEmail, 'rider@example.com');
+    expect(repository.registeredPhone, '0912345678');
   });
 
   testWidgets(
     'Registration requires a valid email along with phone, password and consent',
     (tester) async {
       await openRegister(tester);
+      await tester.enterText(
+        find.byKey(const ValueKey('register-name')),
+        'Customer Test',
+      );
       final email = find.byKey(const ValueKey('register-email'));
       final submit = find.byType(FilledButton);
       await tester.enterText(
@@ -188,6 +218,7 @@ void main() {
   testWidgets('Registration remains usable with large text and a keyboard', (
     tester,
   ) async {
+    final repository = RecordingAuthRepository();
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     tester.platformDispatcher.textScaleFactorTestValue = 1.5;
@@ -195,11 +226,15 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetViewInsets);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    await openRegister(tester);
+    await openRegister(tester, repository: repository);
     expect(tester.takeException(), isNull);
     await tester.enterText(
       find.byKey(const ValueKey('register-email')),
       'rider@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-name')),
+      'Customer Test',
     );
     await tester.enterText(
       find.byKey(const ValueKey('register-phone')),
@@ -215,7 +250,7 @@ void main() {
     await tester.ensureVisible(find.byType(FilledButton));
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
-    expect(find.text('Đăng ký tài khoản sẽ sớm được hỗ trợ.'), findsOneWidget);
+    expect(repository.registeredEmail, 'rider@example.com');
     expect(tester.takeException(), isNull);
   });
 
@@ -238,7 +273,9 @@ void main() {
     );
     addTearDown(router.dispose);
     await tester.pumpWidget(
-      MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ProviderScope(
+        child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
+      ),
     );
     await tester.pumpAndSettle();
     expect(router.canPop(), isFalse);

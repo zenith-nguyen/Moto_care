@@ -9,7 +9,7 @@ retains its white/black `AuthTheme`; supporting screens keep `HomeTheme.light`.
 
 ## Station discovery
 
-The supplied `assets/images/Thời tiết.png` sky/cloud image sits behind both
+The supplied `assets/images/weather-background.png` sky/cloud image sits behind both
 the header and weather card, including the status-bar area. A `DecoratedSliver`
 wraps their shared `SliverMainAxisGroup`, so the backdrop scrolls with those
 sections and sizes itself to their content, including larger text. The image's

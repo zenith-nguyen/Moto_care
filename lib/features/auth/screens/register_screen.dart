@@ -1,31 +1,38 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/revo_logo.dart';
 import '../../../core/config/support_contact.dart';
+import '../../../app/app_dependencies.dart';
+import '../application/session_controller.dart';
+import '../domain/app_user.dart';
 import '../theme/auth_theme.dart';
 import '../widgets/auth_scaffold.dart';
 import '../models/auth_validation.dart';
 
-class RegisterScreen extends StatefulWidget {
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TapGestureRecognizer _termsRecognizer;
   late final TapGestureRecognizer _privacyRecognizer;
+  String _name = '';
   String _email = '';
   String _phone = '';
   String _password = '';
   bool _obscurePassword = true;
   bool _acceptedTerms = false;
+  bool _isSubmitting = false;
+  String? _failureMessage;
 
   bool get _validPhone => AuthValidation.registrationPhone(_phone);
   bool get _hasMinLength => AuthValidation.hasMinLength(_password);
@@ -35,10 +42,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       AuthValidation.hasSpecialCharacter(_password);
   bool get _validPassword => AuthValidation.registrationPassword(_password);
   bool get _canSubmit =>
+      _name.trim().length >= 2 &&
       AuthValidation.email(_email) == null &&
       _validPhone &&
       _validPassword &&
-      _acceptedTerms;
+      _acceptedTerms &&
+      !_isSubmitting;
 
   @override
   void initState() {
@@ -63,7 +72,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_acceptedTerms) {
       _showMessage(
@@ -72,7 +81,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
     FocusScope.of(context).unfocus();
-    _showMessage('Đăng ký tài khoản sẽ sớm được hỗ trợ.');
+    setState(() {
+      _isSubmitting = true;
+      _failureMessage = null;
+    });
+    try {
+      final session = await ref
+          .read(authRepositoryProvider)
+          .register(
+            name: _name,
+            email: _email,
+            phone: _phone,
+            password: _password,
+            role: AppRole.customer,
+          );
+      await ref
+          .read(sessionControllerProvider.notifier)
+          .activateRegisteredSession(session);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _failureMessage = error.toString());
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -145,12 +176,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            const _FieldLabel('Họ và tên'),
+            const SizedBox(height: 12),
+            TextFormField(
+              key: const ValueKey('register-name'),
+              enabled: !_isSubmitting,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.name],
+              decoration: const InputDecoration(
+                hintText: 'Nhập họ và tên của bạn',
+              ),
+              onChanged: (value) => setState(() => _name = value),
+              validator: (value) => value == null || value.trim().length < 2
+                  ? 'Vui lòng nhập họ và tên'
+                  : null,
+            ),
+            const SizedBox(height: 28),
             const _FieldLabel('Email'),
             const SizedBox(height: 12),
             Semantics(
               label: 'Email',
               child: TextFormField(
                 key: const ValueKey('register-email'),
+                enabled: !_isSubmitting,
                 keyboardType: TextInputType.emailAddress,
                 autocorrect: false,
                 enableSuggestions: false,
@@ -193,6 +241,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: 'Số điện thoại',
                     child: TextFormField(
                       key: const ValueKey('register-phone'),
+                      enabled: !_isSubmitting,
                       keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.next,
                       autofillHints: const [
@@ -321,6 +370,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             const SizedBox(height: 22),
+            if (_failureMessage != null) ...[
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _failureMessage!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: AuthColors.primary,
@@ -328,7 +387,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 disabledForegroundColor: const Color(0xFF909090),
               ),
               onPressed: _canSubmit ? _submit : null,
-              child: const Text('Đăng ký'),
+              child: _isSubmitting
+                  ? const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Đăng ký'),
             ),
           ],
         ),

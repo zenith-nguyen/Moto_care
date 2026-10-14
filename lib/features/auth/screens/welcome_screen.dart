@@ -7,7 +7,7 @@ import '../widgets/auth_scaffold.dart';
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
-  static const imageAsset = 'assets/images/Ảnh.png';
+  static const imageAsset = 'assets/images/welcome-background.png';
 
   @override
   Widget build(BuildContext context) {

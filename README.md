@@ -2,7 +2,9 @@
 
 Moto Care is a mobile roadside-assistance application for motorbike riders. It connects customers who need help with nearby approved mobile mechanics.
 
-This repository contains the Flutter mobile application. The NestJS, PostgreSQL/PostGIS, WebSocket, payment, and administration services live in a separate backend repository.
+This repository is the MotoCare monorepo. The Flutter mobile application lives at the repository root, and the NestJS API lives in `backend/`.
+
+The backend uses PostgreSQL + PostGIS locally through Docker Compose. See [`backend/README.md`](backend/README.md) for backend setup and database commands.
 
 ## Product scope
 
@@ -42,7 +44,7 @@ flutter run
 
 Android and iOS show a white native splash screen with Revo branding. Once
 Flutter is ready, `/` redirects to `/welcome`, showing the supplied
-`assets/images/Ảnh.png` image as a full-screen background with one horizontal
+`assets/images/welcome-background.png` image as a full-screen background with one horizontal
 black “Tiếp” button at the bottom. The button opens `/login`; registration is
 accessible from Login, and Back returns to welcome.
 [Welcome preview](docs/screenshots/welcome-image-continue.png).
@@ -63,7 +65,7 @@ The bundled files include Vietnamese letters and combining marks. Buttons,
 navigation, form labels and custom map labels use Montserrat; Material and Font
 Awesome icons retain their icon fonts.
 
-`assets/images/Logo_Revo.png` is the single source logo. `RevoLogo` crops its
+`assets/images/logo-revo.png` is the single source logo. `RevoLogo` crops its
 transparent padding in the layout and renders it in black on authentication
 cards. To regenerate native splash resources:
 

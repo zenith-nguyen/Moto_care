@@ -3,7 +3,7 @@
 ## Weather backdrop
 
 `HomeMediaAssets.weatherBackground` uses the supplied
-`assets/images/Thời tiết.png` unchanged. The exact Unicode asset key is declared
+`assets/images/weather-background.png` unchanged. The ASCII-only asset key is declared
 in `pubspec.yaml` and loaded through Flutter's `AssetImage` with a light white
 tint to match the reference's pastel blue. Its sky/cloud upper
 area and white lower fade cover the Home header and weather card together;
@@ -25,10 +25,10 @@ Cards retain their existing image crop and dark gradient behind the text.
 
 | Station | Image asset |
 | --- | --- |
-| Trạm cứu hộ Revo Q.1 (`station-mobile`) | `assets/images/Tiemsua1.png` |
-| Cứu hộ Minh Tuấn (`station-tuan`) | `assets/images/Tiemsua2.png` |
-| Đại lý chính hãng An Phát (`station-dealer`) | `assets/images/Tiemsua3.png` |
-| Tiệm sửa xe Thành Công (`station-thanh`) | `assets/images/Tiemsua4.png` |
+| Trạm cứu hộ Revo Q.1 (`station-mobile`) | `assets/images/repair-shop-1.png` |
+| Cứu hộ Minh Tuấn (`station-tuan`) | `assets/images/repair-shop-2.png` |
+| Đại lý chính hãng An Phát (`station-dealer`) | `assets/images/repair-shop-3.png` |
+| Tiệm sửa xe Thành Công (`station-thanh`) | `assets/images/repair-shop-4.png` |
 
 ## Legacy illustration assets
 
