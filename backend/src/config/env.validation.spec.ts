@@ -87,4 +87,47 @@ describe("environment validation", () => {
 
     expect(result.error?.message).toContain('SEPAY_ACCOUNT_NUMBER');
   });
+
+  it('requires a Firebase project ID only when push delivery is enabled', () => {
+    const disabled = envValidationSchema.validate(requiredEnvironment);
+    expect(disabled.error).toBeUndefined();
+    expect(disabled.value.PUSH_NOTIFICATIONS_ENABLED).toBe(false);
+
+    const incomplete = envValidationSchema.validate({
+      ...requiredEnvironment,
+      PUSH_NOTIFICATIONS_ENABLED: true,
+    });
+    expect(incomplete.error?.message).toContain('FIREBASE_PROJECT_ID');
+
+    const enabled = envValidationSchema.validate({
+      ...requiredEnvironment,
+      PUSH_NOTIFICATIONS_ENABLED: true,
+      FIREBASE_PROJECT_ID: 'motocare-demo',
+    });
+    expect(enabled.error).toBeUndefined();
+  });
+
+  it('requires complete SMTP credentials when real email delivery is enabled', () => {
+    const incomplete = envValidationSchema.validate(
+      { ...requiredEnvironment, EMAIL_ENABLED: true },
+      { abortEarly: false },
+    );
+    const message = incomplete.error?.message ?? '';
+    expect(message).toContain('SMTP_HOST');
+    expect(message).toContain('SMTP_USER');
+    expect(message).toContain('SMTP_PASSWORD');
+    expect(message).toContain('SMTP_FROM');
+
+    const enabled = envValidationSchema.validate({
+      ...requiredEnvironment,
+      EMAIL_ENABLED: true,
+      SMTP_HOST: 'smtp.gmail.com',
+      SMTP_PORT: 587,
+      SMTP_SECURE: false,
+      SMTP_USER: 'noreply@example.com',
+      SMTP_PASSWORD: 'local-app-password',
+      SMTP_FROM: 'MotoCare <noreply@example.com>',
+    });
+    expect(enabled.error).toBeUndefined();
+  });
 });

@@ -11,7 +11,7 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { Order } from '../orders/order.entity';
 import { Provider } from '../providers/provider.entity';
 import { User } from '../users/user.entity';
-import { RealtimeMessagePayload, RealtimePublisher } from './realtime-publisher.port';
+import { RealtimeMessagePayload } from './realtime-publisher.port';
 
 function allowedOrigin(origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) {
   const origins = (process.env.CORS_ORIGIN ?? 'http://localhost:3000').split(',').map((value) => value.trim());
@@ -24,7 +24,7 @@ function allowedOrigin(origin: string | undefined, callback: (error: Error | nul
   connectTimeout: 10_000,
   maxHttpBufferSize: 100_000,
 })
-export class RealtimeGateway implements OnGatewayConnection, RealtimePublisher {
+export class RealtimeGateway implements OnGatewayConnection {
   @WebSocketServer()
   private server!: Server;
 

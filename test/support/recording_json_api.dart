@@ -47,6 +47,18 @@ class RecordingJsonApi implements JsonApi {
   }
 
   @override
+  Future<Map<String, dynamic>> putObject(String path, {Object? data}) async {
+    _record('PUT', path, data: data);
+    return objectResponse;
+  }
+
+  @override
+  Future<Map<String, dynamic>> deleteObject(String path, {Object? data}) async {
+    _record('DELETE', path, data: data);
+    return objectResponse;
+  }
+
+  @override
   Future<Map<String, dynamic>> postObject(String path, {Object? data}) async {
     _record('POST', path, data: data);
     return objectResponse;

@@ -43,7 +43,7 @@ export class PriceAdjustmentsService {
       await manager.getRepository(Order).save(order);
       return { response: await this.response(manager, order, proposal), changed: true };
     });
-    if (result.changed) this.realtime?.orderStatusChanged(orderId, result.response.orderStatus);
+    if (result.changed) await this.realtime?.orderStatusChanged(orderId, result.response.orderStatus);
     return result.response;
   }
 
@@ -64,7 +64,7 @@ export class PriceAdjustmentsService {
       await this.applyApprovedPrice(manager, order, proposal);
       return { response: await this.response(manager, order, proposal), changed: true };
     });
-    if (result.changed) this.realtime?.orderStatusChanged(orderId, result.response.orderStatus);
+    if (result.changed) await this.realtime?.orderStatusChanged(orderId, result.response.orderStatus);
     return result.response;
   }
 
@@ -87,7 +87,7 @@ export class PriceAdjustmentsService {
       await manager.getRepository(Order).save(order);
       return { response: await this.response(manager, order, proposal), changed: true };
     });
-    if (result.changed) this.realtime?.orderStatusChanged(orderId, result.response.orderStatus);
+    if (result.changed) await this.realtime?.orderStatusChanged(orderId, result.response.orderStatus);
     return result.response;
   }
 
@@ -109,7 +109,7 @@ export class PriceAdjustmentsService {
       await manager.getRepository(Order).save(order);
       return { response: await this.response(manager, order, proposal), changed: true };
     });
-    if (result.changed) this.realtime?.orderStatusChanged(orderId, result.response.orderStatus);
+    if (result.changed) await this.realtime?.orderStatusChanged(orderId, result.response.orderStatus);
     return result.response;
   }
 
@@ -159,7 +159,7 @@ export class PriceAdjustmentsService {
       }
       return { response: await this.response(manager, order, proposal), changed: true };
     });
-    if (result.changed) this.realtime?.orderStatusChanged(result.response.orderId, result.response.orderStatus);
+    if (result.changed) await this.realtime?.orderStatusChanged(result.response.orderId, result.response.orderStatus);
     return result.response;
   }
 

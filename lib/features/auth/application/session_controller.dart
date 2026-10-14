@@ -82,6 +82,11 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> signOut() async {
+    try {
+      await ref.read(pushRegistrationServiceProvider).deactivate();
+    } catch (_) {
+      // Local token deletion still runs in the service even if the backend is unreachable.
+    }
     await ref.read(tokenStoreProvider).clear();
     state = const SessionSignedOut();
   }

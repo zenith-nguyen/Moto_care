@@ -15,10 +15,10 @@ export abstract class RealtimePublisher {
     latitude: number,
     longitude: number,
     updatedAt: Date,
-  ): void;
+  ): Promise<void>;
 
-  abstract messageCreated(orderId: number, message: RealtimeMessagePayload): void;
-  abstract offerCreated(providerId: number, orderId: number, offerId: number, expiresAt: Date): void;
-  abstract offerExpired(providerId: number, orderId: number, offerId: number): void;
-  abstract orderStatusChanged(orderId: number, status: OrderStatus): void;
+  abstract messageCreated(orderId: number, message: RealtimeMessagePayload): Promise<void>;
+  abstract offerCreated(providerId: number, orderId: number, offerId: number, expiresAt: Date): Promise<void>;
+  abstract offerExpired(providerId: number, orderId: number, offerId: number): Promise<void>;
+  abstract orderStatusChanged(orderId: number, status: OrderStatus): Promise<void>;
 }

@@ -65,6 +65,15 @@ export const envValidationSchema = Joi.object({
   SMTP_USER: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
   SMTP_PASSWORD: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
   SMTP_FROM: Joi.when('EMAIL_ENABLED', { is: true, then: Joi.string().required(), otherwise: Joi.string().optional() }),
+  SMTP_CONNECTION_TIMEOUT_MS: Joi.number().integer().min(1000).max(30_000).default(10_000),
+  SMTP_SOCKET_TIMEOUT_MS: Joi.number().integer().min(5000).max(120_000).default(30_000),
+  PUSH_NOTIFICATIONS_ENABLED: Joi.boolean().default(false),
+  FIREBASE_PROJECT_ID: Joi.when('PUSH_NOTIFICATIONS_ENABLED', {
+    is: true,
+    then: Joi.string().trim().min(4).max(100).required(),
+    otherwise: Joi.string().optional(),
+  }),
+  PROVIDER_NEARBY_RADIUS_METERS: Joi.number().integer().min(50).max(2000).default(300),
   SEPAY_ENABLED: Joi.boolean().default(false),
   SEPAY_MODE: Joi.string().valid('test').default('test'),
   SEPAY_BANK: Joi.when('SEPAY_ENABLED', {

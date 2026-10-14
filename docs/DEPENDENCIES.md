@@ -20,6 +20,7 @@ Treat the application and bundle IDs as permanent after the first store release.
 | `socket_io_client` | Authenticated realtime transport | Receiving MotoCare offer, order, GPS, and chat events through the shared realtime adapter. |
 | `geolocator` | Foreground device location | Acquiring Customer/Provider coordinates while the app is open. Background tracking is not enabled. |
 | `image_picker` | Chat image selection | Selecting one camera/gallery image before the shared 5 MiB validation and protected upload flow. |
+| `firebase_core` and `firebase_messaging` | Android push notification transport | Registering the signed-in APK installation for background order/offer/message alerts. Firebase service-account credentials remain backend-only. |
 | `json_annotation` | Model annotations | Defining API request and response models. |
 | `build_runner` and `json_serializable` | JSON model code generation | Generating `fromJson` and `toJson` for annotated models. |
 

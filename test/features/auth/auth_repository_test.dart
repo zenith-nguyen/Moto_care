@@ -67,6 +67,11 @@ class RecordingJsonApi implements JsonApi {
   }
 
   @override
+  Future<Map<String, dynamic>> deleteObject(String path, {Object? data}) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getList(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -85,6 +90,11 @@ class RecordingJsonApi implements JsonApi {
 
   @override
   Future<Map<String, dynamic>> patchObject(String path, {Object? data}) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Map<String, dynamic>> putObject(String path, {Object? data}) {
     throw UnimplementedError();
   }
 

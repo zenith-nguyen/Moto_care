@@ -62,7 +62,7 @@ export class MessagesService {
       throw error;
     }
     const result = this.toResponse(saved);
-    this.realtime.messageCreated(orderId, result);
+    await this.realtime.messageCreated(orderId, result);
     return result;
   }
 

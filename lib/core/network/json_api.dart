@@ -43,4 +43,8 @@ abstract interface class JsonApi {
   Future<BinaryResponse> getBinary(String path);
 
   Future<Map<String, dynamic>> patchObject(String path, {Object? data});
+
+  Future<Map<String, dynamic>> putObject(String path, {Object? data});
+
+  Future<Map<String, dynamic>> deleteObject(String path, {Object? data});
 }

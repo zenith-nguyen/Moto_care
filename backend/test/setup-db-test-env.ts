@@ -16,6 +16,7 @@ Object.assign(process.env, {
   OFFER_TTL_SECONDS: '60',
   PROVIDER_LOCATION_MAX_AGE_SECONDS: '120',
   MATCH_RADIUS_KM: '10',
+  PROVIDER_NEARBY_RADIUS_METERS: '300',
   CHAT_UPLOAD_DIR: join(tmpdir(), `motocare-chat-http-test-${process.pid}`),
   CHAT_IMAGE_MAX_BYTES: '5242880',
   SEPAY_ENABLED: 'true',
