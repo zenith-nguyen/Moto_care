@@ -50,7 +50,7 @@ flutter:
 
   assets:
     - assets/images/logo-revo.png
-    - assets/images/background.png
+    - assets/images/Background.png
     - assets/images/welcome-background.png
     - assets/images/weather-background.png
     - assets/images/rescue-tow.png
