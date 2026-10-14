@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   quality:
-    name: quality
+    name: Flutter CI / quality
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
