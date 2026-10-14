@@ -12,7 +12,7 @@
 | `docs/<owner>/<description>` | Contributor | Documentation or configuration that does not change app behavior. |
 | `chore/<owner>/<description>` | Contributor | Small maintenance work. |
 
-`<owner>` is `cam-thu` or `thanh-vy`. `<description>` uses lowercase letters, numbers, and hyphens. Example: `feat/cam-thu/booking-form`.
+`<owner>` is `cam-thu`, `thanh-vy`, or `zenith`. `<description>` uses lowercase letters, numbers, and hyphens. Example: `feat/cam-thu/booking-form` or `feat/zenith/backend-auth`. The database-schema milestone uses the dedicated owner branch `feat/db-schema`.
 
 The integration branches are destinations for pull requests. A task branch such as `feat/cam-thu/booking-form` is where a contributor writes the code. A branch cannot open a pull request into itself, so both are required.
 
@@ -21,7 +21,7 @@ The integration branches are destinations for pull requests. A task branch such 
 1. Update the personal integration branch: `git switch cam-thu` and `git pull origin cam-thu`.
 2. Create a task branch from it: `git switch -c feat/cam-thu/booking-form`.
 3. Complete one focused task, make Conventional Commits, and push the task branch.
-4. Open a pull request into `cam-thu` or `thanh-vy`. Do not open a feature pull request directly into `main`.
+4. Open a pull request into `cam-thu` or `thanh-vy`. The repository owner may open a `feat|fix|docs|refactor|test|chore/zenith/*` pull request directly into `main`.
 5. Merge only after GitHub Actions pass and required reviews are complete.
 6. When a group of changes is stable, open a pull request from `cam-thu` or `thanh-vy` into `main`. The repository owner reviews and merges it.
 

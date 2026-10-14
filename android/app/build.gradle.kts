@@ -1,8 +1,19 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val mapsDartDefines = providers.gradleProperty("dart-defines").orNull
+    ?.split(",")
+    ?.filter { it.isNotBlank() }
+    ?.associate { encoded ->
+        val decoded = String(Base64.getDecoder().decode(encoded), Charsets.UTF_8)
+        val pair = decoded.split("=", limit = 2)
+        pair[0] to pair.getOrElse(1) { "" }
+    } ?: emptyMap()
 
 android {
     namespace = "com.motocare.app"
@@ -17,6 +28,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.motocare.app"
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = mapsDartDefines["GOOGLE_MAPS_ANDROID_API_KEY"] ?: ""
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

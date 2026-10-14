@@ -26,6 +26,8 @@
 	<string>$(PRODUCT_COPYRIGHT)</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
+	<key>NSLocationUsageDescription</key>
+	<string>MotoCare sử dụng vị trí để xác định địa chỉ sự cố khi bạn đặt cứu hộ.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 </dict>

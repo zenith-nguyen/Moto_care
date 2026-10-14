@@ -1,0 +1,33 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/realtime/realtime_session_coordinator.dart';
+import '../core/notifications/push_session_coordinator.dart';
+import '../core/theme/app_theme.dart';
+import 'router/app_router.dart';
+
+class MotoCareApp extends ConsumerWidget {
+  const MotoCareApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(realtimeSessionCoordinatorProvider);
+    ref.watch(pushSessionCoordinatorProvider);
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
+      title: 'Moto Care',
+      debugShowCheckedModeBanner: false,
+      locale: const Locale('vi'),
+      supportedLocales: const [Locale('vi'), Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      theme: AppTheme.light,
+      routerConfig: router,
+    );
+  }
+}
