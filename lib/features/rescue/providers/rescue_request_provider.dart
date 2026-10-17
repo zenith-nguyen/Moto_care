@@ -81,7 +81,7 @@ class RescueRequestController extends Notifier<RescueRequestDraft> {
         : Uint8List.fromList(value).asUnmodifiableView(),
     replacePhoto: true,
   );
-  RescueOrder? submit(String description) {
+  Future<RescueOrder?> submit(String description) async {
     if (state.submitted ||
         ref.read(activityProvider).activeOrders.isNotEmpty ||
         ref.read(defaultVehicleProvider) == null ||
@@ -93,9 +93,10 @@ class RescueRequestController extends Notifier<RescueRequestDraft> {
     final configuration = state.configuration;
     final option = configuration.options[state.selectedOption];
     try {
-      final order = ref
+      _update(submitted: true);
+      final order = await ref
           .read(activityProvider.notifier)
-          .createOrder(
+          .createOrderFromApi(
             serviceType: configuration.type,
             serviceOption: option.label,
             basePrice: option.price,
@@ -108,10 +109,9 @@ class RescueRequestController extends Notifier<RescueRequestDraft> {
             locationLongitude: location.longitude,
             incidentDescription: description,
           );
-      _update(submitted: true);
       return order;
-    } on StateError {
-      _update(error: 'Bạn đang có đơn cứu hộ. Hãy kiểm tra trong Hoạt động.');
+    } on StateError catch (error) {
+      _update(error: error.message, submitted: false);
       return null;
     }
   }

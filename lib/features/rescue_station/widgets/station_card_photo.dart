@@ -19,7 +19,7 @@ class StationCardPhoto extends StatelessWidget {
 
   final String imageAsset;
   final bool isVerified;
-  final double rating;
+  final double? rating;
   final String? responseLabel;
   final int? reviewCount;
   final double? distanceKm;
@@ -140,43 +140,44 @@ class StationCardPhoto extends StatelessWidget {
                 runSpacing: 6,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: Colors.amber,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          rating.toStringAsFixed(1),
-                          style: AppTextStyles.body.copyWith(
-                            color: RevoHomeColors.ink,
-                            fontWeight: FontWeight.bold,
+                  if (rating != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            color: Colors.amber,
+                            size: 16,
                           ),
-                        ),
-                        if (reviewCount != null && showBadgeLabel) ...[
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              '($reviewCount đánh giá)',
-                              style: AppTextStyles.caption,
+                          const SizedBox(width: 2),
+                          Text(
+                            rating!.toStringAsFixed(1),
+                            style: AppTextStyles.body.copyWith(
+                              color: RevoHomeColors.ink,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
+                          if (reviewCount != null && showBadgeLabel) ...[
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '($reviewCount đánh giá)',
+                                style: AppTextStyles.caption,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
                   if (reviewCount != null && !showBadgeLabel)
                     Text(
                       '($reviewCount)',

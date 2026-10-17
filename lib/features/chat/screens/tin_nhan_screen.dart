@@ -46,6 +46,7 @@ class TinNhanScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final conversations = ref.watch(chatConversationsProvider);
+    final conversationsState = ref.watch(chatConversationsAsyncProvider);
     return Theme(
       data: ChatTheme.light,
       child: DefaultTabController(
@@ -82,21 +83,38 @@ class TinNhanScreen extends ConsumerWidget {
                 constraints: const BoxConstraints(maxWidth: 600),
                 child: TabBarView(
                   children: [
-                    ListView.builder(
-                      key: const PageStorageKey('rescue-conversations'),
-                      padding: const EdgeInsets.all(16),
-                      itemCount: conversations.length,
-                      itemBuilder: (context, index) {
-                        final conversation = conversations[index];
-                        return _RescueConversationCard(
-                          conversation: conversation,
-                          onTap: () =>
-                              context.push('/chat-detail', extra: conversation),
-                          onCall: () =>
-                              _callMechanic(context, conversation, ref),
-                        );
-                      },
-                    ),
+                    if (conversationsState.isLoading && conversations.isEmpty)
+                      const Center(child: CircularProgressIndicator())
+                    else if (conversationsState.hasError &&
+                        conversations.isEmpty)
+                      _ChatDirectoryError(
+                        onRetry: () =>
+                            ref.invalidate(chatConversationsAsyncProvider),
+                      )
+                    else if (conversations.isEmpty)
+                      const Center(
+                        child: Text('Chưa có cuộc trò chuyện cứu hộ.'),
+                      )
+                    else
+                      ListView.builder(
+                        key: const PageStorageKey('rescue-conversations'),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: conversations.length,
+                        itemBuilder: (context, index) {
+                          final conversation = conversations[index];
+                          return _RescueConversationCard(
+                            conversation: conversation,
+                            onTap: () => context.push(
+                              '/chat-detail',
+                              extra: conversation,
+                            ),
+                            onCall: conversation.phoneNumber.trim().isEmpty
+                                ? null
+                                : () =>
+                                      _callMechanic(context, conversation, ref),
+                          );
+                        },
+                      ),
                     _AdminMessageList(
                       storageKey: 'customer-support',
                       icon: Icons.support_agent_rounded,
@@ -130,12 +148,12 @@ class _RescueConversationCard extends StatelessWidget {
   const _RescueConversationCard({
     required this.conversation,
     required this.onTap,
-    required this.onCall,
+    this.onCall,
   });
 
   final ChatConversation conversation;
   final VoidCallback onTap;
-  final VoidCallback onCall;
+  final VoidCallback? onCall;
 
   @override
   Widget build(BuildContext context) {
@@ -245,6 +263,31 @@ class _RescueConversationCard extends StatelessWidget {
   }
 }
 
+class _ChatDirectoryError extends StatelessWidget {
+  const _ChatDirectoryError({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Chưa tải được danh sách trò chuyện.'),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Thử lại'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _AdminMessageList extends StatelessWidget {
   const _AdminMessageList({
     required this.storageKey,
@@ -258,6 +301,14 @@ class _AdminMessageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (messages.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('Chưa có nội dung trong mục này.'),
+        ),
+      );
+    }
     return ListView.builder(
       key: PageStorageKey(storageKey),
       padding: const EdgeInsets.all(16),

@@ -67,10 +67,10 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
     });
   }
 
-  void _sendText([String? quickReply]) {
+  Future<void> _sendText([String? quickReply]) async {
     final chat = widget.conversation;
     if (chat == null) return;
-    final sent = ref
+    final sent = await ref
         .read(chatMessagesProvider(chat).notifier)
         .sendText(quickReply ?? _textController.text);
     if (sent && quickReply == null) _textController.clear();
@@ -211,7 +211,17 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen>
           .read(attachmentProvider((_pickerKey, chat)).notifier)
           .pick(useCamera: source == ImageSource.camera);
       if (!mounted || photo == null || widget.conversation != chat) return;
-      ref.read(chatMessagesProvider(chat).notifier).sendImage(photo);
+      try {
+        await ref.read(chatMessagesProvider(chat).notifier).sendImage(photo);
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Không gửi được ảnh. Vui lòng thử lại.'),
+            ),
+          );
+        }
+      }
     } finally {
       _selectingPhoto = false;
     }

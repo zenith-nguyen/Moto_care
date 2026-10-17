@@ -20,7 +20,7 @@ class HomeConfirmationController extends Notifier<HomeConfirmationState> {
   final HomeConfirmationKey key;
   @override
   HomeConfirmationState build() => (submitted: false, error: null);
-  RescueOrder? submit() {
+  Future<RescueOrder?> submit() async {
     if (state.submitted) return null;
     final vehicle = ref.read(defaultVehicleProvider);
     final location = ref.read(rescueLocationProvider);
@@ -31,9 +31,10 @@ class HomeConfirmationController extends Notifier<HomeConfirmationState> {
       return null;
     }
     try {
-      final order = ref
+      state = (submitted: true, error: null);
+      final order = await ref
           .read(activityProvider.notifier)
-          .createOrder(
+          .createOrderFromApi(
             serviceType: key.$2.orderType!,
             userVehicle: '${vehicle.name} (${vehicle.licensePlate})',
             locationAddress: location.address,
@@ -41,13 +42,9 @@ class HomeConfirmationController extends Notifier<HomeConfirmationState> {
             locationLatitude: location.latitude,
             locationLongitude: location.longitude,
           );
-      state = (submitted: true, error: null);
       return order;
-    } on StateError {
-      state = (
-        submitted: false,
-        error: 'Bạn đang có đơn cứu hộ. Hãy kiểm tra trong Hoạt động.',
-      );
+    } on StateError catch (error) {
+      state = (submitted: false, error: error.message);
       return null;
     }
   }

@@ -26,7 +26,9 @@ class StationQuickSpecs extends StatelessWidget {
         (
           Icons.star_rounded,
           StationDetailColors.yellow,
-          '${station.rating.toStringAsFixed(1)}${station.reviewCount == null ? '' : ' (${station.reviewCount})'}',
+          station.station.hasStatistics
+              ? '${station.rating.toStringAsFixed(1)}${station.reviewCount == null ? '' : ' (${station.reviewCount})'}'
+              : 'Chưa có',
           'Đánh giá',
         ),
         (
@@ -63,7 +65,9 @@ class StationQuickSpecs extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   key: index == 0 ? const ValueKey('station-reviews') : null,
-                  onTap: index == 0 ? onReviews : null,
+                  onTap: index == 0 && station.station.hasStatistics
+                      ? onReviews
+                      : null,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 6,

@@ -1,11 +1,30 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/services/search_service.dart';
+import '../../../app/app_dependencies.dart';
+import '../../home/providers/home_provider.dart';
 import '../data/mock_rescue_stations.dart';
 import '../models/rescue_station.dart';
 
+final rescueStationsAsyncProvider = FutureProvider<List<RescueStation>>((ref) {
+  if (!ref.watch(runtimeApiIntegrationProvider)) {
+    return Future.value(mockRescueStations);
+  }
+  final repository = ref.watch(serviceLocationsRepositoryProvider);
+  final location = ref.watch(rescueLocationProvider);
+  if (location?.hasCoordinates ?? false) {
+    return repository.nearby(
+      latitude: location!.latitude!,
+      longitude: location.longitude!,
+    );
+  }
+  return repository.hoChiMinhCity();
+});
+
 final rescueStationsProvider = Provider<List<RescueStation>>(
-  (ref) => mockRescueStations,
+  (ref) => !ref.watch(runtimeApiIntegrationProvider)
+      ? mockRescueStations
+      : ref.watch(rescueStationsAsyncProvider).value ?? const [],
 );
 
 enum StationFilter {

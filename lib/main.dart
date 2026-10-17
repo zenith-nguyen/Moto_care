@@ -13,7 +13,10 @@ Future<void> main() async {
   );
   runApp(
     ProviderScope(
-      overrides: [pushTokenSourceProvider.overrideWithValue(pushTokens)],
+      overrides: [
+        pushTokenSourceProvider.overrideWithValue(pushTokens),
+        runtimeApiIntegrationProvider.overrideWithValue(true),
+      ],
       child: const MotoCareApp(),
     ),
   );

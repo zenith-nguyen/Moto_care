@@ -9,9 +9,14 @@ PR #38 merges `feat/cam-thu/station-booking-layout` into `cam-thu`. It does not 
 - Keeps customer routes inaccessible to signed-out, PROVIDER, and ADMIN sessions.
 - Resolves the merge with `main`, removes accidental duplicate generated files, renames non-ASCII asset paths, and keeps Android/iOS plugin permissions and registrations together.
 
-## Scope still requiring API integration before the customer flow is live
+## API integration status after PR #38
 
-The UI branch includes local demo data sources for orders, chats, weather, and rescue stations. Examples are `activity_provider.dart`, `chat_directory_provider.dart`, `home_weather_provider.dart`, and `rescue_station_provider.dart`. Those screens can display demo values and must not be treated as confirmed backend orders, real conversations, weather pricing, or live station records. The next integration PR should bind these views to the existing customer repositories/controllers and show loading, empty, and error states. Payment/booking actions must use the backend order IDs and test-mode payment flow.
+The follow-up `feat/cam-thu/customer-api-integration` branch replaces runtime demo sources for orders, rescue chat, notifications, weather and service locations. The production entrypoint explicitly enables API integration; widget tests retain deterministic fixtures without network access. Order creation/cancellation uses backend IDs, chat uses REST history plus Socket.IO resync and protected image downloads, weather only renders Open-Meteo responses, and stations come from PostGIS/OSM.
+
+OSM locations remain informational. Because that source does not certify ratings,
+completed jobs, opening state or MotoCare partnership, the UI hides those fields
+and disables booking for those markers. It may still show directions and a call
+button when a phone number exists.
 
 ## Merge and verification
 

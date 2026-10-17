@@ -31,6 +31,8 @@ class RescueStation {
     required this.longitude,
     required this.stationType,
     this.isOpen = true,
+    this.hasOperationalData = true,
+    this.hasStatistics = true,
   }) {
     if (!rating.isFinite ||
         rating < 0 ||
@@ -66,6 +68,33 @@ class RescueStation {
   final double longitude;
   final StationType stationType;
   final bool isOpen;
+  final bool hasOperationalData;
+  final bool hasStatistics;
+
+  factory RescueStation.fromServiceLocation(Map<String, dynamic> json) {
+    final distanceMeters = (json['distanceMeters'] as num?)?.toDouble();
+    final openingHours = (json['openingHours'] as String?)
+        ?.trim()
+        .toLowerCase();
+    return RescueStation(
+      id: 'service-location-${json['id']}',
+      name: json['name'] as String,
+      address: (json['address'] as String?)?.trim().isNotEmpty == true
+          ? (json['address'] as String).trim()
+          : 'Chưa có địa chỉ chi tiết',
+      rating: 0,
+      completedRescues: 0,
+      distanceKm: distanceMeters == null ? 0 : distanceMeters / 1000,
+      isOpen24h: openingHours == '24/7' || openingHours == '24 hours',
+      isVerified: json['isVerified'] as bool? ?? false,
+      phoneNumber: (json['phone'] as String?)?.trim() ?? '',
+      latitude: (json['latitude'] as num).toDouble(),
+      longitude: (json['longitude'] as num).toDouble(),
+      stationType: StationType.partner,
+      hasOperationalData: openingHours != null && openingHours.isNotEmpty,
+      hasStatistics: false,
+    );
+  }
 
   factory RescueStation.fromJson(Map<String, dynamic> json) => RescueStation(
     id: json['id'] as String,
@@ -81,6 +110,8 @@ class RescueStation {
     longitude: (json['longitude'] as num).toDouble(),
     stationType: StationType.fromValue(json['stationType'] as String),
     isOpen: json['isOpen'] as bool? ?? true,
+    hasOperationalData: json['hasOperationalData'] as bool? ?? true,
+    hasStatistics: json['hasStatistics'] as bool? ?? true,
   );
 
   Map<String, dynamic> toJson() => {
@@ -97,5 +128,7 @@ class RescueStation {
     'longitude': longitude,
     'stationType': stationType.value,
     'isOpen': isOpen,
+    'hasOperationalData': hasOperationalData,
+    'hasStatistics': hasStatistics,
   };
 }

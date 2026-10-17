@@ -68,6 +68,17 @@ Chi tiết hồ sơ nghề nghiệp và thống kê: [PROVIDER_DIRECTORY.md](PRO
 Dữ liệu OSM chỉ mang tính tham khảo, không phải đối tác MotoCare và không có
 đặt lịch/thanh toán. Xem [SERVICE_LOCATION_MARKERS.md](SERVICE_LOCATION_MARKERS.md).
 
+## Thời tiết hiện tại
+
+| Method | Path | Quyền | Trạng thái / mục đích |
+| --- | --- | --- | --- |
+| GET | `/weather/current?latitude=...&longitude=...` | Đã đăng nhập | Snapshot Open-Meteo có nhiệt độ, mã thời tiết, mưa và gió; trả `FALLBACK` khi adapter tắt/lỗi |
+
+Flutter chỉ trình bày thời tiết là dữ liệu thật khi `source=OPEN_METEO`. Để bật
+trong môi trường demo, đặt `WEATHER_PRICING_ENABLED=true`; Open-Meteo không cần
+API key. Khi provider lỗi, UI hiển thị trạng thái không khả dụng và backend vẫn
+không áp phụ phí.
+
 ## Đơn cứu hộ
 
 | Method | Path | Quyền | Trạng thái / mục đích |
@@ -154,4 +165,4 @@ Cần tăng cường theo thứ tự:
 1. Smoke-load REST đọc-only đã có qua `npm run test:smoke-load`; gateway có test quyền room và định tuyến event. Reconnect WebSocket, upload chậm và Android background GPS vẫn phải nghiệm thu trên thiết bị theo [SYSTEM_VERIFICATION.md](SYSTEM_VERIFICATION.md).
 2. Bổ sung rate limit WebSocket/phân tán nếu chuyển sang nhiều process hoặc public 24/7.
 3. Khi có nhu cầu 24/7: lịch backup tự động ra thiết bị khác, object storage, retention/cleanup file, secret manager và server công khai ổn định. Đây chưa phải yêu cầu bản demo không phí.
-4. Giá theo thời tiết đã được triển khai nhưng mặc định tắt (`WEATHER_PRICING_ENABLED=false`); khi tắt hoặc dịch vụ ngoài lỗi, hệ số luôn là `1.0000`. Xem [WEATHER_PRICING_PLAN.md](WEATHER_PRICING_PLAN.md).
+4. Giá và màn thời tiết dùng chung adapter Open-Meteo nhưng mặc định tắt (`WEATHER_PRICING_ENABLED=false`); khi tắt hoặc dịch vụ ngoài lỗi, hệ số luôn là `1.0000` và Flutter không giả dữ liệu live. Xem [WEATHER_PRICING_PLAN.md](WEATHER_PRICING_PLAN.md).

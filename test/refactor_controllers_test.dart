@@ -67,7 +67,7 @@ void main() {
 
   test(
     'Fresh Checkout quote rejects a changed fee and saves the full total',
-    () {
+    () async {
       final container = ProviderContainer(
         overrides: [
           initialRescueOrdersProvider.overrideWithValue([]),
@@ -80,10 +80,10 @@ void main() {
       container.listen(checkoutProvider(key), (_, next) {});
       final controller = container.read(checkoutProvider(key).notifier);
       final quote = container.read(checkoutQuoteProvider(key));
-      expect(controller.placeOrder(quote.travelFee + 1), isNull);
+      expect(await controller.placeOrder(quote.travelFee + 1), isNull);
       expect(container.read(activityProvider).orders, isEmpty);
       expect(container.read(checkoutProvider(key)).submitting, isFalse);
-      expect(controller.placeOrder(quote.travelFee), isNotNull);
+      expect(await controller.placeOrder(quote.travelFee), isNotNull);
       expect(container.read(activityProvider).orders.single.discount, 0);
       expect(
         container.read(activityProvider).orders.single.voucherCode,

@@ -96,10 +96,10 @@ class _OrderSummaryScreenState extends ConsumerState<OrderSummaryScreen> {
     if (result != null && mounted) _controller.selectPayment(result);
   }
 
-  void _placeOrder(int travelFee) {
+  Future<void> _placeOrder(int travelFee) async {
     FocusManager.instance.primaryFocus?.unfocus();
-    final order = _controller.placeOrder(travelFee);
-    if (order != null) {
+    final order = await _controller.placeOrder(travelFee);
+    if (order != null && mounted) {
       context.pushReplacement(
         '/order-tracking?id=${Uri.encodeComponent(order.id)}',
       );
