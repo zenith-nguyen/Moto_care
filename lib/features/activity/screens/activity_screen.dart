@@ -44,6 +44,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final activity = ref.watch(activityProvider);
     final orders = ref.watch(filteredActivityOrdersProvider(_filter));
     return Theme(
       data: HomeTheme.light,
@@ -101,7 +102,19 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       ),
                     ),
                     Expanded(
-                      child: orders.isEmpty
+                      child: activity.loading && orders.isEmpty
+                          ? const Center(child: CircularProgressIndicator())
+                          : activity.failure != null && orders.isEmpty
+                          ? Center(
+                              child: FilledButton.icon(
+                                onPressed: () => ref
+                                    .read(activityProvider.notifier)
+                                    .refreshFromApi(),
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Tải lại đơn hàng'),
+                              ),
+                            )
+                          : orders.isEmpty
                           ? Center(
                               child: SingleChildScrollView(
                                 padding: const EdgeInsets.all(32),

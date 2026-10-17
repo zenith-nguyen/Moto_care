@@ -75,6 +75,7 @@ class HomeStationListing {
   final double distanceKm;
 
   String get responseLabel {
+    if (!station.hasOperationalData) return 'Thông tin bản đồ';
     if (!station.isOpen) return 'Đóng cửa';
     final minutes = details.responseMinutes;
     if (minutes != null) return '$minutes–${minutes + 5} phút';

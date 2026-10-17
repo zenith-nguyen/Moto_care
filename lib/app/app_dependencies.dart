@@ -24,8 +24,13 @@ import '../features/orders/data/orders_repository.dart';
 import '../features/payments/data/payments_repository.dart';
 import '../features/providers/data/providers_repository.dart';
 import '../features/reviews/data/reviews_repository.dart';
+import '../features/rescue_station/data/service_locations_repository.dart';
 import '../features/wallet/data/wallet_repository.dart';
 import '../features/notifications/data/notifications_repository.dart';
+
+/// Enabled by the production entrypoint. Tests can keep deterministic fixtures
+/// without allowing accidental network requests from unrelated widget tests.
+final runtimeApiIntegrationProvider = Provider<bool>((ref) => false);
 
 final appConfigProvider = Provider<AppConfig>((ref) {
   return AppConfig.fromEnvironment();
@@ -108,6 +113,10 @@ final deviceLocationSourceProvider = Provider<DeviceLocationSource>((ref) {
 final reviewsRepositoryProvider = Provider<ReviewsRepository>((ref) {
   return HttpReviewsRepository(ref.watch(jsonApiProvider));
 });
+
+final serviceLocationsRepositoryProvider = Provider<ServiceLocationsRepository>(
+  (ref) => HttpServiceLocationsRepository(ref.watch(jsonApiProvider)),
+);
 
 final providersRepositoryProvider = Provider<ProvidersRepository>((ref) {
   return HttpProvidersRepository(ref.watch(jsonApiProvider));

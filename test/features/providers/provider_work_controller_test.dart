@@ -110,6 +110,10 @@ class FakeProviderOrdersRepository implements OrdersRepository {
   int acceptCount = 0;
 
   @override
+  Future<ParticipantContact> participantContact(int orderId) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> acceptOffer({required int orderId, required int offerId}) async {
     acceptCount += 1;
   }

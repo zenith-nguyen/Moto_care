@@ -114,9 +114,10 @@ abstract final class ActivityActions {
       const CancelOrderDialog(),
     );
     if (!context.mounted || reason == null) return;
-    final cancelled = ref
+    final cancelled = await ref
         .read(activityProvider.notifier)
-        .cancelOrder(order.id, reason: reason);
+        .cancelOrderFromApi(order.id, reason: reason);
+    if (!context.mounted) return;
     if (!cancelled) {
       feedback(context, 'Đơn không còn ở trạng thái có thể hủy.');
       return;
@@ -143,16 +144,23 @@ abstract final class ActivityActions {
     );
     if (!context.mounted || request == null) return false;
     try {
-      ref
+      await ref
           .read(activityProvider.notifier)
-          .rebookOrder(
-            order.id,
+          .createOrderFromApi(
+            serviceType: order.serviceType,
             userVehicle: request.userVehicle,
             locationAddress: request.locationAddress,
+            locationLatitude: order.locationLatitude,
+            locationLongitude: order.locationLongitude,
           );
-      feedback(context, 'Đã tạo đơn cứu hộ trong phiên dùng thử.');
+      if (!context.mounted) return false;
+      feedback(
+        context,
+        'Đã tạo đơn cứu hộ. Vui lòng thực hiện bước thanh toán.',
+      );
       return true;
     } on StateError {
+      if (!context.mounted) return false;
       feedback(
         context,
         'Không thể đặt lại. Vui lòng kiểm tra đơn đang diễn ra.',

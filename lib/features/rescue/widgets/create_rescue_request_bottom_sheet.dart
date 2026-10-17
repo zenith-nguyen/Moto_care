@@ -46,10 +46,10 @@ class _EmergencyBookingBottomSheetState
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    final order = _controller.submit(_description.text);
-    if (order != null) Navigator.pop(context, order);
+    final order = await _controller.submit(_description.text);
+    if (order != null && mounted) Navigator.pop(context, order);
   }
 
   @override

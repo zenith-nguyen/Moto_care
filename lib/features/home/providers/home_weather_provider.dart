@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../models/home_weather.dart';
 import '../services/home_weather_service.dart';
 import 'home_provider.dart';
 
 final homeWeatherServiceProvider = Provider<HomeWeatherService>(
-  (ref) => const MockHomeWeatherService(),
+  (ref) => ref.watch(runtimeApiIntegrationProvider)
+      ? HttpHomeWeatherService(ref.watch(jsonApiProvider))
+      : const MockHomeWeatherService(),
 );
 
 final weatherRescueServiceProvider = Provider<WeatherRescueService>(

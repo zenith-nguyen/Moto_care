@@ -52,6 +52,56 @@ class OrderSummary {
   }
 }
 
+class OrderVehicleSnapshot {
+  const OrderVehicleSnapshot({
+    required this.type,
+    required this.brand,
+    required this.model,
+    required this.licensePlate,
+    required this.color,
+  });
+
+  final String type;
+  final String brand;
+  final String model;
+  final String licensePlate;
+  final String? color;
+
+  factory OrderVehicleSnapshot.fromJson(Map<String, dynamic> json) {
+    final reader = JsonReader(json);
+    return OrderVehicleSnapshot(
+      type: reader.string('type'),
+      brand: reader.string('brand'),
+      model: reader.string('model'),
+      licensePlate: reader.string('licensePlate'),
+      color: reader.nullableString('color'),
+    );
+  }
+
+  String get displayName => '$brand $model ($licensePlate)';
+}
+
+class ParticipantContact {
+  const ParticipantContact({
+    required this.orderId,
+    required this.name,
+    required this.phone,
+  });
+
+  final int orderId;
+  final String name;
+  final String? phone;
+
+  factory ParticipantContact.fromJson(Map<String, dynamic> json) {
+    final reader = JsonReader(json);
+    return ParticipantContact(
+      orderId: reader.positiveInt('orderId'),
+      name: reader.string('name'),
+      phone: reader.nullableString('phone'),
+    );
+  }
+}
+
 class OrderCreationResult {
   const OrderCreationResult({
     required this.id,
@@ -209,6 +259,7 @@ class OrderDetails {
     required this.message,
     required this.priceProposal,
     required this.paymentAdjustment,
+    this.vehicle,
   });
 
   final int id;
@@ -228,6 +279,7 @@ class OrderDetails {
   final String? message;
   final PriceProposal? priceProposal;
   final PaymentAdjustment? paymentAdjustment;
+  final OrderVehicleSnapshot? vehicle;
 
   OrderDetails copyWith({
     OrderStatus? status,
@@ -253,6 +305,7 @@ class OrderDetails {
       message: message,
       priceProposal: priceProposal,
       paymentAdjustment: paymentAdjustment,
+      vehicle: vehicle,
     );
   }
 
@@ -262,6 +315,7 @@ class OrderDetails {
     final providerLocation = reader.nullableObject('providerLocation');
     final priceProposal = reader.nullableObject('priceProposal');
     final paymentAdjustment = reader.nullableObject('paymentAdjustment');
+    final vehicle = reader.nullableObject('vehicle');
     return OrderDetails(
       id: reader.positiveInt('id'),
       code: reader.string('code'),
@@ -286,6 +340,7 @@ class OrderDetails {
       paymentAdjustment: paymentAdjustment == null
           ? null
           : PaymentAdjustment.fromJson(paymentAdjustment),
+      vehicle: vehicle == null ? null : OrderVehicleSnapshot.fromJson(vehicle),
     );
   }
 }

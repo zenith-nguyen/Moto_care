@@ -21,7 +21,7 @@ class HomeStationGridCard extends StatelessWidget {
     return Semantics(
       button: true,
       label:
-          '${station.name}, ${station.rating.toStringAsFixed(1)} sao, '
+          '${station.name}, ${station.hasStatistics ? '${station.rating.toStringAsFixed(1)} sao, ' : ''}'
           '${listing.distanceKm.toStringAsFixed(1)} km, ${listing.responseLabel}'
           '${station.isVerified ? ', đã xác minh' : ''}',
       excludeSemantics: true,
@@ -35,8 +35,10 @@ class HomeStationGridCard extends StatelessWidget {
             imageAsset: listing.details.imageAsset,
             isVerified: station.isVerified,
             responseLabel: listing.responseLabel,
-            rating: station.rating,
-            reviewCount: listing.details.reviewCount,
+            rating: station.hasStatistics ? station.rating : null,
+            reviewCount: station.hasStatistics
+                ? listing.details.reviewCount
+                : null,
             footer: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

@@ -2,6 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/mock_rescue_orders.dart';
+import '../data/activity_api_orders.dart';
+import '../../../app/app_dependencies.dart';
+import '../../orders/domain/geo_point.dart';
 import '../models/order_cancellation_reason.dart';
 import '../models/rescue_order.dart';
 import '../models/activity_state.dart';
@@ -18,10 +21,148 @@ final activityProvider = NotifierProvider<ActivityController, ActivityState>(
   ActivityController.new,
 );
 
+final incidentBasePriceProvider =
+    FutureProvider.family<int?, RescueServiceType>((ref, serviceType) async {
+      if (!ref.watch(runtimeApiIntegrationProvider)) {
+        return mockBasePrice(serviceType);
+      }
+      final code = _incidentCode(serviceType);
+      if (code == null) return null;
+      final incidents = await ref
+          .watch(incidentTypesRepositoryProvider)
+          .listActive();
+      final matches = incidents.where((item) => item.code == code);
+      if (matches.isEmpty) return null;
+      return double.parse(matches.first.basePrice.value).round();
+    });
+
+String? _incidentCode(RescueServiceType serviceType) => switch (serviceType) {
+  RescueServiceType.flatTire => 'FLAT_TIRE',
+  RescueServiceType.outOfFuel => 'OUT_OF_FUEL',
+  RescueServiceType.engineFailure => 'ENGINE_FAILURE',
+  RescueServiceType.batteryJump => 'DEAD_BATTERY',
+  _ => null,
+};
+
 class ActivityController extends Notifier<ActivityState> {
   @override
-  ActivityState build() =>
-      ActivityState(orders: ref.watch(initialRescueOrdersProvider));
+  ActivityState build() {
+    final initial = ref.watch(initialRescueOrdersProvider);
+    if (!ref.watch(runtimeApiIntegrationProvider)) {
+      return ActivityState(orders: initial);
+    }
+    ref.listen(activityApiOrdersProvider, (_, next) {
+      next.when(
+        data: (orders) =>
+            state = ActivityState(orders: orders, complaints: state.complaints),
+        error: (error, _) => state = ActivityState(
+          orders: state.orders,
+          complaints: state.complaints,
+          failure: error,
+        ),
+        loading: () => state = ActivityState(
+          orders: state.orders,
+          complaints: state.complaints,
+          loading: true,
+        ),
+      );
+    }, fireImmediately: true);
+    return ActivityState(orders: const [], loading: true);
+  }
+
+  void refreshFromApi() => ref.invalidate(activityApiOrdersProvider);
+
+  Future<RescueOrder> createOrderFromApi({
+    required RescueServiceType serviceType,
+    required String userVehicle,
+    required String locationAddress,
+    required double? locationLatitude,
+    required double? locationLongitude,
+    String locationLandmark = '',
+    String incidentDescription = '',
+    String serviceOption = '',
+    String vehicleType = '',
+    Uint8List? incidentPhotoBytes,
+    int? basePrice,
+    int? travelFee,
+    int discount = 0,
+    String? partnerId,
+    String? partnerName,
+    RescuePaymentMethod paymentMethod = RescuePaymentMethod.cash,
+    String voucherCode = '',
+    List<RescueOrderItem> items = const [],
+  }) async {
+    if (!ref.read(runtimeApiIntegrationProvider)) {
+      return createOrder(
+        serviceType: serviceType,
+        userVehicle: userVehicle,
+        locationAddress: locationAddress,
+        locationLatitude: locationLatitude,
+        locationLongitude: locationLongitude,
+        locationLandmark: locationLandmark,
+        incidentDescription: incidentDescription,
+        serviceOption: serviceOption,
+        vehicleType: vehicleType,
+        incidentPhotoBytes: incidentPhotoBytes,
+        basePrice: basePrice,
+        travelFee: travelFee,
+        discount: discount,
+        partnerId: partnerId,
+        partnerName: partnerName,
+        paymentMethod: paymentMethod,
+        voucherCode: voucherCode,
+        items: items,
+      );
+    }
+    if (locationLatitude == null || locationLongitude == null) {
+      throw StateError(
+        'Vui lòng chọn vị trí GPS trên bản đồ trước khi đặt cứu hộ.',
+      );
+    }
+    final code = _incidentCode(serviceType);
+    if (code == null) {
+      throw StateError('Dịch vụ này chưa được backend hỗ trợ đặt trực tuyến.');
+    }
+    final incidents = await ref
+        .read(incidentTypesRepositoryProvider)
+        .listActive();
+    final matches = incidents.where((item) => item.code == code);
+    final incident = matches.isEmpty ? null : matches.first;
+    if (incident == null) throw StateError('Loại sự cố hiện không khả dụng.');
+    final created = await ref
+        .read(ordersRepositoryProvider)
+        .create(
+          incidentTypeId: incident.id,
+          customerLocation: GeoPoint(
+            latitude: locationLatitude,
+            longitude: locationLongitude,
+          ),
+        );
+    ref.invalidate(activityApiOrdersProvider);
+    final orders = await ref.read(activityApiOrdersProvider.future);
+    return orders.firstWhere((order) => order.id == created.id.toString());
+  }
+
+  Future<bool> cancelOrderFromApi(
+    String id, {
+    OrderCancellationReason? reason,
+  }) async {
+    if (!ref.read(runtimeApiIntegrationProvider)) {
+      return cancelOrder(id, reason: reason);
+    }
+    final orderId = int.tryParse(id);
+    if (orderId == null) return false;
+    try {
+      await ref
+          .read(ordersRepositoryProvider)
+          .cancel(orderId, reason?.description ?? 'Khách hàng yêu cầu hủy');
+      ref.invalidate(activityApiOrdersProvider);
+      await ref.read(activityApiOrdersProvider.future);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   bool cancelOrder(String id, {OrderCancellationReason? reason}) {
     final order = state.orderById(id);

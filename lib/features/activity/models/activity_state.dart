@@ -20,11 +20,15 @@ class ActivityState {
   ActivityState({
     required List<RescueOrder> orders,
     List<RescueComplaint> complaints = const [],
+    this.loading = false,
+    this.failure,
   }) : orders = List.unmodifiable(orders),
        complaints = List.unmodifiable(complaints);
 
   final List<RescueOrder> orders;
   final List<RescueComplaint> complaints;
+  final bool loading;
+  final Object? failure;
 
   List<RescueOrder> get activeOrders =>
       orders.where((order) => order.status.isActive).toList();

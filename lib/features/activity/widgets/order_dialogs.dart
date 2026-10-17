@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_rescue_orders.dart';
 import '../models/rescue_order.dart';
 import 'order_summary.dart';
 
@@ -40,9 +39,7 @@ class _RebookOrderDialogState extends State<RebookOrderDialog> {
           children: [
             Text('Dịch vụ: ${widget.order.serviceType.label}'),
             const SizedBox(height: 8),
-            Text(
-              'Phí dự kiến: ${formatOrderPrice(mockBasePrice(widget.order.serviceType))}',
-            ),
+            Text('Phí đơn trước: ${formatOrderPrice(widget.order.basePrice)}'),
             const SizedBox(height: 8),
             const Text('Chưa gồm phụ tùng phát sinh.'),
             const SizedBox(height: 20),
