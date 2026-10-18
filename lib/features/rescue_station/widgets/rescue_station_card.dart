@@ -59,8 +59,10 @@ class RescueStationCard extends ConsumerWidget {
                   imageAsset: details.imageAsset,
                   isVerified: station.isVerified,
                   responseLabel: station.isOpen ? listing.responseLabel : null,
-                  rating: station.rating,
-                  reviewCount: details.reviewCount,
+                  rating: station.hasStatistics ? station.rating : null,
+                  reviewCount: station.hasStatistics
+                      ? details.reviewCount
+                      : null,
                   distanceKm: station.distanceKm,
                   showBadgeLabel: true,
                 ),
@@ -87,35 +89,38 @@ class RescueStationCard extends ConsumerWidget {
               const SizedBox(height: AppCardLayout.smallGap),
               Text(station.address, style: AppTextStyles.body),
               const SizedBox(height: AppCardLayout.smallGap),
-              Row(
-                children: [
-                  Icon(
-                    Icons.circle,
-                    size: 7,
-                    color: station.isOpen
-                        ? const Color(0xFF218653)
-                        : Colors.black54,
-                  ),
-                  const SizedBox(width: AppCardLayout.smallGap),
-                  Expanded(
-                    child: Text(
-                      station.isOpen
-                          ? (station.isOpen24h ? 'Mở cửa • 24/7' : 'Mở cửa')
-                          : 'Đóng cửa',
-                      style: AppTextStyles.status.copyWith(
-                        color: station.isOpen
-                            ? const Color(0xFF218653)
-                            : Colors.black54,
+              if (station.hasOperationalData)
+                Row(
+                  children: [
+                    Icon(
+                      Icons.circle,
+                      size: 7,
+                      color: station.isOpen
+                          ? const Color(0xFF218653)
+                          : Colors.black54,
+                    ),
+                    const SizedBox(width: AppCardLayout.smallGap),
+                    Expanded(
+                      child: Text(
+                        station.isOpen
+                            ? (station.isOpen24h ? 'Mở cửa • 24/7' : 'Mở cửa')
+                            : 'Đóng cửa',
+                        style: AppTextStyles.status.copyWith(
+                          color: station.isOpen
+                              ? const Color(0xFF218653)
+                              : Colors.black54,
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppCardLayout.smallGap),
-              Text(
-                '${station.completedRescues} ca cứu hộ thành công',
-                style: AppTextStyles.caption,
-              ),
+                  ],
+                ),
+              if (station.hasOperationalData)
+                const SizedBox(height: AppCardLayout.smallGap),
+              if (station.hasStatistics)
+                Text(
+                  '${station.completedRescues} ca cứu hộ thành công',
+                  style: AppTextStyles.caption,
+                ),
               const SizedBox(height: AppCardLayout.gap),
               _actions(context, ref),
             ],
@@ -156,7 +161,9 @@ class RescueStationCard extends ConsumerWidget {
             shape: shape,
             textStyle: textStyle,
           ),
-          onPressed: () => RescueStationActions.call(context, ref, station),
+          onPressed: station.phoneNumber.isEmpty
+              ? null
+              : () => RescueStationActions.call(context, ref, station),
           icon: const Icon(Icons.phone_outlined, size: 18),
           label: const Text('Gọi ngay'),
         ),

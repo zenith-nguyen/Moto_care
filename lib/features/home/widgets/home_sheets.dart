@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../activity/data/mock_rescue_orders.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../activity/widgets/order_summary.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
@@ -142,11 +141,11 @@ class HomeRescueConfirmationSheet extends ConsumerStatefulWidget {
 class _HomeRescueConfirmationSheetState
     extends ConsumerState<HomeRescueConfirmationSheet> {
   final _draftKey = Object();
-  void _confirm() {
-    final order = ref
+  Future<void> _confirm() async {
+    final order = await ref
         .read(homeConfirmationProvider((_draftKey, widget.service)).notifier)
         .submit();
-    if (order != null) Navigator.pop(context, order);
+    if (order != null && mounted) Navigator.pop(context, order);
   }
 
   @override
@@ -156,6 +155,9 @@ class _HomeRescueConfirmationSheetState
     );
     final vehicle = ref.watch(defaultVehicleProvider);
     final location = ref.watch(rescueLocationProvider);
+    final quotedBasePrice = ref.watch(
+      incidentBasePriceProvider(widget.service.orderType!),
+    );
     final hasActiveOrder = ref.watch(activityProvider).activeOrders.isNotEmpty;
     final canSubmit =
         vehicle != null &&
@@ -212,13 +214,20 @@ class _HomeRescueConfirmationSheetState
           ),
         ],
         const SizedBox(height: 20),
-        Text(
-          'Chi phí tham khảo: ${formatOrderPrice(mockBasePrice(widget.service.orderType!))}',
-          style: const TextStyle(fontWeight: FontWeight.w700),
+        quotedBasePrice.when(
+          data: (price) => Text(
+            price == null
+                ? 'Dịch vụ này chưa có bảng giá trực tuyến.'
+                : 'Giá cơ sở hiện tại: ${formatOrderPrice(price)}',
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          loading: () => const Text('Đang tải bảng giá hiện tại...'),
+          error: (_, _) =>
+              const Text('Không thể tải bảng giá. Vui lòng thử lại.'),
         ),
         const SizedBox(height: 8),
         const Text(
-          'Đây là yêu cầu thử nghiệm, chỉ lưu trong phiên. Chưa điều phối thợ hoặc thu phí. Giá thực tế cần được xác nhận với trạm cứu hộ.',
+          'Khi xác nhận, hệ thống tạo đơn thật và tìm thợ gần nhất. Giá tạm tính được backend chốt theo bảng giá và thời tiết tại thời điểm tạo đơn.',
           style: TextStyle(
             color: HomeColors.secondary,
             fontSize: 12,

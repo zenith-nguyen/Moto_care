@@ -12,14 +12,18 @@ final partnerShopsProvider = Provider<List<PartnerShop>>(
     for (final station in ref.watch(rescueStationsProvider))
       PartnerShop(
         station: station,
-        vehicleTypes: station.stationType == StationType.officialDealer
+        vehicleTypes: !station.hasStatistics
+            ? const []
+            : station.stationType == StationType.officialDealer
             ? PartnerVehicleType.values
             : [
                 PartnerVehicleType.scooter,
                 PartnerVehicleType.underbone,
                 PartnerVehicleType.tubeless,
               ],
-        services: station.stationType == StationType.mobileTeam
+        services: !station.hasStatistics
+            ? const []
+            : station.stationType == StationType.mobileTeam
             ? RescueServiceType.values
                   .where(
                     (type) =>

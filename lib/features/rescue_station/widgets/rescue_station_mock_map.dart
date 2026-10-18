@@ -18,7 +18,7 @@ class RescueStationMockMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Reserve margins for markers and project sample coordinates to this canvas.
+    // Reserve margins for markers and project API coordinates to this canvas.
     final minLat = stations.map((s) => s.latitude).reduce(math.min);
     final maxLat = stations.map((s) => s.latitude).reduce(math.max);
     final minLng = stations.map((s) => s.longitude).reduce(math.min);
@@ -76,7 +76,7 @@ class RescueStationMockMap extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.all(12),
                   child: Text(
-                    'Bản đồ mô phỏng • Vị trí minh họa',
+                    'Sơ đồ vị trí • Dữ liệu bản đồ TP.HCM',
                     style: TextStyle(
                       color: ServiceColors.text,
                       fontSize: 12,

@@ -22,6 +22,8 @@ class ChatConversation {
     required this.lastMessage,
     required this.timeLabel,
     this.statusLabel,
+    this.orderId,
+    this.customerId,
   });
 
   final String mechanicName;
@@ -32,4 +34,6 @@ class ChatConversation {
   final String lastMessage;
   final String timeLabel;
   final String? statusLabel;
+  final int? orderId;
+  final int? customerId;
 }

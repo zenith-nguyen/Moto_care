@@ -35,6 +35,7 @@ class _TramCuuHoScreenState extends ConsumerState<TramCuuHoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final stationsState = ref.watch(rescueStationsAsyncProvider);
     final stations = filterRescueStations(
       ref.watch(rescueStationsProvider),
       query: _query,
@@ -138,7 +139,31 @@ class _TramCuuHoScreenState extends ConsumerState<TramCuuHoScreen> {
             ),
           ),
         ],
-        body: stations.isEmpty
+        body: stationsState.isLoading && stations.isEmpty
+            ? const Center(child: CircularProgressIndicator())
+            : stationsState.hasError && stations.isEmpty
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Chưa tải được dữ liệu địa điểm. Kiểm tra kết nối rồi thử lại.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        onPressed: () =>
+                            ref.invalidate(rescueStationsAsyncProvider),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Thử lại'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : stations.isEmpty
             ? const SingleChildScrollView(
                 padding: EdgeInsets.all(28),
                 child: Text(

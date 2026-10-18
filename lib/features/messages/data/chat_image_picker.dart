@@ -73,7 +73,6 @@ class SystemChatImagePicker implements ChatImagePicker {
   }
 }
 
-@visibleForTesting
 String? detectChatImageContentType(Uint8List bytes) {
   if (bytes.length >= 3 &&
       bytes[0] == 0xff &&

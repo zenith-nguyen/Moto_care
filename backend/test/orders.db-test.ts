@@ -675,7 +675,7 @@ describe('Orders and matching on PostGIS', () => {
       ok: true,
       json: async () => ({
         current: {
-          time: '2026-10-06T08:00', weather_code: 95, precipitation: 8, rain: 8,
+          time: '2026-10-06T08:00', weather_code: 95, temperature_2m: 28, precipitation: 8, rain: 8,
           wind_speed_10m: 45, wind_gusts_10m: 65,
         },
       }),

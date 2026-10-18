@@ -79,7 +79,7 @@ class CheckoutController extends Notifier<CheckoutState> {
     }
   }
 
-  RescueOrder? placeOrder(int displayedTravelFee) {
+  Future<RescueOrder?> placeOrder(int displayedTravelFee) async {
     if (state.submitting) return null;
     final booking = key.$2;
     final quote = ref
@@ -114,9 +114,9 @@ class CheckoutController extends Notifier<CheckoutState> {
     state = state.copyWith(submitting: true, clearError: true);
     _addressRevision++;
     try {
-      final order = ref
+      final order = await ref
           .read(activityProvider.notifier)
-          .createOrder(
+          .createOrderFromApi(
             serviceType: booking.items.first.serviceType,
             userVehicle: '${vehicle.name} (${vehicle.licensePlate})',
             locationAddress: location.address,
