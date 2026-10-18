@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../../core/router/main_navigation.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../chat/providers/chat_directory_provider.dart';
 import '../../profile/providers/profile_provider.dart';
+import '../../location/services/device_location_service.dart';
 import '../../rescue/widgets/create_rescue_request_bottom_sheet.dart';
 import '../../rescue_station/providers/station_details_provider.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
@@ -44,15 +48,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted ||
-          widget.user == null ||
-          ref.read(profileProvider).initialized) {
-        return;
+      if (!mounted) return;
+      if (widget.user != null && !ref.read(profileProvider).initialized) {
+        ref
+            .read(profileProvider.notifier)
+            .initializeFromHome(widget.user, onlyIfUninitialized: true);
       }
-      ref
-          .read(profileProvider.notifier)
-          .initializeFromHome(widget.user, onlyIfUninitialized: true);
+      unawaited(_detectCurrentLocation());
     });
+  }
+
+  Future<void> _detectCurrentLocation() async {
+    if (!ref.read(runtimeApiIntegrationProvider) ||
+        ref.read(rescueLocationProvider)?.hasCoordinates == true) {
+      return;
+    }
+    try {
+      final location = await ref.read(deviceLocationProvider)();
+      if (mounted) {
+        ref.read(rescueLocationProvider.notifier).confirmLocation(location);
+      }
+    } on Exception {
+      // The explicit location picker exposes permission and GPS errors. Home
+      // remains usable when a user declines the initial permission request.
+    }
   }
 
   void _selectDestination(HomeDestination destination) {

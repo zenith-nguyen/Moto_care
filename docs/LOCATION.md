@@ -1,4 +1,4 @@
-# Incident location: Places search and Google Maps
+# Incident location: device GPS, OpenStreetMap and optional Google Maps
 
 Home's “Vị trí của tôi” label and address open `/incident-map-picker` directly.
 The two location screens use MotoCare's
@@ -28,8 +28,11 @@ uses `deviceLocationProvider`, including real foreground permission handling,
 GPS timeouts and a coordinate fallback when native address resolution fails.
 Recent locations are confirmed user selections held in session memory.
 
-`ConfirmLocationScreen` (`incident_location_screen.dart`) uses
-`google_maps_flutter`; `incident_map_picker_screen.dart` retains the old class
+`ConfirmLocationScreen` (`incident_location_screen.dart`) uses a replaceable
+map boundary. With a configured Google Maps SDK key it uses
+`google_maps_flutter`; otherwise the no-cost build uses `flutter_map` with
+OpenStreetMap tiles and visible contributor attribution. The
+`incident_map_picker_screen.dart` retains the old class
 alias, as does `IncidentLocationScreen`. Its search button pushes
 `/incident-location?pick=1`. Selecting a result
 pops a `RescueLocation` back to that existing map. The screen updates its address
@@ -48,16 +51,18 @@ Moving again, choosing another place, using GPS or leaving cancels the old looku
 A failed reverse lookup keeps the actual coordinate label instead of an old
 address. Confirmation is disabled while the camera/GPS/address lookup is busy.
 
-With no map key, or on desktop/web, the screen shows an unavailable-map message
-and still supports search/GPS. It never renders the former sample map as a real
-map. Android and iOS are the supported native map targets. The default city
+With no Google key, the screen still renders a real OpenStreetMap tile map; it
+does not turn the former sample illustration into a map. The tile client sends
+the application package as its user agent, uses the package cache, displays
+attribution and does not implement bulk/offline downloading. Android and iOS
+are the primary native targets. The default city
 viewport (10.762622, 106.660172) is only a starting view and never substitutes for
 an incident location. Address-only legacy drafts remain usable without the SDK;
 confirmation with an enabled map requires an actual selected coordinate.
 
 ## API configuration
 
-No real credentials are included. Copy `config/maps.example.json` to the ignored
+Google integration is optional and no credentials are included. Copy `config/maps.example.json` to the ignored
 `config/maps.local.json`, then fill the values for your Google Cloud project.
 Use separate, restricted SDK and web-service keys. Enable Places API (New),
 Geocoding API and the Maps SDK for each native platform in that project.
@@ -153,7 +158,7 @@ Review images: [autocomplete](screenshots/location-autocomplete.png) and
 controlled Places responses and a camera test adapter. The second image labels
 its empty map area explicitly; neither capture is evidence of live Google data.
 
-The implementation passed all 208 tests, `flutter analyze --no-pub`, and the
+The integrated application passed all 420 tests, `flutter analyze --no-pub`, and the
 repository's Dart formatting check. `flutter build apk --debug --no-pub`
 successfully produced `build/app/outputs/flutter-apk/app-debug.apk`.
 The local iOS configuration helper was also

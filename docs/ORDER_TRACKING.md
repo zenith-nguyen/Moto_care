@@ -69,10 +69,13 @@ without suppressing actual backend GPS updates. Unknown distance/ETA display
 “—”; when distance is omitted, the service can sum the supplied route segments.
 ETA is never estimated from demo data in live mode.
 
-No backend endpoint or feed protocol was supplied for this task. The default
-provider therefore remains null and retains the clearly labeled demo flow.
-To enable real tracking, supply a production `OrderTrackingFeed` adapter and
-configure the existing Google Maps keys.
+The live application uses the authenticated order/realtime adapters already
+registered in the app foundation. `provider.location_updated` moves the
+mechanic marker and REST order snapshots repair missed events after reconnect.
+When no Google key is configured, live sessions render the customer, mechanic
+and route on OpenStreetMap. Google Maps remains an optional adapter. Widget
+tests deliberately keep the isolated schematic/demo feed unless they override
+the live integration providers.
 
 ## Demo and contacts
 
@@ -114,8 +117,9 @@ interpolation and lifecycle, cancellation, phone/chat navigation, local chat
 retention, missing IDs/coordinates and small-screen keyboard layouts.
 Marketplace tests retain checkout navigation and actual booking values.
 Run formatting, `flutter analyze`, `flutter test` and
-`flutter build apk --debug`. Native tiles and physical-device behavior require
-the SDK keys and device validation described in LOCATION.md.
+`flutter build apk --debug`. Physical-device GPS/realtime still requires device
+validation; Google-native tiles require its SDK key, while the no-key build uses
+OpenStreetMap under the usage rules described in LOCATION.md.
 
 API references: [GoogleMap](https://pub.dev/documentation/google_maps_flutter/latest/google_maps_flutter/GoogleMap-class.html),
 [animateCamera](https://pub.dev/documentation/google_maps_flutter/latest/google_maps_flutter/GoogleMapController/animateCamera.html),

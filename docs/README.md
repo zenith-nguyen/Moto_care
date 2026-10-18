@@ -40,6 +40,7 @@ This folder is the single source of truth for technical guides, collaboration ru
 - [`FLUTTER_PROVIDER_INTEGRATION.md`](FLUTTER_PROVIDER_INTEGRATION.md): Provider online/GPS, offer, service lifecycle, final price, wallet, and withdrawal controller contract.
 - [`FLUTTER_ADMIN_INTEGRATION.md`](FLUTTER_ADMIN_INTEGRATION.md): Admin analytics, reconciliation, provider review, dispute, refund, and withdrawal controller contract.
 - [`FLUTTER_DEVICE_SERVICES.md`](FLUTTER_DEVICE_SERVICES.md): foreground Provider GPS lifecycle and validated camera/gallery chat-image selection.
+- [`REAL_SERVICES_SETUP.md`](REAL_SERVICES_SETUP.md): current live-service matrix and local activation steps for GPS/maps, profile persistence, SMTP, public HTTPS and payment safety.
 - [`../backend/docs/API_CATALOG.md`](../backend/docs/API_CATALOG.md): current REST and Socket.IO inventory (kept under `backend/docs`, not this folder).
 - [`../backend/docs/PROFILE_VEHICLE_CONTACT_WORKFLOW.md`](../backend/docs/PROFILE_VEHICLE_CONTACT_WORKFLOW.md): editable profile, Customer vehicles, order snapshots, and tap-to-call privacy contract.
 - [`../backend/docs/UPCOMING_DOMAINS.md`](../backend/docs/UPCOMING_DOMAINS.md): staged Provider skills/statistics, service-location, and marketplace backend plan.

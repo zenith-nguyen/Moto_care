@@ -5,9 +5,13 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_map/flutter_map.dart' as osm_map;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as osm;
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../home/theme/home_theme.dart';
 import '../../location/services/location_api_config.dart';
 import '../theme/order_tracking_theme.dart';
@@ -258,7 +262,9 @@ class _OrderTrackingMapState extends ConsumerState<OrderTrackingMap> {
   @override
   Widget build(BuildContext context) {
     if (!ref.watch(locationApiConfigProvider).mapConfigured) {
-      return SimulatedTrackingMap(data: widget.data);
+      return ref.watch(runtimeApiIntegrationProvider)
+          ? OsmOrderTrackingMap(data: widget.data)
+          : SimulatedTrackingMap(data: widget.data);
     }
     return Stack(
       fit: StackFit.expand,
@@ -319,6 +325,217 @@ class _OrderTrackingMapState extends ConsumerState<OrderTrackingMap> {
       ],
     );
   }
+}
+
+class OsmOrderTrackingMap extends StatefulWidget {
+  const OsmOrderTrackingMap({super.key, required this.data});
+
+  final OrderTrackingMapData data;
+
+  @override
+  State<OsmOrderTrackingMap> createState() => _OsmOrderTrackingMapState();
+}
+
+class _OsmOrderTrackingMapState extends State<OsmOrderTrackingMap> {
+  final _controller = osm_map.MapController();
+
+  List<osm.LatLng> get _points => widget.data.cameraPoints
+      .map((point) => osm.LatLng(point.latitude, point.longitude))
+      .toList(growable: false);
+
+  void _fitRoute() {
+    final points = _points;
+    if (points.isEmpty) return;
+    if (points.length == 1 ||
+        points.every(
+          (point) =>
+              (point.latitude - points.first.latitude).abs() < .00001 &&
+              (point.longitude - points.first.longitude).abs() < .00001,
+        )) {
+      _controller.move(points.first, 17);
+      return;
+    }
+    _controller.fitCamera(
+      osm_map.CameraFit.bounds(
+        bounds: osm_map.LatLngBounds.fromPoints(points),
+        padding: EdgeInsets.fromLTRB(
+          48 + widget.data.padding.left,
+          48 + widget.data.padding.top,
+          48 + widget.data.padding.right,
+          48 + widget.data.padding.bottom,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void didUpdateWidget(OsmOrderTrackingMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data.customer != widget.data.customer ||
+        oldWidget.data.mechanic != widget.data.mechanic ||
+        !listEquals(oldWidget.data.route, widget.data.route) ||
+        oldWidget.data.padding != widget.data.padding) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _fitRoute();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final route = widget.data.route
+        .map((point) => osm.LatLng(point.latitude, point.longitude))
+        .toList(growable: false);
+    final customer = osm.LatLng(
+      widget.data.customer.latitude,
+      widget.data.customer.longitude,
+    );
+    final mechanic = widget.data.mechanic == null
+        ? null
+        : osm.LatLng(
+            widget.data.mechanic!.latitude,
+            widget.data.mechanic!.longitude,
+          );
+    return Stack(
+      key: const ValueKey('order-tracking-osm-map'),
+      fit: StackFit.expand,
+      children: [
+        osm_map.FlutterMap(
+          mapController: _controller,
+          options: osm_map.MapOptions(
+            initialCenter: customer,
+            initialZoom: 15,
+            minZoom: 5,
+            maxZoom: 19,
+            onMapReady: _fitRoute,
+          ),
+          children: [
+            osm_map.TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.motocare.app',
+              maxNativeZoom: 19,
+            ),
+            if (route.length >= 2)
+              osm_map.PolylineLayer(
+                polylines: [
+                  osm_map.Polyline(
+                    points: route,
+                    color: OrderTrackingColors.route,
+                    strokeWidth: 5,
+                  ),
+                ],
+              ),
+            osm_map.MarkerLayer(
+              markers: [
+                osm_map.Marker(
+                  point: customer,
+                  width: 52,
+                  height: 62,
+                  alignment: Alignment.topCenter,
+                  child: const _OsmTrackingMarker(sos: true),
+                ),
+                if (mechanic != null)
+                  osm_map.Marker(
+                    point: mechanic,
+                    width: 48,
+                    height: 48,
+                    child: _OsmTrackingMarker(
+                      sos: false,
+                      simulated: widget.data.isSimulated,
+                    ),
+                  ),
+              ],
+            ),
+            osm_map.RichAttributionWidget(
+              showFlutterMapAttribution: false,
+              attributions: [
+                osm_map.TextSourceAttribution(
+                  'OpenStreetMap contributors',
+                  onTap: () => launchUrl(
+                    Uri.parse('https://www.openstreetmap.org/copyright'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        Positioned(
+          bottom: widget.data.padding.bottom + 8,
+          right: 14,
+          child: Material(
+            color: Colors.white,
+            shape: const CircleBorder(),
+            elevation: 2,
+            child: IconButton(
+              tooltip: 'Xem toàn bộ lộ trình',
+              onPressed: _fitRoute,
+              icon: const Icon(
+                Icons.route_rounded,
+                color: OrderTrackingColors.route,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OsmTrackingMarker extends StatelessWidget {
+  const _OsmTrackingMarker({required this.sos, this.simulated = false});
+
+  final bool sos;
+  final bool simulated;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: sos
+        ? 'Vị trí sự cố của khách hàng'
+        : simulated
+        ? 'Vị trí thợ cứu hộ mô phỏng'
+        : 'Vị trí thợ cứu hộ',
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          key: ValueKey(
+            sos ? 'tracking-customer-marker' : 'tracking-mechanic-marker',
+          ),
+          width: sos ? 46 : 44,
+          height: sos ? 46 : 44,
+          decoration: BoxDecoration(
+            color: sos ? HomeColors.red : Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: sos ? Colors.white : OrderTrackingColors.route,
+              width: sos ? 3 : 2,
+            ),
+            boxShadow: const [
+              BoxShadow(color: Color(0x33000000), blurRadius: 6),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: sos
+              ? const Text(
+                  'SOS',
+                  textScaler: TextScaler.noScaling,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                )
+              : const Icon(
+                  Icons.two_wheeler_rounded,
+                  color: OrderTrackingColors.route,
+                  size: 28,
+                ),
+        ),
+        if (sos) Container(width: 3, height: 8, color: HomeColors.red),
+      ],
+    ),
+  );
 }
 
 /// Explicitly a diagram, used when native map tiles are not configured.

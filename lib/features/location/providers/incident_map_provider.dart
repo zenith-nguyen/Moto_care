@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../home/models/rescue_location.dart';
 import '../../home/providers/home_provider.dart';
 import '../services/device_location_service.dart';
@@ -71,6 +72,10 @@ class IncidentMapController extends Notifier<IncidentMapState> {
       (a.latitude - b.latitude).abs() < .000001 &&
       (a.longitude - b.longitude).abs() < .000001;
   Future<void> initialize() async {
+    if (!_location.hasCoordinates && ref.read(runtimeApiIntegrationProvider)) {
+      await recenter();
+      if (_location.hasCoordinates) return;
+    }
     if (!_location.hasCoordinates &&
         _location.address.isNotEmpty &&
         ref.read(locationApiConfigProvider).geocodingConfigured) {
@@ -300,11 +305,15 @@ class IncidentMapController extends Notifier<IncidentMapState> {
     );
   }
 
-  bool get canConfirm =>
-      !state.busy &&
-      _location.address.trim().length >= 5 &&
-      (!ref.read(locationApiConfigProvider).mapConfigured ||
-          _location.hasCoordinates);
+  bool get canConfirm {
+    final requiresCoordinates =
+        ref.read(runtimeApiIntegrationProvider) ||
+        ref.read(locationApiConfigProvider).mapConfigured;
+    return !state.busy &&
+        _location.address.trim().length >= 5 &&
+        (!requiresCoordinates || _location.hasCoordinates);
+  }
+
   bool confirm() {
     if (!canConfirm ||
         !ref.read(rescueLocationProvider.notifier).confirmLocation(_location)) {
