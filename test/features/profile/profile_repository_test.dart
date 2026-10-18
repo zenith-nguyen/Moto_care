@@ -19,31 +19,34 @@ void main() {
     expect(profile.workAddress, 'Quan 3, TP.HCM');
   });
 
-  test('trims and sends editable details to the authenticated profile API', () async {
-    final api = RecordingJsonApi()..objectResponse = _profileJson();
+  test(
+    'trims and sends editable details to the authenticated profile API',
+    () async {
+      final api = RecordingJsonApi()..objectResponse = _profileJson();
 
-    await HttpProfileRepository(api).update(
-      fullName: '  Zenith  ',
-      phoneNumber: ' 0367518550 ',
-      emergencyContactName: ' Than ',
-      emergencyContactPhone: ' 0912345678 ',
-      medicalNote: ' Di ung thuoc A ',
-      homeAddress: ' Quan 1, TP.HCM ',
-      workAddress: ' Quan 3, TP.HCM ',
-    );
+      await HttpProfileRepository(api).update(
+        fullName: '  Zenith  ',
+        phoneNumber: ' 0367518550 ',
+        emergencyContactName: ' Than ',
+        emergencyContactPhone: ' 0912345678 ',
+        medicalNote: ' Di ung thuoc A ',
+        homeAddress: ' Quan 1, TP.HCM ',
+        workAddress: ' Quan 3, TP.HCM ',
+      );
 
-    expect(api.lastMethod, 'PATCH');
-    expect(api.lastPath, '/users/me');
-    expect(api.lastData, {
-      'name': 'Zenith',
-      'phone': '0367518550',
-      'emergencyContactName': 'Than',
-      'emergencyContactPhone': '0912345678',
-      'medicalNote': 'Di ung thuoc A',
-      'homeAddress': 'Quan 1, TP.HCM',
-      'workAddress': 'Quan 3, TP.HCM',
-    });
-  });
+      expect(api.lastMethod, 'PATCH');
+      expect(api.lastPath, '/users/me');
+      expect(api.lastData, {
+        'name': 'Zenith',
+        'phone': '0367518550',
+        'emergencyContactName': 'Than',
+        'emergencyContactPhone': '0912345678',
+        'medicalNote': 'Di ung thuoc A',
+        'homeAddress': 'Quan 1, TP.HCM',
+        'workAddress': 'Quan 3, TP.HCM',
+      });
+    },
+  );
 }
 
 Map<String, dynamic> _profileJson() => {
