@@ -19,7 +19,7 @@ Cập nhật: 2026-10-12. Có 77 REST endpoints và 5 Socket.IO events. Mặc đ
 | GET | `/health` | Public | NestJS process đang phản hồi |
 | GET | `/health/ready` | Public | API gọi được PostgreSQL |
 
-Mã đặt lại mật khẩu hết hạn sau 10 phút, giới hạn năm lần nhập sai và chỉ gửi lại sau 60 giây. Sau năm lần đăng nhập sai liên tiếp, tài khoản tạm khóa 15 phút. Chưa có refresh token, xác minh email và đăng xuất server-side.
+Mã đặt lại mật khẩu hết hạn sau 1 phút, giới hạn năm lần nhập sai và chỉ gửi lại sau 60 giây. Sau năm lần đăng nhập sai liên tiếp, tài khoản tạm khóa 15 phút. Chưa có refresh token, xác minh email và đăng xuất server-side.
 
 ## Thông báo
 
