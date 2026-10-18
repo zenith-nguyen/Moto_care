@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-12. Có 77 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
+Cập nhật: 2026-10-18. Có 80 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
 
 ## Auth, tài khoản và health
 
@@ -122,6 +122,7 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | POST | `/payments/demo/orders/:orderId/adjustment/refund` | Admin | Giả lập hoàn phần chênh lệch đã duyệt |
 | GET | `/payments/orders/:orderId/instructions` | Customer sở hữu đơn | Chỉ khi bật adapter: VietQR mô phỏng đúng payment, VA giả `SBSEPAY...`, `simulationOnly=true` |
 | POST | `/payments/webhooks/sepay` | Public khỏi JWT, bắt buộc HMAC | Nhận giao dịch SePay Test mode; idempotent theo transaction ID |
+| POST | `/payments/webhooks/sepay/payouts` | Public khỏi JWT, HMAC payout riêng | Ghi nhận tiền ra để Admin đối soát; không tự chuyển tiền và không sửa đơn khách |
 | GET | `/wallets/me` | Provider | Số dư/giao dịch demo, không rút tiền thật |
 | POST | `/withdrawals` | Provider | Khóa số dư khả dụng và tạo yêu cầu rút sandbox |
 | GET | `/withdrawals/me` | Provider | Lịch sử yêu cầu và tổng/khóa/khả dụng của ví |
@@ -137,6 +138,8 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | GET | `/admin/payment-adjustments/pending-refunds` | Admin | Danh sách hoàn chênh đang chờ |
 | GET | `/admin/withdrawals/pending` | Admin | Yêu cầu rút sandbox đang chờ, cũ trước |
 | PATCH | `/admin/withdrawals/:requestId/resolve` | Admin | Duyệt/từ chối atomic; duyệt tạo một debit, từ chối nhả tiền khóa |
+| GET | `/admin/withdrawal-payouts/pending` | Admin | Payout chờ chuyển khoản hoặc chờ kiểm tra biên lai |
+| PATCH | `/admin/withdrawal-payouts/:payoutId/reconcile` | Admin | Xác nhận/đánh dấu payout sau đối chiếu người nhận, số tiền và biên lai |
 
 Đã có thu bù/hoàn chênh lệch, tranh chấp và yêu cầu rút **sandbox**. Adapter QR/webhook SePay chỉ hỗ trợ Test mode, mặc định tắt, chưa có chuyển/hoàn/rút tiền thật. Không trình bày endpoint demo hay Test mode như giao dịch ngân hàng thật. Xem [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md), [FINAL_PRICE_WORKFLOW.md](FINAL_PRICE_WORKFLOW.md) và [WITHDRAWAL_WORKFLOW.md](WITHDRAWAL_WORKFLOW.md).
 

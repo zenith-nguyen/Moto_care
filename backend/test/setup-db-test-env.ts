@@ -35,4 +35,9 @@ Object.assign(process.env, {
   SEPAY_TRANSFER_MEMO_PREFIX: '',
   SEPAY_WEBHOOK_SECRET: 'db-test-only-sepay-webhook-secret-32-characters',
   SEPAY_WEBHOOK_MAX_AGE_SECONDS: '300',
+  SEPAY_PAYOUT_RECONCILIATION_ENABLED: 'true',
+  SEPAY_PAYOUT_SOURCE_ACCOUNT: 'SBSEPAYX9KA2B7MN4QR',
+  SEPAY_PAYOUT_CODE_PREFIX: 'RP',
+  SEPAY_PAYOUT_WEBHOOK_SECRET: 'db-test-only-payout-webhook-secret-32-characters',
+  SEPAY_PAYOUT_WEBHOOK_MAX_AGE_SECONDS: '300',
 });

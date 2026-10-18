@@ -58,6 +58,9 @@ import { TypeOrmPaymentAccountingAdapter } from '../src/payments/infrastructure/
 import { Vehicle } from '../src/vehicles/vehicle.entity';
 import { VehicleType } from '../src/vehicles/vehicle-type.enum';
 import { VehiclesService } from '../src/vehicles/vehicles.service';
+import { WithdrawalPayout } from '../src/payments/withdrawal-payout.entity';
+import { SepayPayoutWebhookEvent } from '../src/payments/sepay-payout-webhook-event.entity';
+import { PayoutReconciliationService } from '../src/payments/payout-reconciliation.service';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -91,7 +94,7 @@ describe('Orders and matching on PostGIS', () => {
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: testDatabase,
-      entities: [User, Provider, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review, PasswordResetCode, Vehicle],
+      entities: [User, Provider, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, WithdrawalPayout, SepayPayoutWebhookEvent, Review, PasswordResetCode, Vehicle],
       synchronize: false,
       logging: false,
     });
@@ -115,7 +118,7 @@ describe('Orders and matching on PostGIS', () => {
     priceAdjustments = new PriceAdjustmentsService(database, paymentAccounting, paymentAccounting);
     admin = new AdminService(database);
     analytics = new AdminAnalyticsService(database, config);
-    withdrawals = new WithdrawalsService(database);
+    withdrawals = new WithdrawalsService(database, new PayoutReconciliationService(database, config));
     messages = new MessagesService(
       database, { messageCreated } as unknown as RealtimePublisher, new ChatImageStorageService(config),
     );

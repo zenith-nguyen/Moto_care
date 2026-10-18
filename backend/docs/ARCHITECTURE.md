@@ -79,6 +79,7 @@ Hiện chưa có transactional outbox. Nếu chạy nhiều NestJS instance, c�
 - Unique index mỗi order chỉ có một wallet credit vẫn là hàng rào cuối cùng; `wallet_transactions.amount` luôn dương và chiều số dư suy từ `type`.
 - `BankTransferGateway` tách use case nhận tiền khỏi chi tiết SePay/VietQR. `SepayBankTransferAdapter` hiện chỉ tạo chỉ dẫn mô phỏng cho VA giả `SBSEPAY...` và xác thực HMAC Test mode; không gọi Orders từ adapter.
 - `SepayPaymentsService` điều phối transaction payment/order/matching. PostgreSQL advisory transaction lock theo SePay transaction ID, unique audit và `payments.sepay_transaction_id` là ba hàng rào idempotency; raw webhook không được lưu.
+- `PayoutReconciliationService` tách hoàn toàn tiền ra khỏi payment của khách. Mỗi withdrawal đã duyệt có một mã `RP...`; webhook dùng secret/audit riêng và chỉ đưa giao dịch vào manual review. Chỉ Admin xác nhận sau khi kiểm tra người nhận và biên lai mới đặt trạng thái `RECONCILED`.
 
 ## Những gì cố ý chưa làm
 
