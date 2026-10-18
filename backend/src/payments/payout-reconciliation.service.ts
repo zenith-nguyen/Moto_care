@@ -129,6 +129,8 @@ export class PayoutReconciliationService {
       secret: this.config.getOrThrow<string>('SEPAY_PAYOUT_WEBHOOK_SECRET'),
       maxAgeSeconds: this.config.getOrThrow<number>('SEPAY_PAYOUT_WEBHOOK_MAX_AGE_SECONDS'),
     });
+    // Keep dashboard probes out of payout reconciliation and its audit log.
+    if (payload.id === 0) return { success: true };
     const externalTransactionId = String(payload.id);
 
     await this.database.transaction(async (manager) => {
