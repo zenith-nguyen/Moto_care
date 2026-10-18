@@ -48,19 +48,19 @@ import '../../features/vehicle/screens/xe_cua_toi_screen.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   final sessionState = ref.watch(sessionControllerProvider);
   final router = GoRouter(
-    initialLocation: _locationFor(sessionState),
+    initialLocation: locationForSession(sessionState),
     redirect: (context, state) {
       final location = state.matchedLocation;
 
       return switch (sessionState) {
         SessionBooting() || SessionUnavailable() =>
-          location == _locationFor(sessionState)
+          location == locationForSession(sessionState)
               ? null
-              : _locationFor(sessionState),
+              : locationForSession(sessionState),
         SessionAuthenticating() || SessionSignedOut() =>
           _publicAuthLocations.contains(location)
               ? null
-              : _locationFor(sessionState),
+              : locationForSession(sessionState),
         SessionSignedIn(:final session) =>
           _isAllowedForRole(location, session.user.role)
               ? null
@@ -329,11 +329,12 @@ bool _isAllowedForRole(String location, AppRole role) {
   };
 }
 
-String _locationFor(SessionState state) {
+@visibleForTesting
+String locationForSession(SessionState state) {
   return switch (state) {
     SessionBooting() => '/bootstrap',
     SessionAuthenticating() => '/login',
-    SessionSignedOut() => '/welcome',
+    SessionSignedOut(:final failure) => failure == null ? '/welcome' : '/login',
     SessionUnavailable() => '/session-error',
     SessionSignedIn(:final session) => _roleLocation(session.user.role),
   };

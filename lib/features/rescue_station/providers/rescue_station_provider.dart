@@ -5,18 +5,24 @@ import '../../../app/app_dependencies.dart';
 import '../../home/providers/home_provider.dart';
 import '../data/mock_rescue_stations.dart';
 import '../models/rescue_station.dart';
+import '../../location/services/device_location_service.dart';
 
-final rescueStationsAsyncProvider = FutureProvider<List<RescueStation>>((ref) {
+final rescueStationsAsyncProvider = FutureProvider<List<RescueStation>>((
+  ref,
+) async {
   if (!ref.watch(runtimeApiIntegrationProvider)) {
-    return Future.value(mockRescueStations);
+    return mockRescueStations;
   }
   final repository = ref.watch(serviceLocationsRepositoryProvider);
   final location = ref.watch(rescueLocationProvider);
-  if (location?.hasCoordinates ?? false) {
-    return repository.nearby(
-      latitude: location!.latitude!,
+  if (location != null &&
+      location.hasCoordinates &&
+      isHoChiMinhCityServiceArea(location.latitude!, location.longitude!)) {
+    final nearby = await repository.nearby(
+      latitude: location.latitude!,
       longitude: location.longitude!,
     );
+    if (nearby.isNotEmpty) return nearby;
   }
   return repository.hoChiMinhCity();
 });

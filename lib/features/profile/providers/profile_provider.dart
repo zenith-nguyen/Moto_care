@@ -59,13 +59,17 @@ class ProfileController extends Notifier<ProfileState> {
     required String emergencyContactName,
     required String emergencyContactPhone,
     required String medicalNote,
+    required String homeAddress,
+    required String workAddress,
   }) {
     if (ProfileValidation.fullName(fullName) != null ||
         ProfileValidation.phone(phoneNumber) != null ||
         ProfileValidation.phone(emergencyContactPhone, optional: true) !=
             null ||
         emergencyContactName.trim().length > 80 ||
-        medicalNote.trim().length > 240) {
+        medicalNote.trim().length > 240 ||
+        homeAddress.trim().length > 240 ||
+        workAddress.trim().length > 240) {
       return false;
     }
     state = state.copyWith(
@@ -77,6 +81,8 @@ class ProfileController extends Notifier<ProfileState> {
           emergencyContactPhone,
         ),
         medicalNote: medicalNote.trim(),
+        defaultAddress: homeAddress.trim(),
+        workAddress: workAddress.trim(),
       ),
     );
     return true;
@@ -88,6 +94,8 @@ class ProfileController extends Notifier<ProfileState> {
     required String emergencyContactName,
     required String emergencyContactPhone,
     required String medicalNote,
+    required String homeAddress,
+    required String workAddress,
   }) async {
     if (!_validDetails(
       fullName: fullName,
@@ -95,6 +103,8 @@ class ProfileController extends Notifier<ProfileState> {
       emergencyContactName: emergencyContactName,
       emergencyContactPhone: emergencyContactPhone,
       medicalNote: medicalNote,
+      homeAddress: homeAddress,
+      workAddress: workAddress,
     )) {
       return false;
     }
@@ -105,6 +115,8 @@ class ProfileController extends Notifier<ProfileState> {
         emergencyContactName: emergencyContactName,
         emergencyContactPhone: emergencyContactPhone,
         medicalNote: medicalNote,
+        homeAddress: homeAddress,
+        workAddress: workAddress,
       );
     }
     final remote = await ref
@@ -117,8 +129,8 @@ class ProfileController extends Notifier<ProfileState> {
             emergencyContactPhone,
           ),
           medicalNote: medicalNote,
-          homeAddress: state.profile.defaultAddress,
-          workAddress: state.profile.workAddress,
+          homeAddress: homeAddress,
+          workAddress: workAddress,
         );
     if (!ref.mounted) return false;
     state = state.copyWith(profile: _mergeRemote(remote), initialized: true);
@@ -131,12 +143,16 @@ class ProfileController extends Notifier<ProfileState> {
     required String emergencyContactName,
     required String emergencyContactPhone,
     required String medicalNote,
+    required String homeAddress,
+    required String workAddress,
   }) =>
       ProfileValidation.fullName(fullName) == null &&
       ProfileValidation.phone(phoneNumber) == null &&
       ProfileValidation.phone(emergencyContactPhone, optional: true) == null &&
       emergencyContactName.trim().length <= 80 &&
-      medicalNote.trim().length <= 240;
+      medicalNote.trim().length <= 240 &&
+      homeAddress.trim().length <= 240 &&
+      workAddress.trim().length <= 240;
 
   UserProfile _mergeRemote(UserProfile remote) => UserProfile(
     id: remote.id,

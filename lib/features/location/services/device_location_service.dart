@@ -30,37 +30,62 @@ Future<RescueLocation> locateDevice() async {
       timeLimit: Duration(seconds: 12),
     ),
   );
+  if (!isHoChiMinhCityServiceArea(position.latitude, position.longitude)) {
+    throw const LocationLookupException(
+      'GPS hiện nằm ngoài vùng phục vụ TP.HCM. Nếu đang dùng máy ảo, hãy đặt Location về TP.HCM hoặc nhập địa chỉ Nhà/Cơ quan.',
+    );
+  }
   var address =
       'GPS: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+  List<Placemark> places;
   try {
-    final places = GeocodingPlatformFactory.instance == null
+    places = GeocodingPlatformFactory.instance == null
         ? <Placemark>[]
         : await Geocoding()
               .placemarkFromCoordinates(position.latitude, position.longitude)
               .timeout(const Duration(seconds: 8));
-    if (places.isNotEmpty) {
-      final place = places.first;
-      final parts = [
-        place.street,
-        place.subLocality,
-        place.subAdministrativeArea,
-        place.administrativeArea,
-      ];
-      final resolved = parts
-          .whereType<String>()
-          .where((part) => part.trim().isNotEmpty)
-          .toSet()
-          .join(', ');
-      if (resolved.isNotEmpty && resolved.length <= 240) address = resolved;
-    }
   } on Exception {
-    // Coordinates remain usable if the platform cannot reverse-geocode them.
+    throw const LocationLookupException(
+      'Chưa xác minh được GPS thuộc Việt Nam. Hãy thử lại hoặc nhập địa chỉ Nhà/Cơ quan.',
+    );
   }
+  if (places.isEmpty || !isVietnamPlacemark(places.first)) {
+    throw const LocationLookupException(
+      'GPS không thuộc Việt Nam hoặc chưa xác minh được quốc gia. Vị trí này sẽ không được sử dụng.',
+    );
+  }
+  final place = places.first;
+  final parts = [
+    place.street,
+    place.subLocality,
+    place.subAdministrativeArea,
+    place.administrativeArea,
+    place.country,
+  ];
+  final resolved = parts
+      .whereType<String>()
+      .where((part) => part.trim().isNotEmpty)
+      .toSet()
+      .join(', ');
+  if (resolved.isNotEmpty && resolved.length <= 240) address = resolved;
   return RescueLocation(
     address: address,
     latitude: position.latitude,
     longitude: position.longitude,
   );
+}
+
+bool isHoChiMinhCityServiceArea(double latitude, double longitude) =>
+    latitude >= 10.30 &&
+    latitude <= 11.25 &&
+    longitude >= 106.30 &&
+    longitude <= 107.15;
+
+bool isVietnamPlacemark(Placemark place) {
+  final code = place.isoCountryCode?.trim().toUpperCase();
+  if (code == 'VN') return true;
+  final country = place.country?.trim().toLowerCase();
+  return country == 'việt nam' || country == 'viet nam' || country == 'vietnam';
 }
 
 class LocationLookupException implements Exception {

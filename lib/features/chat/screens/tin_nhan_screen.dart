@@ -6,9 +6,11 @@ import '../models/admin_message.dart';
 import '../providers/chat_directory_provider.dart';
 import '../services/chat_service.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../../core/router/main_navigation.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
+import '../../notifications/application/notification_inbox_controller.dart';
 import '../models/chat_conversation.dart';
 import '../theme/chat_theme.dart';
 
@@ -56,6 +58,12 @@ class TinNhanScreen extends ConsumerWidget {
           backgroundColor: ChatTheme.background,
           appBar: AppBar(
             automaticallyImplyLeading: false,
+            leading: IconButton(
+              tooltip: 'Quay lại',
+              onPressed: () =>
+                  context.canPop() ? context.pop() : context.go('/trang-chu'),
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
             title: const Text(
               'Tin nhắn',
               style: TextStyle(fontWeight: FontWeight.w700),
@@ -120,11 +128,7 @@ class TinNhanScreen extends ConsumerWidget {
                       icon: Icons.support_agent_rounded,
                       messages: ref.watch(chatSupportMessagesProvider),
                     ),
-                    _AdminMessageList(
-                      storageKey: 'admin-notifications',
-                      icon: Icons.notifications_outlined,
-                      messages: ref.watch(chatNotificationsProvider),
-                    ),
+                    const _NotificationInbox(),
                   ],
                 ),
               ),
@@ -140,6 +144,71 @@ class TinNhanScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _NotificationInbox extends ConsumerWidget {
+  const _NotificationInbox();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(runtimeApiIntegrationProvider)) {
+      return _AdminMessageList(
+        storageKey: 'admin-notifications',
+        icon: Icons.notifications_outlined,
+        messages: ref.watch(chatNotificationsProvider),
+      );
+    }
+    final inbox = ref.watch(notificationInboxControllerProvider);
+    return inbox.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => _ChatDirectoryError(
+        onRetry: () => ref.invalidate(notificationInboxControllerProvider),
+      ),
+      data: (_) {
+        final messages = ref.watch(chatNotificationsProvider);
+        if (messages.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.notifications_none_rounded, size: 52),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Bạn chưa có thông báo mới.',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Cập nhật đơn cứu hộ và thanh toán sẽ xuất hiện tại đây.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => ref
+                        .read(notificationInboxControllerProvider.notifier)
+                        .refresh(),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Tải lại'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () =>
+              ref.read(notificationInboxControllerProvider.notifier).refresh(),
+          child: _AdminMessageList(
+            storageKey: 'admin-notifications',
+            icon: Icons.notifications_outlined,
+            messages: messages,
+          ),
+        );
+      },
     );
   }
 }
