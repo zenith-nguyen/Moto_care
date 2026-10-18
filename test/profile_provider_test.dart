@@ -62,6 +62,8 @@ void main() {
           emergencyContactName: ' Mẹ ',
           emergencyContactPhone: '',
           medicalNote: ' Lưu ý ',
+          homeAddress: ' Quận 10 ',
+          workAddress: ' Quận 1 ',
         ),
         isTrue,
       );
@@ -73,6 +75,8 @@ void main() {
       expect(edited.phoneNumber, '0900000003');
       expect(edited.emergencyContactPhone, isEmpty);
       expect(edited.medicalNote, 'Lưu ý');
+      expect(edited.defaultAddress, 'Quận 10');
+      expect(edited.workAddress, 'Quận 1');
       expect(edited.defaultVehicle, same(profileFixture.defaultVehicle));
       expect(edited.email, profileFixture.email);
       expect(edited.memberTier, profileFixture.memberTier);
@@ -93,6 +97,8 @@ void main() {
         emergencyContactName: '',
         emergencyContactPhone: '12',
         medicalNote: '',
+        homeAddress: '',
+        workAddress: '',
       ),
       isFalse,
     );
