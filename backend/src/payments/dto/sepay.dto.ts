@@ -4,7 +4,7 @@ import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } fr
 export class SepayWebhookDto {
   @ApiProperty({ example: 12345 })
   @IsInt()
-  @Min(1)
+  @Min(0)
   id!: number;
 
   @ApiProperty({ example: 'MBBank' })

@@ -328,6 +328,43 @@ describe('Sandbox demo flow over HTTP', () => {
       .expect(409);
   });
 
+  it('accepts only an authenticated SePay dashboard test probe without persisting it', async () => {
+    const payload = {
+      id: 0,
+      gateway: 'MBBank',
+      transactionDate: '2026-10-19 01:30:00',
+      accountNumber: 'TEST-ACCOUNT-001',
+      subAccount: null,
+      code: 'MC1',
+      content: 'SePay dashboard test delivery',
+      transferType: 'in',
+      description: 'Dashboard test',
+      transferAmount: 1000,
+      accumulated: 1000,
+      referenceCode: 'SEPAY-DASHBOARD-TEST',
+    };
+    const signed = signedSepayPayload(payload);
+
+    await request(app.getHttpServer())
+      .post('/payments/webhooks/sepay')
+      .set('Content-Type', 'application/json')
+      .send(signed.rawBody)
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .post('/payments/webhooks/sepay')
+      .set('Content-Type', 'application/json')
+      .set('X-SePay-Timestamp', signed.timestamp)
+      .set('X-SePay-Signature', signed.signature)
+      .send(signed.rawBody)
+      .expect(200, { success: true });
+
+    expect(await database.query(
+      'SELECT count(*)::int AS count FROM sepay_webhook_events WHERE external_transaction_id = $1',
+      ['0'],
+    )).toEqual([{ count: 0 }]);
+  });
+
   it('confirms an exact SePay Test mode prepayment once and starts matching', async () => {
     const { customer } = await prepareActors();
     const created = await request(app.getHttpServer())

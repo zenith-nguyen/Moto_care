@@ -51,6 +51,9 @@ export class SepayPaymentsService {
       timestamp,
       signature,
     });
+    // SePay's dashboard uses transaction id 0 for an authenticated test
+    // delivery. Acknowledge it without auditing or touching payment state.
+    if (payload.id === 0) return { success: true };
     const result = await this.database.transaction(async (manager) => {
       const externalTransactionId = String(payload.id);
       await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [externalTransactionId]);
