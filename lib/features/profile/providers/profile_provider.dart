@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../models/profile_validation.dart';
 import '../models/user_profile.dart';
 import '../models/profile_state.dart';
@@ -45,6 +46,13 @@ class ProfileController extends Notifier<ProfileState> {
     );
   }
 
+  Future<void> refreshFromApi() async {
+    if (!ref.read(runtimeApiIntegrationProvider)) return;
+    final remote = await ref.read(profileRepositoryProvider).fetch();
+    if (!ref.mounted) return;
+    state = state.copyWith(profile: _mergeRemote(remote), initialized: true);
+  }
+
   bool saveDetails({
     required String fullName,
     required String phoneNumber,
@@ -73,6 +81,79 @@ class ProfileController extends Notifier<ProfileState> {
     );
     return true;
   }
+
+  Future<bool> saveDetailsPersisted({
+    required String fullName,
+    required String phoneNumber,
+    required String emergencyContactName,
+    required String emergencyContactPhone,
+    required String medicalNote,
+  }) async {
+    if (!_validDetails(
+      fullName: fullName,
+      phoneNumber: phoneNumber,
+      emergencyContactName: emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone,
+      medicalNote: medicalNote,
+    )) {
+      return false;
+    }
+    if (!ref.read(runtimeApiIntegrationProvider)) {
+      return saveDetails(
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        emergencyContactName: emergencyContactName,
+        emergencyContactPhone: emergencyContactPhone,
+        medicalNote: medicalNote,
+      );
+    }
+    final remote = await ref
+        .read(profileRepositoryProvider)
+        .update(
+          fullName: fullName,
+          phoneNumber: ProfileValidation.normalizePhone(phoneNumber),
+          emergencyContactName: emergencyContactName,
+          emergencyContactPhone: ProfileValidation.normalizePhone(
+            emergencyContactPhone,
+          ),
+          medicalNote: medicalNote,
+          homeAddress: state.profile.defaultAddress,
+          workAddress: state.profile.workAddress,
+        );
+    if (!ref.mounted) return false;
+    state = state.copyWith(profile: _mergeRemote(remote), initialized: true);
+    return true;
+  }
+
+  bool _validDetails({
+    required String fullName,
+    required String phoneNumber,
+    required String emergencyContactName,
+    required String emergencyContactPhone,
+    required String medicalNote,
+  }) =>
+      ProfileValidation.fullName(fullName) == null &&
+      ProfileValidation.phone(phoneNumber) == null &&
+      ProfileValidation.phone(emergencyContactPhone, optional: true) == null &&
+      emergencyContactName.trim().length <= 80 &&
+      medicalNote.trim().length <= 240;
+
+  UserProfile _mergeRemote(UserProfile remote) => UserProfile(
+    id: remote.id,
+    fullName: remote.fullName,
+    phoneNumber: remote.phoneNumber,
+    email: remote.email,
+    avatarUrl: state.profile.avatarUrl,
+    isVerified: state.profile.isVerified,
+    memberTier: state.profile.memberTier,
+    rewardPoints: state.profile.rewardPoints,
+    emergencyContactName: remote.emergencyContactName,
+    emergencyContactPhone: remote.emergencyContactPhone,
+    defaultVehicle: state.profile.defaultVehicle,
+    defaultAddress: remote.defaultAddress,
+    workAddress: remote.workAddress,
+    medicalNote: remote.medicalNote,
+  );
 
   void setAvatar(Uint8List bytes) {
     state = state.copyWith(

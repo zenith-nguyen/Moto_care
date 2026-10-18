@@ -57,7 +57,13 @@ larger text and the keyboard.
 - `UserProfile` holds account and emergency contact fields. `ProfileVehicle` holds vehicle type, plate and tire type. Additional `medicalNote` and `workAddress` fields supply the requested UI sections. Both models support JSON conversion.
 - `profileProvider` owns the immutable profile, selected avatar bytes and biometric preference through Riverpod. `initialUserProfileProvider` can supply full account data or be overridden in tests. Reopening the same profile keeps edits; changing member ID clears the previous profile's session data.
 - The edit sheet validates the name and Vietnamese mobile/landline numbers, accepts formatted `+84` numbers and normalizes them to a `0` prefix. The emergency phone and medical note are optional. Canceling the sheet keeps the original data.
-- All edits and preferences currently live in memory. They reset after logout or app restart. No profile, medical notes or credentials are written to disk, logs or the repository.
+- In the live application, name, phone, emergency contact, medical note, home
+  address and work address are loaded from and saved to authenticated
+  `GET/PATCH /users/me`; PostgreSQL is the source of truth across app restarts.
+  Widget tests keep an in-memory repository so they remain deterministic.
+  Avatar bytes and the biometric preference are still device/session-only and
+  are not uploaded by this profile endpoint. Passwords and tokens are never
+  stored in profile state or logs.
 
 ## Device features
 

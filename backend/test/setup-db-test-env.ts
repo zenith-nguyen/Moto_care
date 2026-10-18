@@ -7,6 +7,13 @@ if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
   throw new Error('Set TEST_DATABASE_NAME to a dedicated MotoCare test database');
 }
 
+// ConfigModule in the HTTP integration test intentionally skips Joi coercion.
+// Remove developer-machine feature flags so string values such as "false" do
+// not become truthy and make DB tests call external services.
+delete process.env.WEATHER_PRICING_ENABLED;
+delete process.env.EMAIL_ENABLED;
+delete process.env.PUSH_NOTIFICATIONS_ENABLED;
+
 Object.assign(process.env, {
   NODE_ENV: 'test',
   DATABASE_NAME: testDatabase,

@@ -8,6 +8,13 @@ const trim = ({ value }: { value: unknown }): unknown => typeof value === 'strin
 const normalizePhone = ({ value }: { value: unknown }): unknown => (
   typeof value === 'string' ? value.trim().replace(/[\s().-]/g, '') : value
 );
+const emptyToNull = ({ value }: { value: unknown }): unknown => (
+  typeof value === 'string' && value.trim() === '' ? null : trim({ value })
+);
+const emptyPhoneToNull = ({ value }: { value: unknown }): unknown => {
+  const normalized = normalizePhone({ value });
+  return normalized === '' ? null : normalized;
+};
 
 export class UpdateProfileDto {
   @ApiPropertyOptional({ example: 'Nguyen Van An' })
@@ -25,6 +32,41 @@ export class UpdateProfileDto {
   @IsString()
   @Matches(/^\+?[0-9]{9,15}$/)
   phone?: string | null;
+
+  @ApiPropertyOptional({ maxLength: 80, nullable: true })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  emergencyContactName?: string | null;
+
+  @ApiPropertyOptional({ example: '0901234567', nullable: true })
+  @Transform(emptyPhoneToNull)
+  @IsOptional()
+  @IsString()
+  @Matches(/^\+?[0-9]{9,15}$/)
+  emergencyContactPhone?: string | null;
+
+  @ApiPropertyOptional({ maxLength: 240, nullable: true })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  medicalNote?: string | null;
+
+  @ApiPropertyOptional({ maxLength: 240, nullable: true })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  homeAddress?: string | null;
+
+  @ApiPropertyOptional({ maxLength: 240, nullable: true })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @IsString()
+  @MaxLength(240)
+  workAddress?: string | null;
 }
 
 export class UserProfileResponseDto {
@@ -39,6 +81,21 @@ export class UserProfileResponseDto {
 
   @ApiProperty({ type: String, nullable: true })
   phone!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  emergencyContactName!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  emergencyContactPhone!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  medicalNote!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  homeAddress!: string | null;
+
+  @ApiProperty({ type: String, nullable: true })
+  workAddress!: string | null;
 
   @ApiProperty({ enum: UserRole })
   role!: UserRole;

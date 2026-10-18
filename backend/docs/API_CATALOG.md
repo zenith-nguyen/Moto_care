@@ -11,7 +11,7 @@ Cập nhật: 2026-10-12. Có 77 REST endpoints và 5 Socket.IO events. Mặc đ
 | POST | `/auth/password/forgot` | Public, 3 lần/phút | Nếu email tồn tại, gửi mã sáu số dùng một lần; response luôn chung chung |
 | POST | `/auth/password/reset` | Public, 10 lần/phút | Đổi mật khẩu bằng email + mã + mật khẩu mới; vô hiệu mọi JWT cũ |
 | GET | `/users/me` | Đã đăng nhập | Hồ sơ tài khoản hiện tại |
-| PATCH | `/users/me` | Đã đăng nhập | Sửa tên/số điện thoại; không cho đổi role/email/status |
+| PATCH | `/users/me` | Đã đăng nhập | Sửa tên, số điện thoại, liên hệ khẩn cấp, ghi chú y tế và địa chỉ nhà/cơ quan; không cho đổi role/email/status |
 | GET | `/users/me/vehicles` | Customer | Danh sách xe, xe mặc định đứng trước |
 | POST | `/users/me/vehicles` | Customer | Thêm xe; xe đầu tiên tự thành mặc định |
 | PATCH | `/users/me/vehicles/:vehicleId` | Customer sở hữu | Sửa xe/chọn mặc định atomic |

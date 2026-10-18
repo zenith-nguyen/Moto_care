@@ -286,8 +286,25 @@ describe('Orders and matching on PostGIS', () => {
     const otherCustomer = await makeUser(UserRole.CUSTOMER);
     await users.updateProfile(otherCustomer.id, { phone: '0909999999' });
     await expect(users.updateProfile(customer.id, { phone: '0909999999' })).rejects.toBeInstanceOf(ConflictException);
-    const profile = await users.updateProfile(customer.id, { name: 'Customer Updated', phone: '0901234567' });
-    expect(profile).toMatchObject({ name: 'Customer Updated', phone: '0901234567', role: UserRole.CUSTOMER });
+    const profile = await users.updateProfile(customer.id, {
+      name: 'Customer Updated',
+      phone: '0901234567',
+      emergencyContactName: 'Relative',
+      emergencyContactPhone: '0912345678',
+      medicalNote: 'Allergic to medicine A',
+      homeAddress: 'District 1, HCMC',
+      workAddress: 'District 3, HCMC',
+    });
+    expect(profile).toMatchObject({
+      name: 'Customer Updated',
+      phone: '0901234567',
+      emergencyContactName: 'Relative',
+      emergencyContactPhone: '0912345678',
+      medicalNote: 'Allergic to medicine A',
+      homeAddress: 'District 1, HCMC',
+      workAddress: 'District 3, HCMC',
+      role: UserRole.CUSTOMER,
+    });
 
     const first = await vehicles.create(customer.id, {
       type: VehicleType.MOTORBIKE,
