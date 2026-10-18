@@ -1,0 +1,2 @@
+export const PASSWORD_RESET_CODE_TTL_MS = 60_000;
+export const PASSWORD_RESET_CODE_TTL_MINUTES = 1;

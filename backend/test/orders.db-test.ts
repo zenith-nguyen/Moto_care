@@ -849,8 +849,12 @@ describe('Orders and matching on PostGIS', () => {
   });
 
   it('resets a password once and increments the JWT auth version', async () => {
+    const requestedAt = Date.now();
     await passwordRecovery.forgot(customer.email!);
     expect(deliveredCode).toMatch(/^\d{6}$/);
+    const resetRecord = await database.getRepository(PasswordResetCode).findOneByOrFail({ userId: customer.id });
+    expect(resetRecord.expiresAt.getTime()).toBeGreaterThanOrEqual(requestedAt + 59_000);
+    expect(resetRecord.expiresAt.getTime()).toBeLessThanOrEqual(requestedAt + 61_000);
     await expect(passwordRecovery.reset(customer.email!, '999999', 'NewPassword123!'))
       .rejects.toBeInstanceOf(BadRequestException);
     await passwordRecovery.reset(customer.email!, deliveredCode!, 'NewPassword123!');

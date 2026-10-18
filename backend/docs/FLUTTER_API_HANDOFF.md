@@ -56,7 +56,7 @@ filter và attribution: [SERVICE_LOCATION_MARKERS.md](SERVICE_LOCATION_MARKERS.m
 1. Màn hình quên mật khẩu gửi `{ "email": "..." }` tới `POST /auth/password/forgot`.
 2. Luôn hiển thị thông báo trung tính kiểu “Nếu email đã đăng ký, mã khôi phục sẽ được gửi”; không tiết lộ email có tồn tại hay không.
 3. Màn hình nhập mã gửi `{ "email": "...", "code": "123456", "newPassword": "..." }` tới `POST /auth/password/reset`.
-4. Mã có sáu chữ số, hết hạn sau 10 phút và dùng một lần. Sau khi thành công, xóa JWT đang lưu và đưa người dùng về màn hình đăng nhập.
+4. Mã có sáu chữ số, hết hạn sau 1 phút và dùng một lần. Sau khi thành công, xóa JWT đang lưu và đưa người dùng về màn hình đăng nhập.
 5. Tài khoản chỉ có số điện thoại chưa thể nhận mã email; UI nên giải thích rõ và khuyến khích đăng ký email trong bản demo.
 
 ### Notification inbox và push

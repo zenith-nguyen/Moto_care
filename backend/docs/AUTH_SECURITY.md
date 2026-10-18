@@ -14,7 +14,7 @@ Cập nhật: 2026-10-06. Tài liệu này mô tả hợp đồng backend cho b�
 1. Client gọi `POST /auth/password/forgot` với email.
 2. Backend luôn trả HTTP 202 và cùng một thông báo, dù email tồn tại hay không.
 3. Với email hợp lệ, backend tạo mã ngẫu nhiên sáu số, chỉ lưu HMAC của mã và gửi mã qua SMTP.
-4. Mã hết hạn sau 10 phút, chỉ dùng một lần, tối đa năm lần nhập sai và có khoảng chờ gửi lại 60 giây.
+4. Mã hết hạn sau 1 phút, chỉ dùng một lần, tối đa năm lần nhập sai và có khoảng chờ gửi lại 60 giây.
 5. Client gọi `POST /auth/password/reset` với email, mã và mật khẩu mới dài 8–72 ký tự.
 6. Backend băm mật khẩu mới bằng Argon2, vô hiệu mã còn lại, mở khóa tài khoản và vô hiệu JWT cũ.
 
@@ -33,7 +33,7 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=demo-account@example.com
 SMTP_PASSWORD=<google-app-password>
-SMTP_FROM=MotoCare <demo-account@example.com>
+SMTP_FROM=Revo <demo-account@example.com>
 ```
 
 Không commit `.env`, không gửi App Password qua chat và không chụp màn hình có secret. Nếu secret từng lộ, thu hồi App Password cũ và tạo cái mới.

@@ -6,6 +6,7 @@ import { DataSource, IsNull } from 'typeorm';
 import { User } from '../users/user.entity';
 import { MailService } from './mail.service';
 import { PasswordResetCode } from './password-reset-code.entity';
+import { PASSWORD_RESET_CODE_TTL_MS } from './password-recovery.constants';
 
 const genericForgotResponse = {
   message: 'If the email is registered, a password reset code will be sent.',
@@ -45,7 +46,7 @@ export class PasswordRecoveryService {
         manager.getRepository(PasswordResetCode).create({
           userId: user.id,
           codeHash: this.hash(code),
-          expiresAt: new Date(Date.now() + 10 * 60_000),
+          expiresAt: new Date(Date.now() + PASSWORD_RESET_CODE_TTL_MS),
           usedAt: null,
         }),
       );
