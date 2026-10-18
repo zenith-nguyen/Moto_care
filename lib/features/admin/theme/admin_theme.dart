@@ -6,7 +6,7 @@ import '../../../core/theme/app_theme.dart';
 
 abstract final class AdminTheme {
   static final ThemeData light = _build();
-  static const dashboardCardRadius = BorderRadius.all(Radius.circular(20));
+  static const dashboardCardRadius = BorderRadius.all(Radius.circular(24));
   static final dashboardCardDecoration = BoxDecoration(
     color: AdminTokens.card,
     borderRadius: dashboardCardRadius,

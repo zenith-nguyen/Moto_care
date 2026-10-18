@@ -9,14 +9,24 @@ class AdminAccountCard extends StatelessWidget {
   final Widget child;
   final double padding;
   @override
-  Widget build(BuildContext context) => Material(
-    color: AdminTokens.surface,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
-      side: const BorderSide(color: AdminTokens.border),
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      color: AdminTokens.surface,
+      borderRadius: BorderRadius.all(Radius.circular(18)),
+      boxShadow: [
+        BoxShadow(
+          color: Color(0x0A000000),
+          blurRadius: 8,
+          offset: Offset(0, 3),
+        ),
+      ],
     ),
-    clipBehavior: Clip.antiAlias,
-    child: Padding(padding: EdgeInsets.all(padding), child: child),
+    child: Material(
+      color: AdminTokens.surface,
+      borderRadius: BorderRadius.circular(18),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(padding: EdgeInsets.all(padding), child: child),
+    ),
   );
 }
 
@@ -231,77 +241,11 @@ class AdminAccountSectionTitle extends StatelessWidget {
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 17,
+          fontFamily: 'Montserrat',
+          fontSize: 16,
           fontWeight: FontWeight.w700,
+          color: AdminTokens.text,
           height: 1.5,
-        ),
-      ),
-    ),
-  );
-}
-
-class AdminAccountGridTile extends StatelessWidget {
-  const AdminAccountGridTile({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    this.onTap,
-    this.trailing,
-  });
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final VoidCallback? onTap;
-  final Widget? trailing;
-  @override
-  Widget build(BuildContext context) => Material(
-    color: AdminTokens.card,
-    borderRadius: BorderRadius.circular(16),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AdminTokens.activePill,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 24, color: AdminTokens.primaryBlue),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 11,
-                height: 1.5,
-                color: AdminTokens.muted,
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (trailing != null)
-              trailing!
-            else
-              const Icon(
-                Icons.arrow_forward_rounded,
-                size: 18,
-                color: AdminTokens.primaryBlue,
-              ),
-          ],
         ),
       ),
     ),
@@ -315,51 +259,64 @@ class AdminAccountListTile extends StatelessWidget {
     required this.subtitle,
     required this.icon,
     required this.onTap,
+    this.trailing,
   });
   final String title;
   final String subtitle;
   final IconData icon;
   final VoidCallback? onTap;
+  final Widget? trailing;
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      child: Row(
-        children: [
-          Icon(icon, color: AdminTokens.primaryBlue, size: 23),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1.5,
-                  ),
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: AdminAccountCard(
+      padding: 0,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(icon, color: AdminTokens.primaryBlue, size: 24),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AdminTokens.text,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w400,
+                        color: AdminTokens.muted,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 11,
+              ),
+              const SizedBox(width: 10),
+              trailing ??
+                  const Icon(
+                    Icons.chevron_right_rounded,
                     color: AdminTokens.muted,
-                    height: 1.5,
+                    size: 24,
                   ),
-                ),
-              ],
-            ),
+            ],
           ),
-          const SizedBox(width: 6),
-          const Icon(
-            Icons.chevron_right_rounded,
-            color: AdminTokens.muted,
-            size: 20,
-          ),
-        ],
+        ),
       ),
     ),
   );

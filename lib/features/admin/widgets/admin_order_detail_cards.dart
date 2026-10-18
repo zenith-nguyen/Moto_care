@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/admin_tokens.dart';
@@ -18,88 +19,191 @@ class AdminOrderProgressCard extends StatelessWidget {
   final List<AdminOrderProgressStep> steps;
 
   @override
-  Widget build(BuildContext context) => AdminOrderSurface(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AdminOrderIdentity(order: order),
-        const SizedBox(height: 24),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (var i = 0; i < steps.length; i++)
-              Expanded(
-                child: Semantics(
-                  label:
-                      '${steps[i].milestone.label}: ${steps[i].at == null ? 'Chưa ghi nhận' : adminDate(steps[i].at!)}',
-                  child: ExcludeSemantics(
-                    child: Column(
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      _OrderTrackingIdentity(order: order),
+      const SizedBox(height: 20),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var i = 0; i < steps.length; i++)
+            Expanded(
+              child: Semantics(
+                label:
+                    '${steps[i].milestone.label}: ${steps[i].at == null ? 'Chưa ghi nhận' : adminDate(steps[i].at!)}',
+                child: ExcludeSemantics(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _ProgressLine(
+                              visible: i > 0,
+                              reached:
+                                  i > 0 &&
+                                  steps[i - 1].reached &&
+                                  steps[i].reached,
+                            ),
+                          ),
+                          Icon(
+                            steps[i].reached
+                                ? Icons.check_circle_rounded
+                                : Icons.circle,
+                            key: ValueKey(
+                              'admin-order-step-${steps[i].milestone.name}-${steps[i].reached}',
+                            ),
+                            color: steps[i].reached
+                                ? AdminTokens.text
+                                : const Color(0xFFD1D1D6),
+                            size: 24,
+                          ),
+                          Expanded(
+                            child: _ProgressLine(
+                              visible: i < steps.length - 1,
+                              reached:
+                                  i < steps.length - 1 &&
+                                  steps[i].reached &&
+                                  steps[i + 1].reached,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        steps[i].milestone.label,
+                        textAlign: TextAlign.center,
+                        style: AdminOrderTheme.value.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        steps[i].at == null
+                            ? '—'
+                            : DateFormat('HH:mm').format(steps[i].at!),
+                        style: AdminOrderTheme.label.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+      if (order.warning case final warning?) ...[
+        const SizedBox(height: 16),
+        Text(
+          'Cảnh báo: $warning',
+          style: AdminOrderTheme.label.copyWith(color: AdminTokens.primaryRed),
+        ),
+      ],
+    ],
+  );
+}
+
+class _OrderTrackingIdentity extends StatelessWidget {
+  const _OrderTrackingIdentity({required this.order});
+  final AdminOrder order;
+
+  Future<void> _copy(BuildContext context) async {
+    var message = 'Đã sao chép mã đơn.';
+    try {
+      await Clipboard.setData(ClipboardData(text: order.id));
+    } on PlatformException {
+      message = 'Không thể sao chép mã đơn. Vui lòng thử lại.';
+    }
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final identity = Row(
+        children: [
+          const CircleAvatar(
+            radius: 20,
+            backgroundColor: Color(0xFFF1F2F7),
+            child: Icon(
+              Icons.inventory_2_outlined,
+              size: 20,
+              color: AdminTokens.text,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Mã đơn hàng:',
+                  style: AdminOrderTheme.label.copyWith(
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Tooltip(
+                  message: 'Sao chép mã đơn',
+                  child: TextButton(
+                    key: const ValueKey('admin-order-copy-id'),
+                    onPressed: () => _copy(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AdminTokens.text,
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      alignment: Alignment.centerLeft,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _ProgressLine(
-                                visible: i > 0,
-                                reached:
-                                    i > 0 &&
-                                    steps[i - 1].reached &&
-                                    steps[i].reached,
-                              ),
-                            ),
-                            Icon(
-                              steps[i].reached
-                                  ? Icons.check_circle_rounded
-                                  : Icons.circle,
-                              key: ValueKey(
-                                'admin-order-step-${steps[i].milestone.name}-${steps[i].reached}',
-                              ),
-                              color: steps[i].reached
-                                  ? AdminTokens.text
-                                  : const Color(0xFFDDE0E4),
-                              size: 26,
-                            ),
-                            Expanded(
-                              child: _ProgressLine(
-                                visible: i < steps.length - 1,
-                                reached:
-                                    i < steps.length - 1 &&
-                                    steps[i].reached &&
-                                    steps[i + 1].reached,
-                              ),
-                            ),
-                          ],
+                        Flexible(
+                          child: Text(
+                            order.id,
+                            style: AdminOrderTheme.value.copyWith(height: 1.3),
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          steps[i].milestone.label,
-                          textAlign: TextAlign.center,
-                          style: AdminOrderTheme.value.copyWith(fontSize: 10),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          steps[i].at == null
-                              ? '—'
-                              : DateFormat('HH:mm').format(steps[i].at!),
-                          style: AdminOrderTheme.label.copyWith(fontSize: 10),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.copy_outlined,
+                          size: 14,
+                          color: Color(0xFF8E8E93),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
-        if (order.warning case final warning?) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Cảnh báo: $warning',
-            style: AdminOrderTheme.label.copyWith(
-              color: AdminTokens.primaryRed,
+              ],
             ),
           ),
         ],
-      ],
-    ),
+      );
+      final badge = AdminOrderStatusBadge(order.status, compact: true);
+      if (constraints.maxWidth < 320 ||
+          MediaQuery.textScalerOf(context).scale(1) > 1.2) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            identity,
+            const SizedBox(height: 8),
+            Align(alignment: Alignment.centerRight, child: badge),
+          ],
+        );
+      }
+      return Row(
+        children: [
+          Expanded(child: identity),
+          const SizedBox(width: 12),
+          badge,
+        ],
+      );
+    },
   );
 }
 
@@ -114,7 +218,7 @@ class _ProgressLine extends StatelessWidget {
         ? Colors.transparent
         : reached
         ? AdminTokens.text
-        : const Color(0xFFDDE0E4),
+        : const Color(0xFFD1D1D6),
   );
 }
 

@@ -60,120 +60,77 @@ class AdminAccountScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 28),
               const AdminAccountSectionTitle('Quản lý & Cấu hình Vận hành'),
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: AdminAccountGridTile(
-                        title: 'Cấu hình Phí & Hệ số',
-                        subtitle:
-                            'Thời tiết ×${state.settings.weatherFactor} · SOS ×${state.settings.sosFactor}',
-                        icon: Icons.tune_rounded,
-                        onTap: state.busy
-                            ? null
-                            : () => edit(AdminAccountEditor.fees),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AdminAccountGridTile(
-                        title: 'Cài đặt Cảnh báo SOS',
-                        subtitle: state.settings.sosSound
-                            ? 'Âm thanh chuông đang bật'
-                            : 'Âm thanh chuông đã tắt',
-                        icon: Icons.notifications_active_outlined,
-                        onTap: state.busy
-                            ? null
-                            : () => edit(AdminAccountEditor.alerts),
-                      ),
-                    ),
-                  ],
+              AdminAccountListTile(
+                title: 'Cấu hình Phí & Hệ số',
+                subtitle:
+                    'Thời tiết ×${state.settings.weatherFactor} · SOS ×${state.settings.sosFactor}',
+                icon: Icons.tune_rounded,
+                onTap: state.busy ? null : () => edit(AdminAccountEditor.fees),
+              ),
+              AdminAccountListTile(
+                title: 'Cài đặt Cảnh báo SOS',
+                subtitle: state.settings.sosSound
+                    ? 'Âm thanh chuông đang bật'
+                    : 'Âm thanh chuông đã tắt',
+                icon: Icons.notifications_active_outlined,
+                onTap: state.busy
+                    ? null
+                    : () => edit(AdminAccountEditor.alerts),
+              ),
+              AdminAccountListTile(
+                title: 'Chế độ Sandbox',
+                subtitle: state.settings.sandbox
+                    ? 'Test Mode đang bật'
+                    : 'Test Mode đã tắt',
+                icon: Icons.science_outlined,
+                onTap: null,
+                trailing: Semantics(
+                  label: 'Chế độ Sandbox',
+                  child: Switch.adaptive(
+                    value: state.settings.sandbox,
+                    onChanged: state.busy
+                        ? null
+                        : (value) => _changeSandbox(context, ref, value),
+                  ),
                 ),
+              ),
+              AdminAccountListTile(
+                title: 'Phân quyền Quản trị',
+                subtitle: 'Admin & Nhân viên ca trực',
+                icon: Icons.admin_panel_settings_outlined,
+                onTap: () => sheet(AdminAccountSheet.staff),
+              ),
+              const SizedBox(height: 16),
+              const AdminAccountSectionTitle('Nhật ký & Bảo mật'),
+              AdminAccountListTile(
+                title: 'Nhật ký thao tác (Audit Trail)',
+                subtitle: 'Lịch sử duyệt tiền, duyệt thợ',
+                icon: Icons.history_rounded,
+                onTap: () => sheet(AdminAccountSheet.audit),
+              ),
+              AdminAccountListTile(
+                title: 'Lịch sử đăng nhập & Thiết bị',
+                subtitle: 'Kiểm tra các phiên truy cập',
+                icon: Icons.devices_outlined,
+                onTap: () => sheet(AdminAccountSheet.logins),
+              ),
+              const SizedBox(height: 16),
+              const AdminAccountSectionTitle('Thông tin & Hỗ trợ'),
+              AdminAccountListTile(
+                title: 'Tài liệu Hướng dẫn Vận hành Admin',
+                subtitle: 'Quy trình điều phối và đối soát',
+                icon: Icons.menu_book_outlined,
+                onTap: () => sheet(AdminAccountSheet.guide),
+              ),
+              AdminAccountListTile(
+                title: 'Liên hệ Kỹ thuật (Dev Team Support)',
+                subtitle: 'Tạo và theo dõi yêu cầu hỗ trợ',
+                icon: Icons.support_agent_rounded,
+                onTap: state.busy
+                    ? null
+                    : () => edit(AdminAccountEditor.support),
               ),
               const SizedBox(height: 12),
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: AdminAccountGridTile(
-                        title: 'Chế độ Sandbox',
-                        subtitle: state.settings.sandbox
-                            ? 'Test Mode đang bật'
-                            : 'Test Mode đã tắt',
-                        icon: Icons.science_outlined,
-                        trailing: Semantics(
-                          label: 'Chế độ Sandbox',
-                          child: Switch.adaptive(
-                            value: state.settings.sandbox,
-                            onChanged: state.busy
-                                ? null
-                                : (value) =>
-                                      _changeSandbox(context, ref, value),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: AdminAccountGridTile(
-                        title: 'Phân quyền Quản trị',
-                        subtitle: 'Admin & Nhân viên ca trực',
-                        icon: Icons.admin_panel_settings_outlined,
-                        onTap: () => sheet(AdminAccountSheet.staff),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              const AdminAccountSectionTitle('Nhật ký & Bảo mật'),
-              AdminAccountCard(
-                padding: 0,
-                child: Column(
-                  children: [
-                    AdminAccountListTile(
-                      title: 'Nhật ký thao tác (Audit Trail)',
-                      subtitle: 'Lịch sử duyệt tiền, duyệt thợ',
-                      icon: Icons.history_rounded,
-                      onTap: () => sheet(AdminAccountSheet.audit),
-                    ),
-                    const Divider(height: 1, indent: 52, endIndent: 16),
-                    AdminAccountListTile(
-                      title: 'Lịch sử đăng nhập & Thiết bị',
-                      subtitle: 'Kiểm tra các phiên truy cập',
-                      icon: Icons.devices_outlined,
-                      onTap: () => sheet(AdminAccountSheet.logins),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              const AdminAccountSectionTitle('Thông tin & Hỗ trợ'),
-              AdminAccountCard(
-                padding: 0,
-                child: Column(
-                  children: [
-                    AdminAccountListTile(
-                      title: 'Tài liệu Hướng dẫn Vận hành Admin',
-                      subtitle: 'Quy trình điều phối và đối soát',
-                      icon: Icons.menu_book_outlined,
-                      onTap: () => sheet(AdminAccountSheet.guide),
-                    ),
-                    const Divider(height: 1, indent: 52, endIndent: 16),
-                    AdminAccountListTile(
-                      title: 'Liên hệ Kỹ thuật (Dev Team Support)',
-                      subtitle: 'Tạo và theo dõi yêu cầu hỗ trợ',
-                      icon: Icons.support_agent_rounded,
-                      onTap: state.busy
-                          ? null
-                          : () => edit(AdminAccountEditor.support),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
               const Text(
                 AdminAccountData.version,
                 textAlign: TextAlign.center,

@@ -13,6 +13,7 @@ class AdminOrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AdminOrderSurface(
+    color: AdminTokens.card,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -56,7 +57,7 @@ class AdminOrderCard extends StatelessWidget {
           child: TextButton.icon(
             onPressed: () => context.go('/admin/orders/${order.id}'),
             style: TextButton.styleFrom(
-              backgroundColor: AdminTokens.card,
+              backgroundColor: AdminTokens.surface,
               foregroundColor: AdminTokens.text,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               shape: const StadiumBorder(),

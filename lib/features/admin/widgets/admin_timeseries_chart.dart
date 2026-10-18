@@ -158,8 +158,13 @@ class AdminSosTrendChart extends StatelessWidget {
 
 /// Rounded daily bars and an unobtrusive average reference, as in Health.
 class AdminRevenueBarChart extends StatelessWidget {
-  const AdminRevenueBarChart({super.key, required this.points});
+  const AdminRevenueBarChart({
+    super.key,
+    required this.points,
+    this.compact = false,
+  });
   final List<AdminTimeseriesPoint> points;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -172,12 +177,13 @@ class AdminRevenueBarChart extends StatelessWidget {
       label:
           'Biểu đồ tiền thu mỗi ngày. Trung bình '
           '${adminMoney(average.round())} mỗi ngày. '
-          'Chạm cột để xem giá trị; dữ liệu từng ngày ở bên dưới.',
+          'Chạm cột để xem giá trị.'
+          '${compact ? '' : ' Dữ liệu từng ngày ở bên dưới.'}',
       child: LayoutBuilder(
         builder: (context, constraints) => Column(
           children: [
             SizedBox(
-              height: 190,
+              height: compact ? 64 : 190,
               child: BarChart(
                 duration: MediaQuery.disableAnimationsOf(context)
                     ? Duration.zero
@@ -188,6 +194,7 @@ class AdminRevenueBarChart extends StatelessWidget {
                   alignment: BarChartAlignment.spaceAround,
                   titlesData: const FlTitlesData(show: false),
                   gridData: FlGridData(
+                    show: !compact,
                     drawVerticalLine: false,
                     horizontalInterval: math.max(1, peak / 3),
                     getDrawingHorizontalLine: (_) =>
@@ -196,12 +203,13 @@ class AdminRevenueBarChart extends StatelessWidget {
                   borderData: FlBorderData(show: false),
                   extraLinesData: ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(
-                        y: average,
-                        color: AdminTokens.primaryBlue.withValues(alpha: .45),
-                        strokeWidth: 1.5,
-                        dashArray: [5, 4],
-                      ),
+                      if (!compact)
+                        HorizontalLine(
+                          y: average,
+                          color: AdminTokens.primaryBlue.withValues(alpha: .45),
+                          strokeWidth: 1.5,
+                          dashArray: [5, 4],
+                        ),
                     ],
                   ),
                   barTouchData: BarTouchData(
@@ -230,7 +238,9 @@ class AdminRevenueBarChart extends StatelessWidget {
                             toY: points[i].collected.toDouble(),
                             width: (constraints.maxWidth / points.length * .55)
                                 .clamp(3, 26),
-                            color: i == points.length - 1
+                            color: compact
+                                ? AdminTokens.primaryBlue.withValues(alpha: .7)
+                                : i == points.length - 1
                                 ? AdminTokens.primaryBlue
                                 : AdminTokens.primaryBlue.withValues(
                                     alpha: .28,

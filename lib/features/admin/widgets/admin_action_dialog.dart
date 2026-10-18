@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/admin_models.dart';
 import '../providers/admin_providers.dart';
+import '../theme/admin_theme.dart';
 import 'admin_common.dart';
 
-Future<void> showAdminAction(
+Future<bool> showAdminAction(
   BuildContext context, {
   required AdminActionKind kind,
   required String id,
@@ -17,13 +18,16 @@ Future<void> showAdminAction(
   final success = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => AdminActionDialog(
-      kind: kind,
-      id: id,
-      approve: approve,
-      title: title,
-      description: description,
-      noteRequired: noteRequired,
+    builder: (_) => Theme(
+      data: AdminTheme.light,
+      child: AdminActionDialog(
+        kind: kind,
+        id: id,
+        approve: approve,
+        title: title,
+        description: description,
+        noteRequired: noteRequired,
+      ),
     ),
   );
   if (context.mounted && success == true) {
@@ -33,6 +37,7 @@ Future<void> showAdminAction(
       ),
     );
   }
+  return context.mounted && success == true;
 }
 
 class AdminActionDialog extends ConsumerStatefulWidget {

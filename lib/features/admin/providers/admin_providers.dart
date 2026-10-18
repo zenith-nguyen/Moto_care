@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/admin_models.dart';
 import '../models/admin_dashboard_models.dart';
 import '../models/admin_account_models.dart';
+import '../models/admin_finance_models.dart';
 import '../services/admin_repository.dart';
 import '../services/mock_admin_repository.dart';
 
@@ -135,6 +136,15 @@ final adminReconciliationProvider = FutureProvider<List<AdminReconciliation>>((
   requireAdmin(ref);
   return ref.watch(adminRepositoryProvider).reconciliation();
 }, retry: adminManualRetry);
+final adminProviderDetailProvider =
+    FutureProvider.family<AdminProviderApplication?, String>((ref, id) async {
+      requireAdmin(ref);
+      final applications = await ref.watch(adminProvidersProvider.future);
+      for (final application in applications) {
+        if (application.id == id) return application;
+      }
+      return null;
+    }, retry: adminManualRetry);
 final adminRefundsProvider = FutureProvider<List<AdminRefund>>((ref) async {
   requireAdmin(ref);
   final repository = ref.watch(adminRepositoryProvider);
@@ -181,6 +191,20 @@ final adminSummaryProvider =
       requireAdmin(ref);
       return ref.watch(adminRepositoryProvider).dashboardSummary(range);
     }, retry: adminManualRetry);
+
+final adminFinanceProvider = FutureProvider<AdminFinanceSnapshot>((ref) async {
+  requireAdmin(ref);
+  final now = ref.watch(adminClockProvider)();
+  final range = AdminDateRange(DateTime(2000), DateTime(now.year + 1));
+  final values = await Future.wait<Object>([
+    ref.watch(adminSummaryProvider(range).future),
+    ref.watch(adminReconciliationProvider.future),
+  ]);
+  return AdminFinanceSnapshot(
+    summary: values[0] as AdminDashboardSummary,
+    invoices: values[1] as List<AdminReconciliation>,
+  );
+}, retry: adminManualRetry);
 final adminTimeseriesProvider =
     FutureProvider.family<List<AdminTimeseriesPoint>, AdminDateRange>((
       ref,

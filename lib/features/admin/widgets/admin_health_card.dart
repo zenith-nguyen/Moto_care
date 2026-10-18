@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/admin_tokens.dart';
 import '../theme/admin_theme.dart';
@@ -8,23 +9,33 @@ class AdminHealthCard extends StatelessWidget {
   const AdminHealthCard({
     super.key,
     required this.title,
-    required this.icon,
     required this.color,
     required this.child,
+    this.icon,
     this.onOpen,
+    this.backgroundColor,
+    this.titleStyle,
+    this.trailing,
+    this.actionColor = AdminTokens.muted,
   });
 
   final String title;
-  final IconData icon;
+  final IconData? icon;
   final Color color;
   final Widget child;
   final VoidCallback? onOpen;
+  final Color? backgroundColor;
+  final TextStyle? titleStyle;
+  final Widget? trailing;
+  final Color actionColor;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: AdminTheme.dashboardCardDecoration,
+    decoration: AdminTheme.dashboardCardDecoration.copyWith(
+      color: backgroundColor,
+    ),
     child: Material(
-      color: AdminTokens.card,
+      color: backgroundColor ?? AdminTokens.card,
       borderRadius: AdminTheme.dashboardCardRadius,
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -41,24 +52,31 @@ class AdminHealthCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: [
-                      Icon(icon, size: 22, color: color),
-                      const SizedBox(width: 8),
+                      if (icon != null) ...[
+                        Icon(icon, size: 22, color: color),
+                        const SizedBox(width: 8),
+                      ],
                       Expanded(
                         child: Text(
                           title,
-                          style: TextStyle(
-                            color: color,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            height: 1.4,
-                          ),
+                          style:
+                              titleStyle ??
+                              GoogleFonts.montserrat(
+                                color: color,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                height: 1.4,
+                              ),
                         ),
                       ),
-                      if (onOpen != null)
-                        const Icon(
+                      if (trailing != null) ...[
+                        const SizedBox(width: 8),
+                        trailing!,
+                      ] else if (onOpen != null)
+                        Icon(
                           Icons.chevron_right_rounded,
                           size: 22,
-                          color: AdminTokens.muted,
+                          color: actionColor,
                         ),
                     ],
                   ),

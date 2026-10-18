@@ -21,9 +21,10 @@ class AdminOrderDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => AdminPage(
     title: 'Chi tiết đơn $orderId',
     header: AdminPageHeader(
-      title: 'Chi tiết đơn $orderId',
-      fontSize: 20,
-      showActions: false,
+      title: 'Chi tiết đơn',
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      centerTitle: true,
       onBack: () => context.go('/admin/orders'),
     ),
     children: [

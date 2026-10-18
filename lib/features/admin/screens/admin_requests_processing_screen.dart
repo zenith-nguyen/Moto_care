@@ -5,6 +5,7 @@ import '../models/admin_models.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/admin_action_dialog.dart';
 import '../widgets/admin_common.dart';
+import '../widgets/admin_review_card.dart';
 
 class AdminRequestsProcessingScreen extends ConsumerStatefulWidget {
   const AdminRequestsProcessingScreen({super.key, this.initialTab = 0});
@@ -70,32 +71,23 @@ class _RefundList extends ConsumerWidget {
     value: ref.watch(adminRefundsProvider),
     onRetry: () => ref.invalidate(adminRefundsProvider),
     isEmpty: (items) => items.isEmpty,
-    builder: (items) => AdminRecordList(
-      records: [
+    builder: (items) => AdminReviewCardList(
+      cards: [
         for (final refund in items)
-          AdminRecord(
+          AdminReviewCard(
+            key: ValueKey('admin-refund-${refund.id}'),
             title: '${refund.id} • ${refund.orderId}',
+            status: refund.status,
             fields: [
-              AdminField.text('Khách hàng', refund.customer),
-              AdminField.text('Tiền hoàn', adminMoney(refund.amount)),
-              AdminField.text('Lý do', refund.reason),
-              AdminField(
-                'Trạng thái',
-                AdminStatusChip(
-                  refund.status.label,
-                  color: adminReviewColor(refund.status),
-                ),
-              ),
-              AdminField.text(
-                'Mã giao dịch sandbox',
-                refund.sandboxTransaction,
-              ),
               AdminField.text(
                 'Nguồn yêu cầu',
                 refund.source == 'refund'
                     ? 'Hoàn tiền đơn'
                     : 'Điều chỉnh thanh toán',
               ),
+              AdminField.text('Tiền hoàn', adminMoney(refund.amount)),
+              AdminField.text('Lý do', refund.reason),
+              AdminField.text('Mã Sandbox', refund.sandboxTransaction),
             ],
           ),
       ],
@@ -110,11 +102,13 @@ class _DisputeList extends ConsumerWidget {
     value: ref.watch(adminDisputesProvider),
     onRetry: () => ref.invalidate(adminDisputesProvider),
     isEmpty: (items) => items.isEmpty,
-    builder: (items) => AdminRecordList(
-      records: [
+    builder: (items) => AdminReviewCardList(
+      cards: [
         for (final dispute in items)
-          AdminRecord(
+          AdminReviewCard(
+            key: ValueKey('admin-dispute-${dispute.id}'),
             title: '${dispute.id} • ${dispute.orderId}',
+            status: dispute.status,
             fields: [
               AdminField.text('Giá gốc', adminMoney(dispute.originalPrice)),
               AdminField.text(
@@ -127,22 +121,16 @@ class _DisputeList extends ConsumerWidget {
               ),
               AdminField.text('Lý do thợ', dispute.providerReason),
               AdminField.text('Phản hồi khách', dispute.customerReply),
-              AdminField(
-                'Trạng thái',
-                AdminStatusChip(
-                  dispute.status.label,
-                  color: adminReviewColor(dispute.status),
-                ),
-              ),
             ],
             actions: [
-              FilledButton(
+              AdminReviewAction(
+                label: 'Chấp nhận giá đề xuất',
                 onPressed: () => _resolve(context, dispute, true),
-                child: const Text('Chấp nhận giá đề xuất'),
               ),
-              OutlinedButton(
+              AdminReviewAction(
+                label: 'Bác đề xuất',
+                destructive: true,
                 onPressed: () => _resolve(context, dispute, false),
-                child: const Text('Bác đề xuất'),
               ),
             ],
           ),
@@ -176,11 +164,14 @@ class _WithdrawalList extends ConsumerWidget {
       ref.invalidate(adminWalletProvider);
     },
     isEmpty: (items) => items.isEmpty,
-    builder: (items) => AdminRecordList(
-      records: [
+    builder: (items) => AdminReviewCardList(
+      cards: [
         for (final snapshot in items)
-          AdminRecord(
+          AdminReviewCard(
+            key: ValueKey('admin-withdrawal-${snapshot.request.id}'),
+            titleLabel: 'Mã yêu cầu:',
             title: '${snapshot.request.id} • ${snapshot.request.providerName}',
+            status: snapshot.request.status,
             fields: [
               AdminField.text(
                 'Tiền yêu cầu',
@@ -202,24 +193,19 @@ class _WithdrawalList extends ConsumerWidget {
                 'Thời gian',
                 adminDate(snapshot.request.createdAt),
               ),
-              AdminField(
-                'Trạng thái',
-                AdminStatusChip(
-                  snapshot.request.status.label,
-                  color: adminReviewColor(snapshot.request.status),
-                ),
-              ),
             ],
             actions: [
-              FilledButton(
+              AdminReviewAction(
+                label: 'Duyệt',
                 onPressed: () => _resolve(context, snapshot, true),
-                child: const Text('Duyệt'),
               ),
-              OutlinedButton(
+              AdminReviewAction(
+                label: 'Từ chối',
+                destructive: true,
                 onPressed: () => _resolve(context, snapshot, false),
-                child: const Text('Từ chối'),
               ),
-              TextButton(
+              AdminReviewAction(
+                label: 'Lịch sử ví',
                 onPressed: () => showDialog<void>(
                   context: context,
                   builder: (_) => AdminWalletHistoryDialog(
@@ -227,7 +213,6 @@ class _WithdrawalList extends ConsumerWidget {
                     providerName: snapshot.request.providerName,
                   ),
                 ),
-                child: const Text('Lịch sử ví'),
               ),
             ],
           ),

@@ -38,8 +38,9 @@ class AdminOrderSurface extends StatelessWidget {
 }
 
 class AdminOrderStatusBadge extends StatelessWidget {
-  const AdminOrderStatusBadge(this.status, {super.key});
+  const AdminOrderStatusBadge(this.status, {super.key, this.compact = false});
   final AdminOrderStatus status;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -59,14 +60,21 @@ class AdminOrderStatusBadge extends StatelessWidget {
       _ => (AdminTokens.activePill, AdminTokens.primaryBlue),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 10 : 12,
+        vertical: compact ? 6 : 7,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         status.label,
-        style: AdminOrderTheme.value.copyWith(fontSize: 12, color: foreground),
+        style: AdminOrderTheme.value.copyWith(
+          fontSize: compact ? 11 : 12,
+          fontWeight: compact ? FontWeight.w500 : FontWeight.w600,
+          color: foreground,
+        ),
       ),
     );
   }

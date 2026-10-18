@@ -1,5 +1,5 @@
-name: moto_care
-description: "Moto Care Flutter application."
+name: revo
+description: "Revo Flutter application."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -53,6 +53,8 @@ dependencies:
   carousel_slider: ^5.1.2
   share_plus: ^13.3.1
   video_player: ^2.14.1
+  fl_chart: ^1.2.0
+  google_fonts: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -87,14 +89,14 @@ flutter:
     - "assets/images/Ảnh.png"
     - "assets/images/Thời tiết.png"
 
-    - assets/images/rescue-tow.png
-    - assets/images/rescue-team.png
-    - assets/images/rescue-garage.png
+    - assets/images/admin-rescue-invoice-truck.png
+    - "assets/images/Thẻ_visa_admin.png"
+    - "assets/images/Ảnh_thợ.png"
     - assets/images/Tiemsua1.png
     - assets/images/Tiemsua2.png
     - assets/images/Tiemsua3.png
     - assets/images/Tiemsua4.png
-    - assets/fonts/Montserrat_LICENSE.txt
+    - assets/fonts/
 
   fonts:
     - family: Montserrat

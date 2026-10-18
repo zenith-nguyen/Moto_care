@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/admin_tokens.dart';
-import '../providers/admin_account_provider.dart';
 import '../providers/admin_providers.dart';
 import '../theme/admin_theme.dart';
 
@@ -12,19 +11,32 @@ class AdminPageHeader extends StatelessWidget {
     super.key,
     required this.title,
     this.fontSize = 22,
+    this.fontWeight,
     this.onBack,
-    this.showActions = true,
+    this.leading,
+    this.showNotifications = false,
+    this.centerTitle = false,
   });
 
   final String title;
   final double fontSize;
+  final FontWeight? fontWeight;
   final VoidCallback? onBack;
-  final bool showActions;
+  final Widget? leading;
+  final bool showNotifications;
+  final bool centerTitle;
 
   @override
   Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: centerTitle
+        ? CrossAxisAlignment.center
+        : CrossAxisAlignment.start,
     children: [
+      if (leading != null) ...[
+        leading!,
+        const SizedBox(width: 12),
+      ] else if (centerTitle && onBack == null && showNotifications)
+        const SizedBox(width: 56),
       if (onBack != null) ...[
         IconButton(
           key: const ValueKey('admin-order-back'),
@@ -41,22 +53,28 @@ class AdminPageHeader extends StatelessWidget {
             header: true,
             child: Text(
               title,
-              textAlign: TextAlign.left,
-              style: AdminTheme.pageTitleStyle.copyWith(fontSize: fontSize),
+              textAlign: centerTitle ? TextAlign.center : TextAlign.left,
+              style: AdminTheme.pageTitleStyle.copyWith(
+                fontFamily: fontWeight == null ? null : 'Montserrat',
+                fontSize: fontSize,
+                fontWeight: fontWeight,
+              ),
             ),
           ),
         ),
       ),
-      if (showActions) ...[
+      if (centerTitle && onBack != null && !showNotifications)
+        const SizedBox(width: 56),
+      if (showNotifications) ...[
         const SizedBox(width: 12),
-        const _AdminHeaderActions(),
+        const _AdminHeaderNotifications(),
       ],
     ],
   );
 }
 
-class _AdminHeaderActions extends ConsumerWidget {
-  const _AdminHeaderActions();
+class _AdminHeaderNotifications extends ConsumerWidget {
+  const _AdminHeaderNotifications();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -64,68 +82,40 @@ class _AdminHeaderActions extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final counts = ref.watch(adminPendingCountsProvider);
-    final avatar = ref.watch(
-      adminAccountProvider.select((state) => state.avatarBytes),
-    );
     final hasPending = (counts.asData?.value.total ?? 0) > 0;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          key: const ValueKey('admin-header-notifications'),
-          tooltip: 'Thông báo',
-          onPressed: () => context.go('/admin/requests'),
-          style: IconButton.styleFrom(
-            backgroundColor: AdminTokens.card,
-            foregroundColor: AdminTokens.text,
-            minimumSize: const Size(44, 44),
-            shape: const CircleBorder(),
-          ),
-          icon: SizedBox(
-            width: 24,
-            height: 24,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.notifications_none_rounded, size: 24),
-                if (hasPending)
-                  const Positioned(
-                    top: 1,
-                    right: 2,
-                    child: DecoratedBox(
-                      key: ValueKey('admin-header-notification-dot'),
-                      decoration: BoxDecoration(
-                        color: AdminTokens.primaryRed,
-                        shape: BoxShape.circle,
-                      ),
-                      child: SizedBox(width: 7, height: 7),
-                    ),
+    return IconButton(
+      key: const ValueKey('admin-header-notifications'),
+      tooltip: 'Thông báo',
+      onPressed: () => context.go('/admin/requests'),
+      style: IconButton.styleFrom(
+        backgroundColor: AdminTokens.card,
+        foregroundColor: AdminTokens.text,
+        minimumSize: const Size(44, 44),
+        shape: const CircleBorder(),
+      ),
+      icon: SizedBox(
+        width: 24,
+        height: 24,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.notifications_none_rounded, size: 24),
+            if (hasPending)
+              const Positioned(
+                top: 1,
+                right: 2,
+                child: DecoratedBox(
+                  key: ValueKey('admin-header-notification-dot'),
+                  decoration: BoxDecoration(
+                    color: AdminTokens.primaryRed,
+                    shape: BoxShape.circle,
                   ),
-              ],
-            ),
-          ),
+                  child: SizedBox(width: 7, height: 7),
+                ),
+              ),
+          ],
         ),
-        const SizedBox(width: 8),
-        IconButton(
-          key: const ValueKey('admin-header-account'),
-          tooltip: 'Hồ sơ Admin',
-          onPressed: () => context.go('/admin/account'),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints.tightFor(width: 44, height: 44),
-          icon: CircleAvatar(
-            radius: 20,
-            backgroundColor: AdminTokens.inactivePill,
-            backgroundImage: avatar == null ? null : MemoryImage(avatar),
-            child: avatar == null
-                ? const Icon(
-                    Icons.person_outline_rounded,
-                    color: AdminTokens.inactivePillText,
-                    size: 24,
-                  )
-                : null,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

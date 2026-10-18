@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/admin_tokens.dart';
 
-/// Six Admin destinations, including direct access to the account.
+/// Six icon-only Admin destinations, including direct access to the account.
 class AdminFloatingBottomNav extends StatelessWidget {
   const AdminFloatingBottomNav({
     super.key,
@@ -55,7 +55,8 @@ class AdminFloatingBottomNav extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: Padding(
           padding: const EdgeInsets.all(6),
-          child: IntrinsicHeight(
+          child: SizedBox(
+            height: 48,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -77,48 +78,17 @@ class AdminFloatingBottomNav extends StatelessWidget {
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(24),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 2,
-                              vertical: 10,
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconTheme(
-                                  data: IconThemeData(
-                                    size: 23,
-                                    color: selectedIndex == i
-                                        ? AdminTokens.primaryBlue
-                                        : AdminTokens.muted,
-                                  ),
-                                  child: i == 4 ? requestIcon : Icon(_icons[i]),
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: Center(
+                              child: IconTheme(
+                                data: IconThemeData(
+                                  size: 23,
+                                  color: selectedIndex == i
+                                      ? AdminTokens.primaryBlue
+                                      : AdminTokens.muted,
                                 ),
-                                const SizedBox(height: 5),
-                                ExcludeSemantics(
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(
-                                      minHeight: MediaQuery.textScalerOf(
-                                        context,
-                                      ).scale(30),
-                                    ),
-                                    child: Text(
-                                      i == 4 ? 'Xử lý\nyêu cầu' : labels[i],
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontFamily: 'Montserrat',
-                                        fontSize: selectedIndex == i ? 12 : 11,
-                                        fontWeight: selectedIndex == i
-                                            ? FontWeight.w700
-                                            : FontWeight.w500,
-                                        height: 1.25,
-                                        color: selectedIndex == i
-                                            ? AdminTokens.primaryBlue
-                                            : AdminTokens.muted,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                child: i == 4 ? requestIcon : Icon(_icons[i]),
+                              ),
                             ),
                           ),
                         ),

@@ -178,12 +178,29 @@ class AdminAsyncSection<T> extends ConsumerWidget {
 }
 
 class AdminPageTitle extends StatelessWidget {
-  const AdminPageTitle({super.key, required this.title});
+  const AdminPageTitle({
+    super.key,
+    required this.title,
+    this.showNotifications = false,
+    this.centerTitle = false,
+    this.fontSize = 22,
+    this.leading,
+  });
 
   final String title;
+  final bool showNotifications;
+  final bool centerTitle;
+  final double fontSize;
+  final Widget? leading;
 
   @override
-  Widget build(BuildContext context) => AdminPageHeader(title: title);
+  Widget build(BuildContext context) => AdminPageHeader(
+    title: title,
+    showNotifications: showNotifications,
+    centerTitle: centerTitle,
+    fontSize: fontSize,
+    leading: leading,
+  );
 }
 
 class AdminPage extends StatelessWidget {

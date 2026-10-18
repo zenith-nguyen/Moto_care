@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/admin_tokens.dart';
 import '../models/admin_models.dart';
 import '../providers/admin_providers.dart';
 import '../widgets/admin_common.dart';
@@ -60,6 +61,7 @@ class _AdminOrdersScreenState extends ConsumerState<AdminOrdersScreen> {
       header: const AdminPageHeader(title: 'Quản lý đơn cứu hộ', fontSize: 20),
       children: [
         AdminOrderSurface(
+          color: AdminTokens.card,
           child: Column(
             children: [
               TextField(

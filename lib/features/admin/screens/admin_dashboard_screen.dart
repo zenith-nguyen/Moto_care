@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/admin_tokens.dart';
+import '../../home/data/home_media_assets.dart';
+import '../../home/providers/home_weather_provider.dart';
+import '../../home/theme/revo_home_theme.dart';
 import '../models/admin_dashboard_models.dart';
 import '../models/admin_models.dart';
 import '../providers/admin_providers.dart';
@@ -10,6 +12,8 @@ import '../theme/admin_theme.dart';
 import '../widgets/admin_common.dart';
 import '../widgets/admin_dashboard_highlights.dart';
 import '../widgets/admin_dashboard_queues.dart';
+import '../widgets/admin_header_avatar.dart';
+import '../widgets/admin_weather_card.dart';
 
 class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -74,16 +78,27 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final range = _range;
+    final highlights = _selectedFilterIndex == 4
+        ? null
+        : ref.watch(adminDashboardHighlightsProvider(range));
+    final showPeriodSelector =
+        _selectedFilterIndex == 1 ||
+        _selectedFilterIndex == 3 ||
+        (highlights?.whenOrNull(data: (data) => data.isEmpty) ?? true);
     return RefreshIndicator(
       onRefresh: () async {
         _invalidateDashboard(range);
+        ref.invalidate(homeWeatherProvider);
         ref.invalidate(adminOrdersProvider);
         ref.invalidate(adminRefundsProvider);
         ref.invalidate(adminDisputesProvider);
         ref.invalidate(adminWithdrawalsProvider);
         // Async sections own error/retry presentation, including refresh errors.
         try {
-          await ref.read(adminDashboardHighlightsProvider(range).future);
+          await Future.wait([
+            ref.read(adminDashboardHighlightsProvider(range).future),
+            ref.read(homeWeatherProvider.future),
+          ]);
         } catch (_) {
           // Keep the section's error state visible after the gesture finishes.
         }
@@ -92,11 +107,8 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         key: const PageStorageKey('admin-health-dashboard'),
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.fromLTRB(
-          16,
-          12,
-          16,
-          24 + MediaQuery.paddingOf(context).bottom,
+        padding: EdgeInsets.only(
+          bottom: 24 + MediaQuery.paddingOf(context).bottom,
         ),
         child: Center(
           child: ConstrainedBox(
@@ -104,37 +116,47 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const AdminPageTitle(title: 'Tổng quan'),
-                const SizedBox(height: 16),
+                const _DashboardTopSection(),
                 _DashboardFilters(
                   selectedIndex: _selectedFilterIndex,
                   onSelected: _selectFilter,
                 ),
                 const SizedBox(height: 16),
-                if (_selectedFilterIndex != 4) ...[
-                  _DashboardPeriodSelector(
-                    period: _period,
-                    range: range,
-                    onPeriodChanged: _changePeriod,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_selectedFilterIndex != 4) ...[
+                        if (showPeriodSelector) ...[
+                          _DashboardPeriodSelector(
+                            period: _period,
+                            range: range,
+                            onPeriodChanged: _changePeriod,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                        AdminAsyncSection(
+                          value: highlights!,
+                          onRetry: () => _invalidateDashboard(range),
+                          isEmpty: (data) => data.isEmpty,
+                          builder: (data) => AdminDashboardHighlightsView(
+                            data: data,
+                            period: _period,
+                            onPeriodChanged: _changePeriod,
+                            selectedFilterIndex: _selectedFilterIndex,
+                          ),
+                        ),
+                      ],
+                      if (_selectedFilterIndex == 1) ...[
+                        const SizedBox(height: 16),
+                        const AdminDashboardUrgentOrders(),
+                      ],
+                      if (_selectedFilterIndex == 4)
+                        const AdminDashboardMoneyRequests(),
+                    ],
                   ),
-                  const SizedBox(height: 20),
-                  AdminAsyncSection(
-                    value: ref.watch(adminDashboardHighlightsProvider(range)),
-                    onRetry: () => _invalidateDashboard(range),
-                    isEmpty: (data) => data.isEmpty,
-                    builder: (data) => AdminDashboardHighlightsView(
-                      data: data,
-                      period: _period == 'Tùy chọn' ? 'Đã chọn' : _period,
-                      selectedFilterIndex: _selectedFilterIndex,
-                    ),
-                  ),
-                ],
-                if (_selectedFilterIndex == 1) ...[
-                  const SizedBox(height: 16),
-                  const AdminDashboardUrgentOrders(),
-                ],
-                if (_selectedFilterIndex == 4)
-                  const AdminDashboardMoneyRequests(),
+                ),
               ],
             ),
           ),
@@ -142,6 +164,48 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
       ),
     );
   }
+}
+
+class _DashboardTopSection extends StatelessWidget {
+  const _DashboardTopSection();
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      color: Colors.white,
+      image: DecorationImage(
+        image: AssetImage(HomeMediaAssets.weatherBackground),
+        fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
+        colorFilter: ColorFilter.mode(Color(0x3DFFFFFF), BlendMode.srcATop),
+      ),
+    ),
+    child: Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 12,
+        20,
+        16,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 60),
+            child: const AdminPageTitle(
+              title: 'Tổng quan',
+              fontSize: 20,
+              centerTitle: true,
+              showNotifications: true,
+              leading: AdminHeaderAvatar(),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const AdminWeatherCard(),
+        ],
+      ),
+    ),
+  );
 }
 
 class _DashboardFilters extends StatelessWidget {
@@ -162,40 +226,40 @@ class _DashboardFilters extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
-    key: const PageStorageKey('admin-dashboard-filters'),
-    scrollDirection: Axis.horizontal,
-    child: Row(
-      children: [
-        for (var i = 0; i < _labels.length; i++)
-          Padding(
-            padding: EdgeInsets.only(right: i == _labels.length - 1 ? 0 : 8),
-            child: ChoiceChip(
-              key: ValueKey('admin-dashboard-filter-$i'),
-              label: Text(_labels[i]),
-              selected: selectedIndex == i,
-              onSelected: (_) => onSelected(i),
-              showCheckmark: false,
-              selectedColor: AdminTokens.text,
-              backgroundColor: AdminTokens.inactivePill,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              side: BorderSide.none,
-              labelPadding: const EdgeInsets.symmetric(horizontal: 12),
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              labelStyle: GoogleFonts.montserrat(
-                fontSize: 13,
-                fontWeight: selectedIndex == i
-                    ? FontWeight.w600
-                    : FontWeight.w500,
-                color: selectedIndex == i
-                    ? Colors.white
-                    : AdminTokens.inactivePillText,
+  Widget build(BuildContext context) => Theme(
+    data: RevoHomeTheme.light,
+    child: SingleChildScrollView(
+      key: const PageStorageKey('admin-dashboard-filters'),
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          for (var i = 0; i < _labels.length; i++)
+            Padding(
+              padding: EdgeInsets.only(right: i == _labels.length - 1 ? 0 : 8),
+              child: ChoiceChip(
+                key: ValueKey('admin-dashboard-filter-$i'),
+                label: Text(_labels[i]),
+                selected: selectedIndex == i,
+                onSelected: (_) => onSelected(i),
+                showCheckmark: false,
+                selectedColor: RevoHomeColors.ink,
+                backgroundColor: RevoHomeColors.surface,
+                shape: const StadiumBorder(),
+                side: BorderSide.none,
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 9),
+                labelStyle: TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: selectedIndex == i
+                      ? Colors.white
+                      : RevoHomeColors.muted,
+                ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     ),
   );
 }

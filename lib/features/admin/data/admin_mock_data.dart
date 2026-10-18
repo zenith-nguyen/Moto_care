@@ -243,6 +243,16 @@ abstract final class AdminMockData {
       vehicle: 'Honda Wave • Bộ dụng cụ cứu hộ',
       plate: '59-X1 101.01',
       registeredAt: now.subtract(const Duration(hours: 5)),
+      workshopAddress: '12 Nguyễn Huệ, Q.1, TP.HCM',
+      citizenIdMasked: '079xxxxxxxxx',
+      workshopPhoto: const AdminMechanicPhoto.asset(
+        'assets/images/Tiemsua1.png',
+        label: 'Tiệm sửa xe',
+      ),
+      portraitPhoto: const AdminMechanicPhoto.asset(
+        'assets/images/Ảnh_thợ.png',
+        label: 'Chân dung thợ',
+      ),
     ),
     AdminProviderApplication(
       id: 'P-102',
@@ -252,6 +262,10 @@ abstract final class AdminMockData {
       vehicle: 'Yamaha Sirius • Bình kích điện',
       plate: '59-X2 102.02',
       registeredAt: now.subtract(const Duration(days: 1)),
+      workshopPhoto: const AdminMechanicPhoto.asset(
+        'assets/images/Tiemsua2.png',
+        label: 'Tiệm sửa xe',
+      ),
     ),
     AdminProviderApplication(
       id: 'P-103',
@@ -261,6 +275,10 @@ abstract final class AdminMockData {
       vehicle: 'Honda Future • Xe kéo chuyên dụng',
       plate: '59-X3 103.03',
       registeredAt: now.subtract(const Duration(days: 2)),
+      workshopPhoto: const AdminMechanicPhoto.asset(
+        'assets/images/Tiemsua3.png',
+        label: 'Tiệm sửa xe',
+      ),
     ),
   ];
 

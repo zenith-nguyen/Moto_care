@@ -226,6 +226,17 @@ class AdminChatMessage {
   final DateTime at;
 }
 
+class AdminMechanicPhoto {
+  const AdminMechanicPhoto.asset(this.location, {required this.label})
+    : isNetwork = false;
+  const AdminMechanicPhoto.network(this.location, {required this.label})
+    : isNetwork = true;
+
+  final String location;
+  final String label;
+  final bool isNetwork;
+}
+
 class AdminProviderApplication {
   const AdminProviderApplication({
     required this.id,
@@ -237,6 +248,14 @@ class AdminProviderApplication {
     required this.registeredAt,
     this.status = AdminReviewStatus.pending,
     this.reason,
+    this.workshopAddress,
+    this.citizenIdMasked,
+    this.identityVerified = false,
+    this.workshopPhoto,
+    this.identityFrontPhoto,
+    this.identityBackPhoto,
+    this.portraitPhoto,
+    this.additionalPhotos = const [],
   });
   final String id;
   final String name;
@@ -247,6 +266,14 @@ class AdminProviderApplication {
   final DateTime registeredAt;
   final AdminReviewStatus status;
   final String? reason;
+  final String? workshopAddress;
+  final String? citizenIdMasked;
+  final bool identityVerified;
+  final AdminMechanicPhoto? workshopPhoto;
+  final AdminMechanicPhoto? identityFrontPhoto;
+  final AdminMechanicPhoto? identityBackPhoto;
+  final AdminMechanicPhoto? portraitPhoto;
+  final List<AdminMechanicPhoto> additionalPhotos;
   AdminProviderApplication resolve(bool approve, String note) =>
       AdminProviderApplication(
         id: id,
@@ -260,6 +287,14 @@ class AdminProviderApplication {
             ? AdminReviewStatus.approved
             : AdminReviewStatus.rejected,
         reason: note,
+        workshopAddress: workshopAddress,
+        citizenIdMasked: citizenIdMasked,
+        identityVerified: identityVerified,
+        workshopPhoto: workshopPhoto,
+        identityFrontPhoto: identityFrontPhoto,
+        identityBackPhoto: identityBackPhoto,
+        portraitPhoto: portraitPhoto,
+        additionalPhotos: additionalPhotos,
       );
 }
 

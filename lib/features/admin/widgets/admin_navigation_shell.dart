@@ -84,10 +84,13 @@ class AdminNavigationShell extends ConsumerWidget {
               final wide = constraints.maxWidth >= 1100;
               final rail = constraints.maxWidth >= 760;
               final largeText = MediaQuery.textScalerOf(context).scale(1) > 1.2;
-              return Scaffold(
-                backgroundColor: AdminTokens.background,
+              final scaffold = Scaffold(
+                backgroundColor: selected == 5
+                    ? Colors.transparent
+                    : AdminTokens.background,
                 extendBody: !rail,
                 body: SafeArea(
+                  top: rail || location != '/admin/dashboard',
                   bottom: rail,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -123,6 +126,13 @@ class AdminNavigationShell extends ConsumerWidget {
                         onSelected: (index) =>
                             context.go(_destinations[index].$3),
                       ),
+              );
+              if (selected != 5) return scaffold;
+              return DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: AdminTokens.accountBackgroundGradient,
+                ),
+                child: scaffold,
               );
             },
           );

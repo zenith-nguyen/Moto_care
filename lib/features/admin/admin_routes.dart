@@ -6,12 +6,19 @@ import 'screens/admin_dashboard_screen.dart';
 import 'screens/admin_order_detail_screen.dart';
 import 'screens/admin_orders_screen.dart';
 import 'screens/admin_provider_approval_screen.dart';
-import 'screens/admin_reconciliation_screen.dart';
+import 'presentation/screens/admin_finance_screen.dart';
+import 'presentation/screens/admin_mechanic_detail_screen.dart';
 import 'screens/admin_requests_processing_screen.dart';
 import 'widgets/admin_navigation_shell.dart';
 
 List<RouteBase> get adminRoutes => [
   GoRoute(path: '/admin', redirect: (context, state) => '/admin/dashboard'),
+  GoRoute(
+    path: '/admin/providers/:providerId',
+    builder: (context, state) => AdminMechanicDetailRoute(
+      providerId: state.pathParameters['providerId']!,
+    ),
+  ),
   ShellRoute(
     builder: (context, state, child) =>
         AdminNavigationShell(location: state.uri.path, child: child),
@@ -35,7 +42,7 @@ List<RouteBase> get adminRoutes => [
       ),
       GoRoute(
         path: '/admin/finance',
-        builder: (context, state) => const AdminReconciliationScreen(),
+        builder: (context, state) => const AdminFinanceScreen(),
       ),
       GoRoute(
         path: '/admin/requests',
