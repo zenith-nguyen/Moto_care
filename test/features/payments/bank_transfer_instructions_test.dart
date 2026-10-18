@@ -19,18 +19,23 @@ void main() {
     final instructions = BankTransferInstructions.fromJson(validPayload());
 
     expect(instructions.paymentCode, 'MC42');
+    expect(instructions.simulationOnly, isTrue);
     expect(instructions.amount.value, '100000.00');
     expect(instructions.qrImageUri.scheme, 'https');
   });
 
-  test('refuses live or non-simulation payment instructions', () {
+  test('parses a consistent SePay Live instruction', () {
     final live = validPayload()
       ..['mode'] = 'live'
       ..['simulationOnly'] = false;
 
-    expect(
-      () => BankTransferInstructions.fromJson(live),
-      throwsFormatException,
-    );
+    final instructions = BankTransferInstructions.fromJson(live);
+    expect(instructions.mode, 'live');
+    expect(instructions.simulationOnly, isFalse);
+  });
+
+  test('refuses an inconsistent payment mode marker', () {
+    final invalid = validPayload()..['mode'] = 'live';
+    expect(() => BankTransferInstructions.fromJson(invalid), throwsFormatException);
   });
 }

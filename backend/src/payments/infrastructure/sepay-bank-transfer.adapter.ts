@@ -16,7 +16,8 @@ export class SepayBankTransferAdapter implements BankTransferGateway {
 
     const bank = this.config.getOrThrow<string>('SEPAY_BANK');
     const accountNumber = this.config.getOrThrow<string>('SEPAY_ACCOUNT_NUMBER');
-    if (!/^SBSEPAY[A-Z0-9]{12}$/.test(accountNumber)) {
+    const mode = this.config.getOrThrow<'test' | 'live'>('SEPAY_MODE');
+    if (mode === 'test' && !/^SBSEPAY[A-Z0-9]{12}$/.test(accountNumber)) {
       throw new ConflictException('SePay Test mode QR requires an official SBSEPAY virtual account');
     }
     const accountHolder = this.config.getOrThrow<string>('SEPAY_ACCOUNT_HOLDER');
@@ -35,8 +36,8 @@ export class SepayBankTransferAdapter implements BankTransferGateway {
 
     return {
       provider: 'SEPAY',
-      mode: 'test',
-      simulationOnly: true,
+      mode,
+      simulationOnly: mode === 'test',
       paymentCode,
       amount: command.amount,
       bank,

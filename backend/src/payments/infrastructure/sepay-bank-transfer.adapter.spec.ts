@@ -7,6 +7,7 @@ describe('SepayBankTransferAdapter', () => {
   const adapter = new SepayBankTransferAdapter(
     new ConfigService({
       SEPAY_BANK: 'MBBank',
+      SEPAY_MODE: 'test',
       SEPAY_ACCOUNT_NUMBER: 'SBSEPAYX9KA2B7MN4QR',
       SEPAY_ACCOUNT_HOLDER: 'MOTOCARE DEMO',
       SEPAY_PAYMENT_CODE_PREFIX: 'MC',
@@ -38,6 +39,7 @@ describe('SepayBankTransferAdapter', () => {
     const unsafeAdapter = new SepayBankTransferAdapter(
       new ConfigService({
         SEPAY_BANK: 'MBBank',
+        SEPAY_MODE: 'test',
         SEPAY_ACCOUNT_NUMBER: '0123456789',
         SEPAY_ACCOUNT_HOLDER: 'MOTOCARE DEMO',
         SEPAY_PAYMENT_CODE_PREFIX: 'MC',
@@ -67,6 +69,26 @@ describe('SepayBankTransferAdapter', () => {
         signature,
       }),
     ).toThrow('Invalid webhook signature');
+  });
+
+  it('builds a real-money instruction only for an explicit Live configuration', () => {
+    const live = new SepayBankTransferAdapter(
+      new ConfigService({
+        SEPAY_MODE: 'live',
+        SEPAY_BANK: 'Vietcombank',
+        SEPAY_ACCOUNT_NUMBER: '0010000000355',
+        SEPAY_ACCOUNT_HOLDER: 'MOTOCARE',
+        SEPAY_PAYMENT_CODE_PREFIX: 'MC',
+        SEPAY_TRANSFER_MEMO_PREFIX: '',
+      }),
+    );
+
+    expect(live.createInstructions({ paymentId: 7, amount: '125000.00' })).toMatchObject({
+      mode: 'live',
+      simulationOnly: false,
+      paymentCode: 'MC7',
+      accountNumber: '0010000000355',
+    });
   });
 
   it('rejects a correctly signed request outside the replay window', () => {

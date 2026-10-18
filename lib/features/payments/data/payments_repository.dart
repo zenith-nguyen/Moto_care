@@ -3,7 +3,7 @@ import '../domain/bank_transfer_instructions.dart';
 import '../domain/demo_payment_result.dart';
 
 abstract interface class PaymentsRepository {
-  Future<BankTransferInstructions> getTestModeInstructions(int orderId);
+  Future<BankTransferInstructions> getTransferInstructions(int orderId);
 
   Future<DemoPrepaymentResult> confirmDemoPrepayment(int orderId);
 
@@ -16,7 +16,7 @@ class HttpPaymentsRepository implements PaymentsRepository {
   final JsonApi _api;
 
   @override
-  Future<BankTransferInstructions> getTestModeInstructions(int orderId) async {
+  Future<BankTransferInstructions> getTransferInstructions(int orderId) async {
     if (orderId <= 0) throw ArgumentError.value(orderId, 'orderId');
     final response = await _api.getObject(
       '/payments/orders/$orderId/instructions',

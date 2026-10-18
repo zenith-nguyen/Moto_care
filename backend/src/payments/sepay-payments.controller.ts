@@ -31,7 +31,7 @@ export class SepayPaymentsController {
   @Roles(UserRole.CUSTOMER)
   @ApiOkResponse({ type: BankTransferInstructionsDto })
   @ApiOperation({
-    summary: 'Get SePay Test mode bank-transfer and VietQR instructions for an unpaid order',
+    summary: 'Get configured SePay bank-transfer and VietQR instructions for an unpaid order',
   })
   instructions(@Param('orderId', ParseIntPipe) orderId: number, @CurrentUser() user: JwtPayload) {
     return this.payments.instructions(orderId, user.sub);
@@ -48,7 +48,7 @@ export class SepayPaymentsController {
   })
   @ApiOkResponse({ schema: { example: { success: true } } })
   @ApiOperation({
-    summary: 'Receive an HMAC-authenticated SePay Test mode transaction webhook',
+    summary: 'Receive an HMAC-authenticated SePay transaction webhook',
   })
   webhook(
     @Body() payload: SepayWebhookDto,

@@ -17,6 +17,7 @@ const corsOrigins = Joi.string().custom((value: string, helpers) => {
 export const envValidationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
   PORT: Joi.number().port().default(3000),
+  PUBLIC_BASE_URL: Joi.string().uri({ scheme: ['https'] }).optional(),
   CORS_ORIGIN: corsOrigins.default('http://localhost:3000'),
   DATABASE_HOST: Joi.string().required(),
   DATABASE_PORT: Joi.number().port().default(5432),
@@ -75,7 +76,7 @@ export const envValidationSchema = Joi.object({
   }),
   PROVIDER_NEARBY_RADIUS_METERS: Joi.number().integer().min(50).max(2000).default(300),
   SEPAY_ENABLED: Joi.boolean().default(false),
-  SEPAY_MODE: Joi.string().valid('test').default('test'),
+  SEPAY_MODE: Joi.string().valid('test', 'live').default('test'),
   SEPAY_BANK: Joi.when('SEPAY_ENABLED', {
     is: true,
     then: Joi.string().trim().min(2).max(50).required(),
@@ -83,11 +84,11 @@ export const envValidationSchema = Joi.object({
   }),
   SEPAY_ACCOUNT_NUMBER: Joi.when('SEPAY_ENABLED', {
     is: true,
-    then: Joi.string()
-      .trim()
-      .uppercase()
-      .pattern(/^SBSEPAY[A-Z0-9]{12}$/)
-      .required(),
+    then: Joi.when('SEPAY_MODE', {
+      is: 'test',
+      then: Joi.string().trim().uppercase().pattern(/^SBSEPAY[A-Z0-9]{12}$/).required(),
+      otherwise: Joi.string().trim().pattern(/^[A-Za-z0-9]{4,40}$/).required(),
+    }),
     otherwise: Joi.string().optional(),
   }),
   SEPAY_ACCOUNT_HOLDER: Joi.when('SEPAY_ENABLED', {
@@ -110,4 +111,16 @@ export const envValidationSchema = Joi.object({
     otherwise: Joi.string().optional(),
   }),
   SEPAY_WEBHOOK_MAX_AGE_SECONDS: Joi.number().integer().min(30).max(900).default(300),
-});
+  SEPAY_LIVE_CONFIRMATION: Joi.when('SEPAY_MODE', {
+    is: 'live',
+    then: Joi.string().valid('I_UNDERSTAND_THIS_ACCEPTS_REAL_MONEY').required(),
+    otherwise: Joi.string().optional(),
+  }),
+}).custom((environment, helpers) => {
+  if (environment.SEPAY_ENABLED && environment.SEPAY_MODE === 'live') {
+    if (environment.NODE_ENV !== 'production' || environment.DEMO_MODE !== false || !environment.PUBLIC_BASE_URL) {
+      return helpers.error('any.invalid');
+    }
+  }
+  return environment;
+}, 'production safeguards for real-money payments');
