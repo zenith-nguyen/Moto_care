@@ -36,6 +36,9 @@ void main() {
 
   test('refuses an inconsistent payment mode marker', () {
     final invalid = validPayload()..['mode'] = 'live';
-    expect(() => BankTransferInstructions.fromJson(invalid), throwsFormatException);
+    expect(
+      () => BankTransferInstructions.fromJson(invalid),
+      throwsFormatException,
+    );
   });
 }
