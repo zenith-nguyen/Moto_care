@@ -300,7 +300,7 @@ class FakePaymentsRepository implements PaymentsRepository {
   }
 
   @override
-  Future<BankTransferInstructions> getTestModeInstructions(int orderId) {
+  Future<BankTransferInstructions> getTransferInstructions(int orderId) {
     throw UnimplementedError();
   }
 }

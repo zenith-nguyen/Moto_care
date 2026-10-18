@@ -155,8 +155,12 @@ export class SepayPaymentsService {
     if (!this.config.get<boolean>('SEPAY_ENABLED')) {
       throw new ForbiddenException('SePay Test mode is disabled');
     }
-    if (this.config.get<string>('SEPAY_MODE') !== 'test') {
-      throw new ForbiddenException('Only SePay Test mode is supported');
+    const mode = this.config.get<string>('SEPAY_MODE');
+    if (mode !== 'test' && mode !== 'live') {
+      throw new ForbiddenException('Unsupported SePay mode');
+    }
+    if (mode === 'live' && this.config.get<string>('NODE_ENV') !== 'production') {
+      throw new ForbiddenException('SePay Live requires production mode');
     }
   }
 

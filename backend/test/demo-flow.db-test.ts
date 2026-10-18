@@ -219,9 +219,25 @@ describe('Sandbox demo flow over HTTP', () => {
     await request(app.getHttpServer())
       .patch('/users/me')
       .set('Authorization', `Bearer ${customer.token}`)
-      .send({ name: 'HTTP Customer Updated', phone: '0901234567' })
+      .send({
+        name: 'HTTP Customer Updated',
+        phone: '0901234567',
+        emergencyContactName: 'Relative',
+        emergencyContactPhone: '0912345678',
+        medicalNote: 'Allergic to medicine A',
+        homeAddress: 'District 1, HCMC',
+        workAddress: 'District 3, HCMC',
+      })
       .expect(200)
-      .expect(({ body }) => expect(body).toMatchObject({ name: 'HTTP Customer Updated', phone: '0901234567' }));
+      .expect(({ body }) => expect(body).toMatchObject({
+        name: 'HTTP Customer Updated',
+        phone: '0901234567',
+        emergencyContactName: 'Relative',
+        emergencyContactPhone: '0912345678',
+        medicalNote: 'Allergic to medicine A',
+        homeAddress: 'District 1, HCMC',
+        workAddress: 'District 3, HCMC',
+      }));
     await request(app.getHttpServer())
       .patch('/users/me')
       .set('Authorization', `Bearer ${provider.token}`)

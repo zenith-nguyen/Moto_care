@@ -73,16 +73,16 @@ export class BankTransferInstructionsDto {
   provider!: 'SEPAY';
 
   @ApiProperty({
+    enum: ['test', 'live'],
     example: 'test',
-    description: 'This adapter currently supports SePay Test mode only',
   })
-  mode!: 'test';
+  mode!: 'test' | 'live';
 
   @ApiProperty({
     example: true,
-    description: 'Always true in this adapter; no real-money transfer is supported',
+    description: 'True for Test mode and false for a deliberately enabled Live configuration',
   })
-  simulationOnly!: true;
+  simulationOnly!: boolean;
 
   @ApiProperty({ example: 'MC42' })
   paymentCode!: string;

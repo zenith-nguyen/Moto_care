@@ -105,6 +105,18 @@ class UserProfile {
     medicalNote: json['medicalNote'] as String? ?? '',
   );
 
+  factory UserProfile.fromApiJson(Map<String, dynamic> json) => UserProfile(
+    id: (json['id'] as num).toInt().toString(),
+    fullName: json['name'] as String,
+    phoneNumber: json['phone'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    emergencyContactName: json['emergencyContactName'] as String? ?? '',
+    emergencyContactPhone: json['emergencyContactPhone'] as String? ?? '',
+    medicalNote: json['medicalNote'] as String? ?? '',
+    defaultAddress: json['homeAddress'] as String? ?? '',
+    workAddress: json['workAddress'] as String? ?? '',
+  );
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'fullName': fullName,

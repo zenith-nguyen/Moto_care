@@ -39,7 +39,16 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
       if (!mounted) return;
       ref.read(profileProvider.notifier).initializeFromHome(widget.user);
       unawaited(_recoverAvatar());
+      unawaited(_refreshProfile());
     });
+  }
+
+  Future<void> _refreshProfile() async {
+    try {
+      await ref.read(profileProvider.notifier).refreshFromApi();
+    } catch (_) {
+      _notice('Không thể tải hồ sơ mới nhất. Hãy kiểm tra kết nối và thử lại.');
+    }
   }
 
   void _notice(String message) {
@@ -99,20 +108,27 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
           ProfileEditSheet(profile: ref.read(profileProvider).profile),
     );
     if (!mounted || edited == null) return;
-    final saved = ref
-        .read(profileProvider.notifier)
-        .saveDetails(
-          fullName: edited.fullName,
-          phoneNumber: edited.phoneNumber,
-          emergencyContactName: edited.emergencyContactName,
-          emergencyContactPhone: edited.emergencyContactPhone,
-          medicalNote: edited.medicalNote,
-        );
-    _notice(
-      saved
-          ? 'Đã lưu thông tin trong phiên dùng thử.'
-          : 'Thông tin chưa hợp lệ. Vui lòng kiểm tra lại.',
-    );
+    setState(() => _busy = true);
+    try {
+      final saved = await ref
+          .read(profileProvider.notifier)
+          .saveDetailsPersisted(
+            fullName: edited.fullName,
+            phoneNumber: edited.phoneNumber,
+            emergencyContactName: edited.emergencyContactName,
+            emergencyContactPhone: edited.emergencyContactPhone,
+            medicalNote: edited.medicalNote,
+          );
+      _notice(
+        saved
+            ? 'Đã lưu thông tin vào tài khoản.'
+            : 'Thông tin chưa hợp lệ. Vui lòng kiểm tra lại.',
+      );
+    } catch (_) {
+      _notice('Không thể lưu hồ sơ. Hãy kiểm tra kết nối và thử lại.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   Future<void> _pickAvatar() async {

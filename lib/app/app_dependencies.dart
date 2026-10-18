@@ -23,6 +23,7 @@ import '../features/messages/data/chat_image_picker.dart';
 import '../features/orders/data/orders_repository.dart';
 import '../features/payments/data/payments_repository.dart';
 import '../features/providers/data/providers_repository.dart';
+import '../features/profile/data/profile_repository.dart';
 import '../features/reviews/data/reviews_repository.dart';
 import '../features/rescue_station/data/service_locations_repository.dart';
 import '../features/wallet/data/wallet_repository.dart';
@@ -130,6 +131,10 @@ final notificationsRepositoryProvider = Provider<NotificationsRepository>((
   ref,
 ) {
   return HttpNotificationsRepository(ref.watch(jsonApiProvider));
+});
+
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  return HttpProfileRepository(ref.watch(jsonApiProvider));
 });
 
 final pushRegistrationServiceProvider = Provider<PushRegistrationService>((

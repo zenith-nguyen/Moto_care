@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart' as osm_map;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as osm;
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/location_api_config.dart';
 import '../services/incident_camera_controller.dart';
@@ -16,6 +19,17 @@ class GoogleIncidentCameraController implements IncidentCameraController {
           CameraPosition(target: target, zoom: zoom),
         ),
       );
+}
+
+class OsmIncidentCameraController implements IncidentCameraController {
+  OsmIncidentCameraController(this.mapController);
+
+  final osm_map.MapController mapController;
+
+  @override
+  Future<void> animateTo(LatLng target, {double zoom = 17}) async {
+    mapController.move(osm.LatLng(target.latitude, target.longitude), zoom);
+  }
 }
 
 class IncidentMapRequest {
@@ -56,16 +70,70 @@ final incidentMapBuilderProvider = Provider<IncidentMapBuilder>((ref) {
           mapToolbarEnabled: false,
           zoomControlsEnabled: false,
         )
-      : const ColoredBox(
-          color: Color(0xFFF8F9FA),
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.all(28),
-              child: Text(
-                'Bản đồ chưa sẵn sàng. Bạn có thể tìm kiếm địa điểm hoặc dùng GPS.',
-                textAlign: TextAlign.center,
-              ),
+      : OsmIncidentMap(request: request);
+});
+
+class OsmIncidentMap extends StatefulWidget {
+  const OsmIncidentMap({super.key, required this.request});
+
+  final IncidentMapRequest request;
+
+  @override
+  State<OsmIncidentMap> createState() => _OsmIncidentMapState();
+}
+
+class _OsmIncidentMapState extends State<OsmIncidentMap> {
+  final _controller = osm_map.MapController();
+  bool _gestureMoving = false;
+
+  @override
+  Widget build(BuildContext context) => osm_map.FlutterMap(
+    key: const ValueKey('incident-map-canvas-osm'),
+    mapController: _controller,
+    options: osm_map.MapOptions(
+      initialCenter: osm.LatLng(
+        widget.request.target.latitude,
+        widget.request.target.longitude,
+      ),
+      initialZoom: 17,
+      minZoom: 5,
+      maxZoom: 19,
+      onMapReady: () =>
+          widget.request.onCreated(OsmIncidentCameraController(_controller)),
+      onPositionChanged: (camera, hasGesture) {
+        if (hasGesture && !_gestureMoving) {
+          _gestureMoving = true;
+          widget.request.onMoveStarted();
+        }
+        widget.request.onMove(
+          LatLng(camera.center.latitude, camera.center.longitude),
+        );
+      },
+      onMapEvent: (event) {
+        if (event is osm_map.MapEventMoveEnd) {
+          _gestureMoving = false;
+          widget.request.onIdle();
+        }
+      },
+    ),
+    children: [
+      osm_map.TileLayer(
+        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        userAgentPackageName: 'com.motocare.app',
+        maxNativeZoom: 19,
+      ),
+      osm_map.RichAttributionWidget(
+        showFlutterMapAttribution: false,
+        attributions: [
+          osm_map.TextSourceAttribution(
+            'OpenStreetMap contributors',
+            onTap: () => launchUrl(
+              Uri.parse('https://www.openstreetmap.org/copyright'),
+              mode: LaunchMode.externalApplication,
             ),
           ),
-        );
-});
+        ],
+      ),
+    ],
+  );
+}

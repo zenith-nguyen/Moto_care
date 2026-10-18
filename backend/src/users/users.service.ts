@@ -53,6 +53,11 @@ export class UsersService {
       if (dto.phone === null && !user.email) throw new ConflictException('An account must keep an email or phone number');
       user.phone = dto.phone;
     }
+    if (dto.emergencyContactName !== undefined) user.emergencyContactName = dto.emergencyContactName;
+    if (dto.emergencyContactPhone !== undefined) user.emergencyContactPhone = dto.emergencyContactPhone;
+    if (dto.medicalNote !== undefined) user.medicalNote = dto.medicalNote;
+    if (dto.homeAddress !== undefined) user.homeAddress = dto.homeAddress;
+    if (dto.workAddress !== undefined) user.workAddress = dto.workAddress;
     try {
       return this.presentProfile(await this.usersRepository.save(user));
     } catch (error) {
@@ -70,6 +75,11 @@ export class UsersService {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      emergencyContactName: user.emergencyContactName,
+      emergencyContactPhone: user.emergencyContactPhone,
+      medicalNote: user.medicalNote,
+      homeAddress: user.homeAddress,
+      workAddress: user.workAddress,
       role: user.role,
       status: user.status,
     };
