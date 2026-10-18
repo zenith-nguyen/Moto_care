@@ -119,6 +119,26 @@ describe("environment validation", () => {
     expect(enabled.error).toBeUndefined();
   });
 
+  it('keeps payout reconciliation separate and requires its own account and secret', () => {
+    const incomplete = envValidationSchema.validate(
+      { ...requiredEnvironment, SEPAY_PAYOUT_RECONCILIATION_ENABLED: true },
+      { abortEarly: false },
+    );
+    const message = incomplete.error?.message ?? '';
+    expect(message).toContain('SEPAY_PAYOUT_SOURCE_ACCOUNT');
+    expect(message).toContain('SEPAY_PAYOUT_WEBHOOK_SECRET');
+
+    const enabled = envValidationSchema.validate({
+      ...requiredEnvironment,
+      SEPAY_PAYOUT_RECONCILIATION_ENABLED: true,
+      SEPAY_PAYOUT_SOURCE_ACCOUNT: '0010000000355',
+      SEPAY_PAYOUT_CODE_PREFIX: 'RP',
+      SEPAY_PAYOUT_WEBHOOK_SECRET: 'p'.repeat(32),
+    });
+    expect(enabled.error).toBeUndefined();
+    expect(enabled.value.SEPAY_ENABLED).toBe(false);
+  });
+
   it('requires a Firebase project ID only when push delivery is enabled', () => {
     const disabled = envValidationSchema.validate(requiredEnvironment);
     expect(disabled.error).toBeUndefined();

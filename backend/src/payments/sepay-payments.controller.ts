@@ -20,11 +20,15 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 import { BankTransferInstructionsDto, SepayWebhookDto } from './dto/sepay.dto';
 import { SepayPaymentsService } from './sepay-payments.service';
+import { PayoutReconciliationService } from './payout-reconciliation.service';
 
 @ApiTags('payments')
 @Controller('payments')
 export class SepayPaymentsController {
-  constructor(private readonly payments: SepayPaymentsService) {}
+  constructor(
+    private readonly payments: SepayPaymentsService,
+    private readonly payouts: PayoutReconciliationService,
+  ) {}
 
   @Get('orders/:orderId/instructions')
   @ApiBearerAuth()
@@ -57,5 +61,23 @@ export class SepayPaymentsController {
     @Headers('x-sepay-signature') signature?: string,
   ) {
     return this.payments.receive(payload, request.rawBody, timestamp, signature);
+  }
+
+  @Post('webhooks/sepay/payouts')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiHeader({ name: 'X-SePay-Timestamp', required: true })
+  @ApiHeader({ name: 'X-SePay-Signature', required: true, example: 'sha256=<hex>' })
+  @ApiOkResponse({ schema: { example: { success: true } } })
+  @ApiOperation({
+    summary: 'Record a separately authenticated outgoing transaction for manual payout reconciliation',
+  })
+  payoutWebhook(
+    @Body() payload: SepayWebhookDto,
+    @Req() request: RawBodyRequest<Request>,
+    @Headers('x-sepay-timestamp') timestamp?: string,
+    @Headers('x-sepay-signature') signature?: string,
+  ) {
+    return this.payouts.receive(payload, request.rawBody, timestamp, signature);
   }
 }

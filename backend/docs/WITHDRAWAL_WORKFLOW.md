@@ -1,43 +1,56 @@
-# MotoCare — quy trình rút tiền sandbox
+# Revo — withdrawal and payout workflow
 
-Cập nhật: 2026-10-07. Đây là ledger demo để kiểm chứng nghiệp vụ ví/Admin; không kết nối ngân hàng và không chứng minh tiền đã được chuyển.
+Updated: 2026-10-18.
 
-## Mô hình số dư
+The wallet ledger, withdrawal approval and bank payout reconciliation are separate
+states. `APPROVED` means Revo approved and debited the provider wallet; only payout
+status `RECONCILED` means an Admin verified the external bank transfer.
 
-- `wallets.balance`: tổng số demo còn thuộc ví thợ.
-- `wallets.locked_balance`: phần đã giữ cho yêu cầu `PENDING`.
-- `availableBalance = balance - locked_balance`: backend trả sẵn cho UI.
-- `wallet_transactions.amount` luôn dương; `CREDIT`/`DEBIT` quyết định chiều.
+## Provider flow
 
-PostgreSQL bắt buộc `balance >= 0`, `locked_balance >= 0`, `locked_balance <= balance`, withdrawal `amount > 0`, tối đa một request `PENDING` cho mỗi provider và tối đa một `DEBIT` cho mỗi withdrawal.
+1. `GET /wallets/me` returns wallet balance, locked balance and available balance.
+2. `POST /withdrawals` with `{ "amount": "50000.00" }` reserves available funds.
+3. `GET /withdrawals/me` returns the request plus its payout status when approved.
 
-## Luồng Provider
+The database locks the provider wallet, permits only one pending request per provider,
+and prevents more than one debit for a withdrawal.
 
-1. `GET /wallets/me`: xem tổng/khóa/khả dụng và 20 giao dịch gần nhất.
-2. `POST /withdrawals` với `{ "amount": "50000.00" }`.
-3. Backend khóa dòng provider + wallet, kiểm tra amount không vượt available, tăng `locked_balance` và tạo request `PENDING` trong cùng transaction.
-4. `GET /withdrawals/me`: xem tối đa 50 request gần nhất và snapshot ví.
+## Admin approval
 
-Hai request đồng thời không thể cùng tiêu phần available giống nhau vì wallet được `SELECT ... FOR UPDATE`; mỗi thợ chỉ có một request `PENDING`. Sau khi Admin xử lý mới tạo request kế tiếp.
+1. `GET /admin/withdrawals/pending` lists pending requests FIFO.
+2. `PATCH /admin/withdrawals/:requestId/resolve` approves or rejects.
+3. Approval releases the reservation, debits the wallet once, and creates payout code
+   `RP<withdrawalId>` in `AWAITING_TRANSFER`.
+4. Rejection releases the reservation without a debit.
 
-## Luồng Admin
+Approval does not call a bank and must not be displayed as “money transferred”.
 
-1. `GET /admin/withdrawals/pending`: tối đa 50 request cũ trước.
-2. `PATCH /admin/withdrawals/:id/resolve`:
-   - Duyệt: `{ "decision": "APPROVE", "reason": "Sandbox payout reviewed" }`.
-   - Từ chối: `{ "decision": "REJECT", "reason": "Lý do bắt buộc" }`.
-3. Duyệt: giảm `balance` và `locked_balance`, tạo một `DEBIT`, request thành `APPROVED`.
-4. Từ chối: chỉ giảm `locked_balance`, request thành `REJECTED`.
+## Real manual bank transfer
 
-Request được khóa dòng. Gửi lặp cùng quyết định trả lại kết quả hiện tại; cố đổi quyết định sau khi xử lý trả `409`. Unique partial index tiếp tục ngăn debit trùng nếu logic ứng dụng bị gọi cạnh tranh.
+1. Admin opens `GET /admin/withdrawal-payouts/pending`.
+2. Admin transfers the exact amount in the banking app and includes the `RP...` code.
+3. Admin verifies recipient name/account and bank receipt.
+4. Admin calls `PATCH /admin/withdrawal-payouts/:payoutId/reconcile`:
 
-## Phạm vi UI
+```json
+{
+  "decision": "CONFIRM",
+  "externalTransactionId": "bank-transaction-id",
+  "referenceCode": "bank-reference",
+  "observedAmount": "50000.00",
+  "reason": "Recipient and bank receipt verified"
+}
+```
 
-- Dùng “yêu cầu rút sandbox”, “đang duyệt”, “đã duyệt sandbox”, không dùng “đã chuyển khoản”.
-- Không hỏi hoặc lưu số tài khoản, ngân hàng, OTP hay ảnh chứng từ.
-- `409` nghĩa là cần tải lại ví/request; không retry vô hạn.
-- Dashboard Admin phân biệt tiền cộng ví (`settledToProvidersInPeriod`) và debit rút (`providerWithdrawnInPeriod`).
+A mismatched amount is rejected. Suspicious payouts use `decision=FLAG` with a reason.
+All confirmations are idempotent and retain the Admin ID and timestamp.
 
-## Nâng cấp thành tiền thật sau này
+## Optional outgoing webhook
 
-Cần một thiết kế riêng cho thông tin người nhận được mã hóa, trạng thái payout chi tiết, idempotency key của ngân hàng, webhook có chữ ký, retry/reconciliation và quy trình xử lý lỗi. Không tái sử dụng cờ `APPROVED` sandbox như bằng chứng ngân hàng đã chi tiền.
+`POST /payments/webhooks/sepay/payouts` has a separate HMAC secret and audit table.
+It can record an eligible bank’s outgoing transaction, but always leaves it in
+`MANUAL_REVIEW` because SePay’s payload does not prove the intended recipient.
+
+The linked MBBank account does not support SePay outgoing webhooks. Keep the payout
+webhook disabled and use manual bank transfer reconciliation. See
+[PAYOUT_RECONCILIATION.md](PAYOUT_RECONCILIATION.md).

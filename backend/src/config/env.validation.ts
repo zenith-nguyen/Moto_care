@@ -111,6 +111,19 @@ export const envValidationSchema = Joi.object({
     otherwise: Joi.string().optional(),
   }),
   SEPAY_WEBHOOK_MAX_AGE_SECONDS: Joi.number().integer().min(30).max(900).default(300),
+  SEPAY_PAYOUT_RECONCILIATION_ENABLED: Joi.boolean().default(false),
+  SEPAY_PAYOUT_SOURCE_ACCOUNT: Joi.when('SEPAY_PAYOUT_RECONCILIATION_ENABLED', {
+    is: true,
+    then: Joi.string().trim().pattern(/^[A-Za-z0-9]{4,40}$/).required(),
+    otherwise: Joi.string().optional(),
+  }),
+  SEPAY_PAYOUT_CODE_PREFIX: Joi.string().uppercase().pattern(/^[A-Z]{2,5}$/).default('RP'),
+  SEPAY_PAYOUT_WEBHOOK_SECRET: Joi.when('SEPAY_PAYOUT_RECONCILIATION_ENABLED', {
+    is: true,
+    then: Joi.string().min(32).required(),
+    otherwise: Joi.string().optional(),
+  }),
+  SEPAY_PAYOUT_WEBHOOK_MAX_AGE_SECONDS: Joi.number().integer().min(30).max(900).default(300),
   SEPAY_LIVE_CONFIRMATION: Joi.when('SEPAY_MODE', {
     is: 'live',
     then: Joi.string().valid('I_UNDERSTAND_THIS_ACCEPTS_REAL_MONEY').required(),

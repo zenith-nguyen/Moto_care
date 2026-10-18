@@ -11,9 +11,11 @@ production safeguard and external SePay prerequisite is present.
 - Mark one pending prepayment paid exactly once and start provider matching.
 
 This does **not** claim bank escrow. Funds arrive in the configured bank account.
-Automated refunds, outgoing provider payouts and periodic SePay API reconciliation
-are not enabled by this switch. Keep those Admin workflows manual and audited until
-the bank account is eligible and their separate adapters are implemented.
+Automated refunds and bank payout initiation are not enabled by this switch. Provider
+payouts have a separate audited manual-reconciliation workflow. The outgoing webhook
+never proves the recipient and never changes a customer payment. MBBank currently
+supports incoming SePay webhooks but not outgoing webhooks, so keep payout webhook
+reconciliation disabled for the linked MBBank account.
 
 ## External prerequisites
 
@@ -24,6 +26,10 @@ the bank account is eligible and their separate adapters are implemented.
 4. Select HMAC-SHA256, copy the secret once into the untracked server `.env`,
    enable payment-code filtering for the configured prefix, and enable retries/alerts.
 5. Never paste the bank account, HMAC secret or API token into chat, issues or Git.
+
+For the linked MBBank account, create only the `Tiền vào` webhook above. Do not choose
+`Tất cả` and do not create the payout webhook. SePay documents outgoing webhook support
+only for eligible Sacombank, TPBank and VietinBank account modes.
 
 ## Required production environment
 

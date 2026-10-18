@@ -15,10 +15,19 @@ import { BankTransferGateway } from './application/bank-transfer.gateway';
 import { SepayBankTransferAdapter } from './infrastructure/sepay-bank-transfer.adapter';
 import { SepayPaymentsService } from './sepay-payments.service';
 import { SepayPaymentsController } from './sepay-payments.controller';
+import { WithdrawalPayout } from './withdrawal-payout.entity';
+import { SepayPayoutWebhookEvent } from './sepay-payout-webhook-event.entity';
+import { PayoutReconciliationService } from './payout-reconciliation.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([WithdrawalRequest, Payment, SepayWebhookEvent]),
+    TypeOrmModule.forFeature([
+      WithdrawalRequest,
+      WithdrawalPayout,
+      SepayPayoutWebhookEvent,
+      Payment,
+      SepayWebhookEvent,
+    ]),
     PaymentAccountingModule,
     OrdersModule,
     RealtimeModule,
@@ -30,7 +39,8 @@ import { SepayPaymentsController } from './sepay-payments.controller';
     SepayBankTransferAdapter,
     { provide: BankTransferGateway, useExisting: SepayBankTransferAdapter },
     SepayPaymentsService,
+    PayoutReconciliationService,
   ],
-  exports: [WithdrawalsService],
+  exports: [WithdrawalsService, PayoutReconciliationService],
 })
 export class PaymentsModule {}

@@ -1,0 +1,5 @@
+export enum WithdrawalPayoutStatus {
+  AWAITING_TRANSFER = 'AWAITING_TRANSFER',
+  MANUAL_REVIEW = 'MANUAL_REVIEW',
+  RECONCILED = 'RECONCILED',
+}
