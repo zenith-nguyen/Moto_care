@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/features/home/data/demo_home_weather.dart';
-import 'package:moto_care/features/home/models/home_weather.dart';
-import 'package:moto_care/features/home/models/rescue_location.dart';
-import 'package:moto_care/features/home/providers/home_provider.dart';
-import 'package:moto_care/features/home/providers/home_weather_provider.dart';
-import 'package:moto_care/features/home/services/home_weather_service.dart';
+import 'package:revo/features/home/data/demo_home_weather.dart';
+import 'package:revo/features/home/models/home_weather.dart';
+import 'package:revo/features/home/models/rescue_location.dart';
+import 'package:revo/features/home/providers/home_provider.dart';
+import 'package:revo/features/home/providers/home_weather_provider.dart';
+import 'package:revo/features/home/services/home_weather_service.dart';
 
 class _WeatherService implements HomeWeatherService {
   final requests = <(RescueLocation?, Completer<HomeWeather>)>[];

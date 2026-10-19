@@ -53,7 +53,7 @@ class RescueTrackingScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            order.partnerName ?? 'MotoCare',
+            order.partnerName ?? 'Revo',
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),

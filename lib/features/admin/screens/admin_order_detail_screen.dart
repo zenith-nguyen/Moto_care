@@ -23,7 +23,7 @@ class AdminOrderDetailScreen extends ConsumerWidget {
     header: AdminPageHeader(
       title: 'Chi tiết đơn',
       fontSize: 16,
-      fontWeight: FontWeight.w500,
+      fontWeight: FontWeight.w600,
       centerTitle: true,
       onBack: () => context.go('/admin/orders'),
     ),
@@ -93,7 +93,7 @@ class _OrderDetails extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Chat history • Chỉ xem',
                           style: AdminOrderTheme.title,

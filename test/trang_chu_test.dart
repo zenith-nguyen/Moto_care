@@ -3,26 +3,26 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/home/models/home_destination.dart';
-import 'package:moto_care/features/home/models/home_user.dart';
-import 'package:moto_care/features/home/providers/home_discovery_provider.dart';
-import 'package:moto_care/features/home/providers/home_provider.dart';
-import 'package:moto_care/features/home/screens/home_screen.dart';
-import 'package:moto_care/features/home/screens/trang_chu.dart';
-import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
-import 'package:moto_care/features/home/widgets/home_station_grid_card.dart';
-import 'package:moto_care/features/home/widgets/revo_home_header.dart';
-import 'package:moto_care/features/home/widgets/smart_weather_rescue_card.dart';
-import 'package:moto_care/features/home/models/home_rescue_quick_action.dart';
-import 'package:moto_care/features/partner/screens/partner_list_screen.dart';
-import 'package:moto_care/features/partner/screens/partner_detail_screen.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/home/models/home_discovery.dart';
-import 'package:moto_care/features/rescue/widgets/create_rescue_request_bottom_sheet.dart';
-import 'package:moto_care/features/rescue_station/widgets/rescue_station_mock_map.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/home/models/home_destination.dart';
+import 'package:revo/features/home/models/home_user.dart';
+import 'package:revo/features/home/providers/home_discovery_provider.dart';
+import 'package:revo/features/home/providers/home_provider.dart';
+import 'package:revo/features/home/screens/home_screen.dart';
+import 'package:revo/features/home/screens/trang_chu.dart';
+import 'package:revo/features/home/widgets/home_bottom_navigation.dart';
+import 'package:revo/features/home/widgets/home_station_grid_card.dart';
+import 'package:revo/features/home/widgets/revo_home_header.dart';
+import 'package:revo/features/home/widgets/smart_weather_rescue_card.dart';
+import 'package:revo/features/home/models/home_rescue_quick_action.dart';
+import 'package:revo/features/partner/screens/partner_list_screen.dart';
+import 'package:revo/features/partner/screens/partner_detail_screen.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/home/models/home_discovery.dart';
+import 'package:revo/features/rescue/widgets/create_rescue_request_bottom_sheet.dart';
+import 'package:revo/features/rescue_station/widgets/rescue_station_mock_map.dart';
 
 import 'fixtures/marketplace_router_fixture.dart';
 import 'fixtures/home_scroll_helpers.dart';
@@ -53,6 +53,14 @@ Future<void> _openHome(
 }
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isEmpty &&
+      find.byType(HomeScreen).evaluate().isNotEmpty) {
+    await tester.scrollUntilVisible(
+      finder,
+      120,
+      scrollable: homePageScrollable(),
+    );
+  }
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
@@ -106,7 +114,7 @@ void main() {
     expect(find.byType(TrangChu), findsOneWidget);
     expect(find.byTooltip('Tài khoản Nguyễn Văn An'), findsOneWidget);
     expect(find.text('Thành viên Vàng'), findsNothing);
-    expect(find.text('MotoCare Club'), findsNothing);
+    expect(find.text('Revo Club'), findsNothing);
     expect(find.text('350 xu'), findsNothing);
   });
 
@@ -304,11 +312,14 @@ void main() {
       await _tap(tester, find.byTooltip('Bộ lọc'));
       await _tap(tester, find.byKey(const ValueKey('home-filter-open24h')));
       await _tap(tester, find.byTooltip('Đóng'));
+      await scrollHomeToStations(tester);
       expect(find.byType(HomeStationGridCard), findsNWidgets(4));
+      await scrollHomeToSearch(tester);
       await _tap(tester, find.byTooltip('Bộ lọc'));
       await _tap(tester, find.byKey(const ValueKey('home-filter-open24h')));
       await _tap(tester, find.byKey(const ValueKey('home-filter-verified')));
       await _tap(tester, find.text('Áp dụng bộ lọc'));
+      await scrollHomeToStations(tester);
       expect(find.byType(HomeStationGridCard), findsNWidgets(2));
       expect(_state(tester).read(homeDiscoveryProvider).filters.activeCount, 2);
       expect(find.text('Đóng cửa'), findsNothing);

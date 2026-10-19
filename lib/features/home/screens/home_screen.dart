@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/main_navigation.dart';
 import '../../activity/models/rescue_order.dart';
+import '../../activity/providers/activity_provider.dart';
 import '../../chat/providers/chat_directory_provider.dart';
+import '../../customer/presentation/widgets/active_order_tracking_card.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../rescue/widgets/create_rescue_request_bottom_sheet.dart';
 import '../../rescue_station/providers/station_details_provider.dart';
@@ -96,7 +98,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _locationOpen = true;
     FocusScope.of(context).unfocus();
     try {
-      await context.push('/incident-map-picker');
+      await context.push('/incident-location');
     } finally {
       _locationOpen = false;
     }
@@ -206,6 +208,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final discovery = ref.watch(homeDiscoveryProvider);
     final stations = ref.watch(homeDiscoveryStationsProvider);
     final weather = ref.watch(homeWeatherProvider);
+    final activeOrder = ref.watch(
+      activityProvider.select((state) => state.activeOrders.firstOrNull),
+    );
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -233,15 +238,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ScrollViewKeyboardDismissBehavior.onDrag,
                     slivers: [
                       DecoratedSliver(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: Colors.white,
                           image: DecorationImage(
                             image: AssetImage(
-                              HomeMediaAssets.weatherBackground,
+                              HomeMediaAssets.weatherBackgroundFor(
+                                weather.asData?.value.weather.condition,
+                              ),
                             ),
                             fit: BoxFit.cover,
                             alignment: Alignment.topCenter,
-                            colorFilter: ColorFilter.mode(
+                            colorFilter: const ColorFilter.mode(
                               Color(0x3DFFFFFF),
                               BlendMode.srcATop,
                             ),
@@ -296,6 +303,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ],
                         ),
                       ),
+                      if (activeOrder != null)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: ActiveOrderTrackingCard(
+                              order: activeOrder,
+                              onDetails: () => this.context.push(
+                                '/order-tracking?id=${Uri.encodeQueryComponent(activeOrder.id)}',
+                              ),
+                            ),
+                          ),
+                        ),
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
                         sliver: SliverToBoxAdapter(

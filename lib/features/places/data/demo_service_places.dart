@@ -4,7 +4,7 @@ import '../models/service_place.dart';
 const demoServicePlaces = [
   ServicePlace(
     id: '1',
-    name: 'Trạm sạc MotoCare Nguyễn Trãi',
+    name: 'Trạm sạc Revo Nguyễn Trãi',
     address: '120 Nguyễn Trãi, TP. Hồ Chí Minh',
     distanceKm: 0.8,
     rating: 4.8,

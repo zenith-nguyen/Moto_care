@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:moto_care/core/router/app_router.dart';
+import 'package:revo/core/router/app_router.dart';
 
 GoRouter marketplaceTestRouter(Widget home) {
   final appRouter = createAppRouter();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/admin_models.dart';
@@ -148,8 +149,10 @@ class _AdminActionDialogState extends ConsumerState<AdminActionDialog> {
                         action.error is AdminException
                             ? (action.error as AdminException).message
                             : 'Lỗi kết nối. Vui lòng thử lại.',
-                        style: TextStyle(
+                        style: GoogleFonts.montserrat(
                           color: Theme.of(context).colorScheme.error,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: -0.2,
                         ),
                       ),
                     ],

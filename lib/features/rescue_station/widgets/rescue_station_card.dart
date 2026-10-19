@@ -76,7 +76,7 @@ class RescueStationCard extends ConsumerWidget {
                   Text(station.stationType.label, style: AppTextStyles.caption),
                   if (station.isVerified)
                     Text(
-                      'Xác thực MotoCare',
+                      'Xác thực Revo',
                       style: AppTextStyles.caption.copyWith(
                         color: RevoHomeColors.verified,
                         fontWeight: FontWeight.w500,

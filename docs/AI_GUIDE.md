@@ -1,6 +1,6 @@
 # AI coding guide
 
-This guide is mandatory for every coding agent before it proposes or changes Moto Care source code. Read [the workflow](WORKFLOW.md), [dependency guide](DEPENDENCIES.md), and the relevant contributor guide before starting.
+This guide is mandatory for every coding agent before it proposes or changes Revo source code. Read [the workflow](WORKFLOW.md), [dependency guide](DEPENDENCIES.md), and the relevant contributor guide before starting.
 
 ## Mandatory rules
 
@@ -10,6 +10,7 @@ This guide is mandatory for every coding agent before it proposes or changes Mot
 4. Keep Dart formatting, `flutter analyze`, `flutter test`, and Android builds passing. Do not disable tests or lints merely to make a check pass.
 5. Update tests when behavior changes. Update documentation when changing process, architecture, configuration, or release behavior.
 6. Keep `pubspec.lock` in sync when changing dependencies. Change `version:` only for a release prepared on `main`.
+7. Never recreate, bundle or reference `assets/images/rescue-tow.png` in application code, widgets or validation copies. Use an available bundled station image such as `assets/images/Tiemsua1.png`, or a Flutter icon, instead.
 
 ## Change conventions
 

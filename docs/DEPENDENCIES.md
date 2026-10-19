@@ -1,12 +1,15 @@
 # Dependency guide
 
-This document defines the approved baseline dependencies for Moto Care. Add a package only when its responsibility is needed by the current task. Do not introduce a competing package in the same category without a repository-owner decision.
+This document defines the approved baseline dependencies for Revo. Add a package only when its responsibility is needed by the current task. Do not introduce a competing package in the same category without a repository-owner decision.
 
 ## Project identity
 
-- Flutter package name: `moto_care`
-- Android application ID and Apple bundle ID: `com.motocare.app`
-- User-facing application name: `Moto Care`
+- Flutter package name: `revo`
+- Android application ID and Apple bundle ID: `com.revo.app`
+- User-facing application name: `Revo`
+
+Native targets and location API identity headers consistently use `com.revo.app`.
+Google API key restrictions must match this identifier and the app's signing certificate.
 
 Treat the application and bundle IDs as permanent after the first store release. Changing them later creates a different application identity for users and stores.
 
@@ -27,8 +30,10 @@ Treat the application and bundle IDs as permanent after the first store release.
 | `font_awesome_flutter` | Font Awesome icons | Displaying icons, including password visibility controls. |
 | `flutter_native_splash` | Generate native Android and iOS splash screens (development only). | Regenerating launch resources after a logo or splash configuration change. |
 | `image` | Trim the Revo PNG and export temporary native splash images (development only). | Running `dart run tool/generate_splash.dart`. |
+| `fl_chart` | Interactive line and bar charts | Admin Health-style SOS comparisons and daily revenue with an average reference. |
+| `google_fonts` | Google Fonts text themes | Admin Montserrat theme, resolved from bundled font assets. |
 | `intl` and `flutter_localizations` | Locale-aware dates, currency, and translated UI | Presenting dates, VND amounts, or more than one language. |
-| `dio` | HTTP client | Calling the Moto Care backend. Configure timeouts and interceptors in one client. |
+| `dio` | HTTP client | Calling the Revo backend. Configure timeouts and interceptors in one client. |
 | `flutter_secure_storage` | Encrypted device storage | Persisting credentials, access tokens, or refresh tokens. Never use it for non-sensitive UI preferences. |
 | `json_annotation` | Model annotations | Defining API request and response models. |
 | `build_runner` and `json_serializable` | JSON model code generation | Generating `fromJson` and `toJson` for annotated models. |

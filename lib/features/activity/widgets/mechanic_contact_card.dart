@@ -17,10 +17,7 @@ class MechanicContactCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(14),
-    decoration: BoxDecoration(
-      color: OrderDetailsTheme.surface,
-      borderRadius: BorderRadius.circular(16),
-    ),
+    decoration: CustomerOrderTheme.cardDecoration,
     child: LayoutBuilder(
       builder: (context, constraints) {
         final compact =
@@ -39,7 +36,7 @@ class MechanicContactCard extends StatelessWidget {
             _ContactButton(
               id: 'call',
               tooltip: 'Gọi điện cho thợ',
-              icon: Icons.phone_outlined,
+              icon: Icons.phone,
               onPressed: onCall,
             ),
           ],
@@ -56,7 +53,7 @@ class MechanicContactCard extends StatelessWidget {
                     )
                   : Text(
                       details.mechanicInitials,
-                      style: const TextStyle(
+                      style: CustomerOrderTheme.text(
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -70,7 +67,7 @@ class MechanicContactCard extends StatelessWidget {
                 children: [
                   Text(
                     details.mechanicName,
-                    style: const TextStyle(
+                    style: CustomerOrderTheme.text(
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
                     ),
@@ -78,7 +75,7 @@ class MechanicContactCard extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     details.mechanicPlate,
-                    style: const TextStyle(
+                    style: CustomerOrderTheme.text(
                       color: OrderDetailsTheme.muted,
                       fontSize: 11,
                       height: 1.4,
@@ -123,11 +120,11 @@ class _ContactButton extends StatelessWidget {
     tooltip: tooltip,
     onPressed: onPressed,
     style: IconButton.styleFrom(
-      backgroundColor: Colors.white,
-      foregroundColor: OrderDetailsTheme.red,
+      backgroundColor: CustomerOrderTheme.navy,
+      foregroundColor: Colors.white,
       disabledForegroundColor: OrderDetailsTheme.muted,
+      disabledBackgroundColor: OrderDetailsTheme.line,
       minimumSize: const Size(44, 44),
-      side: const BorderSide(color: OrderDetailsTheme.line),
       shape: const CircleBorder(),
     ),
     icon: Icon(icon, size: 20),

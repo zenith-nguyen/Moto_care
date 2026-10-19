@@ -61,35 +61,23 @@ class RescueProgressStepper extends StatelessWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: switch (steps[i].state) {
-                              RescueProgressState.active =>
-                                OrderDetailsTheme.red,
-                              RescueProgressState.done =>
-                                OrderDetailsTheme.text,
+                              RescueProgressState.active ||
+                              RescueProgressState.done => Colors.white,
                               RescueProgressState.upcoming =>
                                 OrderDetailsTheme.line,
                             },
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow:
-                                steps[i].state == RescueProgressState.active
-                                ? [
-                                    const BoxShadow(
-                                      color: OrderDetailsTheme.redTint,
-                                      spreadRadius: 2,
-                                    ),
-                                  ]
-                                : [],
                           ),
                           child: Icon(
                             steps[i].state == RescueProgressState.upcoming
                                 ? Icons.circle
-                                : Icons.check_rounded,
+                                : Icons.check_circle,
                             size: steps[i].state == RescueProgressState.upcoming
                                 ? 7
-                                : 18,
+                                : 34,
                             color:
                                 steps[i].state == RescueProgressState.upcoming
                                 ? OrderDetailsTheme.muted
-                                : Colors.white,
+                                : OrderDetailsTheme.text,
                           ),
                         ),
                       ],
@@ -101,7 +89,7 @@ class RescueProgressStepper extends StatelessWidget {
                     child: Text(
                       steps[i].label,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: CustomerOrderTheme.text(
                         fontSize: 11,
                         height: 1.4,
                         fontWeight: steps[i].state == RescueProgressState.active
@@ -116,7 +104,7 @@ class RescueProgressStepper extends StatelessWidget {
                   const SizedBox(height: 5),
                   Text(
                     steps[i].time,
-                    style: const TextStyle(
+                    style: CustomerOrderTheme.text(
                       fontSize: 10,
                       color: OrderDetailsTheme.muted,
                     ),

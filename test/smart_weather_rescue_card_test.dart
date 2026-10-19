@@ -1,11 +1,16 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/home/data/demo_home_weather.dart';
-import 'package:moto_care/features/home/models/home_rescue_quick_action.dart';
-import 'package:moto_care/features/home/services/home_weather_service.dart';
-import 'package:moto_care/features/home/widgets/smart_weather_rescue_card.dart';
-import 'package:moto_care/features/home/widgets/weather_condition_icon.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/home/data/demo_home_weather.dart';
+import 'package:revo/features/home/data/home_media_assets.dart';
+import 'package:revo/features/home/models/home_rescue_quick_action.dart';
+import 'package:revo/features/home/models/home_weather.dart';
+import 'package:revo/features/home/services/home_weather_service.dart';
+import 'package:revo/features/home/widgets/smart_weather_rescue_card.dart';
+import 'package:revo/features/home/widgets/weather_condition_icon.dart';
 
 void main() {
   Widget card({
@@ -15,6 +20,7 @@ void main() {
     VoidCallback? onRetry,
     bool error = false,
     bool loading = false,
+    HomeWeather? forecast,
   }) => MaterialApp(
     theme: AppTheme.light,
     home: Scaffold(
@@ -24,7 +30,9 @@ void main() {
           child: SmartWeatherRescueCard(
             weather: error || loading
                 ? null
-                : const WeatherRescueService().evaluate(demoHomeWeather),
+                : const WeatherRescueService().evaluate(
+                    forecast ?? demoHomeWeather,
+                  ),
             isLoading: loading,
             hasWeatherError: error,
             onSearch: onSearch ?? () {},
@@ -36,6 +44,59 @@ void main() {
       ),
     ),
   );
+
+  for (final (condition, usesRainArtwork) in [
+    (HomeWeatherCondition.sunny, false),
+    (HomeWeatherCondition.partlyCloudy, false),
+    (HomeWeatherCondition.cloudy, false),
+    (HomeWeatherCondition.rainy, true),
+    (HomeWeatherCondition.stormy, true),
+  ]) {
+    testWidgets('Weather artwork follows ${condition.name}', (tester) async {
+      await tester.pumpWidget(
+        card(
+          forecast: HomeWeather(
+            temperatureCelsius: 26,
+            condition: condition,
+            description: 'Thời tiết thử nghiệm',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.image(const AssetImage(HomeMediaAssets.rainWeatherIcon)),
+        usesRainArtwork ? findsOneWidget : findsNothing,
+      );
+      expect(find.text('26°'), findsOneWidget);
+      expect(
+        tester.getSize(find.byType(WeatherConditionIcon)),
+        const Size.square(72),
+      );
+      expect(find.byKey(const ValueKey('home-search')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  test('Rain artwork has a transparent canvas and visible clouds', () async {
+    final data = await rootBundle.load(HomeMediaAssets.rainWeatherIcon);
+    final codec = await ui.instantiateImageCodec(data.buffer.asUint8List());
+    final frame = await codec.getNextFrame();
+    try {
+      final rgba = (await frame.image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      ))!;
+      expect(rgba.getUint8(3), 0);
+      expect(rgba.getUint8(rgba.lengthInBytes - 1), 0);
+      final cloudPixel =
+          (frame.image.height ~/ 3 * frame.image.width +
+              frame.image.width ~/ 2) *
+          4;
+      expect(rgba.getUint8(cloudPixel + 3), greaterThan(200));
+    } finally {
+      frame.image.dispose();
+      codec.dispose();
+    }
+  });
 
   testWidgets('Weather stays above search with its subtitle left of the icon', (
     tester,

@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/features/profile/models/profile_validation.dart';
-import 'package:moto_care/features/profile/models/user_profile.dart';
-import 'package:moto_care/features/profile/providers/profile_provider.dart';
+import 'package:revo/features/profile/models/profile_validation.dart';
+import 'package:revo/features/profile/models/user_profile.dart';
+import 'package:revo/features/profile/providers/profile_provider.dart';
 
 import 'fixtures/user_profile_fixture.dart';
 

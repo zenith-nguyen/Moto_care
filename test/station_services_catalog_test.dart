@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/features/rescue_station/widgets/station_services_catalog.dart';
+import 'package:revo/features/rescue_station/widgets/station_services_catalog.dart';
 
 void main() {
   testWidgets('An empty catalog offers contact guidance without price cards', (

@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "Moto Care" "\0"
-            VALUE "FileDescription", "Moto Care" "\0"
+            VALUE "CompanyName", "Revo" "\0"
+            VALUE "FileDescription", "Revo" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "moto_care" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 Moto Care. All rights reserved." "\0"
-            VALUE "OriginalFilename", "moto_care.exe" "\0"
-            VALUE "ProductName", "Moto Care" "\0"
+            VALUE "InternalName", "revo" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Revo. All rights reserved." "\0"
+            VALUE "OriginalFilename", "revo.exe" "\0"
+            VALUE "ProductName", "Revo" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

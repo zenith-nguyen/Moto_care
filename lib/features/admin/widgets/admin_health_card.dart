@@ -66,6 +66,7 @@ class AdminHealthCard extends StatelessWidget {
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 height: 1.4,
+                                letterSpacing: -0.3,
                               ),
                         ),
                       ),

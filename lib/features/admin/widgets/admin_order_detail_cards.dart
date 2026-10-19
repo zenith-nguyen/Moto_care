@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -73,9 +74,11 @@ class AdminOrderProgressCard extends StatelessWidget {
                       Text(
                         steps[i].milestone.label,
                         textAlign: TextAlign.center,
-                        style: AdminOrderTheme.value.copyWith(
+                        style: GoogleFonts.montserrat(
+                          textStyle: AdminOrderTheme.value,
                           fontSize: 10,
                           fontWeight: FontWeight.w500,
+                          letterSpacing: -0.2,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -83,9 +86,11 @@ class AdminOrderProgressCard extends StatelessWidget {
                         steps[i].at == null
                             ? '—'
                             : DateFormat('HH:mm').format(steps[i].at!),
-                        style: AdminOrderTheme.label.copyWith(
+                        style: GoogleFonts.montserrat(
+                          textStyle: AdminOrderTheme.label,
                           fontSize: 10,
                           fontWeight: FontWeight.w400,
+                          letterSpacing: -0.2,
                         ),
                       ),
                     ],
@@ -142,12 +147,7 @@ class _OrderTrackingIdentity extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Mã đơn hàng:',
-                  style: AdminOrderTheme.label.copyWith(
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
+                Text('Mã đơn hàng:', style: AdminOrderTheme.label),
                 Tooltip(
                   message: 'Sao chép mã đơn',
                   child: TextButton(
@@ -166,7 +166,12 @@ class _OrderTrackingIdentity extends StatelessWidget {
                         Flexible(
                           child: Text(
                             order.id,
-                            style: AdminOrderTheme.value.copyWith(height: 1.3),
+                            style: GoogleFonts.montserrat(
+                              textStyle: AdminOrderTheme.value,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.3,
+                              height: 1.3,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -231,7 +236,7 @@ class AdminOrderInformationCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Thông tin chi tiết', style: AdminOrderTheme.title),
+        Text('Thông tin chi tiết', style: AdminOrderTheme.title),
         const SizedBox(height: 12),
         _InformationRow('Khách hàng', order.customer),
         _InformationRow('Địa chỉ cứu hộ', order.address),
@@ -291,7 +296,7 @@ class AdminOrderMechanicCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Thông tin Thợ cứu hộ', style: AdminOrderTheme.title),
+        Text('Thông tin Thợ cứu hộ', style: AdminOrderTheme.title),
         const SizedBox(height: 16),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -312,8 +317,10 @@ class AdminOrderMechanicCard extends StatelessWidget {
                     children: [
                       Text(
                         order.provider ?? 'Chưa phân công',
-                        style: AdminOrderTheme.value.copyWith(
-                          fontWeight: FontWeight.bold,
+                        style: GoogleFonts.montserrat(
+                          textStyle: AdminOrderTheme.value,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -405,7 +412,7 @@ class AdminOrderHistoryCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Lịch sử trạng thái', style: AdminOrderTheme.title),
+        Text('Lịch sử trạng thái', style: AdminOrderTheme.title),
         const SizedBox(height: 20),
         if (events.isEmpty) const AdminStateView.empty(),
         for (var i = 0; i < events.length; i++)

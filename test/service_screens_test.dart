@@ -4,22 +4,22 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/services/service_actions.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
-import 'package:moto_care/features/home/models/home_destination.dart';
-import 'package:moto_care/core/widgets/photo_attachment_field.dart';
-import 'package:moto_care/core/widgets/service_scaffold.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/chat/screens/tin_nhan_screen.dart';
-import 'package:moto_care/features/home/models/home_user.dart';
-import 'package:moto_care/features/partner/providers/partner_registration_provider.dart';
-import 'package:moto_care/features/places/models/service_place.dart';
-import 'package:moto_care/features/places/screens/tram_sac_tiem_sua_screen.dart';
-import 'package:moto_care/features/policy/providers/compensation_provider.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/services/service_actions.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/home/theme/home_theme.dart';
+import 'package:revo/features/home/widgets/home_bottom_navigation.dart';
+import 'package:revo/features/home/models/home_destination.dart';
+import 'package:revo/core/widgets/photo_attachment_field.dart';
+import 'package:revo/core/widgets/service_scaffold.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/chat/screens/tin_nhan_screen.dart';
+import 'package:revo/features/home/models/home_user.dart';
+import 'package:revo/features/partner/providers/partner_registration_provider.dart';
+import 'package:revo/features/places/models/service_place.dart';
+import 'package:revo/features/places/screens/tram_sac_tiem_sua_screen.dart';
+import 'package:revo/features/policy/providers/compensation_provider.dart';
 
 const _user = HomeUser(displayName: 'Nguyễn Văn An', memberId: 'MC15335206');
 const _routes = [
@@ -51,7 +51,7 @@ Future<GoRouter> _open(
         attachmentPickerProvider.overrideWithValue(
           picker ??
               () async =>
-                  (await rootBundle.load('assets/images/Logo_Revo.png')).buffer
+                  (await rootBundle.load('assets/images/REVO.png')).buffer
                       .asUint8List(),
         ),
         if (places != null) servicePlacesProvider.overrideWithValue(places),
@@ -176,13 +176,13 @@ void main() {
       await _tap(tester, find.text('Trạm sạc'));
       await _tap(tester, find.text('Mở 24/7'));
       expect(find.text('1 địa điểm • Khoảng cách minh họa'), findsOneWidget);
-      expect(find.text('Trạm sạc MotoCare Nguyễn Trãi'), findsOneWidget);
+      expect(find.text('Trạm sạc Revo Nguyễn Trãi'), findsOneWidget);
       expect(find.text('Tiệm sửa xe Minh Tuấn'), findsNothing);
       await tester.enterText(find.byType(TextField), 'nguyen trai');
       await tester.pumpAndSettle();
       expect(find.text('1 địa điểm • Khoảng cách minh họa'), findsOneWidget);
       await _tap(tester, find.text('Bản đồ'));
-      expect(find.byTooltip('Trạm sạc MotoCare Nguyễn Trãi'), findsOneWidget);
+      expect(find.byTooltip('Trạm sạc Revo Nguyễn Trãi'), findsOneWidget);
       await _tap(tester, find.text('Sửa xe xăng'));
       expect(
         find.text(

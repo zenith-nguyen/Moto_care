@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/activity/models/order_cancellation_reason.dart';
-import 'package:moto_care/features/activity/widgets/cancel_order_dialog.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/activity/models/order_cancellation_reason.dart';
+import 'package:revo/features/activity/widgets/cancel_order_dialog.dart';
 
 Finder _key(String value) => find.byKey(ValueKey(value));
 

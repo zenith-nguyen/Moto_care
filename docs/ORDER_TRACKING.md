@@ -11,17 +11,31 @@ a recoverable empty state. The older `/rescue-tracking` route remains available.
 
 A full-screen Stack places Google Map beneath a floating, centered “Theo dõi
 trực tiếp” header with circular Back and order-details buttons. The white draggable
-bottom card has 24px top corners. Its first three rows show the actual order code
-and status pill; service, remaining distance and ETA; and the mechanic avatar,
-name, plate and circular Chat/Call controls. Dragging up reveals the tracking
-explanation, shop, selected services, price, address and cancellation action.
-Typography remains Montserrat. Small displays and large text wrap the status
+bottom card has 28px top corners and initially leaves the upper half available
+for the map. The header pairs a pastel service icon with the actual order code,
+service name and a circular Copy action. A pale 16px overview has three equal
+columns: incident address, the existing requester name and a blue status pill.
+The 16px mechanic card retains the name, plate, image/initials and both Chat/Call
+actions, with a pastel orange initials avatar and navy Call control.
+The sheet retains Google Fonts Montserrat with -0.3 letter spacing, a light
+slate background, white surfaces and a slate drag handle.
+Below the contact card, the vertical route history reads the existing
+`orderDetailsProvider` timeline without creating status events or timestamps.
+Orange/teal dots connect each unchanged description and address to its recorded
+time/date; missing times keep their existing placeholder. “Xem tất cả” opens
+the same order-details route. Copy writes the stored code to the clipboard.
+Connection/demo notices remain next to the mechanic card. The existing
+service/distance/ETA metrics, explanation,
+shop, selected services, price, full address and cancellation action remain
+available by scrolling. No bottom-navigation widgets or shared state changed.
+Small displays and large text wrap the status
 and move contact controls onto a separate row.
 
 The SOS pin stays at the incident coordinates. The motorcycle bitmap,
-remaining polyline (width 5) and contact icons use `#E53935`; the status pill uses
-an orange tint. A pre-rendered red motorcycle bitmap keeps the marker visible
-before the detailed icon loads. No other screen's accent colors change.
+remaining polyline (width 5) use teal `#14B8A6`, with round line joins/caps and
+soft circular marker halos. Matching pre-rendered teal bitmaps keep both pins
+visible before the detailed icons load. Coordinates, road points, metrics,
+status labels and contact/cancellation handlers are unchanged.
 
 `OrderTrackingMapData` accepts route points from the service and reserves camera
 padding for the header and current card height without resizing the map.
@@ -102,12 +116,13 @@ timeline; its invoice link retains full costs and rating actions.
 
 ## Review and validation
 
-Review captures: [Live tracking](screenshots/live-tracking.png) and
-[320px with 1.5x text](screenshots/live-tracking-large-text.png). They use
+Review captures: [overview](screenshots/tracking-redesign-overview.png),
+[history](screenshots/tracking-redesign-history.png) and
+[320px with 1.5x text](screenshots/tracking-redesign-large-text.png). They use
 Montserrat and an injected example feed with the explicit diagram fallback.
 
 `test/order_tracking_screen_test.dart` covers full-screen map geometry, exact
-incident coordinates, red width-5 polylines and marker bitmaps, live GPS/route
+incident coordinates, teal width-5 polylines and halo marker bitmaps, live GPS/route
 and ETA updates, empty-route bounds, immutable observations, stale/other-order
 filtering, connection loss/recovery, subscription cleanup, arrival, demo
 interpolation and lifecycle, cancellation, phone/chat navigation, local chat

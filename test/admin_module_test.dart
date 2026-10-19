@@ -47,7 +47,7 @@ const _captureKey = ValueKey('admin-capture');
 class _AvatarDevice extends NativeProfileDeviceService {
   @override
   Future<Uint8List?> pickAvatar() async =>
-      (await rootBundle.load('assets/images/Logo_Revo.png')).buffer
+      (await rootBundle.load('assets/images/REVO.png')).buffer
           .asUint8List();
 }
 
@@ -150,7 +150,7 @@ Future<void> _capture(WidgetTester tester, String name) async {
   await tester.runAsync(
     () => Future.wait([
       for (final asset in [
-        'assets/images/Logo_Revo.png',
+        'assets/images/REVO.png',
         HomeMediaAssets.weatherBackground,
         AdminFinanceStyle.escrowAsset,
         'assets/images/Tiemsua1.png',
@@ -199,6 +199,8 @@ void main() {
       ..addFont(rootBundle.load('assets/fonts/Montserrat-Medium.ttf'))
       ..addFont(rootBundle.load('assets/fonts/Montserrat-SemiBold.ttf'))
       ..addFont(rootBundle.load('assets/fonts/Montserrat-Bold.ttf'));
+    // Render finance's ExtraBold amounts with the bundled production weight.
+    fonts.addFont(rootBundle.load('assets/fonts/Montserrat-ExtraBold.ttf'));
     await fonts.load();
     await (FontLoader(
       'MaterialIcons',
@@ -970,11 +972,11 @@ void main() {
           label: 'Xưởng kiểm thử',
         ),
         identityFrontPhoto: const AdminMechanicPhoto.asset(
-          'assets/images/Logo_Revo.png',
+          'assets/images/REVO.png',
           label: 'Mặt trước CCCD kiểm thử',
         ),
         identityBackPhoto: const AdminMechanicPhoto.asset(
-          'assets/images/Logo_Revo.png',
+          'assets/images/REVO.png',
           label: 'Mặt sau CCCD kiểm thử',
         ),
         portraitPhoto: const AdminMechanicPhoto.asset(
@@ -983,11 +985,11 @@ void main() {
         ),
         additionalPhotos: const [
           AdminMechanicPhoto.asset(
-            'assets/images/Logo_Revo.png',
+            'assets/images/REVO.png',
             label: 'Giấy phép kiểm thử',
           ),
           AdminMechanicPhoto.asset(
-            'assets/images/Logo_Revo.png',
+            'assets/images/REVO.png',
             label: 'Chứng chỉ kiểm thử',
           ),
         ],

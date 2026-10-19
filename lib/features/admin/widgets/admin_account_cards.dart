@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/admin_tokens.dart';
 import '../models/admin_account_models.dart';
@@ -93,10 +94,11 @@ class AdminAccountProfileCard extends StatelessWidget {
               children: [
                 Text(
                   state.profile.name,
-                  style: const TextStyle(
+                  style: GoogleFonts.montserrat(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     height: 1.4,
+                    letterSpacing: -0.3,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -111,37 +113,44 @@ class AdminAccountProfileCard extends StatelessWidget {
                   ),
                   child: Text(
                     session.isSuperAdmin ? 'SUPER ADMIN' : 'ADMIN',
-                    style: const TextStyle(
+                    style: GoogleFonts.montserrat(
                       fontSize: 10,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w500,
                       color: AdminTokens.primaryBlue,
+                      letterSpacing: -0.2,
                     ),
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   state.profile.email,
-                  style: const TextStyle(
+                  style: GoogleFonts.montserrat(
                     fontSize: 12,
                     color: AdminTokens.muted,
                     height: 1.5,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: -0.2,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   'ID: ${session.id}',
-                  style: const TextStyle(
+                  style: GoogleFonts.montserrat(
                     fontSize: 11,
                     color: AdminTokens.muted,
                     height: 1.5,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: -0.2,
                   ),
                 ),
                 if (state.profile.phone.isNotEmpty)
                   Text(
                     state.profile.phone,
-                    style: const TextStyle(
+                    style: GoogleFonts.montserrat(
                       fontSize: 11,
                       color: AdminTokens.muted,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: -0.2,
                     ),
                   ),
               ],
@@ -218,10 +227,11 @@ class _ProfileAction extends StatelessWidget {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: GoogleFonts.montserrat(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               height: 1.4,
+              letterSpacing: -0.3,
             ),
           ),
         ),
@@ -240,12 +250,12 @@ class AdminAccountSectionTitle extends StatelessWidget {
       header: true,
       child: Text(
         title,
-        style: const TextStyle(
-          fontFamily: 'Montserrat',
+        style: GoogleFonts.montserrat(
           fontSize: 16,
           fontWeight: FontWeight.w700,
           color: AdminTokens.text,
           height: 1.5,
+          letterSpacing: -0.3,
         ),
       ),
     ),
@@ -285,23 +295,23 @@ class AdminAccountListTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
+                      style: GoogleFonts.montserrat(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AdminTokens.text,
                         height: 1.5,
+                        letterSpacing: -0.3,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
+                      style: GoogleFonts.montserrat(
                         fontSize: 11,
                         fontWeight: FontWeight.w400,
                         color: AdminTokens.muted,
                         height: 1.5,
+                        letterSpacing: -0.2,
                       ),
                     ),
                   ],

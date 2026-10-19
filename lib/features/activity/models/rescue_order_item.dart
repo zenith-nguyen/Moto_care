@@ -47,7 +47,8 @@ enum RescuePaymentMethod {
   cash('cash', 'Tiền mặt'),
   momo('momo', 'Ví MoMo'),
   vnpay('vnpay', 'VNPay'),
-  motoCare('motocare', 'Ví MotoCare');
+  // Keep the stored value so existing orders remain readable after rebranding.
+  revo('motocare', 'Ví Revo');
 
   const RescuePaymentMethod(this.value, this.label);
   final String value;

@@ -4,34 +4,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/activity/data/mock_rescue_orders.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/home/models/rescue_location.dart';
-import 'package:moto_care/features/home/providers/home_provider.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
-import 'package:moto_care/features/location/data/mock_incident_places.dart';
-import 'package:moto_care/features/location/providers/incident_location_provider.dart';
-import 'package:moto_care/features/location/models/place_suggestion.dart';
-import 'package:moto_care/features/location/services/device_location_service.dart';
-import 'package:moto_care/features/location/services/places_service.dart';
-import 'package:moto_care/features/location/widgets/incident_google_map.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/activity/data/mock_rescue_orders.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/home/models/rescue_location.dart';
+import 'package:revo/features/home/providers/home_provider.dart';
+import 'package:revo/features/home/theme/home_theme.dart';
+import 'package:revo/features/home/widgets/home_bottom_navigation.dart';
+import 'package:revo/features/location/data/mock_incident_places.dart';
+import 'package:revo/features/location/providers/incident_location_provider.dart';
+import 'package:revo/features/location/models/place_suggestion.dart';
+import 'package:revo/features/location/services/device_location_service.dart';
+import 'package:revo/features/location/services/places_service.dart';
+import 'package:revo/features/location/widgets/incident_google_map.dart';
 
 import 'fixtures/location_fixture.dart';
 import 'fixtures/marketplace_router_fixture.dart';
 
-import 'package:moto_care/features/location/screens/incident_location_search_screen.dart';
-import 'package:moto_care/features/location/screens/incident_map_picker_screen.dart';
-import 'package:moto_care/features/profile/models/user_profile.dart';
-import 'package:moto_care/features/profile/providers/profile_provider.dart';
-import 'package:moto_care/features/rescue/widgets/create_rescue_request_bottom_sheet.dart';
-import 'package:moto_care/features/home/screens/home_screen.dart';
-import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
-import 'package:moto_care/features/vehicle/models/vehicle.dart';
-import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
+import 'package:revo/features/location/screens/incident_location_search_screen.dart';
+import 'package:revo/features/location/screens/incident_map_picker_screen.dart';
+import 'package:revo/features/profile/models/user_profile.dart';
+import 'package:revo/features/profile/providers/profile_provider.dart';
+import 'package:revo/features/rescue/widgets/create_rescue_request_bottom_sheet.dart';
+import 'package:revo/features/home/screens/home_screen.dart';
+import 'package:revo/features/rescue/screens/order_tracking_screen.dart';
+import 'package:revo/features/vehicle/models/vehicle.dart';
+import 'package:revo/features/vehicle/providers/vehicle_provider.dart';
 
 const _vehicle = Vehicle(
   id: 'vision',
@@ -284,7 +284,7 @@ void main() {
     (tester) async {
       final router = await _open(tester, path: '/trang-chu', saved: _saved);
       await _tap(tester, find.byKey(const ValueKey('home-location')));
-      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
+      expect(router.state.uri.path, '/incident-location');
       await tester.enterText(_address, 'abc');
       await _tap(tester, find.text('Chọn trên bản đồ'));
       expect(
@@ -302,6 +302,12 @@ void main() {
         'Đối diện cây xăng',
       );
       await _tap(tester, find.byTooltip('Quay lại'));
+      await _tap(tester, find.byTooltip('Quay lại'));
+      expect(router.state.uri.path, '/incident-location');
+      expect(
+        tester.widget<TextFormField>(_landmark).controller!.text,
+        'Đối diện cây xăng',
+      );
       await _tap(tester, find.byTooltip('Quay lại'));
       expect(router.state.uri.path, '/trang-chu');
       expect(_state(tester).read(rescueLocationProvider), same(_saved));
@@ -391,6 +397,11 @@ void main() {
       final offset = scroll.position.pixels;
       await tester.tap(find.byKey(const ValueKey('home-location')));
       await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/incident-location');
+      expect(find.byType(IncidentLocationSearchScreen), findsOneWidget);
+      expect(find.byType(IncidentMapPickerScreen), findsNothing);
+      expect(_state(tester).read(rescueLocationProvider), same(_saved));
+      await _tap(tester, find.text('Chọn trên bản đồ'));
       expect(router.state.uri.path, '/incident-map-picker');
       expect(find.byType(IncidentLocationSearchScreen), findsNothing);
       await tester.dragFrom(const Offset(400, 140), const Offset(150, 120));
@@ -433,8 +444,26 @@ void main() {
         tester,
         find.byKey(const ValueKey('emergency-change-location')),
       );
+      expect(router.state.uri.path, '/incident-location');
+      expect(find.text('Vị trí gặp sự cố?'), findsOneWidget);
+      expect(find.byType(IncidentMapPickerScreen), findsNothing);
+      expect(_state(tester).read(rescueLocationProvider), isNull);
+      await _tap(tester, find.byTooltip('Quay lại'));
+      expect(
+        tester.state(find.byType(EmergencyBookingBottomSheet)),
+        same(sheetState),
+      );
+      expect(
+        tester.widget<TextFormField>(description).controller!.text,
+        'Xe không đề được',
+      );
+      await _tap(
+        tester,
+        find.byKey(const ValueKey('emergency-change-location')),
+      );
+      expect(router.state.uri.path, '/incident-location');
+      await _tap(tester, find.text('Sử dụng vị trí hiện tại của tôi'));
       expect(router.state.uri.path, '/incident-map-picker');
-      await _tap(tester, find.byKey(const ValueKey('incident-map-gps')));
       await _tap(tester, _confirm);
       expect(router.state.uri.path, '/trang-chu');
       expect(
@@ -460,7 +489,6 @@ void main() {
     (tester) async {
       final router = await _open(tester, path: '/trang-chu');
       await _tap(tester, find.byKey(const ValueKey('home-location')));
-      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await tester.enterText(_address, ' 118 Bùi Văn Ba, Tân Thuận, Q.7 ');
       await tester.enterText(_landmark, ' Cạnh cổng trường ');
       await _tap(tester, find.text('Chọn trên bản đồ'));
@@ -536,7 +564,6 @@ void main() {
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await _open(tester, path: '/trang-chu');
       await _tap(tester, find.byKey(const ValueKey('home-location')));
-      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await _tap(tester, _address);
       tester.view.viewInsets = const FakeViewPadding(bottom: 250);
       await tester.pumpAndSettle();

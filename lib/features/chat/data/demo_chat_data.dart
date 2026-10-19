@@ -17,7 +17,7 @@ const mockRescueConversations = [
     licensePlate: '59-X1 123.45',
     phoneNumber: '0900000002',
     status: RescueStatus.completed,
-    lastMessage: 'Xe đã được sửa xong. Cảm ơn bạn đã chọn MotoCare!',
+    lastMessage: 'Xe đã được sửa xong. Cảm ơn bạn đã chọn Revo!',
     timeLabel: 'Hôm qua',
   ),
   ChatConversation(
@@ -42,8 +42,8 @@ const mockRescueConversations = [
 
 const demoSupportMessages = [
   AdminMessage(
-    title: 'CSKH MotoCare',
-    message: 'Xin chào! MotoCare có thể giúp gì cho bạn hôm nay?',
+    title: 'CSKH Revo',
+    message: 'Xin chào! Revo có thể giúp gì cho bạn hôm nay?',
     time: '09:00',
   ),
   AdminMessage(
@@ -55,13 +55,13 @@ const demoSupportMessages = [
 
 const demoAdminNotifications = [
   AdminMessage(
-    title: 'Chào mừng đến với MotoCare',
-    message: 'Đội ngũ MotoCare luôn sẵn sàng đồng hành và hỗ trợ bạn trên mọi hành trình.',
+    title: 'Chào mừng đến với Revo',
+    message: 'Đội ngũ Revo luôn sẵn sàng đồng hành và hỗ trợ bạn trên mọi hành trình.',
     time: '08:30',
   ),
   AdminMessage(
     title: 'Đơn cứu hộ đã hoàn tất',
-    message: 'Cảm ơn bạn đã sử dụng dịch vụ. Hãy đánh giá trải nghiệm để MotoCare phục vụ tốt hơn.',
+    message: 'Cảm ơn bạn đã sử dụng dịch vụ. Hãy đánh giá trải nghiệm để Revo phục vụ tốt hơn.',
     time: 'Hôm qua',
   ),
   AdminMessage(

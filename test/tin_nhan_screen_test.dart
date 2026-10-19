@@ -1,4 +1,4 @@
-import 'package:moto_care/features/chat/data/demo_chat_data.dart';
+import 'package:revo/features/chat/data/demo_chat_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -6,14 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';
-import 'package:moto_care/features/chat/screens/tin_nhan_screen.dart';
-import 'package:moto_care/features/home/models/home_user.dart';
-import 'package:moto_care/features/home/screens/trang_chu.dart';
-import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/home/theme/home_theme.dart';
+import 'package:revo/features/chat/screens/chat_detail_screen.dart';
+import 'package:revo/features/chat/screens/tin_nhan_screen.dart';
+import 'package:revo/features/home/models/home_user.dart';
+import 'package:revo/features/home/screens/trang_chu.dart';
+import 'package:revo/features/home/widgets/home_bottom_navigation.dart';
 
 Future<void> _openMessages(
   WidgetTester tester, {
@@ -97,13 +97,13 @@ void main() {
     await _openMessages(tester);
     await tester.tap(find.widgetWithText(Tab, 'Hỗ trợ CSKH'));
     await tester.pumpAndSettle();
-    expect(find.text('CSKH MotoCare'), findsOneWidget);
+    expect(find.text('CSKH Revo'), findsOneWidget);
     expect(find.text('Hỗ trợ đơn cứu hộ'), findsOneWidget);
     expect(find.text('Nguyễn Minh Tuấn'), findsNothing);
 
     await tester.tap(find.widgetWithText(Tab, 'Thông báo'));
     await tester.pumpAndSettle();
-    expect(find.text('Chào mừng đến với MotoCare'), findsOneWidget);
+    expect(find.text('Chào mừng đến với Revo'), findsOneWidget);
     expect(find.text('Đơn cứu hộ đã hoàn tất'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(Tab, 'Cứu hộ'));

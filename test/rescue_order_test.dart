@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:moto_care/features/activity/data/mock_rescue_orders.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/data/mock_rescue_orders.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
 
 void main() {
   test(

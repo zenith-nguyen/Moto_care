@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/admin_tokens.dart';
@@ -243,7 +244,11 @@ class _MechanicPhotoViewerState extends ConsumerState<_MechanicPhotoViewer> {
                   if (allowed)
                     Text(
                       '${_index + 1}/${widget.photos.length}',
-                      style: const TextStyle(color: Colors.white70),
+                      style: GoogleFonts.montserrat(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                 ],
               ),
@@ -265,20 +270,29 @@ class _MechanicPhotoViewerState extends ConsumerState<_MechanicPhotoViewer> {
                         ),
                       ),
                     )
-                  : const Center(
+                  : Center(
                       child: Text(
                         'Bạn không có quyền truy cập khu vực này',
-                        style: TextStyle(color: Colors.white),
+                        style: GoogleFonts.montserrat(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: -0.2,
+                        ),
                       ),
                     ),
             ),
             if (allowed)
-              const Padding(
+              Padding(
                 padding: EdgeInsets.all(20),
                 child: Text(
                   'Vuốt để xem ảnh • Chụm hai ngón để phóng to',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               ),
           ],

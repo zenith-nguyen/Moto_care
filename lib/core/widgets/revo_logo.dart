@@ -3,22 +3,27 @@ import 'package:flutter/material.dart';
 class RevoLogo extends StatelessWidget {
   const RevoLogo({super.key, this.width = 150, this.color = Colors.black});
 
-  static const asset = 'assets/images/Logo_Revo.png';
+  static const asset = 'assets/images/REVO.png';
+  // Visible wordmark bounds in the 2000px source, with 2% breathing room.
+  static const _wordmarkBounds = Rect.fromLTRB(164, 802, 1822, 1204);
 
   final double width;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    // The supplied 2000px PNG has transparent padding around the wordmark.
-    // Crop that padding in the layout while keeping one original logo asset.
-    final imageSize = width * 2000 / 840;
+    final scale = width / _wordmarkBounds.width;
+    final imageSize = 2000 * scale;
     return SizedBox(
       width: width,
+      // Preserve the existing header space around the wider wordmark.
       height: width * 460 / 840,
       child: ClipRect(
         child: Transform.translate(
-          offset: Offset(0, width * 30 / 840),
+          offset: Offset(
+            (1000 - _wordmarkBounds.center.dx) * scale,
+            (1000 - _wordmarkBounds.center.dy) * scale,
+          ),
           child: OverflowBox(
             minWidth: imageSize,
             maxWidth: imageSize,

@@ -799,7 +799,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
       const SizedBox(height: 12),
       const Text(
-        'Phiên bản MotoCare v1.0.0',
+        'Phiên bản Revo v1.0.0',
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 11, color: ProfileDashboardTheme.muted),
       ),

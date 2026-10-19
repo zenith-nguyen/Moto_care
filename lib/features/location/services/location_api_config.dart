@@ -41,13 +41,13 @@ class LocationApiConfig {
   Map<String, String> get applicationHeaders =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android
       ? {
-          'X-Android-Package': 'com.motocare.app',
+          'X-Android-Package': 'com.revo.app',
           if (androidCertificate.isNotEmpty)
             'X-Android-Cert': androidCertificate
                 .replaceAll(':', '')
                 .toUpperCase(),
         }
       : !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS
-      ? {'X-Ios-Bundle-Identifier': 'com.motocare.app'}
+      ? {'X-Ios-Bundle-Identifier': 'com.revo.app'}
       : {};
 }

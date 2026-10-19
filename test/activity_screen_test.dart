@@ -5,23 +5,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/activity/data/mock_rescue_orders.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/activity/screens/chi_tiet_don_hang_screen.dart';
-import 'package:moto_care/features/activity/screens/hoat_dong_screen.dart';
-import 'package:moto_care/features/activity/services/activity_actions.dart';
-import 'package:moto_care/features/activity/widgets/activity_order_card.dart';
-import 'package:moto_care/features/rescue_station/screens/tram_cuu_ho_screen.dart';
-import 'package:moto_care/features/profile/screens/profile_screen.dart';
-import 'package:moto_care/features/activity/widgets/order_summary.dart';
-import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';
-import 'package:moto_care/features/home/models/home_user.dart';
-import 'package:moto_care/features/home/screens/trang_chu.dart';
-import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/home/theme/home_theme.dart';
+import 'package:revo/features/activity/data/mock_rescue_orders.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/activity/screens/chi_tiet_don_hang_screen.dart';
+import 'package:revo/features/activity/screens/hoat_dong_screen.dart';
+import 'package:revo/features/activity/services/activity_actions.dart';
+import 'package:revo/features/activity/widgets/activity_order_card.dart';
+import 'package:revo/features/rescue_station/screens/tram_cuu_ho_screen.dart';
+import 'package:revo/features/profile/screens/profile_screen.dart';
+import 'package:revo/features/activity/widgets/order_summary.dart';
+import 'package:revo/features/chat/screens/chat_detail_screen.dart';
+import 'package:revo/features/home/models/home_user.dart';
+import 'package:revo/features/home/screens/trang_chu.dart';
+import 'package:revo/features/home/widgets/home_bottom_navigation.dart';
 
 Future<GoRouter> _open(
   WidgetTester tester, {

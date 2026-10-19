@@ -81,7 +81,7 @@ class _CamKetDichVuScreenState extends ConsumerState<CamKetDichVuScreen> {
             ),
             const SizedBox(height: 14),
             const Text(
-              'Chính sách bảo vệ khách hàng MotoCare',
+              'Chính sách bảo vệ khách hàng Revo',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
             ),

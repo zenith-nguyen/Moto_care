@@ -30,7 +30,7 @@ class _AdminFinanceScreenState extends ConsumerState<AdminFinanceScreen> {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: const Color(0xFFF8F9FA),
+    color: AdminFinanceStyle.background,
     child: AdminPage(
       title: 'Thanh toán & đối soát',
       children: [
@@ -56,16 +56,16 @@ class _AdminFinanceScreenState extends ConsumerState<AdminFinanceScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(child: balance),
-                        const SizedBox(width: 24),
+                        const SizedBox(width: 20),
                         const Expanded(child: AdminEscrowCard()),
                       ],
                     )
                   else ...[
                     balance,
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 18),
                     const AdminEscrowCard(),
                   ],
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
                   AdminInvoiceActivity(invoices: data.invoices),
                 ],
               );

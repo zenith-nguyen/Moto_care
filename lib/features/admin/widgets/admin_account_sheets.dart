@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/admin_tokens.dart';
@@ -46,7 +47,10 @@ class _AccountSheet extends ConsumerWidget {
                   children: [
                     Text(
                       data.profile.name,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: GoogleFonts.montserrat(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(data.profile.email),
@@ -76,12 +80,19 @@ class _AccountSheet extends ConsumerWidget {
                       children: [
                         Text(
                           member.name,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          style: GoogleFonts.montserrat(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.3,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           member.email,
-                          style: const TextStyle(fontSize: 12),
+                          style: GoogleFonts.montserrat(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: -0.2,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         Wrap(
@@ -134,9 +145,10 @@ class _AccountSheet extends ConsumerWidget {
                   ),
                   title: Text(
                     entry.action,
-                    style: const TextStyle(
+                    style: GoogleFonts.montserrat(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: -0.3,
                     ),
                   ),
                   subtitle: Text(
@@ -157,16 +169,21 @@ class _AccountSheet extends ConsumerWidget {
                       const SizedBox(height: 12),
                       Text(
                         login.device,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        style: GoogleFonts.montserrat(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(login.description),
                       const SizedBox(height: 8),
                       Text(
                         'Ghi nhận: ${adminDate(login.at)}',
-                        style: const TextStyle(
+                        style: GoogleFonts.montserrat(
                           fontSize: 12,
                           color: AdminTokens.muted,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: -0.2,
                         ),
                       ),
                       if (login.current)
@@ -185,16 +202,22 @@ class _AccountSheet extends ConsumerWidget {
                   initiallyExpanded: section == AdminAccountData.guide.first,
                   title: Text(
                     section.$1,
-                    style: const TextStyle(
+                    style: GoogleFonts.montserrat(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: -0.3,
                     ),
                   ),
                   childrenPadding: const EdgeInsets.only(bottom: 20),
                   children: [
                     Text(
                       section.$2,
-                      style: const TextStyle(fontSize: 13, height: 1.7),
+                      style: GoogleFonts.montserrat(
+                        fontSize: 13,
+                        height: 1.7,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                   ],
                 ),
@@ -214,9 +237,10 @@ class _AccountSheet extends ConsumerWidget {
                   child: Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: GoogleFonts.montserrat(
                       fontSize: 19,
                       fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
                     ),
                   ),
                 ),
@@ -293,7 +317,11 @@ class _StaffEditorState extends ConsumerState<_StaffEditor> {
               if (_error != null)
                 Text(
                   _error!,
-                  style: const TextStyle(color: AdminTokens.primaryRed),
+                  style: GoogleFonts.montserrat(
+                    color: AdminTokens.primaryRed,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: -0.2,
+                  ),
                 ),
               if (busy) const LinearProgressIndicator(),
             ],

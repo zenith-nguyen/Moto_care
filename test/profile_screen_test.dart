@@ -6,18 +6,18 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/auth/screens/login_screen.dart';
-import 'package:moto_care/features/home/models/home_user.dart';
-import 'package:moto_care/features/home/screens/trang_chu.dart';
-import 'package:moto_care/features/profile/models/user_profile.dart';
-import 'package:moto_care/features/profile/providers/profile_provider.dart';
-import 'package:moto_care/features/profile/screens/thong_tin_ca_nhan_screen.dart';
-import 'package:moto_care/features/profile/services/profile_account_service.dart';
-import 'package:moto_care/features/profile/services/profile_device_service.dart';
-import 'package:moto_care/features/profile/widgets/profile_edit_sheet.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/home/theme/home_theme.dart';
+import 'package:revo/features/auth/screens/login_screen.dart';
+import 'package:revo/features/home/models/home_user.dart';
+import 'package:revo/features/home/screens/trang_chu.dart';
+import 'package:revo/features/profile/models/user_profile.dart';
+import 'package:revo/features/profile/providers/profile_provider.dart';
+import 'package:revo/features/profile/screens/thong_tin_ca_nhan_screen.dart';
+import 'package:revo/features/profile/services/profile_account_service.dart';
+import 'package:revo/features/profile/services/profile_device_service.dart';
+import 'package:revo/features/profile/widgets/profile_edit_sheet.dart';
 
 import 'fixtures/user_profile_fixture.dart';
 
@@ -41,7 +41,7 @@ class _Device extends ProfileDeviceService {
     if (error != null) throw ProfileDeviceException(error!);
     return cancelPhoto
         ? null
-        : (await rootBundle.load('assets/images/Logo_Revo.png')).buffer
+        : (await rootBundle.load('assets/images/REVO.png')).buffer
               .asUint8List();
   }
 

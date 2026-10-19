@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/admin_tokens.dart';
 import '../../../core/theme/app_theme.dart';
+import '../theme/admin_typography.dart';
 import '../models/admin_models.dart';
 import '../providers/admin_providers.dart';
 import 'admin_date_range_picker_dialog.dart';
@@ -102,14 +103,14 @@ class AdminStateView extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: AppTextStyles.cardTitle,
+              style: AdminTypography.cardTitle,
             ),
             if (description != null) ...[
               const SizedBox(height: 8),
               Text(
                 description!,
                 textAlign: TextAlign.center,
-                style: AppTextStyles.body,
+                style: AdminTypography.body,
               ),
             ],
             if (onRetry != null) ...[
@@ -254,7 +255,7 @@ class AdminCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (title != null) ...[
-            Text(title!, style: AppTextStyles.cardTitle),
+            Text(title!, style: AdminTypography.cardTitle),
             const SizedBox(height: 16),
           ],
           child,
@@ -291,7 +292,7 @@ class AdminStatusChip extends StatelessWidget {
       color: color.withValues(alpha: .09),
       borderRadius: BorderRadius.circular(8),
     ),
-    child: Text(label, style: AppTextStyles.status.copyWith(color: color)),
+    child: Text(label, style: AdminTypography.status.copyWith(color: color)),
   );
 }
 
@@ -347,7 +348,7 @@ class AdminRecordList extends StatelessWidget {
                       DataRow(
                         cells: [
                           DataCell(
-                            Text(record.title, style: AppTextStyles.status),
+                            Text(record.title, style: AdminTypography.status),
                           ),
                           for (final field in record.fields)
                             DataCell(
@@ -398,7 +399,9 @@ class AdminRecordList extends StatelessWidget {
                                 children: [
                                   Text(
                                     field.label,
-                                    style: AppTextStyles.caption,
+                                    style: AdminTypography.label.copyWith(
+                                      color: Colors.black54,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   field.value,
@@ -462,10 +465,16 @@ class AdminMetricGrid extends StatelessWidget {
                           ? adminMoney(metrics[i].value)
                           : NumberFormat.decimalPattern('vi_VN')
                                 .format(metrics[i].value),
-                      style: AppTextStyles.pageTitle.copyWith(fontSize: 23),
+                      style: AdminTypography.pageTitle.copyWith(fontSize: 23),
                     ),
                     const SizedBox(height: 8),
-                    Text(metrics[i].label, style: AppTextStyles.body),
+                    Text(
+                      metrics[i].label,
+                      style: AdminTypography.label.copyWith(
+                        fontSize: 13,
+                        color: const Color(0xA3000000),
+                      ),
+                    ),
                   ],
                 ),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/admin_tokens.dart';
@@ -39,14 +40,11 @@ class AdminMechanicProfileCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Thợ cứu hộ xe máy',
-                    style: AdminMechanicTheme.heading,
-                  ),
+                  Text('Thợ cứu hộ xe máy', style: AdminMechanicTheme.heading),
                   const SizedBox(height: 5),
                   Text(application.phone, style: AdminMechanicTheme.value),
                   const SizedBox(height: 2),
-                  Text(application.email, style: AdminMechanicTheme.label),
+                  Text(application.email, style: AdminMechanicTheme.caption),
                 ],
               ),
             ),
@@ -110,7 +108,7 @@ class AdminMechanicFeatures extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Trang bị & Kỹ năng', style: AdminMechanicTheme.heading),
+        Text('Trang bị & Kỹ năng', style: AdminMechanicTheme.heading),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
@@ -161,16 +159,16 @@ class AdminMechanicDocuments extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Giấy tờ & CCCD', style: AdminMechanicTheme.heading),
+        Text('Giấy tờ & CCCD', style: AdminMechanicTheme.heading),
         const SizedBox(height: 12),
-        const Text('Thông tin CCCD', style: AdminMechanicTheme.label),
+        Text('Thông tin CCCD', style: AdminMechanicTheme.label),
         const SizedBox(height: 3),
         Text(
           application.citizenIdMasked ?? 'Chưa cập nhật',
           style: AdminMechanicTheme.value,
         ),
         const SizedBox(height: 10),
-        const Text('Biển số xe', style: AdminMechanicTheme.label),
+        Text('Biển số xe', style: AdminMechanicTheme.label),
         const SizedBox(height: 3),
         Text(application.plate, style: AdminMechanicTheme.value),
         const SizedBox(height: 16),
@@ -266,9 +264,11 @@ class AdminMechanicActionBar extends StatelessWidget {
             children: [
               Text(
                 application.id,
-                style: AdminMechanicTheme.heading.copyWith(
+                style: GoogleFonts.montserrat(
+                  textStyle: AdminMechanicTheme.heading,
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.3,
                 ),
               ),
               const SizedBox(height: 2),
@@ -276,7 +276,9 @@ class AdminMechanicActionBar extends StatelessWidget {
                 application.status == AdminReviewStatus.pending
                     ? 'Hồ sơ đăng ký mới'
                     : application.status.label,
-                style: AdminMechanicTheme.label,
+                style: application.status == AdminReviewStatus.pending
+                    ? AdminMechanicTheme.caption
+                    : AdminMechanicTheme.label,
               ),
             ],
           );
@@ -336,9 +338,11 @@ class AdminMechanicActionBar extends StatelessWidget {
         foregroundColor: foreground,
         minimumSize: const Size(0, 48),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-        textStyle: AdminMechanicTheme.value.copyWith(
+        textStyle: GoogleFonts.montserrat(
+          textStyle: AdminMechanicTheme.value,
           fontSize: 12,
           fontWeight: weight,
+          letterSpacing: -0.3,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       );

@@ -197,7 +197,7 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
   Future<void> _logout(BuildContext pageContext) async {
     if (await _confirm(
           pageContext,
-          title: 'Đăng xuất khỏi MotoCare?',
+          title: 'Đăng xuất khỏi Revo?',
           message: 'Thông tin chỉnh sửa trong phiên dùng thử sẽ được xóa khỏi bộ nhớ.',
           action: 'Đăng xuất',
         ) &&

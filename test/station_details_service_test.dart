@@ -1,13 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/home/models/home_discovery.dart';
-import 'package:moto_care/features/partner/providers/partner_provider.dart';
-import 'package:moto_care/features/rescue_station/data/mock_rescue_stations.dart';
-import 'package:moto_care/features/rescue_station/models/station_model.dart';
-import 'package:moto_care/features/rescue_station/models/service_catalog_model.dart';
-import 'package:moto_care/features/rescue_station/providers/station_details_provider.dart';
-import 'package:moto_care/features/rescue_station/services/station_details_service.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/home/models/home_discovery.dart';
+import 'package:revo/features/partner/providers/partner_provider.dart';
+import 'package:revo/features/rescue_station/data/mock_rescue_stations.dart';
+import 'package:revo/features/rescue_station/models/station_model.dart';
+import 'package:revo/features/rescue_station/models/service_catalog_model.dart';
+import 'package:revo/features/rescue_station/providers/station_details_provider.dart';
+import 'package:revo/features/rescue_station/services/station_details_service.dart';
 
 void main() {
   test(

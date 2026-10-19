@@ -1,0 +1,5 @@
+Built-in image_gen edit; transparent_background: true.
+Input: assets/images/Thời tiết mưa.png (original supplied white-background icon).
+Output: assets/images/Thời tiết mưa.png (transparent PNG).
+
+Use case: background-extraction. Edit target: the attached existing rain-weather icon. Remove only the solid white background and return the same two overlapping blue-gray clouds and all five blue raindrops on a genuinely transparent background (alpha channel). Preserve the exact original shapes, flat illustration style, blue colors, spacing, composition and crisp edges. Keep all clouds and raindrops completely intact. No added objects, no text, no shadows, no glow, no white matte, no checkerboard baked into the image. This is a small weather icon asset for an existing Flutter mobile application.

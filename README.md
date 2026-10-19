@@ -1,6 +1,6 @@
-# Moto Care
+# Revo
 
-Moto Care is a mobile roadside-assistance application for motorbike riders. It connects customers who need help with nearby approved mobile mechanics.
+Revo is a mobile roadside-assistance application for motorbike riders. It connects customers who need help with nearby approved mobile mechanics.
 
 This repository contains the Flutter mobile application. The NestJS, PostgreSQL/PostGIS, WebSocket, payment, and administration services live in a separate backend repository.
 
@@ -63,9 +63,10 @@ The bundled files include Vietnamese letters and combining marks. Buttons,
 navigation, form labels and custom map labels use Montserrat; Material and Font
 Awesome icons retain their icon fonts.
 
-`assets/images/Logo_Revo.png` is the single source logo. `RevoLogo` crops its
+`assets/images/REVO.png` is the single source logo. `RevoLogo` crops its
 transparent padding in the layout and renders it in black on authentication
-cards. To regenerate native splash resources:
+cards. The wider wordmark remains centered within the existing header space.
+To regenerate native splash resources:
 
 ```bash
 flutter pub get
@@ -77,7 +78,7 @@ The script trims transparent padding, renders the mark in black and writes its
 temporary PNGs to `.dart_tool/revo_splash/`, then runs `flutter_native_splash:create`.
 Android 12 padding keeps the entire logo inside the system's circular mask.
 Commit the source logo, splash configuration and generated Android/iOS resources;
-no duplicate source logos are kept in `assets/images/`. Stop and rebuild the app
+only `REVO.png` is bundled as the application logo. Stop and rebuild the app
 to see native splash changes; hot reload does not update them.
 
 The login screen has a temporary DEV bypass: pressing `Đăng nhập` opens home
@@ -94,7 +95,7 @@ privacy links show update notices until the policy content is available.
 ## Home UI
 
 `/trang-chu` opens `lib/features/home/screens/trang_chu.dart`. The screen uses
-the Moto Care logo, a greeting and member card, voucher and nearby-service cards,
+the Revo logo, a greeting and member card, voucher and nearby-service cards,
 a right drawer with nine service entries, and five bottom navigation actions:
 Trang chủ, Xe của tôi, Hoạt động, Trạm cứu hộ, and Tin nhắn.
 Both the home content and drawer scroll on smaller screens and support large text.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -54,10 +55,11 @@ class AdminPageHeader extends StatelessWidget {
             child: Text(
               title,
               textAlign: centerTitle ? TextAlign.center : TextAlign.left,
-              style: AdminTheme.pageTitleStyle.copyWith(
-                fontFamily: fontWeight == null ? null : 'Montserrat',
+              style: GoogleFonts.montserrat(
+                textStyle: AdminTheme.pageTitleStyle,
                 fontSize: fontSize,
-                fontWeight: fontWeight,
+                fontWeight: fontWeight ?? FontWeight.w700,
+                letterSpacing: -0.5,
               ),
             ),
           ),

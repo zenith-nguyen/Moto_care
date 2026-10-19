@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/order_tracking_theme.dart';
+
 class OrderTrackingHeader extends StatelessWidget {
   const OrderTrackingHeader({super.key, required this.onBack, this.onDetails});
   final VoidCallback onBack;
@@ -17,11 +19,14 @@ class OrderTrackingHeader extends StatelessWidget {
             onPressed: onBack,
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               'Theo dõi trực tiếp',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              style: CustomerOrderTheme.text(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -51,7 +56,7 @@ class _HeaderButton extends StatelessWidget {
   Widget build(BuildContext context) => Material(
     color: Colors.white,
     elevation: 1,
-    shadowColor: const Color(0x22000000),
+    shadowColor: const Color(0x0A000000),
     shape: const CircleBorder(),
     child: IconButton(
       tooltip: label,

@@ -3,13 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:moto_care/features/auth/screens/forgot_password_screen.dart';
-import 'package:moto_care/features/auth/screens/login_screen.dart';
-import 'package:moto_care/features/auth/screens/register_screen.dart';
-import 'package:moto_care/features/auth/screens/welcome_screen.dart';
-import 'package:moto_care/features/home/screens/trang_chu.dart';
-import 'package:moto_care/main.dart';
-import 'package:moto_care/core/widgets/revo_logo.dart';
+import 'package:revo/features/auth/screens/forgot_password_screen.dart';
+import 'package:revo/features/auth/screens/login_screen.dart';
+import 'package:revo/features/auth/screens/register_screen.dart';
+import 'package:revo/features/auth/screens/welcome_screen.dart';
+import 'package:revo/features/home/screens/trang_chu.dart';
+import 'package:revo/main.dart';
+import 'package:revo/core/widgets/revo_logo.dart';
 
 Future<void> openLogin(WidgetTester tester) async {
   await tester.pumpWidget(const ProviderScope(child: MyApp()));
@@ -41,7 +41,7 @@ void main() {
     await openLogin(tester);
     expect(find.byType(LoginScreen), findsOneWidget);
     final loginLogo = find.image(
-      const AssetImage('assets/images/Logo_Revo.png'),
+      const AssetImage('assets/images/REVO.png'),
     );
     expect(loginLogo, findsOneWidget);
     expect(
@@ -93,7 +93,7 @@ void main() {
         of: identifier,
         matching: find.byType(EditableText),
       );
-      await tester.enterText(find.byType(TextFormField).last, 'MotoCare1!');
+      await tester.enterText(find.byType(TextFormField).last, 'Revo2026!');
       for (final value in [
         'rider+test@example.com',
         '0912345678',

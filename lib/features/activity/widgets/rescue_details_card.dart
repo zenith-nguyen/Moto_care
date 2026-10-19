@@ -12,25 +12,25 @@ class RescueDetailsCard extends StatelessWidget {
     final order = details.order;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: OrderDetailsTheme.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: CustomerOrderTheme.cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.assignment_outlined,
                 size: 19,
                 color: OrderDetailsTheme.muted,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Thông tin cứu hộ',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                  style: CustomerOrderTheme.text(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],
@@ -39,8 +39,8 @@ class RescueDetailsCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              color: CustomerOrderTheme.background,
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
               children: [
@@ -100,13 +100,16 @@ class _DetailLine extends StatelessWidget {
           MediaQuery.textScalerOf(context).scale(12) > 16;
       final labelWidget = Text(
         label,
-        style: const TextStyle(fontSize: 11, color: OrderDetailsTheme.muted),
+        style: CustomerOrderTheme.text(
+          fontSize: 11,
+          color: OrderDetailsTheme.muted,
+        ),
       );
       final valueWidget = warning
           ? Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               decoration: BoxDecoration(
-                color: OrderDetailsTheme.redTint,
+                color: CustomerOrderTheme.warningTint,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -116,16 +119,16 @@ class _DetailLine extends StatelessWidget {
                   const Icon(
                     Icons.warning_amber_rounded,
                     size: 15,
-                    color: OrderDetailsTheme.red,
+                    color: CustomerOrderTheme.warningText,
                   ),
                   const SizedBox(width: 5),
                   Flexible(
                     child: Text(
                       value,
-                      style: const TextStyle(
+                      style: CustomerOrderTheme.text(
                         fontSize: 11,
                         height: 1.5,
-                        color: OrderDetailsTheme.red,
+                        color: CustomerOrderTheme.warningText,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -135,7 +138,7 @@ class _DetailLine extends StatelessWidget {
             )
           : Text(
               value,
-              style: const TextStyle(
+              style: CustomerOrderTheme.text(
                 fontSize: 12,
                 height: 1.6,
                 fontWeight: FontWeight.w500,

@@ -5,17 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:moto_care/core/widgets/photo_attachment_field.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/activity/widgets/order_summary.dart';
-import 'package:moto_care/features/home/models/rescue_location.dart';
-import 'package:moto_care/features/home/providers/home_provider.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/home/widgets/home_sheets.dart';
-import 'package:moto_care/features/rescue/widgets/create_rescue_request_bottom_sheet.dart';
-import 'package:moto_care/features/vehicle/models/vehicle.dart';
-import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
+import 'package:revo/core/widgets/photo_attachment_field.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/activity/widgets/order_summary.dart';
+import 'package:revo/features/home/models/rescue_location.dart';
+import 'package:revo/features/home/providers/home_provider.dart';
+import 'package:revo/features/home/theme/home_theme.dart';
+import 'package:revo/features/home/widgets/home_sheets.dart';
+import 'package:revo/features/rescue/widgets/create_rescue_request_bottom_sheet.dart';
+import 'package:revo/features/vehicle/models/vehicle.dart';
+import 'package:revo/features/vehicle/providers/vehicle_provider.dart';
 
 const _vehicle = Vehicle(
   id: 'vision',
@@ -163,7 +163,7 @@ void main() {
   testWidgets(
     'Vehicle categories and captured photo are retained with the request',
     (tester) async {
-      final photo = (await rootBundle.load('assets/images/Logo_Revo.png'))
+      final photo = (await rootBundle.load('assets/images/REVO.png'))
           .buffer
           .asUint8List();
       final container = await _open(

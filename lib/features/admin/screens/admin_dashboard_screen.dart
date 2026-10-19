@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/admin_tokens.dart';
@@ -248,13 +249,13 @@ class _DashboardFilters extends StatelessWidget {
                 shape: const StadiumBorder(),
                 side: BorderSide.none,
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 9),
-                labelStyle: TextStyle(
-                  fontFamily: 'Montserrat',
+                labelStyle: GoogleFonts.montserrat(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: selectedIndex == i
                       ? Colors.white
                       : RevoHomeColors.muted,
+                  letterSpacing: -0.2,
                 ),
               ),
             ),
@@ -283,7 +284,12 @@ class _DashboardPeriodSelector extends StatelessWidget {
     children: [
       Text(
         adminRangeLabel(range),
-        style: const TextStyle(fontSize: 11, color: AdminTokens.muted),
+        style: GoogleFonts.montserrat(
+          fontSize: 11,
+          color: AdminTokens.muted,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.2,
+        ),
       ),
       Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -295,11 +301,11 @@ class _DashboardPeriodSelector extends StatelessWidget {
             borderRadius: AdminTheme.dashboardCardRadius,
             dropdownColor: AdminTokens.surface,
             icon: const Icon(Icons.expand_more_rounded, size: 18),
-            style: const TextStyle(
-              fontFamily: 'Montserrat',
+            style: GoogleFonts.montserrat(
               fontSize: 12,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
               color: AdminTokens.text,
+              letterSpacing: -0.2,
             ),
             items: [
               for (final item in ['Hôm nay', '7 ngày', '30 ngày', 'Tùy chọn'])

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
-import 'package:moto_care/features/home/data/home_media_assets.dart';
-import 'package:moto_care/features/home/widgets/home_video_hero.dart';
+import 'package:revo/features/home/data/home_media_assets.dart';
+import 'package:revo/features/home/widgets/home_video_hero.dart';
 
 import 'fixtures/home_video_platform.dart';
 

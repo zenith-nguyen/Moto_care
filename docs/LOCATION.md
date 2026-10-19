@@ -1,7 +1,11 @@
 # Incident location: Places search and Google Maps
 
-Home's “Vị trí của tôi” label and address open `/incident-map-picker` directly.
-The two location screens use MotoCare's
+Home's “Vị trí của tôi” label and address first open `/incident-location`, the
+“Vị trí gặp sự cố?” search screen. The rescue form's “Chọn vị trí sự cố” / “Sửa
+vị trí” action uses the same entry. Selecting an address, using GPS or choosing
+“Chọn trên bản đồ” then opens the existing `/incident-map-picker` confirmation
+screen. This adds the search step without changing map confirmation or booking.
+The two location screens use Revo's
 white/gray surfaces, dark text and black `#000000` primary controls.
 
 ## Search and camera flow
@@ -62,6 +66,10 @@ No real credentials are included. Copy `config/maps.example.json` to the ignored
 Use separate, restricted SDK and web-service keys. Enable Places API (New),
 Geocoding API and the Maps SDK for each native platform in that project.
 
+The Android application ID and Apple bundle ID are `com.revo.app`. Use this
+identifier for platform key restrictions; Android also requires the signing
+certificate SHA-1. Direct REST identity headers use the same identifier.
+
 | Setting | Purpose |
 | --- | --- |
 | `GOOGLE_PLACES_API_KEY` | Places autocomplete/details in direct development mode. |
@@ -118,8 +126,9 @@ Official references: [Autocomplete](https://developers.google.com/maps/documenta
 
 “XÁC NHẬN VỊ TRÍ SỰ CỐ” saves the address, landmark and coordinate pair through
 `RescueLocationController.confirmLocation`, remembers the location, then calls
-`Navigator.pop` with the confirmed location. When opened from Home, this returns
-directly to the same Home route without replacing its State or scroll position.
+`Navigator.pop` with the confirmed location. When opened from Home, the result
+passes back through the search screen to the same Home route without replacing
+its State or scroll position.
 It opens no booking modal and creates no order. A standalone map entry without
 a parent route returns to `/trang-chu`. The standalone search route propagates
 the confirmed location to its caller; search cancellation does not save its draft.
@@ -135,6 +144,18 @@ submitting it. Requests are session-only: mechanic dispatch and payment still re
 Marketplace checkout continues to use the shared confirmed location.
 
 ## Validation
+
+Home's search-first entry is captured at 390 × 844:
+[address entry](screenshots/home-location-search-first.png), then
+[the existing confirmation map](screenshots/home-location-confirmation-after-search.png).
+These use the unavailable-map fallback and do not represent live map tiles.
+
+Search-first verification on 2026-10-19: all 458 repository tests passed,
+static analysis reported no issues, the changed Dart files passed formatting,
+and the debug Android APK built successfully in the matching validation copy.
+The route tests cover both Home entry points, returning from the map to the
+retained address draft, cancelling without saving, confirmed coordinates,
+preserved rescue-form notes, and 320px layouts with large text and a keyboard.
 
 The [location-only confirmation preview](screenshots/location-confirmation-only.png)
 uses a confirmed test location and the unavailable-map fallback at 390 × 844.
@@ -153,7 +174,7 @@ Review images: [autocomplete](screenshots/location-autocomplete.png) and
 controlled Places responses and a camera test adapter. The second image labels
 its empty map area explicitly; neither capture is evidence of live Google data.
 
-The implementation passed all 208 tests, `flutter analyze --no-pub`, and the
+The original Places implementation passed all 208 tests, `flutter analyze --no-pub`, and the
 repository's Dart formatting check. `flutter build apk --debug --no-pub`
 successfully produced `build/app/outputs/flutter-apk/app-debug.apk`.
 The local iOS configuration helper was also

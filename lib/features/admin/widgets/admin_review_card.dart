@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/admin_tokens.dart';
 import '../models/admin_models.dart';
@@ -169,7 +170,7 @@ class _ReviewStatusBadge extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         child: Text(
           status.label,
-          style: AdminOrderTheme.value.copyWith(
+          style: AdminOrderTheme.label.copyWith(
             fontSize: 11,
             color: foreground,
           ),
@@ -302,7 +303,12 @@ class AdminReviewAction extends StatelessWidget {
           : AdminTokens.primaryBlue,
       shape: const StadiumBorder(),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      textStyle: AdminOrderTheme.value.copyWith(fontSize: 12),
+      textStyle: GoogleFonts.montserrat(
+        textStyle: AdminOrderTheme.value,
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.3,
+      ),
     ),
     child: Text(label),
   );

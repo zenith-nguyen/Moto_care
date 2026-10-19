@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/admin_routes.dart';
 import '../../features/activity/models/rescue_order.dart';
 import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
 import '../../features/activity/screens/order_details_screen.dart';
@@ -41,6 +42,7 @@ GoRouter createAppRouter() {
   return GoRouter(
     initialLocation: '/',
     routes: [
+      ...adminRoutes,
       GoRoute(
         path: '/stations/:stationId',
         builder: (context, state) => StationDetailRoute(

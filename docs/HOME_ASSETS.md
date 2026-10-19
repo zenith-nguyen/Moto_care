@@ -30,20 +30,15 @@ Cards retain their existing image crop and dark gradient behind the text.
 | Đại lý chính hãng An Phát (`station-dealer`) | `assets/images/Tiemsua3.png` |
 | Tiệm sửa xe Thành Công (`station-thanh`) | `assets/images/Tiemsua4.png` |
 
+Stations without assigned image metadata also use the bundled
+`assets/images/Tiemsua1.png` image. The removed tow illustration is no longer
+declared or used; follow the asset restriction in [the AI guide](AI_GUIDE.md).
+
 ## Legacy illustration assets
 
-The earlier assets remain bundled; `rescue-tow.png` is the fallback for stations
-without assigned image metadata.
-
-These are illustrative station photos created with the built-in `image_gen` tool using the [imagegen skill](/Users/phamthicamthu/.codex/skills/.system/imagegen/SKILL.md). They are not photographs of the sample stations. Original generated files are retained; the app bundles copies of the selected outputs.
-
-## assets/images/rescue-tow.png
-
-Mode: built-in tool. Use case: photorealistic-natural.
-
-Final prompt:
-
-> Use case: photorealistic-natural. Asset type: illustrative rescue station card photo in the Revo mobile app. Primary request: a professional flatbed recovery truck carrying a dark compact car, parked outside a clean urban vehicle rescue depot in Ho Chi Minh City. Style: premium editorial automotive photography, monochrome black white and gray, natural soft daylight, realistic tow truck proportions. Composition: portrait 4:5, three-quarter front view, tow truck centered in the upper two-thirds, unobtrusive dark pavement in lower quarter suitable for a UI text overlay. No text, logos, brand names, watermarks, badges, UI elements or borders. A single coherent photo, no montage.
+The following prompts are retained as provenance for earlier illustrative
+station photos created with the built-in `image_gen` tool. They are not
+photographs of the sample stations.
 
 ## assets/images/rescue-team.png
 

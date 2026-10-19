@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:moto_care/features/location/services/location_api_config.dart';
-import 'package:moto_care/features/location/services/places_service.dart';
+import 'package:revo/features/location/services/location_api_config.dart';
+import 'package:revo/features/location/services/places_service.dart';
 
 class _Adapter implements HttpClientAdapter {
   final requests = <RequestOptions>[];

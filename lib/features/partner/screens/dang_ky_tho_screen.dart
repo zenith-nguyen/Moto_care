@@ -103,7 +103,7 @@ class _DangKyThoScreenState extends ConsumerState<DangKyThoScreen> {
             _RegistrationSteps(current: _step, onSelected: _changeStep),
             const SizedBox(height: 24),
             const Text(
-              'Cùng MotoCare giúp mọi hành trình an toàn hơn.',
+              'Cùng Revo giúp mọi hành trình an toàn hơn.',
               style: TextStyle(color: ServiceColors.muted),
             ),
             const SizedBox(height: 20),

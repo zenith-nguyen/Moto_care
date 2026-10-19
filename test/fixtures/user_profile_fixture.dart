@@ -1,4 +1,4 @@
-import 'package:moto_care/features/profile/models/user_profile.dart';
+import 'package:revo/features/profile/models/user_profile.dart';
 
 const profileFixture = UserProfile(
   id: 'member-001',

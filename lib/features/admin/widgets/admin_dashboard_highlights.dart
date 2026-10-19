@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/admin_tokens.dart';
-import '../../../core/theme/app_theme.dart';
+import '../theme/admin_typography.dart';
 import '../models/admin_dashboard_models.dart';
 import 'admin_common.dart';
 import 'admin_health_card.dart';
@@ -117,7 +118,7 @@ class _SosDetailsCard extends StatelessWidget {
           style: _mutedStyle,
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Lũy kế theo ngày · So với cùng số ngày liền trước',
           style: _mutedStyle,
         ),
@@ -141,17 +142,17 @@ class _RevenueCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Dòng tiền thu trong kỳ đã chọn.', style: _insightStyle),
+        Text('Dòng tiền thu trong kỳ đã chọn.', style: _insightStyle),
         const Divider(height: 32),
-        const Text('Đã thu', style: _mutedStyle),
+        Text('Đã thu', style: _mutedStyle),
         const SizedBox(height: 6),
         Text(
           adminMoney(data.collected),
-          style: const TextStyle(
+          style: GoogleFonts.montserrat(
             fontSize: 26,
             fontWeight: FontWeight.w700,
             color: AdminTokens.primaryBlue,
-            letterSpacing: -.8,
+            letterSpacing: -0.5,
             height: 1.2,
           ),
         ),
@@ -174,23 +175,26 @@ class _RevenueCard extends StatelessWidget {
         const SizedBox(height: 20),
         AdminRevenueBarChart(points: data.points),
         const SizedBox(height: 12),
-        const Text('Theo ngày tạo đơn · VND', style: _mutedStyle),
+        Text('Theo ngày tạo đơn · VND', style: _mutedStyle),
         _DailyValues(data: data, money: true),
       ],
     ),
   );
 }
 
-const _insightStyle = TextStyle(
+final _insightStyle = GoogleFonts.montserrat(
   fontSize: 17,
   fontWeight: FontWeight.w600,
   height: 1.5,
   color: AdminTokens.text,
+  letterSpacing: -0.3,
 );
-const _mutedStyle = TextStyle(
+final _mutedStyle = GoogleFonts.montserrat(
   fontSize: 11,
   color: AdminTokens.muted,
   height: 1.5,
+  fontWeight: FontWeight.w400,
+  letterSpacing: -0.2,
 );
 
 class _ComparisonValue extends StatelessWidget {
@@ -220,10 +224,11 @@ class _ComparisonValue extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w500,
                 color: color,
+                letterSpacing: -0.2,
               ),
             ),
           ),
@@ -236,15 +241,19 @@ class _ComparisonValue extends StatelessWidget {
           children: [
             TextSpan(
               text: ' $unit',
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              style: GoogleFonts.montserrat(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                letterSpacing: -0.2,
+              ),
             ),
           ],
         ),
-        style: TextStyle(
+        style: GoogleFonts.montserrat(
           fontSize: 34,
           fontWeight: FontWeight.w700,
           color: color,
-          letterSpacing: -1,
+          letterSpacing: -0.5,
           height: 1.2,
         ),
       ),
@@ -264,9 +273,13 @@ class _DailyValues extends StatelessWidget {
     childrenPadding: const EdgeInsets.only(bottom: 8),
     shape: const Border(),
     collapsedShape: const Border(),
-    title: const Text(
+    title: Text(
       'Dữ liệu theo ngày',
-      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+      style: GoogleFonts.montserrat(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.3,
+      ),
     ),
     children: [
       for (final point in data.points)
@@ -285,7 +298,7 @@ class _DailyValues extends StatelessWidget {
                             'Cộng ví thợ: ${adminMoney(point.credited)}'
                       : '${point.orders} ca',
                   textAlign: TextAlign.end,
-                  style: AppTextStyles.caption.copyWith(
+                  style: AdminTypography.caption.copyWith(
                     color: AdminTokens.text,
                   ),
                 ),

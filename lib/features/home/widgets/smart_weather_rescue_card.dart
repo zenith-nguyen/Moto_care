@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/home_media_assets.dart';
 import '../models/home_rescue_quick_action.dart';
 import '../models/home_weather.dart';
 import 'weather_condition_icon.dart';
@@ -209,7 +210,11 @@ class _SmartWeatherRescueCardState extends State<SmartWeatherRescueCard> {
         const SizedBox(width: 12),
         Semantics(
           label: weather.description,
-          child: WeatherConditionIcon(condition: weather.condition, size: 72),
+          child: WeatherConditionIcon(
+            condition: weather.condition,
+            size: 72,
+            rainAsset: HomeMediaAssets.rainWeatherIcon,
+          ),
         ),
       ],
     );

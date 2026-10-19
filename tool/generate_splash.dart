@@ -5,10 +5,10 @@ import 'package:image/image.dart' as img;
 
 /// Run from the repository root: dart run tool/generate_splash.dart
 Future<void> main() async {
-  final sourceFile = File('assets/images/Logo_Revo.png');
+  final sourceFile = File('assets/images/REVO.png');
   if (!sourceFile.existsSync()) {
     throw StateError(
-      'Add assets/images/Logo_Revo.png before generating the splash.',
+      'Add assets/images/REVO.png before generating the splash.',
     );
   }
   final source = img.decodeImage(sourceFile.readAsBytesSync());
@@ -20,8 +20,8 @@ Future<void> main() async {
   final output = Directory('.dart_tool/revo_splash')
     ..createSync(recursive: true);
   final cropped = _trimTransparentBorder(source);
-  // Revo is supplied as a white mark on transparency. Render it in black
-  // against the native white background, preserving the original asset.
+  // Render the mark in black against the native white background,
+  // preserving the original asset.
   for (final pixel in cropped) {
     pixel
       ..r = 0

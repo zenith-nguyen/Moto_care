@@ -6,16 +6,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/customer/profile/profile_screen.dart';
-import 'package:moto_care/features/home/theme/revo_home_theme.dart';
-import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
-import 'package:moto_care/features/profile/models/user_profile.dart';
-import 'package:moto_care/features/profile/providers/profile_actions_provider.dart';
-import 'package:moto_care/features/profile/providers/profile_provider.dart';
-import 'package:moto_care/features/profile/services/profile_account_service.dart';
-import 'package:moto_care/features/profile/services/profile_device_service.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/customer/profile/profile_screen.dart';
+import 'package:revo/features/home/theme/revo_home_theme.dart';
+import 'package:revo/features/home/widgets/home_bottom_navigation.dart';
+import 'package:revo/features/profile/models/user_profile.dart';
+import 'package:revo/features/profile/providers/profile_actions_provider.dart';
+import 'package:revo/features/profile/providers/profile_provider.dart';
+import 'package:revo/features/profile/services/profile_account_service.dart';
+import 'package:revo/features/profile/services/profile_device_service.dart';
 
 import 'fixtures/user_profile_fixture.dart';
 
@@ -33,7 +33,7 @@ class _Device extends ProfileDeviceService {
 
   @override
   Future<Uint8List?> pickAvatar() async => pendingPhoto == null
-      ? (await rootBundle.load('assets/images/Logo_Revo.png')).buffer
+      ? (await rootBundle.load('assets/images/REVO.png')).buffer
             .asUint8List()
       : pendingPhoto!.future;
 
@@ -294,7 +294,7 @@ void main() {
       expect(_key(id).hitTestable(), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
-    expect(find.text('Phiên bản MotoCare v1.0.0'), findsOneWidget);
+    expect(find.text('Phiên bản Revo v1.0.0'), findsOneWidget);
     expect(find.text('Chưa có hạng'), findsNothing);
   });
 

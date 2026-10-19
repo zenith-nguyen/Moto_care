@@ -7,16 +7,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/services/attachment_service.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/home/screens/home_screen.dart';
-import 'package:moto_care/features/rescue/models/service_rating.dart';
-import 'package:moto_care/features/rescue/providers/service_rating_provider.dart';
-import 'package:moto_care/features/rescue/services/service_rating_service.dart';
-import 'package:moto_care/features/rescue/widgets/rating_stars.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/services/attachment_service.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/home/screens/home_screen.dart';
+import 'package:revo/features/rescue/models/service_rating.dart';
+import 'package:revo/features/rescue/providers/service_rating_provider.dart';
+import 'package:revo/features/rescue/services/service_rating_service.dart';
+import 'package:revo/features/rescue/widgets/rating_stars.dart';
 
 Uint8List _photo() => base64Decode(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a5i8AAAAASUVORK5CYII=',

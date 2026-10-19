@@ -4,23 +4,23 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/activity/models/order_details.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/activity/providers/order_details_provider.dart';
-import 'package:moto_care/features/activity/screens/order_details_screen.dart';
-import 'package:moto_care/features/activity/services/activity_actions.dart';
-import 'package:moto_care/features/activity/services/order_details_service.dart';
-import 'package:moto_care/features/activity/services/rescue_order_service.dart';
-import 'package:moto_care/features/activity/widgets/activity_order_card.dart';
-import 'package:moto_care/features/activity/widgets/rescue_progress_stepper.dart';
-import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';
-import 'package:moto_care/features/profile/models/user_profile.dart';
-import 'package:moto_care/features/profile/providers/profile_provider.dart';
-import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
-import 'package:moto_care/features/rescue/widgets/order_tracking_map.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/activity/models/order_details.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/activity/providers/order_details_provider.dart';
+import 'package:revo/features/activity/screens/order_details_screen.dart';
+import 'package:revo/features/activity/services/activity_actions.dart';
+import 'package:revo/features/activity/services/order_details_service.dart';
+import 'package:revo/features/activity/services/rescue_order_service.dart';
+import 'package:revo/features/activity/widgets/activity_order_card.dart';
+import 'package:revo/features/activity/widgets/rescue_progress_stepper.dart';
+import 'package:revo/features/chat/screens/chat_detail_screen.dart';
+import 'package:revo/features/profile/models/user_profile.dart';
+import 'package:revo/features/profile/providers/profile_provider.dart';
+import 'package:revo/features/rescue/screens/order_tracking_screen.dart';
+import 'package:revo/features/rescue/widgets/order_tracking_map.dart';
 
 final _created = DateTime(2026, 10, 9, 10, 30);
 final _arriving = DateTime(2026, 10, 9, 10, 32);
@@ -290,7 +290,7 @@ void main() {
   );
 
   testWidgets(
-    'Header shows actual data, red accents, Montserrat and clipboard feedback',
+    'Header keeps actual data and clipboard feedback with navy Montserrat styling',
     (tester) async {
       String? copied;
       tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -325,7 +325,7 @@ void main() {
             .textTheme
             .bodyMedium!
             .fontFamily,
-        'Montserrat',
+        startsWith('Montserrat'),
       );
       expect(
         Theme.of(tester.element(_key('tracking')))
@@ -333,7 +333,7 @@ void main() {
             .style!
             .backgroundColor!
             .resolve({}),
-        const Color(0xFFE53935),
+        const Color(0xFF0F172A),
       );
       await _tap(tester, _key('copy'));
       expect(copied, 'MC-2026-8899');

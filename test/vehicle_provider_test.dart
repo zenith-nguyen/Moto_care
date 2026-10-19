@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/features/vehicle/models/vehicle.dart';
-import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
+import 'package:revo/features/vehicle/models/vehicle.dart';
+import 'package:revo/features/vehicle/providers/vehicle_provider.dart';
 
 const _seed = Vehicle(
   id: 'original',

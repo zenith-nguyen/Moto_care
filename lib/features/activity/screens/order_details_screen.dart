@@ -42,7 +42,7 @@ class OrderDetailsScreen extends ConsumerWidget {
       data: OrderDetailsTheme.light,
       child: Builder(
         builder: (context) => Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: OrderDetailsTheme.background,
           appBar: AppBar(
             toolbarHeight: MediaQuery.textScalerOf(context).scale(18) > 23
                 ? 76
@@ -154,9 +154,9 @@ class OrderDetailsScreen extends ConsumerWidget {
                                 key: const ValueKey('order-details-cancel'),
                                 onPressed: () =>
                                     ActivityActions.cancel(context, ref, order),
-                                child: const Text(
+                                child: Text(
                                   'Hủy đơn cứu hộ',
-                                  style: TextStyle(
+                                  style: CustomerOrderTheme.text(
                                     color: OrderDetailsTheme.muted,
                                     fontSize: 13,
                                   ),

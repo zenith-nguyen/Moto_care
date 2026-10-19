@@ -44,9 +44,9 @@ Google Maps, as described in [LOCATION.md](LOCATION.md).
 
 Payment defaults to “Tiền mặt cho thợ”. The selection sheet offers cash, MoMo
 and VNPay and records a preference; there is no wallet integration, charge or
-mechanic dispatch. Historical MotoCare Wallet values remain readable in order
-JSON. Checkout removes implementation/demo text from the station and price cards;
-tracking retains its explicit simulation label.
+mechanic dispatch. The Revo wallet retains the legacy `motocare` payment value
+so existing order JSON remains readable. Checkout removes implementation/demo
+text from the station and price cards; tracking retains its explicit simulation label.
 Partner identities, capabilities, verification,
 menu prices and arrival estimates remain sample data supplied through
 `partnerShopsProvider`; an API can replace this boundary.

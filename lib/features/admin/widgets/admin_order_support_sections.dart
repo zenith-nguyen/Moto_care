@@ -16,7 +16,7 @@ class AdminOrderSupportSections extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Thông tin bổ sung', style: AdminOrderTheme.title),
+        Text('Thông tin bổ sung', style: AdminOrderTheme.title),
         const SizedBox(height: 8),
         _Section(
           title: 'Vị trí khách & thợ',

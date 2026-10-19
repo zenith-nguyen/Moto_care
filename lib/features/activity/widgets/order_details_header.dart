@@ -18,17 +18,20 @@ class OrderDetailsHeader extends StatelessWidget {
       final compact =
           constraints.maxWidth < 340 ||
           MediaQuery.textScalerOf(context).scale(14) > 18;
+      final statusColors = CustomerOrderTheme.statusColors(
+        details.order.status,
+      );
       final badge = Container(
         key: const ValueKey('order-details-status'),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
         decoration: BoxDecoration(
-          color: OrderDetailsTheme.redTint,
+          color: statusColors.background,
           borderRadius: BorderRadius.circular(30),
         ),
         child: Text(
           details.statusLabel,
-          style: const TextStyle(
-            color: OrderDetailsTheme.red,
+          style: CustomerOrderTheme.text(
+            color: statusColors.foreground,
             fontSize: 11,
             fontWeight: FontWeight.w600,
           ),
@@ -57,9 +60,9 @@ class OrderDetailsHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Mã đơn cứu hộ',
-                      style: TextStyle(
+                      style: CustomerOrderTheme.text(
                         color: OrderDetailsTheme.muted,
                         fontSize: 11,
                       ),
@@ -69,7 +72,7 @@ class OrderDetailsHeader extends StatelessWidget {
                         Flexible(
                           child: Text(
                             details.order.orderCode,
-                            style: const TextStyle(
+                            style: CustomerOrderTheme.text(
                               fontWeight: FontWeight.w700,
                               fontSize: 14,
                             ),

@@ -23,7 +23,12 @@ class AdminInvoiceActivity extends StatelessWidget {
       children: [
         Text(
           'Hoạt động hóa đơn',
-          style: AdminFinanceStyle.text(16, FontWeight.bold, AdminTokens.text),
+          style: AdminFinanceStyle.text(
+            16,
+            FontWeight.w700,
+            AdminTokens.text,
+            letterSpacing: -0.3,
+          ),
         ),
         const SizedBox(height: 20),
         if (invoices.isEmpty)
@@ -110,12 +115,12 @@ class _InvoiceRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final order = invoice.order;
     final (label, color, icon) = invoice.status == AdminMatchStatus.anomaly
-        ? ('Cần đối soát', AdminTokens.primaryRed, Icons.priority_high_rounded)
+        ? ('Cần đối soát', AdminTokens.primaryRed, Icons.error_rounded)
         : switch (order.payment) {
             AdminPaymentStatus.settled => (
               'Đã thanh toán',
               AdminTokens.success,
-              Icons.check_rounded,
+              Icons.check_circle_rounded,
             ),
             AdminPaymentStatus.held => (
               'Chờ quyết toán',
@@ -132,7 +137,7 @@ class _InvoiceRow extends StatelessWidget {
             AdminPaymentStatus.refunded => (
               'Đã hoàn tiền',
               AdminTokens.primaryBlue,
-              Icons.undo_rounded,
+              Icons.replay_circle_filled_rounded,
             ),
           };
     final iconColor = order.payment == AdminPaymentStatus.held
@@ -158,7 +163,7 @@ class _InvoiceRow extends StatelessWidget {
                   ),
                   child: Icon(
                     icon,
-                    size: icon == Icons.circle ? 7 : 16,
+                    size: icon == Icons.circle ? 7 : 18,
                     color: iconColor,
                   ),
                 ),
@@ -199,7 +204,7 @@ class _InvoiceRow extends StatelessWidget {
               style: AdminFinanceStyle.text(
                 14,
                 FontWeight.bold,
-                AdminTokens.text,
+                AdminFinanceStyle.navy,
               ),
             ),
           ),
@@ -236,6 +241,7 @@ class _InvoiceRow extends StatelessWidget {
                         16,
                         FontWeight.bold,
                         AdminTokens.text,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ),
@@ -247,18 +253,19 @@ class _InvoiceRow extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              for (final (label, value) in [
-                ('Payment ID', order.paymentId ?? 'Không có'),
+              for (final (label, value, isMoney) in [
+                ('Payment ID', order.paymentId ?? 'Không có', false),
                 (
                   'Tiền đơn',
                   adminMoney(order.finalPrice ?? order.estimatedPrice),
+                  true,
                 ),
-                ('Tổng thu', adminMoney(order.collected)),
-                ('Tổng hoàn', adminMoney(order.refunded)),
-                ('Tổng cộng ví thợ', adminMoney(order.credited)),
-                ('Trạng thái thanh toán', order.payment.label),
-                ('Trạng thái đối soát', invoice.status.label),
-                ('Lý do / Ghi chú', invoice.reason ?? '—'),
+                ('Tổng thu', adminMoney(order.collected), true),
+                ('Tổng hoàn', adminMoney(order.refunded), true),
+                ('Tổng cộng ví thợ', adminMoney(order.credited), true),
+                ('Trạng thái thanh toán', order.payment.label, false),
+                ('Trạng thái đối soát', invoice.status.label, false),
+                ('Lý do / Ghi chú', invoice.reason ?? '—', false),
               ])
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
@@ -278,8 +285,8 @@ class _InvoiceRow extends StatelessWidget {
                         value,
                         style: AdminFinanceStyle.text(
                           14,
-                          FontWeight.w500,
-                          AdminTokens.text,
+                          isMoney ? FontWeight.bold : FontWeight.w500,
+                          isMoney ? AdminFinanceStyle.navy : AdminTokens.text,
                         ),
                       ),
                     ],

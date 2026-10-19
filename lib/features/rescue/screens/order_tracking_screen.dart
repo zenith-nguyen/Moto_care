@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../activity/models/rescue_order.dart';
+import '../../activity/models/order_details.dart';
+import '../../activity/providers/order_details_provider.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../activity/services/activity_actions.dart';
 import '../../chat/services/chat_service.dart';
-import '../../home/theme/home_theme.dart';
+import '../theme/order_tracking_theme.dart';
 import '../providers/order_tracking_provider.dart';
 import '../providers/tracking_chat_provider.dart';
 import '../services/order_tracking_service.dart';
@@ -137,10 +140,13 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
         isScrollControlled: true,
         showDragHandle: true,
         useSafeArea: true,
-        builder: (context) => OrderTrackingChatSheet(
-          mechanicName: snapshot.mechanic.name,
-          orderCode: order.orderCode,
-          sessionKey: _key,
+        builder: (context) => Theme(
+          data: OrderTrackingTheme.light,
+          child: OrderTrackingChatSheet(
+            mechanicName: snapshot.mechanic.name,
+            orderCode: order.orderCode,
+            sessionKey: _key,
+          ),
         ),
       );
     }
@@ -158,11 +164,26 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
     _syncMotion();
   }
 
+  Future<void> _copyCode(RescueOrder order) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: order.orderCode));
+      if (mounted) ActivityActions.feedback(context, 'Đã sao chép mã đơn.');
+    } on PlatformException {
+      if (mounted) {
+        ActivityActions.feedback(
+          context,
+          'Không thể sao chép mã đơn. Vui lòng thử lại.',
+        );
+      }
+    }
+  }
+
   void _back() => context.canPop() ? context.pop() : context.go('/hoat-dong');
 
   @override
   Widget build(BuildContext context) {
     final order = ref.watch(activityProvider).orderById(widget.orderId);
+    final details = ref.watch(orderDetailsProvider(widget.orderId));
     ref.watch(orderTrackingProvider(_key));
     ref.watch(trackingChatProvider(_key));
     ref.watch(trackingMechanicProvider);
@@ -183,9 +204,9 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
       }
     });
     return Theme(
-      data: HomeTheme.light,
+      data: OrderTrackingTheme.light,
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: CustomerOrderTheme.background,
         body: order == null
             ? Stack(
                 children: [
@@ -195,7 +216,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                       children: [
                         const Icon(
                           Icons.receipt_long_outlined,
-                          color: HomeColors.text,
+                          color: CustomerOrderTheme.navy,
                           size: 48,
                         ),
                         const SizedBox(height: 12),
@@ -213,13 +234,18 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
               )
             : AnimatedBuilder(
                 animation: _motion,
-                builder: (context, _) => _trackingBody(context, order),
+                builder: (context, _) =>
+                    _trackingBody(context, order, details!),
               ),
       ),
     );
   }
 
-  Widget _trackingBody(BuildContext context, RescueOrder order) {
+  Widget _trackingBody(
+    BuildContext context,
+    RescueOrder order,
+    OrderDetails details,
+  ) {
     final state = ref.read(orderTrackingProvider(_key));
     final snapshot = ref
         .read(orderTrackingServiceProvider)
@@ -238,8 +264,9 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
         final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
         final safe = MediaQuery.paddingOf(context);
         final initial =
-            ((282 + (scale - 1) * 220 + safe.bottom) / constraints.maxHeight)
-                .clamp(.32, .64);
+            ((constraints.maxHeight * .5 + (scale - 1) * 140 + safe.bottom) /
+                    constraints.maxHeight)
+                .clamp(.5, .72);
         return Stack(
           children: [
             Positioned.fill(
@@ -310,11 +337,11 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
               builder: (context, scrollController) => Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0x16000000),
-                      blurRadius: 24,
+                      color: Color(0x0A000000),
+                      blurRadius: 10,
                       offset: Offset(0, -4),
                     ),
                   ],
@@ -327,6 +354,11 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                     OrderTrackingStatusCard(
                       order: order,
                       snapshot: snapshot,
+                      details: details,
+                      onCopy: () => _copyCode(order),
+                      onDetails: () => context.push(
+                        '/order-details?id=${Uri.encodeComponent(order.id)}',
+                      ),
                       onCall: order.status.isActive
                           ? () => _call(snapshot)
                           : null,

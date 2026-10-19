@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/tracking_chat_provider.dart';
 import '../providers/order_tracking_provider.dart';
 
-import '../../home/theme/home_theme.dart';
+import '../theme/order_tracking_theme.dart';
 
 class OrderTrackingChatSheet extends ConsumerStatefulWidget {
   const OrderTrackingChatSheet({
@@ -63,7 +63,7 @@ class _OrderTrackingChatSheetState
                     Expanded(
                       child: Text(
                         widget.mechanicName,
-                        style: const TextStyle(
+                        style: CustomerOrderTheme.text(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
                         ),
@@ -84,27 +84,29 @@ class _OrderTrackingChatSheetState
                   children: [
                     Text(
                       widget.orderCode,
-                      style: const TextStyle(
-                        color: HomeColors.secondary,
+                      style: CustomerOrderTheme.text(
+                        color: CustomerOrderTheme.muted,
                         fontSize: 12,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
                         'Trò chuyện mô phỏng • Tin nhắn được lưu trong màn hình này, chưa gửi tới thợ.',
-                        style: TextStyle(
-                          color: HomeColors.secondary,
+                        style: CustomerOrderTheme.text(
+                          color: CustomerOrderTheme.muted,
                           fontSize: 12,
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
                     if (messages.isEmpty)
-                      const Text(
+                      Text(
                         'Bạn có thể ghi chú vị trí hoặc tình trạng xe tại đây.',
-                        style: TextStyle(color: HomeColors.secondary),
+                        style: CustomerOrderTheme.text(
+                          color: CustomerOrderTheme.muted,
+                        ),
                       ),
                     for (final message in messages)
                       Align(
@@ -113,8 +115,8 @@ class _OrderTrackingChatSheetState
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: HomeColors.redSelected,
-                            borderRadius: BorderRadius.circular(12),
+                            color: CustomerOrderTheme.background,
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(message.text!),
                         ),
@@ -131,6 +133,7 @@ class _OrderTrackingChatSheetState
                       child: TextField(
                         key: const ValueKey('tracking-chat-input'),
                         controller: _text,
+                        style: CustomerOrderTheme.text(),
                         minLines: 1,
                         maxLines: 3,
                         maxLength: 500,

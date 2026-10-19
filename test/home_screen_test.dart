@@ -3,31 +3,36 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/home/models/home_destination.dart';
-import 'package:moto_care/features/home/models/home_user.dart';
-import 'package:moto_care/features/home/models/rescue_location.dart';
-import 'package:moto_care/features/home/providers/home_provider.dart';
-import 'package:moto_care/features/home/screens/home_screen.dart';
-import 'package:moto_care/features/home/widgets/home_service_grid.dart';
-import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
-import 'package:moto_care/features/profile/models/user_profile.dart';
-import 'package:moto_care/features/profile/providers/profile_provider.dart';
-import 'package:moto_care/features/partner/screens/partner_list_screen.dart';
-import 'package:moto_care/features/partner/models/marketplace_catalog.dart';
-import 'package:moto_care/features/rescue/screens/checkout_screen.dart';
-import 'package:moto_care/features/location/services/device_location_service.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/home/models/home_destination.dart';
+import 'package:revo/features/home/models/home_user.dart';
+import 'package:revo/features/home/models/rescue_location.dart';
+import 'package:revo/features/home/data/demo_home_weather.dart';
+import 'package:revo/features/home/data/home_media_assets.dart';
+import 'package:revo/features/home/models/home_weather.dart';
+import 'package:revo/features/home/providers/home_provider.dart';
+import 'package:revo/features/home/providers/home_weather_provider.dart';
+import 'package:revo/features/home/screens/home_screen.dart';
+import 'package:revo/features/home/services/home_weather_service.dart';
+import 'package:revo/features/home/widgets/home_service_grid.dart';
+import 'package:revo/features/home/widgets/home_bottom_navigation.dart';
+import 'package:revo/features/profile/models/user_profile.dart';
+import 'package:revo/features/profile/providers/profile_provider.dart';
+import 'package:revo/features/partner/screens/partner_list_screen.dart';
+import 'package:revo/features/partner/models/marketplace_catalog.dart';
+import 'package:revo/features/rescue/screens/checkout_screen.dart';
+import 'package:revo/features/location/services/device_location_service.dart';
 
 import 'fixtures/marketplace_router_fixture.dart';
 import 'fixtures/home_scroll_helpers.dart';
 
-import 'package:moto_care/features/rescue_station/providers/rescue_station_provider.dart';
-import 'package:moto_care/features/rescue_station/screens/station_detail_screen.dart';
-import 'package:moto_care/features/vehicle/models/vehicle.dart';
-import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
+import 'package:revo/features/rescue_station/providers/rescue_station_provider.dart';
+import 'package:revo/features/rescue_station/screens/station_detail_screen.dart';
+import 'package:revo/features/vehicle/models/vehicle.dart';
+import 'package:revo/features/vehicle/providers/vehicle_provider.dart';
 
 const _vehicles = [
   Vehicle(
@@ -53,6 +58,13 @@ const _location = RescueLocation(
   latitude: 10.757,
   longitude: 106.668,
 );
+
+class _ChangingWeatherService implements HomeWeatherService {
+  HomeWeather weather = demoHomeWeather;
+
+  @override
+  Future<HomeWeather> fetchWeather(RescueLocation? location) async => weather;
+}
 
 void _expectSelectedNavigation(
   WidgetTester tester,
@@ -111,6 +123,7 @@ Future<ProviderContainer> _open(
   bool active = false,
   bool routed = false,
   ValueChanged<HomeDestination>? onSelected,
+  HomeWeatherService? weatherService,
 }) async {
   final router = routed
       ? createAppRouter()
@@ -124,6 +137,8 @@ Future<ProviderContainer> _open(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (weatherService != null)
+          homeWeatherServiceProvider.overrideWithValue(weatherService),
         initialUserProfileProvider.overrideWithValue(
           const UserProfile(
             id: 'api-user',
@@ -207,6 +222,47 @@ Future<void> _checkout(WidgetTester tester, HomeService service) async {
 }
 
 void main() {
+  testWidgets(
+    'Home updates rain artwork and the sky together when weather changes',
+    (tester) async {
+      final service = _ChangingWeatherService();
+      final container = await _open(tester, weatherService: service);
+      final homeState = tester.state(find.byType(HomeScreen));
+      for (final (condition, usesRainArtwork) in [
+        (HomeWeatherCondition.partlyCloudy, false),
+        (HomeWeatherCondition.rainy, true),
+        (HomeWeatherCondition.stormy, true),
+        (HomeWeatherCondition.cloudy, false),
+      ]) {
+        service.weather = HomeWeather(
+          temperatureCelsius: 26,
+          condition: condition,
+          description: condition.name,
+        );
+        container.invalidate(homeWeatherProvider);
+        await tester.pumpAndSettle();
+        final decoration =
+            tester
+                    .widget<DecoratedSliver>(find.byType(DecoratedSliver))
+                    .decoration
+                as BoxDecoration;
+        expect(
+          (decoration.image!.image as AssetImage).assetName,
+          usesRainArtwork
+              ? HomeMediaAssets.rainWeatherBackground
+              : HomeMediaAssets.weatherBackground,
+        );
+        expect(
+          find.image(const AssetImage(HomeMediaAssets.rainWeatherIcon)),
+          usesRainArtwork ? findsOneWidget : findsNothing,
+        );
+        expect(tester.state(find.byType(HomeScreen)), same(homeState));
+        expect(find.byKey(const ValueKey('home-search')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+
   testWidgets('Home watches the shared profile and default vehicle', (
     tester,
   ) async {
@@ -250,8 +306,8 @@ void main() {
       final container = await _open(tester, routed: true);
       final homeState = tester.state(find.byType(HomeScreen));
       await _tap(tester, find.byKey(const ValueKey('home-location')));
-      expect(find.text('Xác nhận vị trí gặp sự cố'), findsOneWidget);
-      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
+      expect(find.text('Vị trí gặp sự cố?'), findsOneWidget);
+      expect(find.text('Xác nhận vị trí gặp sự cố'), findsNothing);
       await tester.enterText(
         find.byKey(const ValueKey('incident-address')),
         'abc',
@@ -262,10 +318,8 @@ void main() {
         findsOneWidget,
       );
       await _tap(tester, find.byTooltip('Quay lại'));
-      await _tap(tester, find.byTooltip('Quay lại'));
       expect(container.read(rescueLocationProvider), same(_location));
       await _tap(tester, find.byKey(const ValueKey('home-location')));
-      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await tester.enterText(
         find.byKey(const ValueKey('incident-address')),
         '  45 Lê Văn Sỹ, TP. Hồ Chí Minh  ',
@@ -426,7 +480,6 @@ void main() {
       await _open(tester, routed: true);
       expect(tester.takeException(), isNull);
       await _tap(tester, find.byKey(const ValueKey('home-location')));
-      await _tap(tester, find.byKey(const ValueKey('incident-map-search')));
       await _tap(tester, find.byKey(const ValueKey('incident-address')));
       tester.view.viewInsets = const FakeViewPadding(bottom: 250);
       await tester.pumpAndSettle();

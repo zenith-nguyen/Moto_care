@@ -9,6 +9,6 @@ const demoCommitments = [
   ),
   (
     'Lý lịch Thợ',
-    'Thông tin thợ được xác minh trước khi tham gia mạng lưới đối tác MotoCare.',
+    'Thông tin thợ được xác minh trước khi tham gia mạng lưới đối tác Revo.',
   ),
 ];

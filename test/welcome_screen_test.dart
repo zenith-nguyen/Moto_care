@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/auth/screens/login_screen.dart';
-import 'package:moto_care/features/auth/screens/register_screen.dart';
-import 'package:moto_care/features/auth/screens/welcome_screen.dart';
-import 'package:moto_care/features/auth/theme/auth_theme.dart';
-import 'package:moto_care/features/activity/theme/activity_theme.dart';
-import 'package:moto_care/features/chat/theme/chat_theme.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/home/theme/revo_home_theme.dart';
-import 'package:moto_care/features/profile/theme/profile_theme.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/auth/screens/login_screen.dart';
+import 'package:revo/features/auth/screens/register_screen.dart';
+import 'package:revo/features/auth/screens/welcome_screen.dart';
+import 'package:revo/features/auth/theme/auth_theme.dart';
+import 'package:revo/features/activity/theme/activity_theme.dart';
+import 'package:revo/features/chat/theme/chat_theme.dart';
+import 'package:revo/features/home/theme/home_theme.dart';
+import 'package:revo/features/home/theme/revo_home_theme.dart';
+import 'package:revo/features/profile/theme/profile_theme.dart';
 
 Future<GoRouter> _openWelcome(WidgetTester tester) async {
   final router = createAppRouter();

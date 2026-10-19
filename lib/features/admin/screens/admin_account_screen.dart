@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -131,13 +132,15 @@ class AdminAccountScreen extends ConsumerWidget {
                     : () => edit(AdminAccountEditor.support),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 AdminAccountData.version,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.montserrat(
                   fontSize: 11,
                   color: AdminTokens.muted,
                   height: 1.5,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: -0.2,
                 ),
               ),
               const SizedBox(height: 24),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -114,19 +115,22 @@ class _QueueIntro extends StatelessWidget {
     children: [
       Text(
         title,
-        style: const TextStyle(
+        style: GoogleFonts.montserrat(
           fontSize: 18,
           fontWeight: FontWeight.w700,
           height: 1.4,
+          letterSpacing: -0.3,
         ),
       ),
       const SizedBox(height: 8),
       Text(
         description,
-        style: const TextStyle(
+        style: GoogleFonts.montserrat(
           fontSize: 12,
           height: 1.6,
           color: AdminTokens.muted,
+          fontWeight: FontWeight.w400,
+          letterSpacing: -0.2,
         ),
       ),
       const SizedBox(height: 12),
@@ -176,19 +180,22 @@ class _QueueRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: GoogleFonts.montserrat(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         height: 1.5,
+                        letterSpacing: -0.3,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: GoogleFonts.montserrat(
                         fontSize: 11,
                         height: 1.5,
                         color: AdminTokens.muted,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: -0.2,
                       ),
                     ),
                   ],
@@ -220,10 +227,10 @@ class _QueueLink extends StatelessWidget {
       onPressed: onTap,
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
-        textStyle: const TextStyle(
-          fontFamily: 'Montserrat',
-          fontWeight: FontWeight.w700,
+        textStyle: GoogleFonts.montserrat(
+          fontWeight: FontWeight.w600,
           fontSize: 12,
+          letterSpacing: -0.3,
         ),
       ),
       child: Text(label),

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/admin_tokens.dart';
 import '../../../core/theme/app_theme.dart';
+import 'admin_typography.dart';
 
 abstract final class AdminTheme {
   static final ThemeData light = _build();
@@ -21,6 +22,7 @@ abstract final class AdminTheme {
   static final pageTitleStyle = GoogleFonts.montserrat(
     fontSize: 22,
     fontWeight: FontWeight.bold,
+    letterSpacing: AdminTypography.titleSpacing,
     color: AdminTokens.text,
     height: 1.3,
   );
@@ -32,19 +34,25 @@ abstract final class AdminTheme {
       error: AdminTokens.primaryRed,
       surface: AdminTokens.surface,
     );
+    final textTheme = AdminTypography.textTheme(AppTheme.light.textTheme)
+        .apply(bodyColor: AdminTokens.text, displayColor: AdminTokens.text);
+    final controlLabel = GoogleFonts.montserrat(
+      textStyle: textTheme.bodyLarge,
+      fontWeight: FontWeight.w500,
+      letterSpacing: AdminTypography.bodySpacing,
+    );
+    final controlButton = GoogleFonts.montserrat(
+      textStyle: textTheme.labelLarge,
+      fontWeight: FontWeight.w600,
+      letterSpacing: AdminTypography.actionSpacing,
+    );
     return AppTheme.light.copyWith(
       colorScheme: scheme,
       scaffoldBackgroundColor: AdminTokens.background,
-      textTheme: GoogleFonts.montserratTextTheme(AppTheme.light.textTheme)
-          .apply(
-            // Keep bundled weights in one family when a child overrides weight.
-            fontFamily: 'Montserrat',
-            bodyColor: AdminTokens.text,
-            displayColor: AdminTokens.text,
-          ),
-      primaryTextTheme: GoogleFonts.montserratTextTheme(
+      textTheme: textTheme,
+      primaryTextTheme: AdminTypography.textTheme(
         AppTheme.light.primaryTextTheme,
-      ).apply(fontFamily: 'Montserrat'),
+      ),
       dividerTheme: const DividerThemeData(color: AdminTokens.border),
       appBarTheme: AppBarTheme(
         backgroundColor: AdminTokens.surface,
@@ -56,6 +64,11 @@ abstract final class AdminTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AdminTokens.surface,
+        labelStyle: controlLabel,
+        floatingLabelStyle: controlLabel,
+        hintStyle: textTheme.bodyLarge?.copyWith(color: AdminTokens.muted),
+        helperStyle: textTheme.bodySmall,
+        errorStyle: textTheme.bodySmall?.copyWith(color: scheme.error),
         contentPadding: const EdgeInsets.all(14),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
@@ -73,23 +86,51 @@ abstract final class AdminTheme {
           backgroundColor: AdminTokens.primaryBlue,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          textStyle: AppTextStyles.status,
+          textStyle: AdminTypography.button,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(foregroundColor: AdminTokens.primaryBlue),
+        style: TextButton.styleFrom(
+          foregroundColor: AdminTokens.primaryBlue,
+          textStyle: controlButton,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style:
+            AppTheme.light.outlinedButtonTheme.style?.copyWith(
+              textStyle: WidgetStatePropertyAll(controlButton),
+            ) ??
+            OutlinedButton.styleFrom(textStyle: controlButton),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style:
+            AppTheme.light.elevatedButtonTheme.style?.copyWith(
+              textStyle: WidgetStatePropertyAll(controlButton),
+            ) ??
+            ElevatedButton.styleFrom(textStyle: controlButton),
+      ),
+      chipTheme: AppTheme.light.chipTheme.copyWith(
+        labelStyle: textTheme.labelLarge,
+        secondaryLabelStyle: textTheme.labelLarge,
+      ),
+      tabBarTheme: AppTheme.light.tabBarTheme.copyWith(
+        labelStyle: controlButton,
+        unselectedLabelStyle: controlButton,
+      ),
+      dataTableTheme: AppTheme.light.dataTableTheme.copyWith(
+        headingTextStyle: textTheme.labelLarge,
+        dataTextStyle: textTheme.bodyMedium,
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: AdminTokens.surface,
         selectedIconTheme: IconThemeData(color: AdminTokens.primaryBlue),
-        selectedLabelTextStyle: AppTextStyles.caption.copyWith(
+        selectedLabelTextStyle: AdminTypography.label.copyWith(
           color: AdminTokens.primaryBlue,
-          fontWeight: FontWeight.w600,
         ),
-        unselectedLabelTextStyle: AppTextStyles.caption.copyWith(
+        unselectedLabelTextStyle: AdminTypography.label.copyWith(
           color: AdminTokens.muted,
         ),
       ),

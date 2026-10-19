@@ -1,6 +1,14 @@
 import 'package:flutter/foundation.dart';
 
-enum HomeWeatherCondition { sunny, partlyCloudy, cloudy, rainy, stormy }
+enum HomeWeatherCondition {
+  sunny,
+  partlyCloudy,
+  cloudy,
+  rainy,
+  stormy;
+
+  bool get hasRain => this == rainy || this == stormy;
+}
 
 @immutable
 class HomeWeather {

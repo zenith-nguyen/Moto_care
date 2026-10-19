@@ -84,10 +84,12 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/Logo_Revo.png
+    - assets/images/REVO.png
     - assets/images/Background.png
     - "assets/images/Ảnh.png"
     - "assets/images/Thời tiết.png"
+    - "assets/images/Trời mưa.png"
+    - "assets/images/Thời tiết mưa.png"
 
     - assets/images/admin-rescue-invoice-truck.png
     - "assets/images/Thẻ_visa_admin.png"

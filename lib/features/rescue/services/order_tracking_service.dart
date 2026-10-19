@@ -99,7 +99,7 @@ class OrderTrackingService {
       RescueOrderStatus.completed => (
         'Cứu hộ đã hoàn tất',
         'HOÀN TẤT',
-        'Cảm ơn bạn đã sử dụng MotoCare.',
+        'Cảm ơn bạn đã sử dụng Revo.',
       ),
       RescueOrderStatus.repairing => (
         'Thợ đang xử lý sự cố',

@@ -1,4 +1,4 @@
-# Moto Care documentation
+# Revo documentation
 
 This folder is the single source of truth for technical guides, collaboration rules, and coding-agent instructions. It must be present on `main`, `cam-thu`, `thanh-vy`, and every task branch created from them.
 
@@ -13,6 +13,7 @@ This folder is the single source of truth for technical guides, collaboration ru
 
 ## Contents
 
+- [`ADMIN.md`](ADMIN.md): Admin sandbox, role integration, dashboard, approvals, requests and reconciliation.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md): feature boundaries, data flow, injected services, route drafts and UI-preserving refactor.
 
 - [`MARKETPLACE.md`](MARKETPLACE.md): partner discovery, package cart, GPS, checkout and rescue tracking.

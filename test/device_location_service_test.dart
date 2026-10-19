@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:moto_care/features/location/services/device_location_service.dart';
+import 'package:revo/features/location/services/device_location_service.dart';
 
 class _GpsPlatform extends GeolocatorPlatform {
   bool enabled = true;

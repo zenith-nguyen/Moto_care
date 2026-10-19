@@ -114,7 +114,12 @@ class _AdminDateRangePickerDialogState
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
     clipBehavior: Clip.antiAlias,
     child: DefaultTextStyle(
-      style: GoogleFonts.montserrat(color: AdminTokens.text, fontSize: 14),
+      style: GoogleFonts.montserrat(
+        color: AdminTokens.text,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        letterSpacing: -0.2,
+      ),
       child: SizedBox(
         width: 440,
         child: Column(
@@ -137,6 +142,7 @@ class _AdminDateRangePickerDialogState
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AdminTokens.text,
+                        letterSpacing: -0.3,
                       ),
                     ),
                   ),
@@ -150,6 +156,7 @@ class _AdminDateRangePickerDialogState
                       textStyle: GoogleFonts.montserrat(
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
+                        letterSpacing: -0.3,
                       ),
                     ),
                     child: const Text('Áp dụng'),
@@ -169,9 +176,10 @@ class _AdminDateRangePickerDialogState
                         _rangeLabel,
                         key: const ValueKey('admin-date-range-label'),
                         style: GoogleFonts.montserrat(
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           fontSize: 22,
                           color: const Color(0xFF1A1A1A),
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ),
@@ -185,9 +193,10 @@ class _AdminDateRangePickerDialogState
                             child: Text(
                               'Tháng ${_month.month}, ${_month.year}',
                               style: GoogleFonts.montserrat(
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w700,
                                 fontSize: 16,
                                 color: AdminTokens.text,
+                                letterSpacing: -0.3,
                               ),
                             ),
                           ),
@@ -228,6 +237,7 @@ class _AdminDateRangePickerDialogState
                                 fontWeight: FontWeight.w500,
                                 fontSize: 13,
                                 color: const Color(0xFF8E8E93),
+                                letterSpacing: -0.2,
                               ),
                             ),
                           ),
@@ -429,10 +439,11 @@ class _CalendarDay extends StatelessWidget {
                 children: [
                   Text(
                     '${date.day}',
-                    style: TextStyle(
+                    style: GoogleFonts.montserrat(
                       color: color,
                       fontSize: 14,
-                      fontWeight: endpoint ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: endpoint ? FontWeight.w700 : FontWeight.w500,
+                      letterSpacing: -0.2,
                     ),
                   ),
                   if (today)

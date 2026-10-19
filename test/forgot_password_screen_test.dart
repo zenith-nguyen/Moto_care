@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/auth/screens/forgot_password_screen.dart';
-import 'package:moto_care/features/auth/screens/login_screen.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/auth/screens/forgot_password_screen.dart';
+import 'package:revo/features/auth/screens/login_screen.dart';
 
 Future<GoRouter> openRecovery(WidgetTester tester) async {
   final router = createAppRouter();
@@ -27,7 +27,7 @@ void main() {
     expect(find.text('Quên mật khẩu'), findsOneWidget);
     expect(find.text('Quên mật khẩu?'), findsOneWidget);
     expect(
-      find.image(const AssetImage('assets/images/Logo_Revo.png')),
+      find.image(const AssetImage('assets/images/REVO.png')),
       findsOneWidget,
     );
     expect(

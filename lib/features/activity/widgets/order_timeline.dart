@@ -10,16 +10,16 @@ class OrderTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: OrderDetailsTheme.surface,
-      borderRadius: BorderRadius.circular(16),
-    ),
+    decoration: CustomerOrderTheme.cardDecoration,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Nhật ký trạng thái',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          style: CustomerOrderTheme.text(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 18),
         for (var i = 0; i < entries.length; i++)
@@ -36,7 +36,7 @@ class OrderTimeline extends StatelessWidget {
                     children: [
                       Text(
                         entries[i].time,
-                        style: const TextStyle(
+                        style: CustomerOrderTheme.text(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
@@ -44,7 +44,7 @@ class OrderTimeline extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         entries[i].date,
-                        style: const TextStyle(
+                        style: CustomerOrderTheme.text(
                           fontSize: 9,
                           color: OrderDetailsTheme.muted,
                           height: 1.5,
@@ -62,16 +62,14 @@ class OrderTimeline extends StatelessWidget {
                         height: 18,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: entries[i].isCurrent
-                              ? OrderDetailsTheme.red
-                              : OrderDetailsTheme.text,
+                          color: Colors.white,
                         ),
                         child: Icon(
                           entries[i].isCancelled
-                              ? Icons.close_rounded
-                              : Icons.check_rounded,
-                          size: 12,
-                          color: Colors.white,
+                              ? Icons.cancel
+                              : Icons.check_circle,
+                          size: 18,
+                          color: OrderDetailsTheme.text,
                         ),
                       ),
                       if (i < entries.length - 1)
@@ -79,7 +77,7 @@ class OrderTimeline extends StatelessWidget {
                           child: Center(
                             child: Container(
                               width: 1.5,
-                              color: OrderDetailsTheme.line,
+                              color: OrderDetailsTheme.text,
                             ),
                           ),
                         ),
@@ -94,7 +92,10 @@ class OrderTimeline extends StatelessWidget {
                     ),
                     child: Text(
                       entries[i].description,
-                      style: const TextStyle(fontSize: 12, height: 1.65),
+                      style: CustomerOrderTheme.text(
+                        fontSize: 12,
+                        height: 1.65,
+                      ),
                     ),
                   ),
                 ),

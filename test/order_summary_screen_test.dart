@@ -3,24 +3,24 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/activity/widgets/order_summary.dart';
-import 'package:moto_care/features/home/models/rescue_location.dart';
-import 'package:moto_care/features/home/providers/home_provider.dart';
-import 'package:moto_care/features/location/services/device_location_service.dart';
-import 'package:moto_care/features/partner/models/marketplace_catalog.dart';
-import 'package:moto_care/features/partner/providers/partner_provider.dart';
-import 'package:moto_care/features/rescue/models/marketplace_booking.dart';
-import 'package:moto_care/features/rescue/screens/order_summary_screen.dart';
-import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
-import 'package:moto_care/features/rescue/services/checkout_service.dart';
-import 'package:moto_care/features/rescue_station/data/mock_rescue_stations.dart';
-import 'package:moto_care/features/rescue_station/models/rescue_station.dart';
-import 'package:moto_care/features/vehicle/models/vehicle.dart';
-import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/activity/widgets/order_summary.dart';
+import 'package:revo/features/home/models/rescue_location.dart';
+import 'package:revo/features/home/providers/home_provider.dart';
+import 'package:revo/features/location/services/device_location_service.dart';
+import 'package:revo/features/partner/models/marketplace_catalog.dart';
+import 'package:revo/features/partner/providers/partner_provider.dart';
+import 'package:revo/features/rescue/models/marketplace_booking.dart';
+import 'package:revo/features/rescue/screens/order_summary_screen.dart';
+import 'package:revo/features/rescue/screens/order_tracking_screen.dart';
+import 'package:revo/features/rescue/services/checkout_service.dart';
+import 'package:revo/features/rescue_station/data/mock_rescue_stations.dart';
+import 'package:revo/features/rescue_station/models/rescue_station.dart';
+import 'package:revo/features/vehicle/models/vehicle.dart';
+import 'package:revo/features/vehicle/providers/vehicle_provider.dart';
 
 import 'fixtures/marketplace_router_fixture.dart';
 
@@ -270,11 +270,8 @@ void main() {
     expect(_state(tester).read(activityProvider).orders, isEmpty);
   });
 
-  test('Historic MotoCare payment values remain readable', () {
-    expect(
-      RescuePaymentMethod.fromValue('motocare'),
-      RescuePaymentMethod.motoCare,
-    );
+  test('Legacy wallet payment values remain readable after rebranding', () {
+    expect(RescuePaymentMethod.fromValue('motocare'), RescuePaymentMethod.revo);
     expect(RescuePaymentMethod.fromValue('cash'), RescuePaymentMethod.cash);
   });
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 enum StationType {
-  partner('partner', 'Đối tác MotoCare'),
+  partner('partner', 'Đối tác Revo'),
   officialDealer('official_dealer', 'Đại lý chính hãng'),
   mobileTeam('mobile_team', 'Đội cứu hộ lưu động');
 

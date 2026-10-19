@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/admin_tokens.dart';
 import '../models/admin_models.dart';
@@ -70,9 +71,11 @@ class AdminOrderStatusBadge extends StatelessWidget {
       ),
       child: Text(
         status.label,
-        style: AdminOrderTheme.value.copyWith(
+        style: GoogleFonts.montserrat(
+          textStyle: AdminOrderTheme.value,
           fontSize: compact ? 11 : 12,
-          fontWeight: compact ? FontWeight.w500 : FontWeight.w600,
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.2,
           color: foreground,
         ),
       ),

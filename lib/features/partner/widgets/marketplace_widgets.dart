@@ -100,7 +100,7 @@ class VerifiedPartnerBadge extends StatelessWidget {
       const SizedBox(width: 4),
       Flexible(
         child: Text(
-          'Đã xác thực MotoCare',
+          'Đã xác thực Revo',
           style: TextStyle(
             color: HomeColors.red,
             fontSize: 11,

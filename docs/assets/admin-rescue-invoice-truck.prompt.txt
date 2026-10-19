@@ -1,0 +1,7 @@
+Tool: built-in image_gen.imagegen
+Mode: edit / background-extraction
+Transparency: true
+Reference input: four user attachments; the third image is the invoice-and-truck edit target.
+Output: assets/images/admin-rescue-invoice-truck.png
+
+Use case: background-extraction. Asset type: transparent PNG icon for an Admin Flutter dashboard, displayed about 110 px wide on a dark navy card. Input images: edit target is ONLY the third of the four user attachments: the flat icon with a tall receipt on the left and a small delivery truck on the right, thick black outlines, light gray receipt, muted gold truck box and slate gray truck body. The other three attachments are layout context only and must not appear in the output. Remove the white background and the thin dark outer screenshot border from the receipt-and-truck icon. Preserve the icon's composition, thick outlines, white/light gray receipt interiors, gray wheel and gold truck colors. Output only that complete icon as a centered clean cutout with genuinely transparent background, no checkerboard baked into pixels, no surrounding frame, no text, no extra objects. Keep all contours fully within the canvas and use only a small transparent margin.

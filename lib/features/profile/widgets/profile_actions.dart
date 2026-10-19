@@ -76,7 +76,7 @@ class ProfileActions {
 
   Future<void> logout() async {
     if (!await _confirm(
-          title: 'Đăng xuất khỏi MotoCare?',
+          title: 'Đăng xuất khỏi Revo?',
           message: 'Thông tin chỉnh sửa trong phiên dùng thử sẽ được xóa khỏi bộ nhớ.',
           action: 'Đăng xuất',
         ) ||

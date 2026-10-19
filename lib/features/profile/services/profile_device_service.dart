@@ -83,7 +83,7 @@ class NativeProfileDeviceService implements ProfileDeviceService {
         );
       }
       return await _auth.authenticate(
-        localizedReason: 'Xác thực để bảo vệ thông tin cá nhân MotoCare',
+        localizedReason: 'Xác thực để bảo vệ thông tin cá nhân Revo',
         biometricOnly: true,
       );
     } on LocalAuthException {

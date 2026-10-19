@@ -2,18 +2,19 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/admin_tokens.dart';
-import '../../../core/theme/app_theme.dart';
+import '../theme/admin_typography.dart';
 import '../models/admin_models.dart';
 import 'admin_common.dart';
 
-const _tooltipStyle = TextStyle(
-  fontFamily: 'Montserrat',
+final _tooltipStyle = GoogleFonts.montserrat(
   fontSize: 12,
-  fontWeight: FontWeight.w600,
+  fontWeight: FontWeight.w500,
   color: AdminTokens.text,
+  letterSpacing: -0.2,
 );
 
 /// Cumulative rescue activity, with the preceding equal-length period in gray.
@@ -283,7 +284,9 @@ class _DateAxis extends StatelessWidget {
               child: Text(
                 label(point),
                 textAlign: TextAlign.center,
-                style: AppTextStyles.caption.copyWith(color: AdminTokens.muted),
+                style: AdminTypography.caption.copyWith(
+                  color: AdminTokens.muted,
+                ),
               ),
             ),
         ],
@@ -301,7 +304,7 @@ class _DateAxis extends StatelessWidget {
               (points.length > 7 && i == points.length ~/ 2))
             Text(
               label(points[i]),
-              style: AppTextStyles.caption.copyWith(color: AdminTokens.muted),
+              style: AdminTypography.caption.copyWith(color: AdminTokens.muted),
             ),
       ],
     );

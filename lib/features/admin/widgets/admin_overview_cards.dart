@@ -19,6 +19,7 @@ TextStyle get _overviewHeadingStyle => GoogleFonts.montserrat(
   fontWeight: FontWeight.w600,
   color: _heading,
   height: 1.35,
+  letterSpacing: -0.3,
 );
 
 class AdminSosOverviewCard extends StatelessWidget {
@@ -46,9 +47,10 @@ class AdminSosOverviewCard extends StatelessWidget {
       actionColor: Colors.white70,
       titleStyle: GoogleFonts.montserrat(
         fontSize: 12,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
         color: Colors.white.withValues(alpha: .8),
         height: 1.4,
+        letterSpacing: -0.3,
       ),
       onOpen: () => context.go('/admin/orders'),
       child: Row(
@@ -61,9 +63,10 @@ class AdminSosOverviewCard extends StatelessWidget {
                   '${data.orders}',
                   style: GoogleFonts.montserrat(
                     fontSize: 32,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w800,
                     height: 1.15,
                     color: Colors.white,
+                    letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -74,6 +77,7 @@ class AdminSosOverviewCard extends StatelessWidget {
                     fontWeight: FontWeight.w400,
                     height: 1.5,
                     color: Colors.white.withValues(alpha: .7),
+                    letterSpacing: -0.2,
                   ),
                 ),
               ],
@@ -185,6 +189,7 @@ class AdminPeopleOverviewCard extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                           color: AdminTokens.primaryBlue,
                           height: 1.5,
+                          letterSpacing: -0.2,
                         ),
                       ),
                     ),
@@ -203,6 +208,7 @@ class AdminPeopleOverviewCard extends StatelessWidget {
               fontWeight: FontWeight.w400,
               color: AdminTokens.muted,
               height: 1.5,
+              letterSpacing: -0.2,
             ),
           ),
         ],
@@ -231,9 +237,10 @@ class AdminRevenueOverviewCard extends StatelessWidget {
           adminMoney(data.collected),
           style: GoogleFonts.montserrat(
             fontSize: 26,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w800,
             color: AdminTokens.primaryBlue,
             height: 1.25,
+            letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: 16),
@@ -267,9 +274,10 @@ class _SystemMetric extends StatelessWidget {
           value,
           style: GoogleFonts.montserrat(
             fontSize: 20,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w700,
             color: color,
             height: 1.3,
+            letterSpacing: -0.5,
           ),
         ),
       ),
@@ -278,9 +286,10 @@ class _SystemMetric extends StatelessWidget {
         label,
         style: GoogleFonts.montserrat(
           fontSize: 11,
-          fontWeight: FontWeight.w400,
+          fontWeight: FontWeight.w500,
           color: AdminTokens.muted,
           height: 1.4,
+          letterSpacing: -0.2,
         ),
       ),
       const SizedBox(height: 12),
@@ -330,6 +339,7 @@ class _PeriodDropdown extends StatelessWidget {
             fontSize: 11,
             fontWeight: FontWeight.w500,
             color: _heading,
+            letterSpacing: -0.2,
           ),
           items: [
             for (final period in ['Hôm nay', '7 ngày', '30 ngày', 'Tùy chọn'])

@@ -6,16 +6,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/home/models/rescue_location.dart';
-import 'package:moto_care/features/home/providers/home_provider.dart';
-import 'package:moto_care/features/location/models/place_suggestion.dart';
-import 'package:moto_care/features/location/providers/incident_location_provider.dart';
-import 'package:moto_care/features/location/services/device_location_service.dart';
-import 'package:moto_care/features/location/services/location_api_config.dart';
-import 'package:moto_care/features/location/services/places_service.dart';
-import 'package:moto_care/features/location/widgets/incident_google_map.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/home/models/rescue_location.dart';
+import 'package:revo/features/home/providers/home_provider.dart';
+import 'package:revo/features/location/models/place_suggestion.dart';
+import 'package:revo/features/location/providers/incident_location_provider.dart';
+import 'package:revo/features/location/services/device_location_service.dart';
+import 'package:revo/features/location/services/location_api_config.dart';
+import 'package:revo/features/location/services/places_service.dart';
+import 'package:revo/features/location/widgets/incident_google_map.dart';
 
 import 'fixtures/location_fixture.dart';
 

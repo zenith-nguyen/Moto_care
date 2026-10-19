@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:moto_care/features/home/models/rescue_location.dart';
-import 'package:moto_care/features/location/models/place_suggestion.dart';
-import 'package:moto_care/features/location/services/places_service.dart';
-import 'package:moto_care/features/location/widgets/incident_google_map.dart';
+import 'package:revo/features/home/models/rescue_location.dart';
+import 'package:revo/features/location/models/place_suggestion.dart';
+import 'package:revo/features/location/services/places_service.dart';
+import 'package:revo/features/location/widgets/incident_google_map.dart';
 
 const testPlace = PlaceSuggestion(
   id: 'vincom',

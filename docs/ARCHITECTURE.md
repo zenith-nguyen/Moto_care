@@ -1,6 +1,6 @@
 # Feature architecture and refactor boundaries
 
-Moto Care uses a feature-first Flutter layout. The existing module guides in
+Revo uses a feature-first Flutter layout. The existing module guides in
 this directory define product behavior; this document defines how those modules
 share data and dependencies. Read it together with `AI_GUIDE.md`, `WORKFLOW.md`
 and `DEPENDENCIES.md` before changing application code.
@@ -226,7 +226,7 @@ Black-accent review captures: [incident location](screenshots/black-accent-locat
 [chat](screenshots/black-accent-chat.png) and
 [tracking](screenshots/black-accent-tracking.png).
 
-`RevoLogo` uses the canonical transparent `Logo_Revo.png` asset and crops its
+`RevoLogo` uses the canonical transparent `REVO.png` asset and crops its
 padding only at render time. Native splash generation derives temporary PNGs
 in `.dart_tool/revo_splash/` from that same source. See the root README for
 regeneration instructions.

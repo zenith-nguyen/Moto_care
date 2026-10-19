@@ -10,17 +10,26 @@ class WeatherConditionIcon extends StatelessWidget {
     super.key,
     required this.condition,
     this.size = 72,
+    this.rainAsset,
   });
 
   final HomeWeatherCondition condition;
   final double size;
+  final String? rainAsset;
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
-    child: CustomPaint(
-      size: Size.square(size),
-      painter: _WeatherPainter(condition),
-    ),
+    child: condition.hasRain && rainAsset != null
+        ? Image.asset(
+            rainAsset!,
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+          )
+        : CustomPaint(
+            size: Size.square(size),
+            painter: _WeatherPainter(condition),
+          ),
   );
 }
 
@@ -31,9 +40,7 @@ class _WeatherPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     canvas.scale(size.width / 96, size.height / 96);
-    final wet =
-        condition == HomeWeatherCondition.rainy ||
-        condition == HomeWeatherCondition.stormy;
+    final wet = condition.hasRain;
     if (condition == HomeWeatherCondition.sunny ||
         condition == HomeWeatherCondition.partlyCloudy) {
       const center = Offset(64, 30);

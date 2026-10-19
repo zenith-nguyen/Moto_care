@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/models/auth_validation.dart';
@@ -259,11 +260,15 @@ class _AdminAccountEditDialogState
       ),
     ],
     AdminAccountEditor.support => [
-      const Padding(
+      Padding(
         padding: EdgeInsets.only(bottom: 18),
         child: Text(
           'Yêu cầu hỗ trợ được lưu trong phiên hiện tại.',
-          style: TextStyle(fontSize: 12),
+          style: GoogleFonts.montserrat(
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+            letterSpacing: -0.2,
+          ),
         ),
       ),
       _field(
@@ -319,8 +324,10 @@ class _AdminAccountEditDialogState
                 if (_error != null)
                   Text(
                     _error!,
-                    style: TextStyle(
+                    style: GoogleFonts.montserrat(
                       color: Theme.of(context).colorScheme.error,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: -0.2,
                     ),
                   ),
                 if (busy) const LinearProgressIndicator(),

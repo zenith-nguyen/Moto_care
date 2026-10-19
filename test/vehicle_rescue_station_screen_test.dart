@@ -3,20 +3,20 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/services/service_actions.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/home/theme/home_theme.dart';
-import 'package:moto_care/features/home/models/home_destination.dart';
-import 'package:moto_care/features/home/models/home_user.dart';
-import 'package:moto_care/features/home/widgets/home_bottom_navigation.dart';
-import 'package:moto_care/features/rescue_station/models/rescue_station.dart';
-import 'package:moto_care/features/rescue_station/providers/rescue_station_provider.dart';
-import 'package:moto_care/features/rescue_station/widgets/rescue_station_card.dart';
-import 'package:moto_care/features/vehicle/models/vehicle.dart';
-import 'package:moto_care/features/vehicle/providers/vehicle_provider.dart';
-import 'package:moto_care/features/vehicle/widgets/them_sua_xe_bottom_sheet.dart';
-import 'package:moto_care/features/vehicle/widgets/vehicle_card.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/services/service_actions.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/home/theme/home_theme.dart';
+import 'package:revo/features/home/models/home_destination.dart';
+import 'package:revo/features/home/models/home_user.dart';
+import 'package:revo/features/home/widgets/home_bottom_navigation.dart';
+import 'package:revo/features/rescue_station/models/rescue_station.dart';
+import 'package:revo/features/rescue_station/providers/rescue_station_provider.dart';
+import 'package:revo/features/rescue_station/widgets/rescue_station_card.dart';
+import 'package:revo/features/vehicle/models/vehicle.dart';
+import 'package:revo/features/vehicle/providers/vehicle_provider.dart';
+import 'package:revo/features/vehicle/widgets/them_sua_xe_bottom_sheet.dart';
+import 'package:revo/features/vehicle/widgets/vehicle_card.dart';
 
 const _wave = Vehicle(
   id: 'wave',
@@ -358,7 +358,7 @@ void main() {
       );
       await _reveal(tester, find.text('Đóng cửa'));
       expect(find.text('Đóng cửa'), findsOneWidget);
-      expect(find.text('Xác thực MotoCare'), findsNothing);
+      expect(find.text('Xác thực Revo'), findsNothing);
       tester
           .state<ScrollableState>(find.byType(Scrollable).first)
           .position

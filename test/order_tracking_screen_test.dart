@@ -1,30 +1,33 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image/image.dart' as images;
-import 'package:moto_care/core/router/app_router.dart';
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/activity/models/rescue_order.dart';
-import 'package:moto_care/features/activity/providers/activity_provider.dart';
-import 'package:moto_care/features/activity/services/activity_actions.dart';
-import 'package:moto_care/features/activity/widgets/order_summary.dart';
-import 'package:moto_care/features/rescue/models/order_tracking_journey.dart';
-import 'package:moto_care/features/rescue/models/tracking_update.dart';
-import 'package:moto_care/features/rescue/models/tracking_mechanic.dart';
-import 'package:moto_care/features/rescue/services/order_tracking_feed.dart';
-import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
-import 'package:moto_care/features/rescue/widgets/order_tracking_map.dart';
+import 'package:revo/core/router/app_router.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/activity/models/rescue_order.dart';
+import 'package:revo/features/activity/providers/activity_provider.dart';
+import 'package:revo/features/activity/services/activity_actions.dart';
+import 'package:revo/features/activity/widgets/order_summary.dart';
+import 'package:revo/features/rescue/models/order_tracking_journey.dart';
+import 'package:revo/features/rescue/models/tracking_update.dart';
+import 'package:revo/features/rescue/models/tracking_mechanic.dart';
+import 'package:revo/features/rescue/services/order_tracking_feed.dart';
+import 'package:revo/features/rescue/screens/order_tracking_screen.dart';
+import 'package:revo/features/rescue/widgets/order_tracking_map.dart';
+import 'package:revo/features/rescue/widgets/order_tracking_history.dart';
 
 RescueOrder _order({
   String id = 'tracking-001',
   RescueOrderStatus status = RescueOrderStatus.pending,
   bool coordinates = true,
   String? phone,
+  List<RescueOrderEvent> events = const [],
 }) => RescueOrder(
   id: id,
   orderCode: 'MC-TRACK-001',
@@ -42,6 +45,7 @@ RescueOrder _order({
   extraPartPrice: 0,
   discount: 10000,
   createdAt: DateTime(2026, 10, 7),
+  statusEvents: events,
   items: [
     RescueOrderItem(
       packageId: 'tire-tubeless',
@@ -373,7 +377,7 @@ void main() {
     },
   );
 
-  test('Native map data keeps both markers and a red width-5 route to SOS', () {
+  test('Native map data keeps coordinates with a teal width-5 route and halo icons', () {
     final journey = OrderTrackingJourney.fromOrder(_order(), null)!;
     final data = OrderTrackingMapData(
       customer: journey.customer,
@@ -400,16 +404,16 @@ void main() {
     )) {
       final icon = marker.icon as BytesMapBitmap;
       final bitmap = images.decodePng(icon.byteData)!;
-      var hasBlack = false;
-      for (final pixel in bitmap) {
-        if (pixel.a == 0) continue;
-        expect(pixel.r, pixel.g);
-        expect(pixel.g, pixel.b);
-        hasBlack |= pixel.r == 0;
-      }
-      expect(hasBlack, isTrue);
+      expect(
+        bitmap.any(
+          (pixel) =>
+              pixel.r == 20 && pixel.g == 184 && pixel.b == 166 && pixel.a > 0,
+        ),
+        isTrue,
+      );
+      expect(bitmap.any((pixel) => pixel.a > 0 && pixel.a < 255), isTrue);
     }
-    expect(data.polylines.single.color, const Color(0xFFE53935));
+    expect(data.polylines.single.color, const Color(0xFF14B8A6));
     expect(data.polylines.single.width, 5);
     final bike =
         markers
@@ -422,7 +426,7 @@ void main() {
     expect(
       bikeBitmap.any(
         (pixel) =>
-            pixel.r == 229 && pixel.g == 57 && pixel.b == 53 && pixel.a > 0,
+            pixel.r == 20 && pixel.g == 184 && pixel.b == 166 && pixel.a > 0,
       ),
       isTrue,
     );
@@ -457,11 +461,11 @@ void main() {
       );
       expect(
         tester.widget<Text>(_key('tracking-total')).style!.color,
-        Colors.black,
+        const Color(0xFF0F172A),
       );
       expect(
         tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
-        Colors.white,
+        const Color(0xFFF8FAFC),
       );
       expect(
         _state(tester).read(activityProvider).orders.single.status,
@@ -470,6 +474,84 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('Copy and history retain the saved order and confirmed times', (
+    tester,
+  ) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final order = _order(
+      status: RescueOrderStatus.enRoute,
+      phone: '0901234567',
+      events: [
+        RescueOrderEvent(
+          status: RescueOrderStatus.pending,
+          occurredAt: DateTime(2026, 10, 7, 9, 10),
+        ),
+        RescueOrderEvent(
+          status: RescueOrderStatus.enRoute,
+          occurredAt: DateTime(2026, 10, 7, 9, 15),
+        ),
+      ],
+    );
+    final router = await _open(tester, map: _MapRecorder(), order: order);
+    final before = _state(tester).read(activityProvider).orders.single.toJson();
+    final history = tester.widget<OrderTrackingHistory>(
+      find.byType(OrderTrackingHistory),
+    );
+    expect(history.entries.map((entry) => entry.time), ['09:15', '09:10']);
+    expect(
+      history.entries.map((entry) => entry.date),
+      everyElement('07/10/2026'),
+    );
+    await _tap(tester, _key('tracking-copy'));
+    expect(copied, order.orderCode);
+    expect(find.text('Đã sao chép mã đơn.'), findsOneWidget);
+    await _tap(tester, _key('tracking-view-history'));
+    expect(router.state.uri.path, '/order-details');
+    expect(router.state.uri.queryParameters['id'], order.id);
+    expect(
+      _state(tester).read(activityProvider).orders.single.toJson(),
+      before,
+    );
+  });
+
+  testWidgets('GPS updates do not invent missing history transition times', (
+    tester,
+  ) async {
+    final feed = _TrackingFeed();
+    addTearDown(feed.controller.close);
+    final order = _order(status: RescueOrderStatus.enRoute);
+    await _open(tester, map: _MapRecorder(), order: order, feed: feed);
+    final before = _state(tester).read(activityProvider).orders.single.toJson();
+    feed.controller.add(_update(eta: 3));
+    await tester.pumpAndSettle();
+    final history = tester.widget<OrderTrackingHistory>(
+      find.byType(OrderTrackingHistory),
+    );
+    expect(history.entries.first.time, '—');
+    expect(history.entries.first.date, 'Chưa có mốc giờ');
+    expect(history.entries.last.time, '00:00');
+    expect(find.text('3 phút'), findsOneWidget);
+    expect(
+      _state(tester).read(activityProvider).orders.single.toJson(),
+      before,
+    );
+  });
 
   testWidgets(
     '1.5-second checkpoints interpolate the mechanic and stop at SOS without accepting a real order',

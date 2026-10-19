@@ -38,7 +38,7 @@ class _MyAppState extends State<MyApp> {
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
       child: MaterialApp.router(
-        title: 'Moto Care',
+        title: 'Revo',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         locale: const Locale('vi'),

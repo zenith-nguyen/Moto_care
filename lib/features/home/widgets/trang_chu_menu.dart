@@ -97,7 +97,7 @@ class TrangChuMenu extends StatelessWidget {
                   const Divider(color: Color(0xFF333333)),
                   const SizedBox(height: 16),
                   Text(
-                    'MOTO CARE',
+                    'Revo',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: light ? HomeColors.text : Colors.white,

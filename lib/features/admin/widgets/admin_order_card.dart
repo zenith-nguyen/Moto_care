@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/admin_tokens.dart';
@@ -61,7 +62,12 @@ class AdminOrderCard extends StatelessWidget {
               foregroundColor: AdminTokens.text,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               shape: const StadiumBorder(),
-              textStyle: AdminOrderTheme.value.copyWith(fontSize: 12),
+              textStyle: GoogleFonts.montserrat(
+                textStyle: AdminOrderTheme.value,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.3,
+              ),
             ),
             icon: const Icon(Icons.arrow_forward_rounded, size: 16),
             label: const Text('Chi tiết'),

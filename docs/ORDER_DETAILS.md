@@ -9,13 +9,15 @@ layout. Back restores the invoking route and its checkout draft, or returns to
 Activity for a direct link.
 Missing/unknown IDs show an empty state instead of selecting a sample order.
 
-The screen uses Montserrat with a scoped white/black/red `#E53935` theme. Small
+The screen shares the scoped customer order theme with live tracking:
+Google Fonts Montserrat with -0.3 letter spacing, a light slate `#F8FAFC`
+background, white 20px cards with soft shadows and navy `#0F172A` actions. Small
 widgets render the order code/status, four connected horizontal progress steps,
 rescue information, mechanic contact and vertical status timeline. Narrow
 screens and enlarged text stack the order badge, detail values and contact
 actions; the whole body scrolls without hiding content.
 
-The red map action opens `OrderTrackingScreen` for the same ID and disables for
+The navy map action opens `OrderTrackingScreen` for the same ID and disables for
 terminal orders. Chat preserves the assigned mechanic and order context through
 the existing conversation route. Call delegates a `tel:` URI to the existing
 injectable `url_launcher` boundary; unavailable contacts disable their actions,
@@ -26,7 +28,10 @@ available through the existing invoice route. Cancellation opens the shared
 then shows a success SnackBar and returns to Home. Keeping the order or dismissing
 the dialog leaves the progress and tracking state unchanged. The dialog scrolls
 with enlarged text and keyboard insets, and its blue controls override this
-screen's red theme.
+screen's order theme. Status pills use soft orange, blue, green or slate;
+completed/current timeline markers use navy check circles, while upcoming
+steps stay pale gray. All displayed labels, order values and handlers retain
+their existing sources.
 
 `orderDetailsProvider` watches Activity and profile data. `OrderDetailsService`
 derives immutable display steps and timeline entries. The four step positions
@@ -51,9 +56,9 @@ shows the current event first. The creation timestamp is the only assumed
 milestone: missing transition timestamps display “—” rather than invented times.
 Without a backend, the app does not simulate acceptance or completion.
 
-Review captures: [normal](screenshots/order-details.png),
-[timeline](screenshots/order-details-timeline.png) and
-[large text](screenshots/order-details-large-text.png). Widget/service tests in
+Review captures: [normal](screenshots/customer-order-details-fintech.png),
+[timeline](screenshots/customer-order-details-timeline-fintech.png) and
+[large text](screenshots/customer-order-details-large-text-fintech.png). Widget/service tests in
 `test/order_details_screen_test.dart` cover navigation, copy/contact actions,
 progress/timestamps, requester snapshots, JSON compatibility, cancellation,
 missing data and narrow layouts.

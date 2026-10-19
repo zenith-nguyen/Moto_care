@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/features/rescue_station/data/mock_rescue_stations.dart';
-import 'package:moto_care/features/rescue_station/models/rescue_station.dart';
-import 'package:moto_care/features/rescue_station/providers/rescue_station_provider.dart';
+import 'package:revo/features/rescue_station/data/mock_rescue_stations.dart';
+import 'package:revo/features/rescue_station/models/rescue_station.dart';
+import 'package:revo/features/rescue_station/providers/rescue_station_provider.dart';
 
 void main() {
   test(

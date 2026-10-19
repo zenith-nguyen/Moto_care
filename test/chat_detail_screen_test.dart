@@ -1,4 +1,4 @@
-import 'package:moto_care/features/chat/data/demo_chat_data.dart';
+import 'package:revo/features/chat/data/demo_chat_data.dart';
 
 import 'dart:async';
 
@@ -7,13 +7,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:moto_care/core/widgets/photo_attachment_field.dart';
-import 'package:moto_care/core/services/service_actions.dart';
-import 'package:moto_care/features/chat/models/chat_message.dart';
-import 'package:moto_care/features/chat/providers/chat_messages_provider.dart';
-import 'package:moto_care/features/chat/screens/chat_detail_screen.dart';
-import 'package:moto_care/features/chat/theme/chat_theme.dart';
-import 'package:moto_care/features/chat/widgets/chat_message_bubble.dart';
+import 'package:revo/core/widgets/photo_attachment_field.dart';
+import 'package:revo/core/services/service_actions.dart';
+import 'package:revo/features/chat/models/chat_message.dart';
+import 'package:revo/features/chat/providers/chat_messages_provider.dart';
+import 'package:revo/features/chat/screens/chat_detail_screen.dart';
+import 'package:revo/features/chat/theme/chat_theme.dart';
+import 'package:revo/features/chat/widgets/chat_message_bubble.dart';
 
 Finder _key(String value) => find.byKey(ValueKey(value));
 
@@ -290,7 +290,7 @@ void main() {
     testWidgets('$source sends an image and receives an automatic reply', (
       tester,
     ) async {
-      final bytes = (await rootBundle.load('assets/images/Logo_Revo.png'))
+      final bytes = (await rootBundle.load('assets/images/REVO.png'))
           .buffer
           .asUint8List();
       var cameraCalls = 0;

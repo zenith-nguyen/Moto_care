@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Moto_care",
+            "name": "Revo",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "Moto_care (profile mode)",
+            "name": "Revo (profile mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "Moto_care (release mode)",
+            "name": "Revo (release mode)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"

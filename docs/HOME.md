@@ -14,6 +14,15 @@ the header and weather card, including the status-bar area. A `DecoratedSliver`
 wraps their shared `SliverMainAxisGroup`, so the backdrop scrolls with those
 sections and sizes itself to their content, including larger text. The image's
 white lower edge transitions into the station listing without a repeated image.
+When the shared forecast reports `rainy` or `stormy`, Home switches that backdrop
+to the supplied `assets/images/Trời mưa.png` and uses
+`assets/images/Thời tiết mưa.png` for the weather icon. The icon's white
+background has been removed, preserving a transparent PNG. Both changes follow
+the same provider snapshot and revert when the forecast becomes dry. The blue
+card, header layout, search and service controls keep their existing styling.
+Loading/error states with no forecast use the original sky background.
+The cutout was made with the built-in imagegen tool; the exact edit prompt is
+saved in [the rain icon prompt](assets/home-rain-icon.prompt.txt).
 
 `SmartWeatherRescueCard` replaces the Home video banner with a sky-blue
 gradient (`#91C8EF` → `#80B3E6`), 24px corners, 16px padding and a soft shadow.
@@ -26,6 +35,9 @@ other chips use a translucent blue fill without borders. Narrow screens and
 larger text wrap the subtitle below the temperature in the same header row.
 The stateful widget owns horizontal scrolling. Search and quick-service taps
 forward booking callbacks; providers own the booking draft and weather request.
+Rain artwork is enabled by the Home card's optional `rainAsset` argument to
+`WeatherConditionIcon`; other consumers, including Admin, retain their existing
+painted weather illustrations.
 
 The header follows the reference's order: a blank circular account placeholder
 on the left, “Vị trí của tôi” (12px, medium, black54) and the black location capsule in the middle, and the
@@ -109,10 +121,13 @@ in [HOME_ASSETS.md](HOME_ASSETS.md).
   integration boundary for an address and optional GPS coordinates. Without a
   confirmed location, the header displays “Quận 1, TP.HCM” as a browsing area;
   this does not populate the rescue address/GPS state or enable checkout.
-  Tapping the location label or capsule pushes `/incident-map-picker` and opens
-  `ConfirmLocationScreen`. Its search button opens address and landmark search.
-  Confirmation saves shared location and pops directly to the retained Home
-  route; it opens no booking sheet and creates no order. Drafts do not update
+  Tapping the location label or capsule pushes `/incident-location` and opens
+  `SelectLocationScreen` (“Vị trí gặp sự cố?”) first. Address selection, GPS or
+  “Chọn trên bản đồ” continues to the existing `ConfirmLocationScreen` at
+  `/incident-map-picker`. The rescue form's location action follows the same
+  sequence and returns to that retained form, including its entered notes.
+  Map confirmation saves shared location and returns through the search screen
+  to the retained Home route or rescue form; it creates no order. Drafts do not update
   shared location until confirmation. Typed address changes clear
   stale coordinates. The map and current-location shortcut use configured native Maps, GPS and
   Places/geocoding services; see LOCATION.md for unavailable-key fallbacks.
@@ -181,6 +196,8 @@ Controlled 390 × 844 previews with bundled Montserrat and test session data:
 
 The current [smart weather Home preview](screenshots/smart-weather-sky-background.png)
 is rendered at 390 × 844 with bundled Montserrat, a blank avatar and demo weather.
+Location selection now opens [address entry first](screenshots/home-location-search-first.png)
+before [the retained confirmation screen](screenshots/home-location-confirmation-after-search.png).
 
 `test/home_weather_service_test.dart` covers demo metadata, heat/rain precedence,
 confirmed-location refresh, stale responses and failure/retry.

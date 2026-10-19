@@ -28,5 +28,5 @@ const homeStationDetails = {
 };
 
 const defaultHomeStationDetails = HomeStationDetails(
-  imageAsset: 'assets/images/rescue-tow.png',
+  imageAsset: 'assets/images/Tiemsua1.png',
 );

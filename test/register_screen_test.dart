@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:moto_care/core/theme/app_theme.dart';
-import 'package:moto_care/features/auth/screens/register_screen.dart';
-import 'package:moto_care/main.dart';
+import 'package:revo/core/theme/app_theme.dart';
+import 'package:revo/features/auth/screens/register_screen.dart';
+import 'package:revo/main.dart';
 
 Future<void> openRegister(WidgetTester tester) async {
   await tester.pumpWidget(const MyApp());
@@ -24,7 +24,7 @@ void main() {
 
     expect(find.text('Đăng ký tài khoản Revo'), findsOneWidget);
     expect(
-      find.image(const AssetImage('assets/images/Logo_Revo.png')),
+      find.image(const AssetImage('assets/images/REVO.png')),
       findsOneWidget,
     );
     expect(find.text('+84'), findsOneWidget);
@@ -74,7 +74,7 @@ void main() {
     await openRegister(tester);
     final passwordField = find.byType(TextFormField).last;
     final passwordInput = find.byType(EditableText).last;
-    await tester.enterText(passwordField, 'MotoCare1!');
+    await tester.enterText(passwordField, 'Revo2026!');
     expect(tester.widget<EditableText>(passwordInput).obscureText, isTrue);
     await tester.ensureVisible(find.byTooltip('Hiện mật khẩu'));
     await tester.pumpAndSettle();
@@ -83,7 +83,7 @@ void main() {
     expect(tester.widget<EditableText>(passwordInput).obscureText, isFalse);
     expect(
       tester.widget<EditableText>(passwordInput).controller.text,
-      'MotoCare1!',
+      'Revo2026!',
     );
     await tester.ensureVisible(find.byTooltip('Ẩn mật khẩu'));
     await tester.pumpAndSettle();
@@ -104,7 +104,7 @@ void main() {
       'rider@example.com',
     );
     await tester.enterText(phoneField, '123');
-    await tester.enterText(passwordField, 'MotoCare1!');
+    await tester.enterText(passwordField, 'Revo2026!');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(find.text('Số điện thoại không hợp lệ'), findsOneWidget);
@@ -112,7 +112,7 @@ void main() {
     expect(find.byType(SnackBar), findsNothing);
 
     await tester.enterText(phoneField, '0912345678');
-    await tester.enterText(passwordField, 'MotoCare1!');
+    await tester.enterText(passwordField, 'Revo2026!');
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
     expect(
@@ -149,7 +149,7 @@ void main() {
         find.byKey(const ValueKey('register-phone')),
         '0912345678',
       );
-      await tester.enterText(find.byType(TextFormField).last, 'MotoCare1!');
+      await tester.enterText(find.byType(TextFormField).last, 'Revo2026!');
       await tester.ensureVisible(find.byType(Checkbox));
       await tester.tap(find.byType(Checkbox));
       await tester.pump();
@@ -205,7 +205,7 @@ void main() {
       find.byKey(const ValueKey('register-phone')),
       '912345678',
     );
-    await tester.enterText(find.byType(TextFormField).last, 'MotoCare1!');
+    await tester.enterText(find.byType(TextFormField).last, 'Revo2026!');
     tester.view.viewInsets = const FakeViewPadding(bottom: 260);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
