@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../partner/providers/partner_provider.dart';
@@ -37,7 +38,9 @@ class OrderTrackingController extends Notifier<OrderTrackingState> {
   bool _enabled = false;
   @override
   OrderTrackingState build() {
-    final liveMode = ref.watch(orderTrackingFeedProvider) != null;
+    final liveMode =
+        ref.watch(runtimeApiIntegrationProvider) ||
+        ref.watch(orderTrackingFeedProvider) != null;
     final order = ref.read(activityProvider).orderById(key.$2);
     final shops = ref
         .read(partnerShopsProvider)

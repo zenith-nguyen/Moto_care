@@ -70,6 +70,7 @@ class RescueStation {
   final bool isOpen;
   final bool hasOperationalData;
   final bool hasStatistics;
+  bool get isMapDirectory => id.startsWith('service-location-');
 
   factory RescueStation.fromServiceLocation(Map<String, dynamic> json) {
     final distanceMeters = (json['distanceMeters'] as num?)?.toDouble();

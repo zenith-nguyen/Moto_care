@@ -159,7 +159,7 @@ void main() {
   );
 
   testWidgets(
-    'VNPay, GPS and notes survive confirmation into the tracked order',
+    'Bank transfer, GPS and notes survive confirmation into the tracked order',
     (tester) async {
       await _open(tester);
       await tapMarketplace(
@@ -193,9 +193,15 @@ void main() {
         tester,
         find.byKey(const ValueKey('checkout-payment')),
       );
-      expect(find.byKey(const ValueKey('payment-cash')), findsOneWidget);
-      expect(find.byKey(const ValueKey('payment-momo')), findsOneWidget);
-      await tapMarketplace(tester, find.byKey(const ValueKey('payment-vnpay')));
+      expect(
+        find.byKey(const ValueKey('payment-bank_transfer')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('payment-cash')), findsNothing);
+      await tapMarketplace(
+        tester,
+        find.byKey(const ValueKey('payment-bank_transfer')),
+      );
       await tapMarketplace(tester, find.byKey(const ValueKey('checkout-note')));
       await tester.enterText(
         find.byKey(const ValueKey('checkout-note')),
@@ -209,7 +215,7 @@ void main() {
       expect(find.byType(OrderTrackingScreen), findsOneWidget);
       final order = _state(tester).read(activityProvider).orders.single;
       expect(order.partnerId, _shop().id);
-      expect(order.paymentMethod, RescuePaymentMethod.vnpay);
+      expect(order.paymentMethod, RescuePaymentMethod.bankTransfer);
       expect(order.incidentDescription, 'Xe SH bị thủng bánh sau');
       expect(order.locationLatitude, isNotNull);
       expect(order.travelFee, 15000);
@@ -218,7 +224,7 @@ void main() {
       expect(order.voucherCode, isEmpty);
       expect(
         RescueOrder.fromJson(order.toJson()).paymentMethod,
-        RescuePaymentMethod.vnpay,
+        RescuePaymentMethod.bankTransfer,
       );
       expect(tester.takeException(), isNull);
     },
@@ -255,7 +261,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Dismissing payment keeps cash and creates no order', (
+  testWidgets('Dismissing payment keeps bank transfer and creates no order', (
     tester,
   ) async {
     await _open(tester);
@@ -263,10 +269,11 @@ void main() {
       tester,
       find.byKey(const ValueKey('checkout-payment')),
     );
-    Navigator.of(tester.element(find.byKey(const ValueKey('payment-cash'))))
-        .pop();
+    Navigator.of(
+      tester.element(find.byKey(const ValueKey('payment-bank_transfer'))),
+    ).pop();
     await tester.pumpAndSettle();
-    expect(find.text('Tiền mặt cho thợ'), findsOneWidget);
+    expect(find.text('Chuyển khoản ngân hàng'), findsOneWidget);
     expect(_state(tester).read(activityProvider).orders, isEmpty);
   });
 

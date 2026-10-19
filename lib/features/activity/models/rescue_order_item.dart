@@ -44,6 +44,7 @@ class RescueOrderItem {
 }
 
 enum RescuePaymentMethod {
+  bankTransfer('bank_transfer', 'Chuyển khoản ngân hàng'),
   cash('cash', 'Tiền mặt'),
   momo('momo', 'Ví MoMo'),
   vnpay('vnpay', 'VNPay'),

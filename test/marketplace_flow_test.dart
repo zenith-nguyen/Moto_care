@@ -208,7 +208,10 @@ void main() {
         tester,
         find.byKey(const ValueKey('checkout-payment')),
       );
-      await tapMarketplace(tester, find.byKey(const ValueKey('payment-momo')));
+      await tapMarketplace(
+        tester,
+        find.byKey(const ValueKey('payment-bank_transfer')),
+      );
       expect(find.byKey(const ValueKey('checkout-voucher')), findsNothing);
       expect(find.text('Thêm mã giảm giá / Voucher'), findsNothing);
       expect(find.text('Giảm giá voucher'), findsNothing);
@@ -221,7 +224,7 @@ void main() {
       final order = _state(tester).read(activityProvider).orders.single;
       expect(order.items.map((item) => item.quantity), [2, 1]);
       expect(order.partnerName, 'Đại lý chính hãng An Phát');
-      expect(order.paymentMethod, RescuePaymentMethod.momo);
+      expect(order.paymentMethod, RescuePaymentMethod.bankTransfer);
       expect(order.voucherCode, isEmpty);
       expect(order.discount, 0);
       expect(order.totalPrice, booking.subtotal + order.travelFee);
