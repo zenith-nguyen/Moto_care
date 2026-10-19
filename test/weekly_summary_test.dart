@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:motocare_mechanic/data/mock_data.dart';
 import 'package:motocare_mechanic/models/models.dart';
 import 'package:motocare_mechanic/screens/order_history_detail_screen.dart';
+import 'package:motocare_mechanic/utils/format.dart';
+import 'support/current_week_fixtures.dart';
 import 'package:motocare_mechanic/screens/weekly_summary_screen.dart';
 import 'package:motocare_mechanic/services/weekly_summary_data.dart';
 import 'package:motocare_mechanic/state/app_state.dart';
@@ -177,12 +178,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     appState.activeOrder = null;
-    appState.history
-      ..clear()
-      ..addAll(MockData.history());
-    appState.transactions
-      ..clear()
-      ..addAll(MockData.transactions());
+    seedCurrentWeekFixtures();
     await tester.pumpWidget(MaterialApp(
         theme: buildAppTheme(),
         home: const WeeklySummaryScreen(),
@@ -257,7 +253,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(
         find.text(
-            '${chart.dates.first.day.toString().padLeft(2, '0')}/${chart.dates.first.month.toString().padLeft(2, '0')} · 0đ'),
+            '${chart.dates.first.day.toString().padLeft(2, '0')}/${chart.dates.first.month.toString().padLeft(2, '0')} · ${formatVnd(chart.values.first ?? 0)}'),
         findsOneWidget);
     expect(appState.balance, balance);
     expect(appState.history.length, count);

@@ -8,18 +8,14 @@ import 'package:motocare_mechanic/models/models.dart';
 import 'package:motocare_mechanic/screens/rank_screen.dart';
 import 'package:motocare_mechanic/screens/weekly_summary_screen.dart';
 import 'package:motocare_mechanic/state/app_state.dart';
+import 'support/current_week_fixtures.dart';
 import 'package:motocare_mechanic/theme/app_theme.dart';
 
 void main() {
   final boundary = GlobalKey();
   setUp(() {
     appState.profile = MockData.profile();
-    appState.history
-      ..clear()
-      ..addAll(MockData.history());
-    appState.transactions
-      ..clear()
-      ..addAll(MockData.transactions());
+    seedCurrentWeekFixtures();
     appState.balance = 1250000;
   });
 
