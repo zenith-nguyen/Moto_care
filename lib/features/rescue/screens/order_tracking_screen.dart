@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../activity/services/activity_actions.dart';
@@ -31,6 +34,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   );
   final _sheet = DraggableScrollableController();
   final _screenKey = Object();
+  Timer? _runtimeRefresh;
   TrackingKey get _key => (_screenKey, widget.orderId);
   OrderTrackingController get _controller =>
       ref.read(orderTrackingProvider(_key).notifier);
@@ -53,6 +57,13 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (ref.read(runtimeApiIntegrationProvider) && _runtimeRefresh == null) {
+      _runtimeRefresh = Timer.periodic(const Duration(seconds: 4), (_) {
+        if (mounted && _foreground && !_chatOpen) {
+          ref.read(activityProvider.notifier).refreshFromApi();
+        }
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _syncMotion();
     });
@@ -94,6 +105,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
     WidgetsBinding.instance.removeObserver(this);
     _stopMotion();
     _motion.dispose();
+    _runtimeRefresh?.cancel();
     _sheet.dispose();
     super.dispose();
   }
@@ -220,6 +232,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   }
 
   Widget _trackingBody(BuildContext context, RescueOrder order) {
+    final runtimeIntegration = ref.watch(runtimeApiIntegrationProvider);
     final state = ref.read(orderTrackingProvider(_key));
     final snapshot = ref
         .read(orderTrackingServiceProvider)
@@ -327,14 +340,22 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                     OrderTrackingStatusCard(
                       order: order,
                       snapshot: snapshot,
-                      onCall: order.status.isActive
+                      onCall:
+                          order.status.isActive &&
+                              (runtimeIntegration
+                                  ? order.hasProvider
+                                  : snapshot.isSimulated ||
+                                        state.update != null ||
+                                        order.hasProvider)
                           ? () => _call(snapshot)
                           : null,
                       onChat:
                           order.status.isActive &&
-                              (snapshot.isSimulated ||
-                                  state.update != null ||
-                                  order.hasProvider)
+                              (runtimeIntegration
+                                  ? order.hasProvider
+                                  : snapshot.isSimulated ||
+                                        state.update != null ||
+                                        order.hasProvider)
                           ? () => _chat(order, snapshot)
                           : null,
                       onCancel: order.status.isActive && !_cancelling

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moto_care/app/app_dependencies.dart';
+import 'package:moto_care/app/router/app_router.dart';
+import 'package:moto_care/core/network/api_failure.dart';
 import 'package:moto_care/features/auth/application/session_controller.dart';
 import 'package:moto_care/features/auth/application/session_state.dart';
 import 'package:moto_care/features/auth/data/auth_repository.dart';
@@ -46,6 +48,25 @@ void main() {
     expect(state, isA<SessionSignedIn>());
     expect((state as SessionSignedIn).session.user.role, AppRole.provider);
   });
+
+  test('failed sign-in stays on login so the error remains visible', () async {
+    final container = createContainer(
+      tokenStore: MemoryTokenStore(),
+      repository: FakeAuthRepository(failSignIn: true),
+    );
+    final controller = container.read(sessionControllerProvider.notifier);
+    await controller.bootstrap();
+
+    await controller.signIn(
+      identity: 'customer@example.com',
+      password: 'wrong-password',
+    );
+
+    final state = container.read(sessionControllerProvider);
+    expect(state, isA<SessionSignedOut>());
+    expect((state as SessionSignedOut).failure, isA<ApiFailure>());
+    expect(locationForSession(state), '/login');
+  });
 }
 
 ProviderContainer createContainer({
@@ -74,9 +95,10 @@ AppUser testUser({AppRole role = AppRole.customer}) {
 }
 
 class FakeAuthRepository implements AuthRepository {
-  FakeAuthRepository({this.signInResult});
+  FakeAuthRepository({this.signInResult, this.failSignIn = false});
 
   final AuthSession? signInResult;
+  final bool failSignIn;
 
   @override
   Future<AppUser> currentUser() async => testUser();
@@ -107,6 +129,12 @@ class FakeAuthRepository implements AuthRepository {
     required String identity,
     required String password,
   }) async {
+    if (failSignIn) {
+      throw const ApiFailure(
+        kind: ApiFailureKind.unauthorized,
+        message: 'Thông tin đăng nhập không đúng.',
+      );
+    }
     return signInResult ??
         AuthSession(accessToken: 'customer-token', user: testUser());
   }

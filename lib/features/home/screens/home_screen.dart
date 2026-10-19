@@ -64,6 +64,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       return;
     }
     try {
+      await ref.read(profileProvider.notifier).refreshFromApi();
+    } on Exception {
+      // GPS and the locally initialized profile can still keep Home usable.
+    }
+    if (!mounted || ref.read(rescueLocationProvider)?.hasCoordinates == true) {
+      return;
+    }
+    try {
       final location = await ref.read(deviceLocationProvider)();
       if (mounted) {
         ref.read(rescueLocationProvider.notifier).confirmLocation(location);
@@ -71,6 +79,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } on Exception {
       // The explicit location picker exposes permission and GPS errors. Home
       // remains usable when a user declines the initial permission request.
+      final homeAddress = ref.read(profileProvider).profile.defaultAddress;
+      if (homeAddress.trim().length >= 5) {
+        ref.read(rescueLocationProvider.notifier).updateAddress(homeAddress);
+      }
     }
   }
 

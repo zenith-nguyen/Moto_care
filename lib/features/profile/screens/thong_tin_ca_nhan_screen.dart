@@ -11,6 +11,7 @@ import '../../home/widgets/brand_backdrop.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
 
 import '../../home/models/home_user.dart';
+import '../../home/providers/home_provider.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 import '../services/profile_account_service.dart';
@@ -19,6 +20,7 @@ import '../theme/profile_theme.dart';
 import '../widgets/change_password_dialog.dart';
 import '../widgets/profile_cards.dart';
 import '../widgets/profile_edit_sheet.dart';
+import '../../vehicle/providers/vehicle_provider.dart';
 
 class ThongTinCaNhanScreen extends ConsumerStatefulWidget {
   const ThongTinCaNhanScreen({super.key, this.user});
@@ -118,12 +120,19 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
             emergencyContactName: edited.emergencyContactName,
             emergencyContactPhone: edited.emergencyContactPhone,
             medicalNote: edited.medicalNote,
+            homeAddress: edited.defaultAddress,
+            workAddress: edited.workAddress,
           );
       _notice(
         saved
             ? 'Đã lưu thông tin vào tài khoản.'
             : 'Thông tin chưa hợp lệ. Vui lòng kiểm tra lại.',
       );
+      if (saved && edited.defaultAddress.trim().length >= 5) {
+        ref
+            .read(rescueLocationProvider.notifier)
+            .updateAddress(edited.defaultAddress);
+      }
     } catch (_) {
       _notice('Không thể lưu hồ sơ. Hãy kiểm tra kết nối và thử lại.');
     } finally {
@@ -253,7 +262,8 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(profileProvider);
     final profile = state.profile;
-    final vehicle = profile.defaultVehicle;
+    final vehicle = ref.watch(defaultVehicleProvider);
+    final legacyVehicle = profile.defaultVehicle;
     return Theme(
       data: ProfileTheme.light,
       child: Builder(
@@ -323,17 +333,26 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
                           ProfileInfoRow(
                             icon: Icons.motorcycle_outlined,
                             label: 'Xe mặc định',
-                            value: vehicle?.type ?? 'Chưa chọn xe mặc định',
+                            value: vehicle != null
+                                ? '${vehicle.brand} ${vehicle.name}'
+                                : legacyVehicle?.type ??
+                                      'Chưa chọn xe mặc định',
                           ),
                           ProfileInfoRow(
                             icon: Icons.pin_outlined,
                             label: 'Biển số xe',
-                            value: vehicle?.plate ?? '',
+                            value:
+                                vehicle?.licensePlate ??
+                                legacyVehicle?.plate ??
+                                '',
                           ),
                           ProfileInfoRow(
                             icon: Icons.tire_repair_rounded,
                             label: 'Loại lốp',
-                            value: vehicle?.tireType ?? '',
+                            value:
+                                vehicle?.tireType.label ??
+                                legacyVehicle?.tireType ??
+                                '',
                           ),
                           const Divider(color: HomeColors.border),
                           ProfileInfoRow(
@@ -345,6 +364,29 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
                             icon: Icons.business_outlined,
                             label: 'Cơ quan',
                             value: profile.workAddress,
+                          ),
+                          const Divider(color: HomeColors.border),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(
+                              Icons.edit_location_alt_outlined,
+                            ),
+                            title: const Text('Chỉnh sửa địa chỉ'),
+                            subtitle: const Text(
+                              'Lưu Nhà và Cơ quan để chọn nhanh khi cần cứu hộ',
+                            ),
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: _busy ? null : () => _edit(pageContext),
+                          ),
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.garage_outlined),
+                            title: const Text('Quản lý phương tiện'),
+                            subtitle: const Text(
+                              'Thêm xe, sửa thông tin và chọn xe mặc định',
+                            ),
+                            trailing: const Icon(Icons.chevron_right_rounded),
+                            onTap: () => pageContext.push('/xe-cua-toi'),
                           ),
                         ],
                       ),

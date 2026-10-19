@@ -116,7 +116,7 @@ abstract final class ProfileDashboardSheets {
   static void payment(BuildContext context) => information(
     context,
     'Phương thức thanh toán',
-    'Tiền mặt\nThanh toán trực tiếp cho thợ hoặc tiệm sau khi xác nhận chi phí.\n\nChưa có thẻ hoặc ví điện tử được liên kết.',
+    'Chuyển khoản ngân hàng qua mã QR SePay.\n\nMỗi đơn có số tiền và nội dung chuyển khoản riêng. Hệ thống chỉ bắt đầu tìm thợ sau khi webhook ngân hàng xác nhận thanh toán.',
   );
 
   static void insurance(BuildContext context) => information(

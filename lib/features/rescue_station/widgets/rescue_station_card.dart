@@ -55,17 +55,21 @@ class RescueStationCard extends ConsumerWidget {
               SizedBox(
                 height: 180 + (scale - 1) * 80,
                 width: double.infinity,
-                child: StationCardPhoto(
-                  imageAsset: details.imageAsset,
-                  isVerified: station.isVerified,
-                  responseLabel: station.isOpen ? listing.responseLabel : null,
-                  rating: station.hasStatistics ? station.rating : null,
-                  reviewCount: station.hasStatistics
-                      ? details.reviewCount
-                      : null,
-                  distanceKm: station.distanceKm,
-                  showBadgeLabel: true,
-                ),
+                child: station.isMapDirectory
+                    ? _MapDirectoryVisual(station: station)
+                    : StationCardPhoto(
+                        imageAsset: details.imageAsset,
+                        isVerified: station.isVerified,
+                        responseLabel: station.isOpen
+                            ? listing.responseLabel
+                            : null,
+                        rating: station.hasStatistics ? station.rating : null,
+                        reviewCount: station.hasStatistics
+                            ? details.reviewCount
+                            : null,
+                        distanceKm: station.distanceKm,
+                        showBadgeLabel: true,
+                      ),
               ),
               const SizedBox(height: AppCardLayout.gap),
               Text(station.name, style: AppTextStyles.cardTitle),
@@ -75,13 +79,26 @@ class RescueStationCard extends ConsumerWidget {
                 runSpacing: 4,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(station.stationType.label, style: AppTextStyles.caption),
+                  Text(
+                    station.isMapDirectory
+                        ? 'Dữ liệu địa điểm OpenStreetMap'
+                        : station.stationType.label,
+                    style: AppTextStyles.caption,
+                  ),
                   if (station.isVerified)
                     Text(
                       'Xác thực MotoCare',
                       style: AppTextStyles.caption.copyWith(
                         color: RevoHomeColors.verified,
                         fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  if (station.isMapDirectory && !station.isVerified)
+                    Text(
+                      'Chưa xác minh đối tác',
+                      style: AppTextStyles.caption.copyWith(
+                        color: Colors.deepOrange,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                 ],
@@ -183,5 +200,43 @@ class RescueStationCard extends ConsumerWidget {
         ],
       );
     },
+  );
+}
+
+class _MapDirectoryVisual extends StatelessWidget {
+  const _MapDirectoryVisual({required this.station});
+
+  final RescueStation station;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: const Color(0xFFF1F5F4),
+      borderRadius: BorderRadius.circular(AppCardLayout.radius),
+      border: Border.all(color: RevoHomeColors.border),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.map_outlined, size: 52, color: Color(0xFF245B53)),
+          const SizedBox(height: 12),
+          Text(
+            station.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.cardTitle,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${station.distanceKm.toStringAsFixed(1)} km • Thông tin bản đồ',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.caption,
+          ),
+        ],
+      ),
+    ),
   );
 }

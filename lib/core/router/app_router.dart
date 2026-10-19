@@ -25,6 +25,7 @@ import '../../features/rescue/screens/checkout_screen.dart';
 import '../../features/rescue/screens/rescue_tracking_screen.dart';
 import '../../features/rescue/screens/order_tracking_screen.dart';
 import '../../features/rescue/screens/service_rating_screen.dart';
+import '../../features/payments/screens/bank_transfer_screen.dart';
 import '../../features/places/screens/tram_sac_tiem_sua_screen.dart';
 import '../../features/policy/screens/cam_ket_dich_vu_screen.dart';
 import '../../features/pricing/screens/bang_gia_screen.dart';
@@ -86,6 +87,12 @@ GoRouter createAppRouter() {
         path: '/order-tracking',
         builder: (context, state) =>
             OrderTrackingScreen(orderId: state.uri.queryParameters['id']),
+      ),
+      GoRoute(
+        path: '/bank-transfer',
+        builder: (context, state) => BankTransferScreen(
+          orderId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+        ),
       ),
       GoRoute(
         path: '/rescue-tracking',

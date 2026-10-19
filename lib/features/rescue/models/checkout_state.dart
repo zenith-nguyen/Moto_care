@@ -4,7 +4,7 @@ import '../../home/models/rescue_location.dart';
 class CheckoutState {
   const CheckoutState({
     this.location,
-    this.payment = RescuePaymentMethod.cash,
+    this.payment = RescuePaymentMethod.bankTransfer,
     this.note = '',
     this.error,
     this.locationError,

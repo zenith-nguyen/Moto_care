@@ -249,6 +249,19 @@ class _ConfirmLocationScreenState extends ConsumerState<ConfirmLocationScreen> {
                             height: 1.5,
                           ),
                         ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          key: const ValueKey('incident-enter-address'),
+                          onPressed: draft.searchOpen || draft.locating
+                              ? null
+                              : _searchLocation,
+                          icon: const Icon(Icons.search_rounded),
+                          label: const Text('Nhập hoặc tìm địa chỉ'),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size.fromHeight(48),
+                            alignment: Alignment.centerLeft,
+                          ),
+                        ),
                         if (draft.resolvingAddress || draft.locating)
                           const Padding(
                             padding: EdgeInsets.only(top: 12),

@@ -10,6 +10,8 @@ import '../../messages/application/customer_chat_controller.dart';
 import '../../messages/application/customer_chat_state.dart';
 import '../../messages/data/chat_image_picker.dart';
 import '../../messages/domain/chat_message.dart' as api;
+import '../../auth/application/session_controller.dart';
+import '../../auth/application/session_state.dart';
 
 final chatMessagesProvider = NotifierProvider.autoDispose
     .family<ChatMessagesController, List<ChatMessage>, ChatConversation>(
@@ -94,6 +96,10 @@ class ChatMessagesController extends Notifier<List<ChatMessage>> {
   Future<void> _sync(CustomerChatState source) async {
     final orderId = conversation.orderId;
     if (orderId == null) return;
+    final session = ref.read(sessionControllerProvider);
+    final currentUserId = session is SessionSignedIn
+        ? session.session.user.id
+        : conversation.customerId;
     final controller = ref.read(
       customerChatControllerProvider(orderId).notifier,
     );
@@ -115,7 +121,7 @@ class ChatMessagesController extends Notifier<List<ChatMessage>> {
                   ? 'Không thể tải hình ảnh'
                   : null),
           imageBytes: bytes,
-          isCustomer: message.senderId == conversation.customerId,
+          isCustomer: message.senderId == currentUserId,
           timeLabel: _timeLabel(message.createdAt),
         );
       }),

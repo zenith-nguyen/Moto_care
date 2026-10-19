@@ -185,6 +185,7 @@ class OrderTrackingService {
 
   ChatConversation conversation(RescueOrder order, TrackingSnapshot snapshot) =>
       ChatConversation(
+        orderId: int.tryParse(order.id),
         mechanicName: snapshot.mechanic.name,
         avatarInitials: snapshot.mechanic.initials,
         licensePlate: snapshot.mechanic.plate,

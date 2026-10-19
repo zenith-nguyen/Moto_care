@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../activity/widgets/order_summary.dart';
@@ -65,19 +66,13 @@ class _OrderSummaryScreenState extends ConsumerState<OrderSummaryScreen> {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             children: [
               const OrderSummaryHeading('Phương thức thanh toán'),
-              for (final method in [
-                RescuePaymentMethod.cash,
-                RescuePaymentMethod.momo,
-                RescuePaymentMethod.vnpay,
-              ])
+              for (final method in [RescuePaymentMethod.bankTransfer])
                 ListTile(
                   key: ValueKey('payment-${method.value}'),
                   contentPadding: EdgeInsets.zero,
                   title: Text(orderPaymentLabel(method)),
                   subtitle: Text(
-                    method == RescuePaymentMethod.cash
-                        ? 'Thanh toán sau khi hoàn tất dịch vụ'
-                        : 'Lưu phương thức cho đơn cứu hộ',
+                    'Quét QR SePay trước khi hệ thống bắt đầu tìm thợ',
                     style: const TextStyle(fontSize: 12),
                   ),
                   trailing: Icon(
@@ -100,8 +95,11 @@ class _OrderSummaryScreenState extends ConsumerState<OrderSummaryScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
     final order = await _controller.placeOrder(travelFee);
     if (order != null && mounted) {
+      final runtime = ref.read(runtimeApiIntegrationProvider);
       context.pushReplacement(
-        '/order-tracking?id=${Uri.encodeComponent(order.id)}',
+        runtime
+            ? '/bank-transfer?id=${Uri.encodeComponent(order.id)}'
+            : '/order-tracking?id=${Uri.encodeComponent(order.id)}',
       );
     }
   }

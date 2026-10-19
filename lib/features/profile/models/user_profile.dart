@@ -67,6 +67,8 @@ class UserProfile {
     String? emergencyContactName,
     String? emergencyContactPhone,
     String? medicalNote,
+    String? defaultAddress,
+    String? workAddress,
   }) => UserProfile(
     id: id,
     fullName: fullName ?? this.fullName,
@@ -79,8 +81,8 @@ class UserProfile {
     emergencyContactName: emergencyContactName ?? this.emergencyContactName,
     emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
     defaultVehicle: defaultVehicle,
-    defaultAddress: defaultAddress,
-    workAddress: workAddress,
+    defaultAddress: defaultAddress ?? this.defaultAddress,
+    workAddress: workAddress ?? this.workAddress,
     medicalNote: medicalNote ?? this.medicalNote,
   );
 

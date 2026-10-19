@@ -23,6 +23,12 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
     text: widget.profile.emergencyContactPhone,
   );
   late final _medical = TextEditingController(text: widget.profile.medicalNote);
+  late final _homeAddress = TextEditingController(
+    text: widget.profile.defaultAddress,
+  );
+  late final _workAddress = TextEditingController(
+    text: widget.profile.workAddress,
+  );
 
   @override
   void dispose() {
@@ -32,6 +38,8 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
       _contactName,
       _contactPhone,
       _medical,
+      _homeAddress,
+      _workAddress,
     ]) {
       controller.dispose();
     }
@@ -48,6 +56,8 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
         emergencyContactName: _contactName.text,
         emergencyContactPhone: _contactPhone.text,
         medicalNote: _medical.text,
+        defaultAddress: _homeAddress.text,
+        workAddress: _workAddress.text,
       ),
     );
   }
@@ -148,6 +158,31 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
               maxLines: 3,
               maxLength: 240,
               textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
+              key: const ValueKey('profile-home-address'),
+              controller: _homeAddress,
+              decoration: const InputDecoration(
+                labelText: 'Địa chỉ nhà',
+                hintText: 'Ví dụ: 191 Nguyễn Tiểu La, Quận 10, TP.HCM',
+                helperText: 'Dùng để chọn nhanh vị trí khi cần cứu hộ.',
+              ),
+              maxLines: 2,
+              maxLength: 240,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              key: const ValueKey('profile-work-address'),
+              controller: _workAddress,
+              decoration: const InputDecoration(
+                labelText: 'Địa chỉ cơ quan (không bắt buộc)',
+              ),
+              maxLines: 2,
+              maxLength: 240,
+              textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
