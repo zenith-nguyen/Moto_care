@@ -17,6 +17,7 @@ import 'package:moto_care/features/location/data/mock_incident_places.dart';
 import 'package:moto_care/features/location/providers/incident_location_provider.dart';
 import 'package:moto_care/features/location/models/place_suggestion.dart';
 import 'package:moto_care/features/location/services/device_location_service.dart';
+import 'package:moto_care/features/location/services/location_api_config.dart';
 import 'package:moto_care/features/location/services/places_service.dart';
 import 'package:moto_care/features/location/widgets/incident_google_map.dart';
 
@@ -85,6 +86,9 @@ Future<GoRouter> _open(
           mockRecentIncidentPlaces,
         ),
         deviceLocationProvider.overrideWithValue(() async => current),
+        locationApiConfigProvider.overrideWithValue(
+          const LocationApiConfig(placesKey: 'test', geocodingKey: 'test'),
+        ),
         placesServiceProvider.overrideWithValue(places),
         incidentMapBuilderProvider.overrideWithValue(map.build),
         incidentCurrentLocationProvider.overrideWithValue(current),
@@ -366,7 +370,7 @@ void main() {
       );
       expect(
         _state(tester).read(rescueLocationProvider)!.hasCoordinates,
-        isFalse,
+        isTrue,
       );
       expect(find.byType(IncidentMapPickerScreen), findsNothing);
       expect(_state(tester).read(activityProvider).orders, isEmpty);
@@ -515,10 +519,15 @@ void main() {
         );
         final count = _state(tester).read(activityProvider).orders.length;
         await _tap(tester, find.byKey(const ValueKey('home-search')));
-        expect(tester.widget<FilledButton>(_submit).onPressed, isNull);
+        expect(
+          tester.widget<FilledButton>(_submit).onPressed,
+          active ? isNotNull : isNull,
+        );
         expect(_state(tester).read(activityProvider).orders, hasLength(count));
         if (!hasVehicle) {
           expect(find.text('Thêm xe cần cứu hộ'), findsOneWidget);
+        } else {
+          expect(find.text('XEM ĐƠN ĐANG CÓ'), findsOneWidget);
         }
       },
     );

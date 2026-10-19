@@ -101,6 +101,7 @@ class RescueOrder {
     this.partnerId,
     this.partnerName,
     this.paymentMethod = RescuePaymentMethod.cash,
+    this.awaitingPrepayment = false,
     this.voucherCode = '',
     this.requesterName = '',
     this.requesterPhone = '',
@@ -152,6 +153,7 @@ class RescueOrder {
   final String? partnerId;
   final String? partnerName;
   final RescuePaymentMethod paymentMethod;
+  final bool awaitingPrepayment;
   final String voucherCode;
   final String requesterName;
   final String requesterPhone;
@@ -204,6 +206,7 @@ class RescueOrder {
     partnerId: partnerId,
     partnerName: partnerName,
     paymentMethod: paymentMethod,
+    awaitingPrepayment: awaitingPrepayment,
     voucherCode: voucherCode,
     requesterName: requesterName,
     requesterPhone: requesterPhone,
@@ -242,6 +245,7 @@ class RescueOrder {
     paymentMethod: RescuePaymentMethod.fromValue(
       json['paymentMethod'] as String? ?? 'cash',
     ),
+    awaitingPrepayment: json['awaitingPrepayment'] as bool? ?? false,
     voucherCode: json['voucherCode'] as String? ?? '',
     requesterName: json['requesterName'] as String? ?? '',
     requesterPhone: json['requesterPhone'] as String? ?? '',
@@ -292,6 +296,7 @@ class RescueOrder {
     'partnerId': partnerId,
     'partnerName': partnerName,
     'paymentMethod': paymentMethod.value,
+    'awaitingPrepayment': awaitingPrepayment,
     'voucherCode': voucherCode,
     'requesterName': requesterName,
     'requesterPhone': requesterPhone,

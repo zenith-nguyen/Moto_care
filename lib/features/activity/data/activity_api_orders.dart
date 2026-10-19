@@ -52,6 +52,8 @@ RescueOrder _toLegacyOrder(
             ? null
             : 'Thợ phụ trách #${order.providerId}'),
     providerPhone: contact?.phone,
+    paymentMethod: RescuePaymentMethod.bankTransfer,
+    awaitingPrepayment: order.status == OrderStatus.awaitingPrepayment,
     basePrice: _vnd(order.estimatedPrice.value),
     extraPartPrice: _vnd(order.extraCost.value),
     discount: _vnd(order.discountAmount.value),

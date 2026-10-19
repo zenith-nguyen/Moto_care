@@ -37,6 +37,7 @@ Future<GoRouter> _open(
   RescueLocation? saved = _saved,
   bool onMap = false,
   Future<RescueLocation> Function()? gps,
+  Future<RescueLocation> Function(String)? addressGeocoder,
 }) async {
   final router = createAppRouter();
   addTearDown(router.dispose);
@@ -56,6 +57,8 @@ Future<GoRouter> _open(
         ),
         if (service != null) placesServiceProvider.overrideWithValue(service),
         deviceLocationProvider.overrideWithValue(gps ?? () async => _saved),
+        if (addressGeocoder != null)
+          deviceAddressGeocoderProvider.overrideWithValue(addressGeocoder),
       ],
       child: MaterialApp.router(
         theme: AppTheme.light,
@@ -342,14 +345,20 @@ void main() {
   testWidgets(
     'Missing API configuration and detail failures never commit a bogus location',
     (tester) async {
-      await _open(tester, map: TestIncidentMap(), configured: false);
-      await _query(tester, 'ktx');
-      await tester.pumpAndSettle();
-      expect(
-        find.textContaining('Tìm kiếm địa điểm chưa sẵn sàng'),
-        findsOneWidget,
+      final map = TestIncidentMap();
+      final firstRouter = await _open(
+        tester,
+        map: map,
+        configured: false,
+        addressGeocoder: (_) async => testPlaceLocation,
       );
+      await _query(tester, '191 Nguyen Tieu La');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('use-typed-address')), findsOneWidget);
       expect(_state(tester).read(rescueLocationProvider), same(_saved));
+      await _tap(tester, find.byKey(const ValueKey('use-typed-address')));
+      expect(firstRouter.state.uri.path, '/incident-map-picker');
+      expect(find.text(testPlaceLocation.address), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
       final service = TestPlacesService(
         lookup: (_) async =>

@@ -10,6 +10,101 @@ final deviceLocationProvider = Provider<Future<RescueLocation> Function()>(
   (ref) => locateDevice,
 );
 
+final deviceAddressGeocoderProvider =
+    Provider<Future<RescueLocation> Function(String)>(
+      (ref) => geocodeDeviceAddress,
+    );
+
+final deviceReverseGeocoderProvider =
+    Provider<Future<RescueLocation> Function(double, double)>(
+      (ref) => reverseGeocodeDevicePoint,
+    );
+
+Future<RescueLocation> geocodeDeviceAddress(String address) async {
+  final normalized = address.trim();
+  if (normalized.length < 5) {
+    throw const LocationLookupException(
+      'Hãy nhập địa chỉ chi tiết hơn trước khi tìm trên bản đồ.',
+    );
+  }
+  if (GeocodingPlatformFactory.instance == null) {
+    throw const LocationLookupException(
+      'Thiết bị chưa hỗ trợ tìm tọa độ từ địa chỉ. Hãy dùng GPS hoặc chọn trên bản đồ.',
+    );
+  }
+  final query = _withHoChiMinhCity(normalized);
+  try {
+    final matches = await Geocoding()
+        .locationFromAddress(query)
+        .timeout(const Duration(seconds: 12));
+    if (matches.isEmpty) {
+      throw const LocationLookupException(
+        'Không tìm thấy địa chỉ này. Hãy thêm số nhà, tên đường và quận.',
+      );
+    }
+    final match = matches.firstWhere(
+      (item) => isHoChiMinhCityServiceArea(item.latitude, item.longitude),
+      orElse: () => throw const LocationLookupException(
+        'Địa chỉ không nằm trong vùng phục vụ TP.HCM.',
+      ),
+    );
+    return RescueLocation(
+      address: normalized,
+      latitude: match.latitude,
+      longitude: match.longitude,
+    );
+  } on LocationLookupException {
+    rethrow;
+  } on Exception {
+    throw const LocationLookupException(
+      'Chưa tìm được tọa độ địa chỉ. Hãy thử thêm quận hoặc chọn trực tiếp trên bản đồ.',
+    );
+  }
+}
+
+Future<RescueLocation> reverseGeocodeDevicePoint(
+  double latitude,
+  double longitude,
+) async {
+  if (!isHoChiMinhCityServiceArea(latitude, longitude)) {
+    throw const LocationLookupException(
+      'Vị trí không nằm trong vùng phục vụ TP.HCM.',
+    );
+  }
+  if (GeocodingPlatformFactory.instance == null) {
+    throw const LocationLookupException(
+      'Thiết bị chưa hỗ trợ tra tên đường tại vị trí này.',
+    );
+  }
+  try {
+    final places = await Geocoding()
+        .placemarkFromCoordinates(latitude, longitude)
+        .timeout(const Duration(seconds: 10));
+    if (places.isEmpty || !isVietnamPlacemark(places.first)) {
+      throw const LocationLookupException(
+        'Chưa xác minh được địa chỉ tại vị trí này.',
+      );
+    }
+    final address = _placemarkAddress(places.first);
+    if (address.isEmpty) {
+      throw const LocationLookupException(
+        'Chưa tra được tên đường tại vị trí này.',
+      );
+    }
+    return RescueLocation(
+      address: address,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  } on LocationLookupException {
+    rethrow;
+  } on Exception {
+    throw const LocationLookupException(
+      'Chưa tra được tên đường. Vị trí ghim vẫn được giữ chính xác.',
+    );
+  }
+}
+
 Future<RescueLocation> locateDevice() async {
   if (!await Geolocator.isLocationServiceEnabled()) {
     throw const LocationLookupException('Hãy bật GPS hoặc nhập địa chỉ sự cố.');
@@ -54,19 +149,7 @@ Future<RescueLocation> locateDevice() async {
       'GPS không thuộc Việt Nam hoặc chưa xác minh được quốc gia. Vị trí này sẽ không được sử dụng.',
     );
   }
-  final place = places.first;
-  final parts = [
-    place.street,
-    place.subLocality,
-    place.subAdministrativeArea,
-    place.administrativeArea,
-    place.country,
-  ];
-  final resolved = parts
-      .whereType<String>()
-      .where((part) => part.trim().isNotEmpty)
-      .toSet()
-      .join(', ');
+  final resolved = _placemarkAddress(places.first);
   if (resolved.isNotEmpty && resolved.length <= 240) address = resolved;
   return RescueLocation(
     address: address,
@@ -74,6 +157,31 @@ Future<RescueLocation> locateDevice() async {
     longitude: position.longitude,
   );
 }
+
+String _withHoChiMinhCity(String address) {
+  final folded = address.toLowerCase();
+  if (folded.contains('hồ chí minh') ||
+      folded.contains('ho chi minh') ||
+      folded.contains('tp.hcm') ||
+      folded.contains('tphcm')) {
+    return address;
+  }
+  return '$address, Thành phố Hồ Chí Minh, Việt Nam';
+}
+
+String _placemarkAddress(Placemark place) =>
+    [
+          place.street,
+          place.subLocality,
+          place.subAdministrativeArea,
+          place.administrativeArea,
+          place.country,
+        ]
+        .whereType<String>()
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toSet()
+        .join(', ');
 
 bool isHoChiMinhCityServiceArea(double latitude, double longitude) =>
     latitude >= 10.30 &&

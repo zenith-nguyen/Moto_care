@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image/image.dart' as images;
+import 'package:moto_care/app/app_dependencies.dart';
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
 import 'package:moto_care/features/activity/models/rescue_order.dart';
@@ -19,12 +20,30 @@ import 'package:moto_care/features/rescue/models/tracking_mechanic.dart';
 import 'package:moto_care/features/rescue/services/order_tracking_feed.dart';
 import 'package:moto_care/features/rescue/screens/order_tracking_screen.dart';
 import 'package:moto_care/features/rescue/widgets/order_tracking_map.dart';
+import 'package:moto_care/features/payments/data/payments_repository.dart';
+import 'package:moto_care/features/payments/domain/bank_transfer_instructions.dart';
+import 'package:moto_care/features/payments/domain/demo_payment_result.dart';
+
+class _UnavailablePaymentsRepository implements PaymentsRepository {
+  @override
+  Future<BankTransferInstructions> getTransferInstructions(int orderId) =>
+      Future.error(StateError('Payment test fixture unavailable'));
+
+  @override
+  Future<DemoPrepaymentResult> confirmDemoPrepayment(int orderId) =>
+      Future.error(StateError('Payment test fixture unavailable'));
+
+  @override
+  Future<DemoAdjustmentResult> confirmDemoAdjustment(int orderId) =>
+      Future.error(StateError('Payment test fixture unavailable'));
+}
 
 RescueOrder _order({
   String id = 'tracking-001',
   RescueOrderStatus status = RescueOrderStatus.pending,
   bool coordinates = true,
   String? phone,
+  bool awaitingPrepayment = false,
 }) => RescueOrder(
   id: id,
   orderCode: 'MC-TRACK-001',
@@ -37,6 +56,7 @@ RescueOrder _order({
   partnerName: 'Tiệm sửa xe Siêu Tốc',
   providerName: phone == null ? null : 'Nguyễn Văn A',
   providerPhone: phone,
+  awaitingPrepayment: awaitingPrepayment,
   basePrice: 60000,
   travelFee: 10000,
   extraPartPrice: 0,
@@ -121,6 +141,9 @@ Future<GoRouter> _open(
         activityUrlLauncherProvider.overrideWithValue(
           launcher ?? (_) async => true,
         ),
+        paymentsRepositoryProvider.overrideWithValue(
+          _UnavailablePaymentsRepository(),
+        ),
       ],
       child: MaterialApp.router(
         theme: AppTheme.light,
@@ -168,6 +191,21 @@ Future<void> _tap(
 }
 
 void main() {
+  testWidgets(
+    'An unpaid runtime order cannot appear to be matching a provider',
+    (tester) async {
+      final router = await _open(
+        tester,
+        map: _MapRecorder(),
+        order: _order(id: '1', awaitingPrepayment: true),
+        path: '/order-tracking?id=1',
+      );
+      await tester.pump();
+      expect(router.state.uri.path, '/bank-transfer');
+      expect(router.state.uri.queryParameters['id'], '1');
+    },
+  );
+
   testWidgets(
     'Backend route and GPS update the card even with reduced motion',
     (tester) async {

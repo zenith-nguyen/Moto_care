@@ -41,6 +41,7 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   bool _foreground = true;
   bool _chatOpen = false;
   bool _cancelling = false;
+  bool _redirectingToPayment = false;
   bool get _canMove =>
       mounted &&
       _foreground &&
@@ -175,6 +176,18 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
   @override
   Widget build(BuildContext context) {
     final order = ref.watch(activityProvider).orderById(widget.orderId);
+    if (order?.awaitingPrepayment == true) {
+      if (!_redirectingToPayment) {
+        _redirectingToPayment = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) context.go('/bank-transfer?id=${order!.id}');
+        });
+      }
+      return Theme(
+        data: HomeTheme.light,
+        child: const Scaffold(body: Center(child: CircularProgressIndicator())),
+      );
+    }
     ref.watch(orderTrackingProvider(_key));
     ref.watch(trackingChatProvider(_key));
     ref.watch(trackingMechanicProvider);

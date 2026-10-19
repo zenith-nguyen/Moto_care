@@ -12,6 +12,7 @@ import '../../profile/providers/profile_provider.dart';
 import '../models/place_suggestion.dart';
 import '../providers/incident_location_provider.dart';
 import '../providers/location_search_provider.dart';
+import '../services/location_api_config.dart';
 import '../services/location_validation.dart';
 
 class SelectLocationScreen extends ConsumerStatefulWidget {
@@ -55,6 +56,13 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
 
   Future<void> _useGps() async {
     final place = await _controller.useGps();
+    if (mounted && place != null) await _openMap(place);
+  }
+
+  Future<void> _useTypedAddress() async {
+    if (!_formKey.currentState!.validate()) return;
+    FocusScope.of(context).unfocus();
+    final place = await _controller.resolveTypedAddress(_address.text);
     if (mounted && place != null) await _openMap(place);
   }
 
@@ -106,6 +114,9 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
   @override
   Widget build(BuildContext context) {
     final draft = ref.watch(locationSearchProvider(_key));
+    final placesConfigured = ref.watch(
+      locationApiConfigProvider.select((config) => config.placesConfigured),
+    );
     final profile = ref.watch(profileProvider).profile;
     final places = ref.watch(recentIncidentPlacesProvider);
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
@@ -208,17 +219,19 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                       ),
                     if (draft.query.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      const Wrap(
+                      Wrap(
                         alignment: WrapAlignment.spaceBetween,
                         spacing: 16,
                         children: [
-                          Text(
+                          const Text(
                             'Kết quả tìm kiếm',
                             style: TextStyle(fontWeight: FontWeight.w700),
                           ),
                           Text(
-                            'Google Maps',
-                            style: TextStyle(
+                            placesConfigured
+                                ? 'Google Maps'
+                                : 'Định vị trên thiết bị',
+                            style: const TextStyle(
                               fontFamily: 'Montserrat',
                               fontSize: 12,
                               color: Color(0xFF1F1F1F),
@@ -258,6 +271,18 @@ class _SelectLocationScreenState extends ConsumerState<SelectLocationScreen> {
                           );
                         },
                       ),
+                      if (!placesConfigured &&
+                          !draft.searching &&
+                          !draft.resolving)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: FilledButton.icon(
+                            key: const ValueKey('use-typed-address'),
+                            onPressed: _useTypedAddress,
+                            icon: const Icon(Icons.location_searching_rounded),
+                            label: const Text('DÙNG ĐỊA CHỈ NÀY TRÊN BẢN ĐỒ'),
+                          ),
+                        ),
                       if (!draft.searching &&
                           !draft.resolving &&
                           draft.suggestions.isEmpty &&
