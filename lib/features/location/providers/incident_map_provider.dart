@@ -76,9 +76,7 @@ class IncidentMapController extends Notifier<IncidentMapState> {
       await recenter();
       if (_location.hasCoordinates) return;
     }
-    if (!_location.hasCoordinates &&
-        _location.address.isNotEmpty &&
-        ref.read(locationApiConfigProvider).geocodingConfigured) {
+    if (!_location.hasCoordinates && _location.address.isNotEmpty) {
       await resolveInitial();
     }
   }
@@ -88,16 +86,23 @@ class IncidentMapController extends Notifier<IncidentMapState> {
     final cancel = _geocodeCancel = CancelToken();
     _publish(() => _resolvingAddress = true);
     try {
-      final location = await ref
-          .read(placesServiceProvider)
-          .geocode(_location.address, cancelToken: cancel);
+      final config = ref.read(locationApiConfigProvider);
+      final location = config.geocodingConfigured
+          ? await ref
+                .read(placesServiceProvider)
+                .geocode(_location.address, cancelToken: cancel)
+          : await ref
+                .read(deviceAddressGeocoderProvider)(_location.address)
+                .timeout(const Duration(seconds: 14));
       if (_current(revision)) _applyLocation(location);
     } on Exception catch (error) {
       if (_current(revision)) {
         _publish(
-          () => _error = error is PlacesException
-              ? error.message
-              : 'Chưa tìm được tọa độ. Hãy tìm địa điểm hoặc dùng GPS.',
+          () => _error = switch (error) {
+            PlacesException() => error.message,
+            LocationLookupException() => error.message,
+            _ => 'Chưa tìm được tọa độ. Hãy tìm địa điểm hoặc dùng GPS.',
+          },
         );
       }
     } finally {
@@ -216,9 +221,17 @@ class IncidentMapController extends Notifier<IncidentMapState> {
       _error = null;
     });
     try {
-      final resolved = await ref
-          .read(placesServiceProvider)
-          .reverseGeocode(point, cancelToken: cancel);
+      final config = ref.read(locationApiConfigProvider);
+      final resolved = config.geocodingConfigured
+          ? await ref
+                .read(placesServiceProvider)
+                .reverseGeocode(point, cancelToken: cancel)
+          : await ref
+                .read(deviceReverseGeocoderProvider)(
+                  point.latitude,
+                  point.longitude,
+                )
+                .timeout(const Duration(seconds: 12));
       if (_current(revision)) {
         _publish(
           () => _location = RescueLocation(

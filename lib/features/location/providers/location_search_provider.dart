@@ -81,10 +81,38 @@ class LocationSearchController extends Notifier<LocationSearchState> {
       _sessionToken = newPlacesSessionToken();
       return;
     }
+    if (!ref.read(locationApiConfigProvider).placesConfigured) return;
     _debounce = Timer(
       const Duration(milliseconds: 300),
       () => unawaited(_search(_query, revision)),
     );
+  }
+
+  Future<RescueLocation?> resolveTypedAddress(String address) async {
+    if (_resolving || _openingMap) return null;
+    _debounce?.cancel();
+    _searchCancel?.cancel();
+    final revision = ++_revision;
+    _publish(() {
+      _resolving = true;
+      _searching = false;
+      _error = null;
+    });
+    try {
+      final location = await ref
+          .read(deviceAddressGeocoderProvider)(address)
+          .timeout(const Duration(seconds: 14));
+      if (_current(revision)) return location;
+    } on Exception catch (error) {
+      if (_current(revision)) {
+        _publish(
+          () => _error = error is LocationLookupException ? error.message : 'Chưa tìm được tọa độ địa chỉ. Hãy thử lại hoặc chọn trên bản đồ.',
+        );
+      }
+    } finally {
+      if (_current(revision)) _publish(() => _resolving = false);
+    }
+    return null;
   }
 
   Future<void> _search(String query, int revision) async {
@@ -202,19 +230,28 @@ class LocationSearchController extends Notifier<LocationSearchState> {
         ? _addressSource
         : RescueLocation(address: address.trim());
     try {
-      if (!pickOnMap &&
-          !resolved.hasCoordinates &&
-          ref.read(locationApiConfigProvider).geocodingConfigured) {
-        final cancel = _detailCancel = CancelToken();
-        resolved = await ref
-            .read(placesServiceProvider)
-            .geocode(address.trim(), cancelToken: cancel);
+      if (!pickOnMap && !resolved.hasCoordinates) {
+        final config = ref.read(locationApiConfigProvider);
+        if (config.geocodingConfigured) {
+          final cancel = _detailCancel = CancelToken();
+          resolved = await ref
+              .read(placesServiceProvider)
+              .geocode(address.trim(), cancelToken: cancel);
+        } else {
+          resolved = await ref
+              .read(deviceAddressGeocoderProvider)(address.trim())
+              .timeout(const Duration(seconds: 14));
+        }
       }
     } on Exception catch (error) {
       if (_current(revision)) {
         _publish(() {
           _openingMap = false;
-          _error = error is PlacesException ? error.message : 'Chưa tìm được tọa độ địa chỉ này. Hãy chọn một kết quả tìm kiếm.';
+          _error = switch (error) {
+            PlacesException() => error.message,
+            LocationLookupException() => error.message,
+            _ => 'Chưa tìm được tọa độ địa chỉ này. Hãy chọn trực tiếp trên bản đồ.',
+          };
         });
       }
       return null;

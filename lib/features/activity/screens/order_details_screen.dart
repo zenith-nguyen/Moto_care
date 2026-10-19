@@ -89,16 +89,25 @@ class OrderDetailsScreen extends ConsumerWidget {
                               key: const ValueKey('order-details-tracking'),
                               onPressed: order.status.isActive
                                   ? () => context.push(
-                                      '/order-tracking?id=${Uri.encodeQueryComponent(order.id)}',
+                                      order.awaitingPrepayment
+                                          ? '/bank-transfer?id=${Uri.encodeQueryComponent(order.id)}'
+                                          : '/order-tracking?id=${Uri.encodeQueryComponent(order.id)}',
                                     )
                                   : null,
-                              child: const Row(
+                              child: Row(
                                 children: [
-                                  Icon(Icons.map_outlined, size: 21),
-                                  SizedBox(width: 10),
+                                  Icon(
+                                    order.awaitingPrepayment
+                                        ? Icons.qr_code_rounded
+                                        : Icons.map_outlined,
+                                    size: 21,
+                                  ),
+                                  const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Xem vị trí thợ trên bản đồ',
+                                      order.awaitingPrepayment
+                                          ? 'Tiếp tục thanh toán chuyển khoản'
+                                          : 'Xem vị trí thợ trên bản đồ',
                                       textAlign: TextAlign.center,
                                     ),
                                   ),

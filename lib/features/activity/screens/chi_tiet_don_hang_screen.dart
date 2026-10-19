@@ -44,7 +44,9 @@ class ChiTietDonHangScreen extends ConsumerWidget {
               IconButton(
                 tooltip: 'Theo dõi lộ trình thợ',
                 onPressed: () => context.push(
-                  '/order-tracking?id=${Uri.encodeComponent(order!.id)}',
+                  order!.awaitingPrepayment
+                      ? '/bank-transfer?id=${Uri.encodeComponent(order.id)}'
+                      : '/order-tracking?id=${Uri.encodeComponent(order.id)}',
                 ),
                 icon: const Icon(Icons.route_rounded, color: ActivityTheme.red),
               ),

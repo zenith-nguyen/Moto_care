@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../../core/widgets/photo_attachment_field.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
@@ -57,7 +58,10 @@ class _EmergencyBookingBottomSheetState
     final location = ref.watch(rescueLocationProvider);
     final vehicle = ref.watch(defaultVehicleProvider);
     final vehicles = ref.watch(vehicleProvider);
-    final hasActiveOrder = ref.watch(activityProvider).activeOrders.isNotEmpty;
+    final activeOrders = ref.watch(activityProvider).activeOrders;
+    final activeOrder = activeOrders.isEmpty ? null : activeOrders.first;
+    final hasActiveOrder = activeOrder != null;
+    final runtimeIntegration = ref.watch(runtimeApiIntegrationProvider);
     final draft = ref.watch(
       rescueRequestProvider((_draftKey, widget.serviceType)),
     );
@@ -288,9 +292,11 @@ class _EmergencyBookingBottomSheetState
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Yêu cầu thử nghiệm, chỉ lưu trong phiên. Chưa điều phối thợ hoặc thu phí.',
-              style: TextStyle(
+            Text(
+              runtimeIntegration
+                  ? 'Bạn sẽ thanh toán bằng QR chuyển khoản trước khi hệ thống bắt đầu ghép thợ.'
+                  : 'Yêu cầu thử nghiệm, chỉ lưu trong phiên. Chưa điều phối thợ hoặc thu phí.',
+              style: const TextStyle(
                 color: HomeColors.secondary,
                 fontSize: 12,
                 height: 1.5,
@@ -307,15 +313,23 @@ class _EmergencyBookingBottomSheetState
             const SizedBox(height: 24),
             FilledButton.icon(
               key: const ValueKey('incident-request-submit'),
-              onPressed: canSubmit ? _submit : null,
+              onPressed: activeOrder != null
+                  ? () => Navigator.pop(context, activeOrder)
+                  : canSubmit
+                  ? _submit
+                  : null,
               style: FilledButton.styleFrom(
                 backgroundColor: HomeColors.red,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: HomeColors.redSelected,
               ),
               icon: const Icon(Icons.sos_rounded),
-              label: const Text(
-                'TÌM THỢ CỨU HỘ NGAY',
+              label: Text(
+                activeOrder?.awaitingPrepayment == true
+                    ? 'TIẾP TỤC THANH TOÁN'
+                    : activeOrder != null
+                    ? 'XEM ĐƠN ĐANG CÓ'
+                    : 'TÌM THỢ CỨU HỘ NGAY',
                 textAlign: TextAlign.center,
               ),
             ),

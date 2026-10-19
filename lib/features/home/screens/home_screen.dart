@@ -151,9 +151,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       );
       if (!mounted || order == null) return;
-      await this.context.push(
-        '/order-tracking?id=${Uri.encodeQueryComponent(order.id)}',
-      );
+      final route = order.awaitingPrepayment
+          ? '/bank-transfer?id=${Uri.encodeQueryComponent(order.id)}'
+          : '/order-tracking?id=${Uri.encodeQueryComponent(order.id)}';
+      await this.context.push(route);
     } finally {
       _bookingOpen = false;
     }
