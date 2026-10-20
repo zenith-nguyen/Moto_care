@@ -2,14 +2,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/service_scaffold.dart';
+import '../../auth/application/session_controller.dart';
+import '../../auth/application/session_state.dart';
 import '../../home/models/home_destination.dart';
 import '../models/vehicle.dart';
 import '../providers/vehicle_provider.dart';
 import '../widgets/them_sua_xe_bottom_sheet.dart';
 import '../widgets/vehicle_card.dart';
 
-class XeCuaToiScreen extends ConsumerWidget {
+class XeCuaToiScreen extends ConsumerStatefulWidget {
   const XeCuaToiScreen({super.key});
+
+  @override
+  ConsumerState<XeCuaToiScreen> createState() => _XeCuaToiScreenState();
+}
+
+class _XeCuaToiScreenState extends ConsumerState<XeCuaToiScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final session = ref.read(sessionControllerProvider);
+      if (session is! SessionSignedIn) return;
+      try {
+        await ref
+            .read(vehicleProvider.notifier)
+            .refreshFromApi(session.session.user.id.toString());
+      } on Exception {
+        if (mounted) {
+          showServiceMessage(context, 'Chưa tải được danh sách xe từ máy chủ.');
+        }
+      }
+    });
+  }
 
   Future<void> _edit(BuildContext context, {Vehicle? vehicle}) async {
     final saved = await showThemSuaXeBottomSheet(context, vehicle: vehicle);
@@ -29,7 +55,21 @@ class XeCuaToiScreen extends ConsumerWidget {
   ) async {
     switch (action) {
       case VehicleAction.setDefault:
-        final saved = ref.read(vehicleProvider.notifier).setDefault(vehicle.id);
+        bool saved;
+        try {
+          saved = await ref
+              .read(vehicleProvider.notifier)
+              .setDefaultPersisted(vehicle.id);
+        } on Exception {
+          if (context.mounted) {
+            showServiceMessage(
+              context,
+              'Chưa đổi được xe mặc định trên máy chủ.',
+            );
+          }
+          return;
+        }
+        if (!context.mounted) return;
         showServiceMessage(
           context,
           saved
@@ -59,7 +99,18 @@ class XeCuaToiScreen extends ConsumerWidget {
           ),
         );
         if (!context.mounted || confirmed != true) return;
-        final deleted = ref.read(vehicleProvider.notifier).delete(vehicle.id);
+        bool deleted;
+        try {
+          deleted = await ref
+              .read(vehicleProvider.notifier)
+              .deletePersisted(vehicle.id);
+        } on Exception {
+          if (context.mounted) {
+            showServiceMessage(context, 'Chưa xóa được xe trên máy chủ.');
+          }
+          return;
+        }
+        if (!context.mounted) return;
         showServiceMessage(
           context,
           deleted
@@ -70,7 +121,7 @@ class XeCuaToiScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final vehicles = ref.watch(vehicleProvider);
     return ServiceScaffold(
       title: 'Danh sách xe cứu hộ',

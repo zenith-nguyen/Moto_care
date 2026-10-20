@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_dependencies.dart';
 import '../../../core/router/main_navigation.dart';
 import '../../activity/models/rescue_order.dart';
+import '../../auth/application/session_controller.dart';
+import '../../auth/application/session_state.dart';
 import '../../chat/providers/chat_directory_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../location/services/device_location_service.dart';
@@ -54,8 +56,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             .read(profileProvider.notifier)
             .initializeFromHome(widget.user, onlyIfUninitialized: true);
       }
+      final session = ref.read(sessionControllerProvider);
+      if (session is SessionSignedIn) {
+        unawaited(_refreshVehicles(session.session.user.id.toString()));
+      }
       unawaited(_detectCurrentLocation());
     });
+  }
+
+  Future<void> _refreshVehicles(String userId) async {
+    try {
+      await ref.read(vehicleProvider.notifier).refreshFromApi(userId);
+    } on Exception {
+      // Vehicle management exposes the load error and a retry path.
+    }
   }
 
   Future<void> _detectCurrentLocation() async {
@@ -118,7 +132,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (id == HomeVehicleSheet.manageVehicles) {
       _selectDestination(HomeDestination.myVehicles);
     } else {
-      ref.read(vehicleProvider.notifier).setDefault(id);
+      try {
+        await ref.read(vehicleProvider.notifier).setDefaultPersisted(id);
+      } on Exception {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Chưa lưu được xe mặc định. Hãy thử lại.'),
+            ),
+          );
+        }
+      }
     }
   }
 

@@ -14,7 +14,9 @@ import '../application/provider_location_tracking_controller.dart';
 import '../application/provider_location_tracking_state.dart';
 import '../application/provider_work_controller.dart';
 import '../application/provider_work_state.dart';
+import '../application/professional_profile_provider.dart';
 import '../domain/provider_models.dart';
+import '../domain/professional_profile.dart';
 import 'provider_formatters.dart';
 
 class ProviderShell extends ConsumerStatefulWidget {
@@ -40,12 +42,13 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
       appBar: AppBar(
         title: Text(_titles[_index]),
         actions: [
-          if (_index != 3)
-            IconButton(
-              tooltip: 'Tải lại dữ liệu',
-              onPressed: _refreshCurrent,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
+          IconButton(
+            tooltip: 'Tải lại dữ liệu',
+            onPressed: _index == 3
+                ? () => ref.invalidate(professionalProfileProvider)
+                : _refreshCurrent,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
         ],
       ),
       body: IndexedStack(
@@ -803,10 +806,142 @@ class _WithdrawalTile extends StatelessWidget {
 class _ProviderAccountPage extends ConsumerWidget {
   const _ProviderAccountPage();
 
+  Future<void> _editProfile(
+    BuildContext context,
+    WidgetRef ref,
+    ProfessionalProfile profile,
+  ) async {
+    final bio = TextEditingController(text: profile.bio);
+    final years = TextEditingController(text: '${profile.yearsOfExperience}');
+    final radius = TextEditingController(text: '${profile.serviceRadiusKm}');
+    final form = GlobalKey<FormState>();
+    var saving = false;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                20,
+                20,
+                MediaQuery.viewInsetsOf(sheetContext).bottom + 24,
+              ),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: form,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        'Hồ sơ nghề nghiệp',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: bio,
+                        maxLength: 1000,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Giới thiệu bản thân',
+                        ),
+                      ),
+                      TextFormField(
+                        controller: years,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Số năm kinh nghiệm',
+                        ),
+                        validator: (value) {
+                          final number = int.tryParse(value?.trim() ?? '');
+                          return number == null || number < 0 || number > 70
+                              ? 'Nhập số từ 0 đến 70.'
+                              : null;
+                        },
+                      ),
+                      TextFormField(
+                        controller: radius,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: const InputDecoration(
+                          labelText: 'Bán kính nhận đơn (km)',
+                        ),
+                        validator: (value) {
+                          final number = double.tryParse(value?.trim() ?? '');
+                          return number == null || number < 1 || number > 100
+                              ? 'Nhập số từ 1 đến 100 km.'
+                              : null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        onPressed: saving
+                            ? null
+                            : () async {
+                                if (!form.currentState!.validate()) return;
+                                setSheetState(() => saving = true);
+                                try {
+                                  await updateProfessionalProfile(
+                                    ref,
+                                    bio: bio.text,
+                                    yearsOfExperience: int.parse(
+                                      years.text.trim(),
+                                    ),
+                                    serviceRadiusKm: double.parse(
+                                      radius.text.trim(),
+                                    ),
+                                  );
+                                  if (sheetContext.mounted) {
+                                    ref.invalidate(professionalProfileProvider);
+                                    Navigator.pop(sheetContext);
+                                  }
+                                } on Exception {
+                                  if (sheetContext.mounted) {
+                                    ScaffoldMessenger.of(sheetContext)
+                                        .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Chưa lưu được hồ sơ Thợ. Hãy thử lại.',
+                                            ),
+                                          ),
+                                        );
+                                  }
+                                } finally {
+                                  if (sheetContext.mounted) {
+                                    setSheetState(() => saving = false);
+                                  }
+                                }
+                              },
+                        child: Text(saving ? 'Đang lưu...' : 'Lưu hồ sơ'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    } finally {
+      bio.dispose();
+      years.dispose();
+      radius.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(sessionControllerProvider);
     final user = state is SessionSignedIn ? state.session.user : null;
+    final profile = ref.watch(professionalProfileProvider);
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -846,12 +981,51 @@ class _ProviderAccountPage extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const Card(
-          child: ListTile(
-            leading: Icon(Icons.verified_user_outlined),
-            title: Text('Dữ liệu tài khoản'),
-            subtitle: Text(
-              'Vai trò và trạng thái được xác nhận trực tiếp từ máy chủ.',
+        profile.when(
+          loading: () =>
+              const Card(child: ListTile(title: Text('Đang tải hồ sơ Thợ...'))),
+          error: (_, _) => Card(
+            child: ListTile(
+              title: const Text('Chưa tải được hồ sơ Thợ'),
+              subtitle: const Text('Kiểm tra kết nối rồi tải lại.'),
+              trailing: IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () => ref.invalidate(professionalProfileProvider),
+              ),
+            ),
+          ),
+          data: (value) => Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.verified_user_outlined),
+                  title: const Text('Hồ sơ nghề nghiệp'),
+                  subtitle: Text(
+                    value.bio.isEmpty ? 'Chưa có giới thiệu' : value.bio,
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Chỉnh sửa hồ sơ Thợ',
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _editProfile(context, ref, value),
+                  ),
+                ),
+                ListTile(
+                  title: const Text('Kinh nghiệm'),
+                  trailing: Text('${value.yearsOfExperience} năm'),
+                ),
+                ListTile(
+                  title: const Text('Bán kính nhận đơn'),
+                  trailing: Text('${value.serviceRadiusKm} km'),
+                ),
+                ListTile(
+                  title: const Text('Kỹ năng'),
+                  subtitle: Text(
+                    value.skills.isEmpty
+                        ? 'Chưa có kỹ năng được đăng ký'
+                        : value.skills.join(', '),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

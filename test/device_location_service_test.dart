@@ -10,6 +10,7 @@ class _GpsPlatform extends GeolocatorPlatform {
   int requests = 0;
   int positionCalls = 0;
   LocationSettings? settings;
+  DateTime? fixTimestamp;
 
   @override
   Future<bool> isLocationServiceEnabled() async => enabled;
@@ -32,7 +33,7 @@ class _GpsPlatform extends GeolocatorPlatform {
     return Position(
       longitude: -122.083996,
       latitude: 37.427204,
-      timestamp: DateTime(2026, 10, 19),
+      timestamp: fixTimestamp ?? DateTime.now(),
       accuracy: 5,
       altitude: 0,
       altitudeAccuracy: 0,
@@ -94,6 +95,20 @@ void main() {
     expect(gps.positionCalls, 1);
     expect(gps.settings!.accuracy, LocationAccuracy.high);
     expect(gps.settings!.timeLimit, const Duration(seconds: 12));
+  });
+
+  test('old emulator GPS is rejected before reverse geocoding', () async {
+    gps.fixTimestamp = DateTime.now().subtract(const Duration(minutes: 4));
+    await expectLater(
+      locateDevice(),
+      throwsA(
+        isA<LocationLookupException>().having(
+          (error) => error.message,
+          'message',
+          contains('GPS đang trả vị trí cũ'),
+        ),
+      ),
+    );
   });
 
   test('TP.HCM service-area check rejects emulator default in California', () {

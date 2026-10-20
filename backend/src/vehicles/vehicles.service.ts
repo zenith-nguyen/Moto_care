@@ -4,6 +4,7 @@ import { User } from '../users/user.entity';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CreateVehicleDto, UpdateVehicleDto } from './dto/vehicle.dto';
 import { Vehicle } from './vehicle.entity';
+import { VehicleType } from './vehicle-type.enum';
 
 @Injectable()
 export class VehiclesService {
@@ -31,6 +32,8 @@ export class VehiclesService {
           model: dto.model,
           licensePlate: dto.licensePlate,
           color: dto.color ?? null,
+          tireType: dto.tireType ?? 'tubed',
+          engineType: dto.engineType ?? (dto.type === 'ELECTRIC_MOTORBIKE' ? 'electric' : 'gas'),
           isDefault,
         }));
       });
@@ -55,10 +58,16 @@ export class VehiclesService {
         }
         repository.merge(vehicle, {
           ...(dto.type !== undefined && { type: dto.type }),
+          ...(dto.type === undefined && dto.engineType !== undefined &&
+            [VehicleType.MOTORBIKE, VehicleType.ELECTRIC_MOTORBIKE].includes(vehicle.type) && {
+              type: dto.engineType === 'electric' ? VehicleType.ELECTRIC_MOTORBIKE : VehicleType.MOTORBIKE,
+            }),
           ...(dto.brand !== undefined && { brand: dto.brand }),
           ...(dto.model !== undefined && { model: dto.model }),
           ...(dto.licensePlate !== undefined && { licensePlate: dto.licensePlate }),
           ...(dto.color !== undefined && { color: dto.color }),
+          ...(dto.tireType !== undefined && { tireType: dto.tireType }),
+          ...(dto.engineType !== undefined && { engineType: dto.engineType }),
           ...(dto.isDefault === true && { isDefault: true }),
         });
         return repository.save(vehicle);

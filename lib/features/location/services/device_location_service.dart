@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../core/device/location_fix_validation.dart';
 import '../../home/models/rescue_location.dart';
 
 final deviceLocationProvider = Provider<Future<RescueLocation> Function()>(
@@ -125,6 +126,11 @@ Future<RescueLocation> locateDevice() async {
       timeLimit: Duration(seconds: 12),
     ),
   );
+  if (!isRecentLocationFix(position.timestamp, DateTime.now())) {
+    throw const LocationLookupException(
+      'GPS đang trả vị trí cũ. Nếu dùng máy ảo, hãy mở Location → Set location rồi thử lại.',
+    );
+  }
   if (!isHoChiMinhCityServiceArea(position.latitude, position.longitude)) {
     throw const LocationLookupException(
       'GPS hiện nằm ngoài vùng phục vụ TP.HCM. Nếu đang dùng máy ảo, hãy đặt Location về TP.HCM hoặc nhập địa chỉ Nhà/Cơ quan.',
@@ -184,10 +190,7 @@ String _placemarkAddress(Placemark place) =>
         .join(', ');
 
 bool isHoChiMinhCityServiceArea(double latitude, double longitude) =>
-    latitude >= 10.30 &&
-    latitude <= 11.25 &&
-    longitude >= 106.30 &&
-    longitude <= 107.15;
+    isInHoChiMinhCity(latitude, longitude);
 
 bool isVietnamPlacemark(Placemark place) {
   final code = place.isoCountryCode?.trim().toUpperCase();
