@@ -32,15 +32,25 @@ Both role entrypoints must use the existing `ProviderScope`, authenticated
 session, repositories and router foundation. Server-confirmed role checks stay
 authoritative.
 
-Development commands after the Provider entrypoint lands:
+Development commands for the two installable Android flavors:
 
 ```powershell
-flutter run -t lib/main.dart `
+flutter run --flavor customer -t lib/main.dart `
+  -d emulator-5554 `
   --dart-define=API_BASE_URL=https://your-origin.example
 
-flutter run -t lib/main_provider.dart `
+flutter run --flavor provider -t lib/main_provider.dart `
+  -d emulator-5556 `
   --dart-define=API_BASE_URL=https://your-origin.example
 ```
+
+The Customer flavor keeps the permanent `com.motocare.app` application ID.
+The Provider flavor uses `com.motocare.app.provider`, so both APKs can be
+installed at the same time. Run them on two emulators, or on one emulator and
+one Android phone, to verify realtime Customer/Provider handoff side by side.
+The pubspec keeps `customer` as the default flavor, so existing plain
+`flutter run` and `flutter build apk` commands continue to launch/build the
+Customer application.
 
 ## Shared visual language
 

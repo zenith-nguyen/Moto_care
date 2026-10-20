@@ -1,6 +1,6 @@
 # MotoCare Backend — Trạng thái hiện tại
 
-Cập nhật lần cuối: 2026-10-17
+Cập nhật lần cuối: 2026-10-20
 
 ## Đã xong
 
@@ -34,6 +34,7 @@ Cập nhật lần cuối: 2026-10-17
 - PR #36 đã merge vào `main`: hồ sơ nghề nghiệp, skill claim/xác minh, tier chỉ Admin sửa, thống kê tuần tính từ dữ liệu nguồn; `service_locations` PostGIS và importer snapshot OSM TP.HCM. Lần chạy local ngày 2026-10-11 import 482 marker có tên (127 repair, 9 charging, 328 fuel, 18 parts); GiST được xác nhận bằng `EXPLAIN`.
 - Nhánh `feat/cam-thu/customer-api-integration`: UI Customer đọc đơn thật, participant contact có điều kiện, chat REST + Socket.IO + ảnh bảo vệ, notification inbox, Open-Meteo hiện tại và `service_locations` PostGIS. Runtime production bật API integration ở entrypoint; mock chỉ còn là fixture cô lập cho widget test. Marker OSM không bịa rating/số ca/giờ mở hoặc khả năng đặt dịch vụ.
 - PR #37 đã merge: Gmail SMTP thật có kiểm tra credential/fail-fast; notification inbox bền vững; Firebase Cloud Messaging qua Admin SDK/ADC; đăng ký, rotation và revoke token theo installation; delivery worker có `SKIP LOCKED`, retry/backoff và vô hiệu token chết; thông báo offer/trạng thái đơn/chat/thợ ở gần; Flutter push foundation và inbox controller. Mốc nhánh đã qua 59 unit tests backend, 44 PostgreSQL/PostGIS/HTTP tests, 78 Flutter tests, lint, strict typecheck, build backend, Flutter analyze, APK debug, secret scan và production audit 0 vulnerability. Migration hiện có 18 bước.
+- Nhánh `feat/cam-thu/provider-app-integration`: UI Provider chạy trên repository/controller thật cho offer, vòng đời đơn, GPS, chat text/ảnh bảo vệ, ví/rút tiền sandbox và liên hệ người tham gia. Customer và Provider có hai Android application ID riêng để cài/chạy song song nhưng dùng chung REST + Socket.IO + PostgreSQL; realtime chỉ báo hiệu và REST resync vẫn là nguồn chuẩn. CI/release build riêng hai APK; 429 Flutter tests, analyze, hai APK debug, 63 backend unit tests, lint và build đều xanh tại mốc nhánh.
 
 ## Đang làm / Tiếp theo
 

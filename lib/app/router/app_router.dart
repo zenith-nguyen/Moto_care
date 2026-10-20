@@ -32,6 +32,9 @@ import '../../features/policy/screens/cam_ket_dich_vu_screen.dart';
 import '../../features/pricing/screens/bang_gia_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/profile/screens/thong_tin_ca_nhan_screen.dart';
+import '../../features/providers/presentation/provider_chat_screen.dart';
+import '../../features/providers/presentation/provider_order_details_screen.dart';
+import '../../features/providers/presentation/provider_shell.dart';
 import '../../features/rescue/models/marketplace_booking.dart';
 import '../../features/rescue/screens/checkout_screen.dart';
 import '../../features/rescue/screens/order_tracking_screen.dart';
@@ -103,8 +106,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/provider',
-        builder: (context, state) =>
-            const RoleIntegrationPage(role: AppRole.provider),
+        pageBuilder: (context, state) =>
+            const NoTransitionPage(child: ProviderShell()),
+      ),
+      GoRoute(
+        path: '/provider/orders/:orderId',
+        builder: (context, state) => ProviderOrderDetailsScreen(
+          orderId: int.parse(state.pathParameters['orderId']!),
+        ),
+      ),
+      GoRoute(
+        path: '/provider/orders/:orderId/chat',
+        builder: (context, state) => ProviderChatScreen(
+          orderId: int.parse(state.pathParameters['orderId']!),
+        ),
       ),
       GoRoute(
         path: '/admin',
@@ -324,7 +339,8 @@ bool _isAllowedForRole(String location, AppRole role) {
           location.startsWith('/stations/') ||
           location == '/partners' ||
           location.startsWith('/partners/'),
-    AppRole.provider => location == '/provider',
+    AppRole.provider =>
+      location == '/provider' || location.startsWith('/provider/'),
     AppRole.admin => location == '/admin',
   };
 }

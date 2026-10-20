@@ -5,10 +5,11 @@ This document defines the approved baseline dependencies for Moto Care. Add a pa
 ## Project identity
 
 - Flutter package name: `moto_care`
-- Android application ID and Apple bundle ID: `com.motocare.app`
+- Customer Android application ID and Apple bundle ID: `com.motocare.app`
+- Provider Android application ID: `com.motocare.app.provider`
 - User-facing application name: `Moto Care`
 
-Treat the application and bundle IDs as permanent after the first store release. Changing them later creates a different application identity for users and stores.
+Treat these application and bundle IDs as permanent after the first store release. Changing them later creates a different application identity for users and stores. The Android `customer` and `provider` product flavors share source code but use separate secure-storage sandboxes, allowing both roles to be installed together.
 
 | Package | Responsibility | Use when |
 | --- | --- | --- |
