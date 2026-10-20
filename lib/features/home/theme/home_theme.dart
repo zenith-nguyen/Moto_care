@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/revo_brand.dart';
+
 abstract final class HomeColors {
   static const background = Color(0xFFF8F9FA);
   static const surface = Colors.white;
-  static const primary = Colors.black;
-  static const text = Color(0xFF111827);
-  static const secondary = Color(0xFF4B5563);
+  static const primary = RevoBrandColors.primary;
+  static const text = RevoBrandColors.ink;
+  static const secondary = RevoBrandColors.textSubtle;
+  static const danger = RevoBrandColors.danger;
+  static const dangerDark = RevoBrandColors.dangerDark;
   static const red = primary;
-  // Keep subtle backgrounds and borders in the same monochrome palette.
-  static const tint = Color(0x0A000000);
-  static const selected = Color(0x14000000);
-  static const tintStrong = Color(0x26000000);
-  static const accentBorder = Color(0x33000000);
+  // Keep the legacy aliases while all role apps migrate to shared tokens.
+  static const tint = RevoBrandColors.surfaceSoft;
+  static const selected = Color(0x24317CBB);
+  static const tintStrong = Color(0x36317CBB);
+  static const accentBorder = Color(0x66317CBB);
   static const redSelected = selected;
-  static const border = Color(0xFFEEEEEE);
+  static const border = RevoBrandColors.border;
 
   static final shadow = BoxShadow(
     color: Colors.black.withValues(alpha: 0.04),
@@ -58,10 +62,10 @@ abstract final class HomeTheme {
       tertiaryFixedDim: HomeColors.tintStrong,
       onTertiaryFixed: accentColor,
       onTertiaryFixedVariant: accentColor,
-      error: accentColor,
+      error: HomeColors.dangerDark,
       onError: Colors.white,
-      errorContainer: HomeColors.selected,
-      onErrorContainer: accentColor,
+      errorContainer: RevoBrandColors.dangerSoft,
+      onErrorContainer: HomeColors.dangerDark,
       surface: HomeColors.surface,
       surfaceDim: HomeColors.background,
       surfaceBright: HomeColors.surface,

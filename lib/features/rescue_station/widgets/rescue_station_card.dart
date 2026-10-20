@@ -158,7 +158,7 @@ class RescueStationCard extends ConsumerWidget {
       final buttons = [
         OutlinedButton.icon(
           style: OutlinedButton.styleFrom(
-            foregroundColor: RevoHomeColors.ink,
+            foregroundColor: RevoHomeColors.primary,
             side: const BorderSide(color: RevoHomeColors.border),
             minimumSize: const Size(48, 48),
             shape: shape,

@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../theme/revo_brand.dart';
+
 class RevoLogo extends StatelessWidget {
-  const RevoLogo({super.key, this.width = 150, this.color = Colors.black});
+  const RevoLogo({
+    super.key,
+    this.width = 150,
+    this.color = RevoBrandColors.primary,
+  });
 
   static const asset = 'assets/images/logo-revo.png';
 

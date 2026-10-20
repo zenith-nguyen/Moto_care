@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/revo_brand.dart';
 import '../../../core/theme/app_theme.dart';
 
 abstract final class AuthColors {
-  static const primary = Colors.black;
-  static const text = Colors.black;
-  static const secondary = Color(0xFF707070);
+  static const primary = RevoBrandColors.primary;
+  static const text = RevoBrandColors.ink;
+  static const secondary = RevoBrandColors.textSubtle;
   static const background = Colors.white;
   static const field = Color(0xFFF5F5F5);
   static const border = Color(0xFFE0E0E0);
@@ -23,7 +24,7 @@ abstract final class AuthTheme {
       onSecondary: Colors.white,
       surface: AuthColors.background,
       onSurface: AuthColors.text,
-      error: AuthColors.text,
+      error: RevoBrandColors.dangerDark,
       onError: Colors.white,
       outline: AuthColors.border,
     ),

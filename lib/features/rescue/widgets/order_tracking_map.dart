@@ -505,7 +505,7 @@ class _OsmTrackingMarker extends StatelessWidget {
           width: sos ? 46 : 44,
           height: sos ? 46 : 44,
           decoration: BoxDecoration(
-            color: sos ? HomeColors.red : Colors.white,
+            color: sos ? HomeColors.danger : Colors.white,
             shape: BoxShape.circle,
             border: Border.all(
               color: sos ? Colors.white : OrderTrackingColors.route,
@@ -532,7 +532,7 @@ class _OsmTrackingMarker extends StatelessWidget {
                   size: 28,
                 ),
         ),
-        if (sos) Container(width: 3, height: 8, color: HomeColors.red),
+        if (sos) Container(width: 3, height: 8, color: HomeColors.danger),
       ],
     ),
   );
@@ -568,7 +568,7 @@ class SimulatedTrackingMap extends StatelessWidget {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: HomeColors.red,
+                        color: HomeColors.danger,
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 3),
                       ),
@@ -583,7 +583,7 @@ class SimulatedTrackingMap extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Container(width: 3, height: 8, color: HomeColors.red),
+                    Container(width: 3, height: 8, color: HomeColors.danger),
                   ],
                 ),
               ),
@@ -712,14 +712,14 @@ Future<BitmapDescriptor> createTrackingMarkerIcon({required bool sos}) async {
   canvas.drawCircle(
     const Offset(24, 24),
     19,
-    Paint()..color = sos ? HomeColors.red : Colors.white,
+    Paint()..color = sos ? HomeColors.danger : Colors.white,
   );
   if (sos) {
     canvas.drawLine(
       const Offset(24, 44),
       const Offset(24, 58),
       Paint()
-        ..color = HomeColors.red
+        ..color = HomeColors.danger
         ..strokeWidth = 3,
     );
     final label = TextPainter(

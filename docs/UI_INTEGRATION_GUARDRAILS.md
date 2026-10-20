@@ -31,6 +31,11 @@ Never replace the complete `pubspec.yaml`, router, or application state with an
 older standalone prototype. Adapt screens into the shared structure in small
 commits.
 
+Provider PR #51 has a dedicated audit and migration map in
+[`PR51_PROVIDER_UI_INTEGRATION.md`](PR51_PROVIDER_UI_INTEGRATION.md). Its UI may
+be adapted, but its standalone `main.dart`, demo state and reduced pubspec are
+not shared-runtime replacements.
+
 ## Files that must stay local
 
 Do not commit editor state, Flutter package metadata, build output, Kotlin

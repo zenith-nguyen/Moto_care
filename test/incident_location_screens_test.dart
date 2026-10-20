@@ -197,7 +197,7 @@ void main() {
       );
       expect(
         tester.widget<Icon>(find.byIcon(Icons.location_on_rounded).first).color,
-        Colors.black,
+        HomeColors.red,
       );
       expect(
         Theme.of(tester.element(find.text('Chọn trên bản đồ')))
@@ -205,7 +205,7 @@ void main() {
             .style!
             .foregroundColor!
             .resolve({}),
-        Colors.black,
+        HomeColors.red,
       );
       expect(_state(tester).read(rescueLocationProvider), isNull);
       expect(tester.takeException(), isNull);

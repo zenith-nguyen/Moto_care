@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
+import 'package:moto_care/core/theme/revo_brand.dart';
 import 'package:moto_care/features/activity/models/rescue_order.dart';
 import 'package:moto_care/features/activity/data/mock_rescue_orders.dart';
 import 'package:moto_care/features/activity/screens/order_details_screen.dart';
@@ -445,23 +446,17 @@ void main() {
     );
   });
 
-  test('Global palette and primary actions use the requested exact colors', () {
-    expect(HomeColors.primary, Colors.black);
-    expect(HomeColors.text, const Color(0xFF111827));
-    expect(HomeColors.secondary, const Color(0xFF4B5563));
+  test('Customer and Provider surfaces share the REVO brand palette', () {
+    expect(HomeColors.primary, RevoBrandColors.primary);
+    expect(HomeColors.text, RevoBrandColors.ink);
+    expect(HomeColors.secondary, RevoBrandColors.textSubtle);
+    expect(HomeColors.danger, RevoBrandColors.danger);
     final scheme = AppTheme.light.colorScheme;
-    for (final accent in [
-      scheme.primary,
-      scheme.secondary,
-      scheme.tertiary,
-      scheme.error,
-      scheme.inversePrimary,
-    ]) {
-      expect(accent, Colors.black);
-    }
+    expect(scheme.primary, RevoBrandColors.primary);
+    expect(scheme.error, RevoBrandColors.dangerDark);
     expect(
       AppTheme.light.filledButtonTheme.style!.backgroundColor!.resolve({}),
-      Colors.black,
+      RevoBrandColors.primary,
     );
     for (final theme in [
       AppTheme.light,
@@ -473,21 +468,8 @@ void main() {
       AuthTheme.light,
       RevoHomeTheme.light,
     ]) {
-      final colors = theme.colorScheme;
-      for (final accent in [
-        colors.primary,
-        colors.primaryContainer,
-        colors.secondary,
-        colors.secondaryContainer,
-        colors.tertiary,
-        colors.tertiaryContainer,
-        colors.error,
-        colors.errorContainer,
-        colors.onErrorContainer,
-      ]) {
-        expect(accent.r, accent.g);
-        expect(accent.g, accent.b);
-      }
+      expect(theme.colorScheme.primary, RevoBrandColors.primary);
+      expect(theme.colorScheme.error, RevoBrandColors.dangerDark);
     }
   });
 }
