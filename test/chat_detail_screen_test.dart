@@ -85,7 +85,10 @@ void main() {
       expect(tester.widget<IconButton>(_key('chat-send')).onPressed, isNotNull);
       final sendButton = tester.widget<IconButton>(_key('chat-send'));
       expect(sendButton.color, Colors.white);
-      expect(sendButton.style!.backgroundColor!.resolve({}), Colors.black);
+      expect(
+        sendButton.style!.backgroundColor!.resolve({}),
+        ChatTheme.messageRed,
+      );
       await tester.tap(_key('chat-send'));
       await tester.pump();
       expect(_messages(container), hasLength(2));
@@ -106,7 +109,7 @@ void main() {
       );
       expect(
         (customerContainer.decoration! as BoxDecoration).color,
-        Colors.black,
+        ChatTheme.messageRed,
       );
 
       await tester.pump(const Duration(milliseconds: 1999));

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
+import 'package:moto_care/core/theme/revo_brand.dart';
 import 'package:moto_care/features/activity/models/rescue_order.dart';
 import 'package:moto_care/features/activity/providers/activity_provider.dart';
 import 'package:moto_care/features/home/models/home_destination.dart';
@@ -57,7 +58,7 @@ const _location = RescueLocation(
 void _expectSelectedNavigation(
   WidgetTester tester,
   HomeDestination selectedDestination, {
-  Color activeColor = const Color(0xFF3478D4),
+  Color activeColor = RevoBrandColors.primary,
 }) {
   final nav = find.byType(HomeBottomNavigation);
   expect(
@@ -72,7 +73,7 @@ void _expectSelectedNavigation(
   );
   for (final destination in HomeDestination.homeNavigationItems) {
     final selected = destination == selectedDestination;
-    final color = selected ? activeColor : const Color(0xFF77777C);
+    final color = selected ? activeColor : RevoBrandColors.textSubtle;
     final icon = find.descendant(
       of: nav,
       matching: find.byIcon(destination.navigationIcon),

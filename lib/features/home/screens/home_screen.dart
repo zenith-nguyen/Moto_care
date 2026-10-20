@@ -381,7 +381,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     label: Text(category.label),
                                     selected: discovery.category == category,
                                     showCheckmark: false,
-                                    selectedColor: RevoHomeColors.ink,
+                                    selectedColor: RevoHomeColors.primary,
                                     backgroundColor: RevoHomeColors.surface,
                                     side: BorderSide.none,
                                     shape: const StadiumBorder(),

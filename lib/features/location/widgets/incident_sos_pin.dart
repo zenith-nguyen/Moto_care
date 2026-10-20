@@ -20,7 +20,7 @@ class IncidentSosPin extends StatelessWidget {
             height: 68,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: HomeColors.primary,
+              color: HomeColors.danger,
               border: Border.all(color: HomeColors.surface, width: 4),
               boxShadow: const [
                 BoxShadow(
@@ -46,13 +46,13 @@ class IncidentSosPin extends StatelessWidget {
               ],
             ),
           ),
-          Container(width: 3, height: 18, color: HomeColors.primary),
+          Container(width: 3, height: 18, color: HomeColors.danger),
           Container(
             width: 12,
             height: 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: HomeColors.primary,
+              color: HomeColors.danger,
               border: Border.all(color: Colors.white, width: 2),
             ),
           ),

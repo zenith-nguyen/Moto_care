@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
+import 'package:moto_care/core/theme/revo_brand.dart';
 import 'package:moto_care/features/auth/screens/login_screen.dart';
 import 'package:moto_care/features/auth/screens/register_screen.dart';
 import 'package:moto_care/features/auth/screens/welcome_screen.dart';
@@ -30,16 +31,16 @@ Future<GoRouter> _openWelcome(WidgetTester tester) async {
 void _expectAuthPalette(WidgetTester tester, Finder content) {
   final theme = Theme.of(tester.element(content));
   expect(theme.scaffoldBackgroundColor, Colors.white);
-  expect(theme.colorScheme.primary, Colors.black);
-  expect(theme.colorScheme.error, Colors.black);
+  expect(theme.colorScheme.primary, RevoBrandColors.primary);
+  expect(theme.colorScheme.error, RevoBrandColors.dangerDark);
   expect(theme.textTheme.bodyMedium?.fontFamily, 'Montserrat');
   expect(
     theme.filledButtonTheme.style?.backgroundColor?.resolve({}),
-    Colors.black,
+    RevoBrandColors.primary,
   );
   expect(
     theme.textButtonTheme.style?.foregroundColor?.resolve({}),
-    Colors.black,
+    RevoBrandColors.primary,
   );
 }
 
@@ -119,7 +120,7 @@ void main() {
     await tester.pump();
     final button = tester.widget<FilledButton>(find.byType(FilledButton));
     expect(button.onPressed, isNotNull);
-    expect(button.style?.backgroundColor?.resolve({}), Colors.black);
+    expect(button.style?.backgroundColor?.resolve({}), RevoBrandColors.primary);
     expect(tester.takeException(), isNull);
   });
 

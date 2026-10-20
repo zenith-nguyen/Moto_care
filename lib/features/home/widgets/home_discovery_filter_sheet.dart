@@ -36,7 +36,7 @@ class _HomeDiscoveryFilterSheetState extends State<HomeDiscoveryFilterSheet> {
               label: Text(distance == null ? 'Tất cả' : 'Dưới $distance km'),
               selected: _distance == distance,
               showCheckmark: false,
-              selectedColor: RevoHomeColors.ink,
+              selectedColor: RevoHomeColors.primary,
               backgroundColor: RevoHomeColors.surface,
               side: BorderSide.none,
               labelStyle: TextStyle(
@@ -54,7 +54,7 @@ class _HomeDiscoveryFilterSheetState extends State<HomeDiscoveryFilterSheet> {
         contentPadding: EdgeInsets.zero,
         title: const Text('Phục vụ 24/7'),
         value: _open24h,
-        activeTrackColor: RevoHomeColors.ink,
+        activeTrackColor: RevoHomeColors.primary,
         onChanged: (value) => setState(() => _open24h = value),
       ),
       SwitchListTile.adaptive(
@@ -62,7 +62,7 @@ class _HomeDiscoveryFilterSheetState extends State<HomeDiscoveryFilterSheet> {
         contentPadding: EdgeInsets.zero,
         title: const Text('Trạm đã xác minh'),
         value: _verified,
-        activeTrackColor: RevoHomeColors.ink,
+        activeTrackColor: RevoHomeColors.primary,
         onChanged: (value) => setState(() => _verified = value),
       ),
       const SizedBox(height: 20),

@@ -49,7 +49,7 @@ class IncidentSosPin extends StatelessWidget {
             height: 68,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: HomeColors.primary,
+              color: HomeColors.danger,
               border: Border.all(color: HomeColors.surface, width: 4),
               boxShadow: const [
                 BoxShadow(
@@ -75,13 +75,13 @@ class IncidentSosPin extends StatelessWidget {
               ],
             ),
           ),
-          Container(width: 3, height: 18, color: HomeColors.primary),
+          Container(width: 3, height: 18, color: HomeColors.danger),
           Container(
             width: 12,
             height: 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: HomeColors.primary,
+              color: HomeColors.danger,
               border: Border.all(color: Colors.white, width: 2),
             ),
           ),
@@ -171,13 +171,13 @@ class _IncidentMapPainter extends CustomPainter {
     canvas.drawCircle(
       const Offset(0, 0),
       22,
-      Paint()..color = HomeColors.primary.withValues(alpha: .12),
+      Paint()..color = HomeColors.danger.withValues(alpha: .12),
     );
     canvas.drawCircle(const Offset(0, 0), 8, Paint()..color = Colors.white);
     canvas.drawCircle(
       const Offset(0, 0),
       5,
-      Paint()..color = HomeColors.primary,
+      Paint()..color = HomeColors.danger,
     );
     canvas.restore();
   }
