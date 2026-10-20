@@ -48,6 +48,9 @@ dev_dependencies:
   image: ^4.10.1
 
 flutter:
+  # Preserve existing `flutter run` / `flutter build apk` commands for the
+  # Customer app when no explicit Android flavor is supplied.
+  default-flavor: customer
   uses-material-design: true
 
   assets:

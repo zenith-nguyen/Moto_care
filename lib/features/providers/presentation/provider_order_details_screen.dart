@@ -1,0 +1,559 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../../app/app_dependencies.dart';
+import '../../../core/theme/revo_brand.dart';
+import '../../orders/domain/order_models.dart';
+import '../../orders/domain/order_status.dart';
+import '../../wallet/application/provider_wallet_controller.dart';
+import '../application/provider_location_tracking_controller.dart';
+import '../application/provider_work_controller.dart';
+import '../application/provider_work_state.dart';
+import 'provider_formatters.dart';
+
+class ProviderOrderDetailsScreen extends ConsumerStatefulWidget {
+  const ProviderOrderDetailsScreen({super.key, required this.orderId});
+
+  final int orderId;
+
+  @override
+  ConsumerState<ProviderOrderDetailsScreen> createState() =>
+      _ProviderOrderDetailsScreenState();
+}
+
+class _ProviderOrderDetailsScreenState
+    extends ConsumerState<ProviderOrderDetailsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_loadOrder);
+  }
+
+  Future<void> _loadOrder() async {
+    await ref
+        .read(providerWorkControllerProvider.notifier)
+        .selectOrder(widget.orderId);
+    final order = ref.read(providerWorkControllerProvider).value?.selectedOrder;
+    if (order != null && providerOrderIsActive(order.status)) {
+      await ref
+          .read(providerLocationTrackingControllerProvider.notifier)
+          .trackOrder(order.id);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final work = ref.watch(providerWorkControllerProvider);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Chi tiết đơn cứu hộ'),
+        actions: [
+          IconButton(
+            tooltip: 'Tải lại',
+            onPressed: _loadOrder,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
+      body: work.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => _DetailsFailure(
+          message: 'Không tải được đơn: $error',
+          onRetry: _loadOrder,
+        ),
+        data: (state) {
+          final order = state.selectedOrder;
+          if (order == null || order.id != widget.orderId) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return _OrderDetailsBody(order: order, state: state);
+        },
+      ),
+    );
+  }
+}
+
+class _OrderDetailsBody extends ConsumerWidget {
+  const _OrderDetailsBody({required this.order, required this.state});
+
+  final OrderDetails order;
+  final ProviderWorkState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: RevoBrandColors.surfaceSoft,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                order.incidentType.name,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: RevoBrandColors.ink,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('Mã đơn: ${order.code}'),
+              const SizedBox(height: 10),
+              _StatusLabel(status: order.status),
+            ],
+          ),
+        ),
+        if (state.lastFailure != null) ...[
+          const SizedBox(height: 14),
+          _DetailsFailure(message: 'Thao tác thất bại: ${state.lastFailure}'),
+        ],
+        const SizedBox(height: 18),
+        _DetailsCard(
+          title: 'Vị trí khách hàng',
+          icon: Icons.location_on_outlined,
+          children: [
+            Text(
+              '${order.customerLocation.latitude.toStringAsFixed(6)}, '
+              '${order.customerLocation.longitude.toStringAsFixed(6)}',
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _openNavigation(order),
+              icon: const Icon(Icons.navigation_outlined),
+              label: const Text('Mở chỉ đường'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        _DetailsCard(
+          title: 'Thông tin dịch vụ',
+          icon: Icons.handyman_outlined,
+          children: [
+            _DetailsRow(
+              label: 'Giá tạm tính',
+              value: formatProviderMoney(order.estimatedPrice),
+            ),
+            if (order.finalPrice != null)
+              _DetailsRow(
+                label: 'Giá cuối',
+                value: formatProviderMoney(order.finalPrice!),
+              ),
+            if (order.vehicle != null) ...[
+              const Divider(height: 28),
+              _DetailsRow(
+                label: 'Phương tiện',
+                value: order.vehicle!.displayName,
+              ),
+              if (order.vehicle!.color != null)
+                _DetailsRow(label: 'Màu xe', value: order.vehicle!.color!),
+            ],
+            if (order.message?.isNotEmpty == true) ...[
+              const Divider(height: 28),
+              Text(order.message!),
+            ],
+          ],
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () =>
+                    context.push('/provider/orders/${order.id}/chat'),
+                icon: const Icon(Icons.chat_bubble_outline_rounded),
+                label: const Text('Nhắn khách'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _callCustomer(context, ref, order.id),
+                icon: const Icon(Icons.call_outlined),
+                label: const Text('Gọi khách'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        _OrderAction(order: order, busy: state.isBusy),
+      ],
+    );
+  }
+
+  Future<void> _openNavigation(OrderDetails order) async {
+    final point = order.customerLocation;
+    final uri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination='
+      '${point.latitude},${point.longitude}',
+    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _callCustomer(
+    BuildContext context,
+    WidgetRef ref,
+    int orderId,
+  ) async {
+    try {
+      final contact = await ref
+          .read(ordersRepositoryProvider)
+          .participantContact(orderId);
+      final phone = contact.phone;
+      if (phone == null || phone.isEmpty) {
+        throw StateError('Khách hàng chưa cung cấp số điện thoại.');
+      }
+      await launchUrl(Uri(scheme: 'tel', path: phone));
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Không thể gọi khách: $error')));
+    }
+  }
+}
+
+class _OrderAction extends ConsumerWidget {
+  const _OrderAction({required this.order, required this.busy});
+
+  final OrderDetails order;
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final controller = ref.read(providerWorkControllerProvider.notifier);
+    return switch (order.status) {
+      OrderStatus.accepted => FilledButton.icon(
+        onPressed: busy ? null : controller.markArrived,
+        icon: const Icon(Icons.location_on_rounded),
+        label: const Text('Tôi đã đến nơi'),
+      ),
+      OrderStatus.arrived => FilledButton.icon(
+        onPressed: busy ? null : () => _startService(context, controller),
+        icon: const Icon(Icons.play_arrow_rounded),
+        label: const Text('Nhập mã và bắt đầu sửa'),
+      ),
+      OrderStatus.inProgress => FilledButton.icon(
+        onPressed: busy ? null : () => _proposePrice(context, controller),
+        icon: const Icon(Icons.request_quote_outlined),
+        label: const Text('Đề xuất giá cuối'),
+      ),
+      OrderStatus.paid => FilledButton.icon(
+        onPressed: busy ? null : () => _complete(ref, controller),
+        icon: const Icon(Icons.task_alt_rounded),
+        label: const Text('Hoàn tất dịch vụ'),
+      ),
+      OrderStatus.awaitingPriceApproval => const _WaitingMessage(
+        text: 'Đang chờ khách hàng duyệt giá cuối.',
+      ),
+      OrderStatus.priceDisputed => const _WaitingMessage(
+        text: 'Tranh chấp giá đang chờ quản trị viên xử lý.',
+      ),
+      OrderStatus.awaitingPayment => const _WaitingMessage(
+        text: 'Đang chờ quyết toán phần chênh lệch sandbox.',
+      ),
+      OrderStatus.completed => const _WaitingMessage(
+        text: 'Đơn đã hoàn tất. Số dư ví sẽ được tải lại từ máy chủ.',
+        success: true,
+      ),
+      _ => _WaitingMessage(
+        text:
+            'Không có thao tác dành cho trạng thái '
+            '${providerOrderStatusLabel(order.status)}.',
+      ),
+    };
+  }
+
+  Future<void> _startService(
+    BuildContext context,
+    ProviderWorkController controller,
+  ) async {
+    final token = await _showTextDialog(
+      context,
+      title: 'Mã bắt đầu dịch vụ',
+      label: 'Nhập mã do khách hàng cung cấp',
+      minLines: 1,
+    );
+    if (token != null) await controller.startService(token);
+  }
+
+  Future<void> _proposePrice(
+    BuildContext context,
+    ProviderWorkController controller,
+  ) async {
+    final result = await showDialog<({String price, String reason})>(
+      context: context,
+      builder: (context) => const _PriceProposalDialog(),
+    );
+    if (result == null) return;
+    await controller.proposeFinalPrice(
+      finalPrice: result.price,
+      reason: result.reason,
+    );
+  }
+
+  Future<void> _complete(
+    WidgetRef ref,
+    ProviderWorkController controller,
+  ) async {
+    await controller.completeService();
+    final latest = ref
+        .read(providerWorkControllerProvider)
+        .value
+        ?.selectedOrder;
+    if (latest?.status != OrderStatus.completed) return;
+    ref.invalidate(providerWalletControllerProvider);
+    await ref
+        .read(providerLocationTrackingControllerProvider.notifier)
+        .resumeWaiting();
+  }
+}
+
+class _PriceProposalDialog extends StatefulWidget {
+  const _PriceProposalDialog();
+
+  @override
+  State<_PriceProposalDialog> createState() => _PriceProposalDialogState();
+}
+
+class _PriceProposalDialogState extends State<_PriceProposalDialog> {
+  final _price = TextEditingController();
+  final _reason = TextEditingController();
+
+  @override
+  void dispose() {
+    _price.dispose();
+    _reason.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Đề xuất giá cuối'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _price,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Giá cuối (VND)',
+              hintText: 'Ví dụ: 150000',
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _reason,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Nội dung công việc / lý do',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        FilledButton(
+          onPressed: () {
+            final rawPrice = _price.text.trim();
+            final reason = _reason.text.trim();
+            if (rawPrice.isEmpty || reason.length < 5) return;
+            Navigator.pop(context, (
+              price: rawPrice.contains('.') ? rawPrice : '$rawPrice.00',
+              reason: reason,
+            ));
+          },
+          child: const Text('Gửi đề xuất'),
+        ),
+      ],
+    );
+  }
+}
+
+Future<String?> _showTextDialog(
+  BuildContext context, {
+  required String title,
+  required String label,
+  required int minLines,
+}) async {
+  final controller = TextEditingController();
+  final result = await showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        minLines: minLines,
+        maxLines: minLines == 1 ? 1 : 5,
+        decoration: InputDecoration(labelText: label),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, controller.text.trim()),
+          child: const Text('Xác nhận'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return result?.isEmpty == true ? null : result;
+}
+
+class _DetailsCard extends StatelessWidget {
+  const _DetailsCard({
+    required this.title,
+    required this.icon,
+    required this.children,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: RevoBrandColors.primaryDeep),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 28),
+            ...children,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailsRow extends StatelessWidget {
+  const _DetailsRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: Text(label)),
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusLabel extends StatelessWidget {
+  const _StatusLabel({required this.status});
+
+  final OrderStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      providerOrderStatusLabel(status),
+      style: const TextStyle(
+        color: RevoBrandColors.primaryDeep,
+        fontWeight: FontWeight.w800,
+      ),
+    );
+  }
+}
+
+class _WaitingMessage extends StatelessWidget {
+  const _WaitingMessage({required this.text, this.success = false});
+
+  final String text;
+  final bool success;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: (success ? RevoBrandColors.success : RevoBrandColors.warning)
+            .withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            success ? Icons.check_circle_outline : Icons.hourglass_top_rounded,
+            color: success ? RevoBrandColors.success : RevoBrandColors.warning,
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailsFailure extends StatelessWidget {
+  const _DetailsFailure({required this.message, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: RevoBrandColors.dangerDark),
+            const SizedBox(height: 8),
+            Text(message, textAlign: TextAlign.center),
+            if (onRetry != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton(onPressed: onRetry, child: const Text('Thử lại')),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

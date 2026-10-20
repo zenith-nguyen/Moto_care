@@ -28,6 +28,7 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.motocare.app"
+        manifestPlaceholders["APP_LABEL"] = "Moto Care"
         manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = mapsDartDefines["GOOGLE_MAPS_ANDROID_API_KEY"] ?: ""
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -39,6 +40,19 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions += "appRole"
+    productFlavors {
+        create("customer") {
+            dimension = "appRole"
+            manifestPlaceholders["APP_LABEL"] = "Moto Care"
+        }
+        create("provider") {
+            dimension = "appRole"
+            applicationIdSuffix = ".provider"
+            manifestPlaceholders["APP_LABEL"] = "REVO Thợ"
+        }
     }
 
     buildTypes {
