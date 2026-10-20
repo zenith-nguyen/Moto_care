@@ -21,6 +21,24 @@ import 'package:moto_care/features/wallet/application/provider_wallet_state.dart
 import 'package:moto_care/features/wallet/domain/wallet_models.dart';
 
 void main() {
+  testWidgets('pending provider sees the saved approval state', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionControllerProvider.overrideWith(_PendingSessionController.new),
+        ],
+        child: const MaterialApp(home: ProviderShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hồ sơ Thợ đang chờ duyệt'), findsOneWidget);
+    expect(find.textContaining('đã được lưu vào hệ thống'), findsOneWidget);
+    expect(find.text('provider@example.test'), findsOneWidget);
+    expect(find.text('Kiểm tra trạng thái'), findsOneWidget);
+    expect(find.text('Đang sẵn sàng'), findsNothing);
+  });
+
   testWidgets('renders server-backed offer and active provider order', (
     tester,
   ) async {
@@ -96,6 +114,23 @@ class _StubSessionController extends SessionController {
         phone: '0900000000',
         role: AppRole.provider,
         status: AppUserStatus.active,
+      ),
+    ),
+  );
+}
+
+class _PendingSessionController extends SessionController {
+  @override
+  SessionState build() => const SessionSignedIn(
+    AuthSession(
+      accessToken: 'pending-token',
+      user: AppUser(
+        id: 8,
+        name: 'Zenith Provider',
+        email: 'provider@example.test',
+        phone: '0900000000',
+        role: AppRole.provider,
+        status: AppUserStatus.pendingApproval,
       ),
     ),
   );

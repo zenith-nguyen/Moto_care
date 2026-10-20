@@ -87,6 +87,7 @@ class ApiFailure implements Exception {
         ? null
         : Duration(seconds: retryAfterSeconds);
     final isLogin = error.requestOptions.path.endsWith('/auth/login');
+    final isRegistration = error.requestOptions.path.endsWith('/auth/register');
 
     return switch (status) {
       400 => ApiFailure(
@@ -118,7 +119,9 @@ class ApiFailure implements Exception {
       ),
       409 => ApiFailure(
         kind: ApiFailureKind.conflict,
-        message: 'Trạng thái dữ liệu vừa thay đổi. Vui lòng tải lại.',
+        message: isRegistration
+            ? 'Email hoặc số điện thoại đã được đăng ký. Hãy đăng nhập hoặc dùng thông tin khác.'
+            : 'Trạng thái dữ liệu vừa thay đổi. Vui lòng tải lại.',
         statusCode: status,
         requestId: requestId,
       ),

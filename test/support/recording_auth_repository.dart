@@ -3,6 +3,7 @@ import 'package:moto_care/features/auth/domain/app_user.dart';
 import 'package:moto_care/features/auth/domain/auth_session.dart';
 
 class RecordingAuthRepository implements AuthRepository {
+  Object? registerFailure;
   String? registeredName;
   String? registeredEmail;
   String? registeredPhone;
@@ -32,6 +33,8 @@ class RecordingAuthRepository implements AuthRepository {
     String? email,
     String? phone,
   }) async {
+    final failure = registerFailure;
+    if (failure != null) throw failure;
     registeredName = name;
     registeredEmail = email;
     registeredPhone = phone;
