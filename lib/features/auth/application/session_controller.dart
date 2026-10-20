@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/app_dependencies.dart';
 import '../../../core/auth/session_invalidation_bus.dart';
 import '../../../core/network/api_failure.dart';
+import '../domain/app_user.dart';
 import '../domain/auth_session.dart';
 import 'session_state.dart';
 
@@ -41,6 +42,11 @@ class SessionController extends Notifier<SessionState> {
         return;
       }
       final user = await ref.read(authRepositoryProvider).currentUser();
+      if (!_isAllowedRole(user.role)) {
+        await ref.read(tokenStoreProvider).clear();
+        state = SessionSignedOut(failure: _roleMismatchFailure(user.role));
+        return;
+      }
       state = SessionSignedIn(AuthSession(accessToken: token, user: user));
     } on ApiFailure catch (failure) {
       if (failure.isUnauthorized) {
@@ -77,8 +83,31 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> _persistAndActivate(AuthSession session) async {
+    if (!_isAllowedRole(session.user.role)) {
+      await ref.read(tokenStoreProvider).clear();
+      state = SessionSignedOut(
+        failure: _roleMismatchFailure(session.user.role),
+      );
+      return;
+    }
     await ref.read(tokenStoreProvider).write(session.accessToken);
     state = SessionSignedIn(session);
+  }
+
+  bool _isAllowedRole(AppRole role) =>
+      ref.read(runtimeAllowedRolesProvider).contains(role);
+
+  ApiFailure _roleMismatchFailure(AppRole actualRole) {
+    final allowedRoles = ref.read(runtimeAllowedRolesProvider);
+    final providerOnly = isProviderOnlyRuntime(allowedRoles);
+    return ApiFailure(
+      kind: ApiFailureKind.forbidden,
+      message: providerOnly
+          ? 'Tài khoản này không phải tài khoản thợ. Vui lòng đăng nhập bằng tài khoản thợ.'
+          : actualRole == AppRole.provider
+          ? 'Tài khoản này dành cho thợ. Vui lòng mở ứng dụng REVO Thợ.'
+          : 'Tài khoản không phù hợp với ứng dụng này.',
+    );
   }
 
   Future<void> signOut() async {

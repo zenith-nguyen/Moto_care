@@ -16,6 +16,7 @@ import '../core/notifications/push_registration_service.dart';
 import '../core/notifications/push_token_source.dart';
 import '../core/notifications/secure_installation_id_store.dart';
 import '../features/auth/data/auth_repository.dart';
+import '../features/auth/domain/app_user.dart';
 import '../features/admin/data/admin_repository.dart';
 import '../features/incidents/data/incident_types_repository.dart';
 import '../features/messages/data/messages_repository.dart';
@@ -32,6 +33,15 @@ import '../features/notifications/data/notifications_repository.dart';
 /// Enabled by the production entrypoint. Tests can keep deterministic fixtures
 /// without allowing accidental network requests from unrelated widget tests.
 final runtimeApiIntegrationProvider = Provider<bool>((ref) => false);
+
+/// Roles allowed by the currently installed application flavor. Tests and
+/// non-flavoured desktop builds keep the full set unless explicitly scoped.
+final runtimeAllowedRolesProvider = Provider<Set<AppRole>>(
+  (ref) => AppRole.values.toSet(),
+);
+
+bool isProviderOnlyRuntime(Set<AppRole> roles) =>
+    roles.length == 1 && roles.contains(AppRole.provider);
 
 final appConfigProvider = Provider<AppConfig>((ref) {
   return AppConfig.fromEnvironment();

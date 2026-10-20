@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
+import 'package:moto_care/core/widgets/revo_logo.dart';
+import 'package:moto_care/features/auth/domain/app_user.dart';
 import 'package:moto_care/features/auth/screens/register_screen.dart';
 import 'package:moto_care/app/app_dependencies.dart';
 
@@ -14,6 +16,7 @@ import 'support/recording_auth_repository.dart';
 Future<void> openRegister(
   WidgetTester tester, {
   RecordingAuthRepository? repository,
+  Set<AppRole>? allowedRoles,
 }) async {
   final router = createAppRouter();
   addTearDown(router.dispose);
@@ -24,6 +27,8 @@ Future<void> openRegister(
           repository ?? RecordingAuthRepository(),
         ),
         tokenStoreProvider.overrideWithValue(MemoryTokenStore()),
+        if (allowedRoles != null)
+          runtimeAllowedRolesProvider.overrideWithValue(allowedRoles),
       ],
       child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ),
@@ -43,10 +48,7 @@ void main() {
     await openRegister(tester);
 
     expect(find.text('Đăng ký tài khoản Revo'), findsOneWidget);
-    expect(
-      find.image(const AssetImage('assets/images/logo-revo.png')),
-      findsOneWidget,
-    );
+    expect(find.byType(RevoLogo), findsOneWidget);
     expect(find.text('+84'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Nhập email của bạn'), findsOneWidget);
@@ -163,6 +165,40 @@ void main() {
     expect(repository.registeredName, 'Customer Test');
     expect(repository.registeredEmail, 'rider@example.com');
     expect(repository.registeredPhone, '0912345678');
+    expect(repository.registeredRole, AppRole.customer);
+  });
+
+  testWidgets('Provider flavor registers a provider account', (tester) async {
+    final repository = RecordingAuthRepository();
+    await openRegister(
+      tester,
+      repository: repository,
+      allowedRoles: const {AppRole.provider},
+    );
+    expect(find.text('Đăng ký tài khoản Thợ'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('register-email')),
+      'provider@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-name')),
+      'Provider Test',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-phone')),
+      '0912345678',
+    );
+    await tester.enterText(find.byType(TextFormField).last, 'MotoCare1!');
+    await tester.ensureVisible(find.byType(Checkbox));
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+    final submit = find.byType(FilledButton);
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+
+    expect(repository.registeredRole, AppRole.provider);
   });
 
   testWidgets(

@@ -67,16 +67,73 @@ void main() {
     expect((state as SessionSignedOut).failure, isA<ApiFailure>());
     expect(locationForSession(state), '/login');
   });
+
+  test(
+    'provider app clears a stale customer session during bootstrap',
+    () async {
+      final tokenStore = MemoryTokenStore('stale-customer-token');
+      final container = createContainer(
+        tokenStore: tokenStore,
+        repository: FakeAuthRepository(),
+        allowedRoles: const {AppRole.provider},
+      );
+
+      await container.read(sessionControllerProvider.notifier).bootstrap();
+
+      expect(tokenStore.token, isNull);
+      final state = container.read(sessionControllerProvider);
+      expect(state, isA<SessionSignedOut>());
+      expect(
+        (state as SessionSignedOut).failure?.message,
+        contains('tài khoản thợ'),
+      );
+    },
+  );
+
+  test(
+    'provider app rejects a customer sign-in without saving its token',
+    () async {
+      final tokenStore = MemoryTokenStore();
+      final container = createContainer(
+        tokenStore: tokenStore,
+        repository: FakeAuthRepository(),
+        allowedRoles: const {AppRole.provider},
+      );
+      final controller = container.read(sessionControllerProvider.notifier);
+      await controller.bootstrap();
+
+      await controller.signIn(
+        identity: 'customer@example.com',
+        password: '12345678',
+      );
+
+      expect(tokenStore.token, isNull);
+      final state = container.read(sessionControllerProvider);
+      expect(state, isA<SessionSignedOut>());
+      expect(locationForSession(state), '/login');
+    },
+  );
+
+  test('provider app skips the customer welcome screen when signed out', () {
+    expect(
+      locationForSession(const SessionSignedOut(), providerOnly: true),
+      '/login',
+    );
+    expect(locationForSession(const SessionSignedOut()), '/welcome');
+  });
 }
 
 ProviderContainer createContainer({
   required MemoryTokenStore tokenStore,
   required AuthRepository repository,
+  Set<AppRole>? allowedRoles,
 }) {
   final container = ProviderContainer(
     overrides: [
       tokenStoreProvider.overrideWithValue(tokenStore),
       authRepositoryProvider.overrideWithValue(repository),
+      if (allowedRoles != null)
+        runtimeAllowedRolesProvider.overrideWithValue(allowedRoles),
     ],
   );
   addTearDown(container.dispose);

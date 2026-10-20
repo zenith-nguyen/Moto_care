@@ -86,6 +86,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _failureMessage = null;
     });
     try {
+      final allowedRoles = ref.read(runtimeAllowedRolesProvider);
+      final registrationRole = isProviderOnlyRuntime(allowedRoles)
+          ? AppRole.provider
+          : AppRole.customer;
       final session = await ref
           .read(authRepositoryProvider)
           .register(
@@ -93,7 +97,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _email,
             phone: _phone,
             password: _password,
-            role: AppRole.customer,
+            role: registrationRole,
           );
       await ref
           .read(sessionControllerProvider.notifier)
@@ -108,6 +112,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final allowedRoles = ref.watch(runtimeAllowedRolesProvider);
+    final providerApp = isProviderOnlyRuntime(allowedRoles);
     return AuthScaffold(
       appBar: AppBar(
         backgroundColor: AuthColors.background,
@@ -131,8 +137,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           },
         ),
         centerTitle: true,
-        title: const Text(
-          'Đăng ký tài khoản Revo',
+        title: Text(
+          providerApp ? 'Đăng ký tài khoản Thợ' : 'Đăng ký tài khoản Revo',
           maxLines: 2,
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
