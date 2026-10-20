@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
+import 'package:moto_care/core/network/api_failure.dart';
+import 'package:moto_care/core/widgets/revo_logo.dart';
+import 'package:moto_care/features/auth/domain/app_user.dart';
 import 'package:moto_care/features/auth/screens/register_screen.dart';
 import 'package:moto_care/app/app_dependencies.dart';
 
@@ -14,6 +17,7 @@ import 'support/recording_auth_repository.dart';
 Future<void> openRegister(
   WidgetTester tester, {
   RecordingAuthRepository? repository,
+  Set<AppRole>? allowedRoles,
 }) async {
   final router = createAppRouter();
   addTearDown(router.dispose);
@@ -24,6 +28,8 @@ Future<void> openRegister(
           repository ?? RecordingAuthRepository(),
         ),
         tokenStoreProvider.overrideWithValue(MemoryTokenStore()),
+        if (allowedRoles != null)
+          runtimeAllowedRolesProvider.overrideWithValue(allowedRoles),
       ],
       child: MaterialApp.router(theme: AppTheme.light, routerConfig: router),
     ),
@@ -43,10 +49,7 @@ void main() {
     await openRegister(tester);
 
     expect(find.text('Đăng ký tài khoản Revo'), findsOneWidget);
-    expect(
-      find.image(const AssetImage('assets/images/logo-revo.png')),
-      findsOneWidget,
-    );
+    expect(find.byType(RevoLogo), findsOneWidget);
     expect(find.text('+84'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Nhập email của bạn'), findsOneWidget);
@@ -163,6 +166,123 @@ void main() {
     expect(repository.registeredName, 'Customer Test');
     expect(repository.registeredEmail, 'rider@example.com');
     expect(repository.registeredPhone, '0912345678');
+    expect(repository.registeredRole, AppRole.customer);
+  });
+
+  testWidgets('Provider flavor registers a provider account', (tester) async {
+    final repository = RecordingAuthRepository();
+    await openRegister(
+      tester,
+      repository: repository,
+      allowedRoles: const {AppRole.provider},
+    );
+    expect(find.text('Đăng ký tài khoản Thợ'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('register-email')),
+      'provider@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-name')),
+      'Provider Test',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-phone')),
+      '0912345678',
+    );
+    await tester.enterText(find.byType(TextFormField).last, 'MotoCare1!');
+    await tester.ensureVisible(find.byType(Checkbox));
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+    final submit = find.byType(FilledButton);
+    await tester.ensureVisible(submit);
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+
+    expect(repository.registeredRole, AppRole.provider);
+  });
+
+  testWidgets('Legal links open full documents and return to registration', (
+    tester,
+  ) async {
+    await openRegister(tester);
+    await tester.enterText(
+      find.byKey(const ValueKey('register-email')),
+      'provider@example.com',
+    );
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('register-terms-link')),
+    );
+    await tester.tap(find.byKey(const ValueKey('register-terms-link')));
+    await tester.pumpAndSettle();
+    expect(find.text('Điều khoản sử dụng'), findsOneWidget);
+    expect(find.text('1. Tài khoản và xác minh'), findsOneWidget);
+    await tester.tap(find.byTooltip('Quay lại'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<EditableText>(
+            find.descendant(
+              of: find.byKey(const ValueKey('register-email')),
+              matching: find.byType(EditableText),
+            ),
+          )
+          .controller
+          .text,
+      'provider@example.com',
+    );
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('register-privacy-link')),
+    );
+    await tester.tap(find.byKey(const ValueKey('register-privacy-link')));
+    await tester.pumpAndSettle();
+    expect(find.text('Chính sách quyền riêng tư'), findsOneWidget);
+    expect(find.text('1. Dữ liệu được thu thập'), findsOneWidget);
+  });
+
+  testWidgets('Registration shows a useful API error instead of debug text', (
+    tester,
+  ) async {
+    final repository = RecordingAuthRepository()
+      ..registerFailure = const ApiFailure(
+        kind: ApiFailureKind.conflict,
+        message: 'Email hoặc số điện thoại đã được đăng ký. Hãy đăng nhập hoặc dùng thông tin khác.',
+        statusCode: 409,
+      );
+    await openRegister(
+      tester,
+      repository: repository,
+      allowedRoles: const {AppRole.provider},
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-email')),
+      'provider@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-name')),
+      'Provider Test',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('register-phone')),
+      '0912345678',
+    );
+    await tester.enterText(find.byType(TextFormField).last, 'MotoCare1!');
+    await tester.ensureVisible(find.byType(Checkbox));
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(FilledButton));
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Email hoặc số điện thoại đã được đăng ký. Hãy đăng nhập hoặc dùng thông tin khác.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('ApiFailure('), findsNothing);
   });
 
   testWidgets(

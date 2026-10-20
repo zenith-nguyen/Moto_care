@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:moto_care/core/router/app_router.dart';
 import 'package:moto_care/core/theme/app_theme.dart';
+import 'package:moto_care/core/widgets/revo_logo.dart';
 import 'package:moto_care/features/auth/screens/forgot_password_screen.dart';
 import 'package:moto_care/features/auth/screens/login_screen.dart';
 import 'package:moto_care/app/app_dependencies.dart';
@@ -40,10 +41,7 @@ void main() {
 
     expect(find.text('Quên mật khẩu'), findsOneWidget);
     expect(find.text('Quên mật khẩu?'), findsOneWidget);
-    expect(
-      find.image(const AssetImage('assets/images/logo-revo.png')),
-      findsOneWidget,
-    );
+    expect(find.byType(RevoLogo), findsOneWidget);
     expect(
       find.text('Vui lòng nhập email mà bạn đã đăng ký tài khoản.'),
       findsOneWidget,

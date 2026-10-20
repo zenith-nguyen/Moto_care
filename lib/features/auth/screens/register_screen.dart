@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -7,7 +6,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/revo_logo.dart';
 import '../../../core/config/support_contact.dart';
+import '../../../core/network/api_failure.dart';
 import '../../../app/app_dependencies.dart';
+import '../../policy/screens/legal_document_screen.dart';
 import '../application/session_controller.dart';
 import '../domain/app_user.dart';
 import '../theme/auth_theme.dart';
@@ -23,8 +24,6 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  late final TapGestureRecognizer _termsRecognizer;
-  late final TapGestureRecognizer _privacyRecognizer;
   String _name = '';
   String _email = '';
   String _phone = '';
@@ -49,23 +48,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _acceptedTerms &&
       !_isSubmitting;
 
-  @override
-  void initState() {
-    super.initState();
-    _termsRecognizer = TapGestureRecognizer()
-      ..onTap = () => _showMessage('Điều khoản sử dụng đang được cập nhật.');
-    _privacyRecognizer = TapGestureRecognizer()
-      ..onTap = () =>
-          _showMessage('Chính sách quyền riêng tư đang được cập nhật.');
-  }
-
-  @override
-  void dispose() {
-    _termsRecognizer.dispose();
-    _privacyRecognizer.dispose();
-    super.dispose();
-  }
-
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -86,6 +68,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _failureMessage = null;
     });
     try {
+      final allowedRoles = ref.read(runtimeAllowedRolesProvider);
+      final registrationRole = isProviderOnlyRuntime(allowedRoles)
+          ? AppRole.provider
+          : AppRole.customer;
       final session = await ref
           .read(authRepositoryProvider)
           .register(
@@ -93,21 +79,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _email,
             phone: _phone,
             password: _password,
-            role: AppRole.customer,
+            role: registrationRole,
           );
       await ref
           .read(sessionControllerProvider.notifier)
           .activateRegisteredSession(session);
+    } on ApiFailure catch (failure) {
+      if (!mounted) return;
+      setState(() => _failureMessage = failure.message);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _failureMessage = error.toString());
+      setState(
+        () => _failureMessage =
+            'Đăng ký không thành công. Vui lòng kiểm tra thông tin và thử lại.',
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
+  Future<void> _openLegalDocument(LegalDocument document) {
+    return Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => LegalDocumentScreen(document: document),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final allowedRoles = ref.watch(runtimeAllowedRolesProvider);
+    final providerApp = isProviderOnlyRuntime(allowedRoles);
     return AuthScaffold(
       appBar: AppBar(
         backgroundColor: AuthColors.background,
@@ -131,8 +133,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           },
         ),
         centerTitle: true,
-        title: const Text(
-          'Đăng ký tài khoản Revo',
+        title: Text(
+          providerApp ? 'Đăng ký tài khoản Thợ' : 'Đăng ký tài khoản Revo',
           maxLines: 2,
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
@@ -422,27 +424,61 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text.rich(
-            TextSpan(
-              text: 'Bạn đồng ý với ',
-              children: [
-                TextSpan(
-                  text: 'Điều khoản',
-                  style: const TextStyle(color: AuthColors.primary),
-                  recognizer: _termsRecognizer,
-                ),
-                const TextSpan(text: ' và '),
-                TextSpan(
-                  text: 'Chính sách quyền riêng tư',
-                  style: const TextStyle(color: AuthColors.primary),
-                  recognizer: _privacyRecognizer,
-                ),
-              ],
-            ),
-            style: const TextStyle(fontSize: 16, height: 1.25),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Text(
+                'Bạn đồng ý với ',
+                style: TextStyle(fontSize: 16, height: 1.25),
+              ),
+              _LegalLink(
+                key: const ValueKey('register-terms-link'),
+                label: 'Điều khoản',
+                onTap: () => _openLegalDocument(LegalDocument.terms),
+              ),
+              const Text(' và ', style: TextStyle(fontSize: 16, height: 1.25)),
+              _LegalLink(
+                key: const ValueKey('register-privacy-link'),
+                label: 'Chính sách quyền riêng tư',
+                onTap: () => _openLegalDocument(LegalDocument.privacy),
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LegalLink extends StatelessWidget {
+  const _LegalLink({required this.label, required this.onTap, super.key});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      link: true,
+      button: true,
+      label: 'Mở $label',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: AuthColors.primary,
+              fontSize: 16,
+              height: 1.25,
+              decoration: TextDecoration.underline,
+              decorationColor: AuthColors.primary,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

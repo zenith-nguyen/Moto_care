@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../../core/widgets/revo_logo.dart';
 import '../application/session_controller.dart';
 import '../application/session_state.dart';
@@ -48,21 +49,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final failure = sessionState is SessionSignedOut
         ? sessionState.failure
         : null;
+    final providerApp = isProviderOnlyRuntime(
+      ref.watch(runtimeAllowedRolesProvider),
+    );
 
     return AuthScaffold(
       appBar: AppBar(
         toolbarHeight: 48,
-        leading: IconButton(
-          tooltip: 'Quay lại',
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/welcome');
-            }
-          },
-        ),
+        automaticallyImplyLeading: !providerApp,
+        leading: providerApp
+            ? null
+            : IconButton(
+                tooltip: 'Quay lại',
+                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/welcome');
+                  }
+                },
+              ),
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -231,12 +238,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 }
 
-class _LoginHeader extends StatelessWidget {
+class _LoginHeader extends ConsumerWidget {
   const _LoginHeader();
 
   @override
-  Widget build(BuildContext context) {
-    return const SizedBox(height: 132, child: Center(child: RevoLogo()));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final roles = ref.watch(runtimeAllowedRolesProvider);
+    final providerApp = isProviderOnlyRuntime(roles);
+    return SizedBox(
+      height: 132,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const RevoLogo(),
+          if (providerApp) ...[
+            const SizedBox(height: 12),
+            const Text(
+              'Dành cho Thợ cứu hộ',
+              style: TextStyle(
+                color: AuthColors.secondary,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

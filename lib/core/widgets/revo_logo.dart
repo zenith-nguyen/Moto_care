@@ -6,40 +6,80 @@ class RevoLogo extends StatelessWidget {
   const RevoLogo({
     super.key,
     this.width = 150,
-    this.color = RevoBrandColors.primary,
+    this.color = RevoBrandColors.ink,
+    this.eColor = RevoBrandColors.primary,
   });
-
-  static const asset = 'assets/images/logo-revo.png';
 
   final double width;
   final Color color;
+  final Color eColor;
 
   @override
   Widget build(BuildContext context) {
-    // The supplied 2000px PNG has transparent padding around the wordmark.
-    // Crop that padding in the layout while keeping one original logo asset.
-    final imageSize = width * 2000 / 840;
-    return SizedBox(
-      width: width,
-      height: width * 460 / 840,
-      child: ClipRect(
-        child: Transform.translate(
-          offset: Offset(0, width * 30 / 840),
-          child: OverflowBox(
-            minWidth: imageSize,
-            maxWidth: imageSize,
-            minHeight: imageSize,
-            maxHeight: imageSize,
-            child: Image.asset(
-              asset,
-              width: imageSize,
-              height: imageSize,
-              color: color,
-              semanticLabel: 'Logo Revo',
-            ),
-          ),
-        ),
+    return Semantics(
+      label: 'Logo REVO',
+      image: true,
+      child: SizedBox(
+        width: width,
+        height: width * 32 / 132,
+        child: CustomPaint(painter: _RevoWordmarkPainter(color, eColor)),
       ),
     );
   }
+}
+
+/// Canonical REVO wordmark shared by the Customer and Provider applications.
+/// The three blue bars form the stylised letter "e" from the Provider design.
+class _RevoWordmarkPainter extends CustomPainter {
+  const _RevoWordmarkPainter(this.color, this.eColor);
+
+  final Color color;
+  final Color eColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.scale(size.width / 132, size.height / 32);
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.5
+      ..strokeJoin = StrokeJoin.round;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(3, 29)
+        ..lineTo(3, 4)
+        ..lineTo(18, 4)
+        ..quadraticBezierTo(25, 4, 25, 11)
+        ..quadraticBezierTo(25, 18, 18, 18)
+        ..lineTo(3, 18)
+        ..moveTo(15, 18)
+        ..lineTo(27, 29),
+      stroke,
+    );
+
+    final ePaint = Paint()..color = eColor;
+    for (final y in [2.0, 13.5, 25.0]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(38, y, 23, 4.5),
+          const Radius.circular(.6),
+        ),
+        ePaint,
+      );
+    }
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(72, 3)
+        ..lineTo(84, 29)
+        ..lineTo(96, 3),
+      stroke,
+    );
+    canvas.drawOval(const Rect.fromLTWH(106, 4, 23, 24), stroke);
+  }
+
+  @override
+  bool shouldRepaint(_RevoWordmarkPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.eColor != eColor;
 }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/revo_brand.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/application/session_state.dart';
+import '../../auth/domain/app_user.dart';
 import '../../orders/domain/order_models.dart';
 import '../../orders/domain/order_status.dart';
 import '../../wallet/application/provider_wallet_controller.dart';
@@ -30,6 +31,11 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
 
   @override
   Widget build(BuildContext context) {
+    final session = ref.watch(sessionControllerProvider);
+    if (session is SessionSignedIn &&
+        session.session.user.status == AppUserStatus.pendingApproval) {
+      return _PendingProviderApprovalPage(user: session.session.user);
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(_titles[_index]),
@@ -91,6 +97,79 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
     } else {
       ref.read(providerWorkControllerProvider.notifier).refresh();
     }
+  }
+}
+
+class _PendingProviderApprovalPage extends ConsumerWidget {
+  const _PendingProviderApprovalPage({required this.user});
+
+  final AppUser user;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final contact = user.email ?? user.phone ?? 'Tài khoản Thợ';
+    return Scaffold(
+      appBar: AppBar(title: const Text('Xét duyệt tài khoản')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 40, 24, 32),
+          children: [
+            Container(
+              width: 88,
+              height: 88,
+              decoration: const BoxDecoration(
+                color: RevoBrandColors.surfaceSoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.fact_check_outlined,
+                size: 44,
+                color: RevoBrandColors.primary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Hồ sơ Thợ đang chờ duyệt',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Thông tin đăng ký đã được lưu vào hệ thống. Quản trị viên cần duyệt hồ sơ trước khi bạn có thể bật trạng thái sẵn sàng và nhận đơn cứu hộ.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: RevoBrandColors.textSubtle,
+                fontSize: 15,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.person_outline_rounded),
+                title: Text(user.name),
+                subtitle: Text(contact),
+                trailing: const Chip(label: Text('Chờ duyệt')),
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () =>
+                  ref.read(sessionControllerProvider.notifier).bootstrap(),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Kiểm tra trạng thái'),
+            ),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () =>
+                  ref.read(sessionControllerProvider.notifier).signOut(),
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Đăng xuất'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

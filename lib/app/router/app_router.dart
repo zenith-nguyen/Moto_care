@@ -47,23 +47,31 @@ import '../../features/services/screens/services_screen.dart';
 import '../../features/shell/presentation/role_integration_page.dart';
 import '../../features/tips/screens/meo_xu_ly_screen.dart';
 import '../../features/vehicle/screens/xe_cua_toi_screen.dart';
+import '../app_dependencies.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final sessionState = ref.watch(sessionControllerProvider);
+  final providerOnly = isProviderOnlyRuntime(
+    ref.watch(runtimeAllowedRolesProvider),
+  );
+  final sessionLocation = locationForSession(
+    sessionState,
+    providerOnly: providerOnly,
+  );
   final router = GoRouter(
-    initialLocation: locationForSession(sessionState),
+    initialLocation: sessionLocation,
     redirect: (context, state) {
       final location = state.matchedLocation;
 
       return switch (sessionState) {
         SessionBooting() || SessionUnavailable() =>
-          location == locationForSession(sessionState)
-              ? null
-              : locationForSession(sessionState),
+          location == sessionLocation ? null : sessionLocation,
         SessionAuthenticating() || SessionSignedOut() =>
-          _publicAuthLocations.contains(location)
+          providerOnly && location == '/welcome'
+              ? '/login'
+              : _publicAuthLocations.contains(location)
               ? null
-              : locationForSession(sessionState),
+              : sessionLocation,
         SessionSignedIn(:final session) =>
           _isAllowedForRole(location, session.user.role)
               ? null
@@ -346,11 +354,12 @@ bool _isAllowedForRole(String location, AppRole role) {
 }
 
 @visibleForTesting
-String locationForSession(SessionState state) {
+String locationForSession(SessionState state, {bool providerOnly = false}) {
   return switch (state) {
     SessionBooting() => '/bootstrap',
     SessionAuthenticating() => '/login',
-    SessionSignedOut(:final failure) => failure == null ? '/welcome' : '/login',
+    SessionSignedOut(:final failure) =>
+      failure == null && !providerOnly ? '/welcome' : '/login',
     SessionUnavailable() => '/session-error',
     SessionSignedIn(:final session) => _roleLocation(session.user.role),
   };
