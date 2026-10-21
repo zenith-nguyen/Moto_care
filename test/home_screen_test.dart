@@ -112,6 +112,8 @@ Future<ProviderContainer> _open(
   bool active = false,
   bool routed = false,
   ValueChanged<HomeDestination>? onSelected,
+  RescueLocation? initialLocation,
+  Future<RescueLocation> Function()? deviceLocation,
 }) async {
   final router = routed
       ? createAppRouter()
@@ -135,11 +137,13 @@ Future<ProviderContainer> _open(
         ),
         initialVehiclesProvider.overrideWithValue(hasVehicle ? _vehicles : []),
         initialRescueLocationProvider.overrideWithValue(
-          hasLocation ? _location : null,
+          initialLocation ?? (hasLocation ? _location : null),
         ),
         if (!active) initialRescueOrdersProvider.overrideWithValue([]),
         deviceLocationProvider.overrideWithValue(
-          () async => throw const LocationLookupException('GPS không khả dụng'),
+          deviceLocation ??
+              () async =>
+                  throw const LocationLookupException('GPS không khả dụng'),
         ),
       ],
       child: MaterialApp.router(
@@ -208,6 +212,55 @@ Future<void> _checkout(WidgetTester tester, HomeService service) async {
 }
 
 void main() {
+  testWidgets('Returning to the app refreshes only device-selected GPS', (
+    tester,
+  ) async {
+    const oldGps = RescueLocation(
+      address: '191 Nguyễn Tiểu La, TP. Hồ Chí Minh',
+      latitude: 10.7638,
+      longitude: 106.6663,
+      source: RescueLocationSource.device,
+    );
+    const freshGps = RescueLocation(
+      address: '232/6 Võ Thị Sáu, TP. Hồ Chí Minh',
+      latitude: 10.7820,
+      longitude: 106.6858,
+      source: RescueLocationSource.device,
+    );
+    var gpsCalls = 0;
+    final container = await _open(
+      tester,
+      initialLocation: oldGps,
+      deviceLocation: () async {
+        gpsCalls++;
+        return freshGps;
+      },
+    );
+    expect(gpsCalls, 0);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(gpsCalls, 1);
+    expect(container.read(rescueLocationProvider)!.address, freshGps.address);
+
+    container
+        .read(rescueLocationProvider.notifier)
+        .confirmLocation(
+          const RescueLocation(
+            address: '45 Lê Văn Sỹ, TP. Hồ Chí Minh',
+            latitude: 10.7830,
+            longitude: 106.6780,
+          ),
+        );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(gpsCalls, 1);
+    expect(
+      container.read(rescueLocationProvider)!.address,
+      '45 Lê Văn Sỹ, TP. Hồ Chí Minh',
+    );
+  });
+
   testWidgets('Home watches the shared profile and default vehicle', (
     tester,
   ) async {

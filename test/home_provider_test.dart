@@ -57,6 +57,38 @@ void main() {
   });
 
   test(
+    'Device GPS origin survives confirmation; a typed address clears it',
+    () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final controller = container.read(rescueLocationProvider.notifier);
+      expect(
+        controller.confirmLocation(
+          const RescueLocation(
+            address: '191 Nguyễn Tiểu La, TP. Hồ Chí Minh',
+            latitude: 10.7638,
+            longitude: 106.6663,
+            source: RescueLocationSource.device,
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        container.read(rescueLocationProvider)!.source,
+        RescueLocationSource.device,
+      );
+      expect(
+        controller.updateAddress('232/6 Võ Thị Sáu, TP. Hồ Chí Minh'),
+        isTrue,
+      );
+      expect(
+        container.read(rescueLocationProvider)!.source,
+        RescueLocationSource.selected,
+      );
+    },
+  );
+
+  test(
     'Typed address validates and discards coordinates only when changed',
     () {
       const initial = RescueLocation(

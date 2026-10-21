@@ -26,6 +26,7 @@ class RescueLocationController extends Notifier<RescueLocation?> {
       landmark: landmark,
       latitude: location.latitude,
       longitude: location.longitude,
+      source: location.source,
     );
     return true;
   }

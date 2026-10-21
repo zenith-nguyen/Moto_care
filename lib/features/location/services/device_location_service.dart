@@ -161,6 +161,7 @@ Future<RescueLocation> locateDevice() async {
     address: address,
     latitude: position.latitude,
     longitude: position.longitude,
+    source: RescueLocationSource.device,
   );
 }
 
