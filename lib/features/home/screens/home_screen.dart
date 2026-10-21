@@ -21,6 +21,7 @@ import '../models/home_destination.dart';
 import '../models/home_discovery.dart';
 import '../models/home_rescue_quick_action.dart';
 import '../models/home_user.dart';
+import '../models/rescue_location.dart';
 import '../providers/home_discovery_provider.dart';
 import '../providers/home_provider.dart';
 import '../providers/home_weather_provider.dart';
@@ -42,13 +43,16 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   bool _bookingOpen = false;
   bool _locationOpen = false;
+  bool _refreshingDeviceLocation = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (widget.user != null && !ref.read(profileProvider).initialized) {
@@ -64,6 +68,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed &&
+        ref.read(rescueLocationProvider)?.source ==
+            RescueLocationSource.device) {
+      unawaited(_refreshDeviceLocation());
+    }
+  }
+
+  Future<void> _refreshDeviceLocation() async {
+    if (_refreshingDeviceLocation) return;
+    _refreshingDeviceLocation = true;
+    try {
+      final location = await ref.read(deviceLocationProvider)();
+      if (mounted &&
+          ref.read(rescueLocationProvider)?.source ==
+              RescueLocationSource.device) {
+        ref.read(rescueLocationProvider.notifier).confirmLocation(location);
+      }
+    } on Exception {
+      // Keep the last confirmed point. The location picker shows GPS errors.
+    } finally {
+      _refreshingDeviceLocation = false;
+    }
+  }
+
   Future<void> _refreshVehicles(String userId) async {
     try {
       await ref.read(vehicleProvider.notifier).refreshFromApi(userId);
@@ -73,8 +109,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _detectCurrentLocation() async {
-    if (!ref.read(runtimeApiIntegrationProvider) ||
-        ref.read(rescueLocationProvider)?.hasCoordinates == true) {
+    if (!ref.read(runtimeApiIntegrationProvider)) {
+      return;
+    }
+    final selected = ref.read(rescueLocationProvider);
+    if (selected?.hasCoordinates == true) {
+      if (selected!.source == RescueLocationSource.device) {
+        await _refreshDeviceLocation();
+      }
       return;
     }
     try {
