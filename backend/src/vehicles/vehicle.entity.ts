@@ -41,6 +41,12 @@ export class Vehicle {
   @Column({ type: 'varchar', length: 40, nullable: true })
   color!: string | null;
 
+  @Column({ name: 'tire_type', type: 'varchar', length: 12, default: 'tubed' })
+  tireType!: string;
+
+  @Column({ name: 'engine_type', type: 'varchar', length: 12, default: 'gas' })
+  engineType!: string;
+
   @Column({ name: 'is_default', default: false })
   isDefault!: boolean;
 

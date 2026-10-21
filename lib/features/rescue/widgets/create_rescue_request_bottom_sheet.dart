@@ -169,9 +169,21 @@ class _EmergencyBookingBottomSheetState
                       ),
                     ),
                 ],
-                onChanged: (id) {
+                onChanged: (id) async {
                   if (id != null) {
-                    ref.read(vehicleProvider.notifier).setDefault(id);
+                    try {
+                      await ref
+                          .read(vehicleProvider.notifier)
+                          .setDefaultPersisted(id);
+                    } on Exception {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Chưa lưu được xe mặc định.'),
+                          ),
+                        );
+                      }
+                    }
                   }
                 },
               )

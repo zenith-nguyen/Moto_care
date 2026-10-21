@@ -314,6 +314,8 @@ describe('Orders and matching on PostGIS', () => {
       brand: 'Honda',
       model: 'Wave Alpha',
       licensePlate: '59A1-123.45',
+      tireType: 'tubeless',
+      engineType: 'gas',
     });
     const second = await vehicles.create(customer.id, {
       type: VehicleType.ELECTRIC_MOTORBIKE,
@@ -323,6 +325,11 @@ describe('Orders and matching on PostGIS', () => {
       isDefault: true,
     });
     expect(first.isDefault).toBe(true);
+    expect(first).toMatchObject({ tireType: 'tubeless', engineType: 'gas' });
+    expect(second.engineType).toBe('electric');
+    expect((await vehicles.update(customer.id, first.id, { tireType: 'tubed' })).tireType).toBe('tubed');
+    expect((await vehicles.update(customer.id, first.id, { engineType: 'electric' })).type)
+      .toBe(VehicleType.ELECTRIC_MOTORBIKE);
     expect((await vehicles.list(customer.id)).map((vehicle) => [vehicle.id, vehicle.isDefault])).toEqual([
       [second.id, true],
       [first.id, false],

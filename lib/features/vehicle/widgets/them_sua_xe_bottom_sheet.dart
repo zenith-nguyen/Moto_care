@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_failure.dart';
 import '../../../core/widgets/service_scaffold.dart';
 import '../models/vehicle.dart';
 import '../models/vehicle_validation.dart';
@@ -47,6 +48,7 @@ class _ThemSuaXeBottomSheetState extends ConsumerState<ThemSuaXeBottomSheet> {
   late TireType _tire = widget.vehicle?.tireType ?? TireType.tubed;
   late EngineType _engine = widget.vehicle?.engineType ?? EngineType.gas;
   bool _saved = false;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -56,12 +58,13 @@ class _ThemSuaXeBottomSheetState extends ConsumerState<ThemSuaXeBottomSheet> {
     super.dispose();
   }
 
-  void _save() {
-    if (_saved || !_form.currentState!.validate()) return;
+  Future<void> _save() async {
+    if (_saved || _saving || !_form.currentState!.validate()) return;
+    setState(() => _saving = true);
     try {
-      final vehicle = ref
+      final vehicle = await ref
           .read(vehicleProvider.notifier)
-          .save(
+          .savePersisted(
             id: widget.vehicle?.id,
             name: _name.text,
             brand: _brand!,
@@ -70,11 +73,30 @@ class _ThemSuaXeBottomSheetState extends ConsumerState<ThemSuaXeBottomSheet> {
             engineType: _engine,
             color: _color.text,
           );
+      if (!mounted) return;
       _saved = true;
       FocusScope.of(context).unfocus();
       Navigator.of(context).pop(vehicle);
     } on VehicleSaveException catch (error) {
-      showServiceMessage(context, error.message);
+      if (mounted) showServiceMessage(context, error.message);
+    } on ApiFailure catch (error) {
+      if (mounted) {
+        showServiceMessage(
+          context,
+          error.kind == ApiFailureKind.conflict
+              ? 'Biển số xe đã được đăng ký. Hãy kiểm tra lại.'
+              : error.message,
+        );
+      }
+    } on Exception {
+      if (mounted) {
+        showServiceMessage(
+          context,
+          'Chưa lưu được xe lên máy chủ. Hãy thử lại.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -214,8 +236,8 @@ class _ThemSuaXeBottomSheetState extends ConsumerState<ThemSuaXeBottomSheet> {
                       backgroundColor: ServiceColors.orange,
                       foregroundColor: Colors.white,
                     ),
-                    onPressed: _saved ? null : _save,
-                    child: const Text('Lưu thông tin xe'),
+                    onPressed: _saved || _saving ? null : _save,
+                    child: Text(_saving ? 'Đang lưu...' : 'Lưu thông tin xe'),
                   ),
                 ],
               ),

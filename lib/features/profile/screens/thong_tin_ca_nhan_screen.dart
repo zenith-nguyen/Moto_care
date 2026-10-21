@@ -11,7 +11,6 @@ import '../../home/widgets/brand_backdrop.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
 
 import '../../home/models/home_user.dart';
-import '../../home/providers/home_provider.dart';
 import '../models/user_profile.dart';
 import '../providers/profile_provider.dart';
 import '../services/profile_account_service.dart';
@@ -21,6 +20,8 @@ import '../widgets/change_password_dialog.dart';
 import '../widgets/profile_cards.dart';
 import '../widgets/profile_edit_sheet.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
+import '../../auth/application/session_controller.dart';
+import '../../auth/application/session_state.dart';
 
 class ThongTinCaNhanScreen extends ConsumerStatefulWidget {
   const ThongTinCaNhanScreen({super.key, this.user});
@@ -42,7 +43,19 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
       ref.read(profileProvider.notifier).initializeFromHome(widget.user);
       unawaited(_recoverAvatar());
       unawaited(_refreshProfile());
+      final session = ref.read(sessionControllerProvider);
+      if (session is SessionSignedIn) {
+        unawaited(_refreshVehicles(session.session.user.id.toString()));
+      }
     });
+  }
+
+  Future<void> _refreshVehicles(String userId) async {
+    try {
+      await ref.read(vehicleProvider.notifier).refreshFromApi(userId);
+    } on Exception {
+      _notice('Chưa tải được thông tin xe. Hãy kiểm tra kết nối.');
+    }
   }
 
   Future<void> _refreshProfile() async {
@@ -128,11 +141,6 @@ class _ThongTinCaNhanScreenState extends ConsumerState<ThongTinCaNhanScreen> {
             ? 'Đã lưu thông tin vào tài khoản.'
             : 'Thông tin chưa hợp lệ. Vui lòng kiểm tra lại.',
       );
-      if (saved && edited.defaultAddress.trim().length >= 5) {
-        ref
-            .read(rescueLocationProvider.notifier)
-            .updateAddress(edited.defaultAddress);
-      }
     } catch (_) {
       _notice('Không thể lưu hồ sơ. Hãy kiểm tra kết nối và thử lại.');
     } finally {

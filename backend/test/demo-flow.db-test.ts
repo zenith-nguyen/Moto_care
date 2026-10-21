@@ -258,9 +258,13 @@ describe('Sandbox demo flow over HTTP', () => {
         model: 'Wave Alpha',
         licensePlate: '59a1-123.45',
         color: 'Black',
+        tireType: 'tubeless',
+        engineType: 'gas',
       })
       .expect(201);
-    expect(vehicle.body).toMatchObject({ licensePlate: '59A1-123.45', isDefault: true });
+    expect(vehicle.body).toMatchObject({
+      licensePlate: '59A1-123.45', isDefault: true, tireType: 'tubeless', engineType: 'gas',
+    });
     await request(app.getHttpServer())
       .post('/users/me/vehicles')
       .set('Authorization', `Bearer ${provider.token}`)

@@ -80,6 +80,20 @@ class Vehicle {
     color: json['color'] as String? ?? '',
   );
 
+  factory Vehicle.fromApiJson(Map<String, dynamic> json) => Vehicle(
+    id: (json['id'] as num).toInt().toString(),
+    name: json['model'] as String,
+    brand: json['brand'] as String,
+    licensePlate: json['licensePlate'] as String,
+    tireType: TireType.fromValue(json['tireType'] as String? ?? 'tubed'),
+    engineType: EngineType.fromValue(
+      json['engineType'] as String? ??
+          (json['type'] == 'ELECTRIC_MOTORBIKE' ? 'electric' : 'gas'),
+    ),
+    isDefault: json['isDefault'] as bool? ?? false,
+    color: json['color'] as String? ?? '',
+  );
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,

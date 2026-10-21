@@ -14,13 +14,54 @@ import 'package:moto_care/features/providers/application/provider_location_track
 import 'package:moto_care/features/providers/application/provider_location_tracking_state.dart';
 import 'package:moto_care/features/providers/application/provider_work_controller.dart';
 import 'package:moto_care/features/providers/application/provider_work_state.dart';
+import 'package:moto_care/features/providers/application/professional_profile_provider.dart';
 import 'package:moto_care/features/providers/domain/provider_models.dart';
+import 'package:moto_care/features/providers/domain/professional_profile.dart';
 import 'package:moto_care/features/providers/presentation/provider_shell.dart';
 import 'package:moto_care/features/wallet/application/provider_wallet_controller.dart';
 import 'package:moto_care/features/wallet/application/provider_wallet_state.dart';
 import 'package:moto_care/features/wallet/domain/wallet_models.dart';
 
 void main() {
+  testWidgets('provider account shows server profile and edit action', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sessionControllerProvider.overrideWith(_StubSessionController.new),
+          providerWorkControllerProvider.overrideWith(
+            _StubProviderWorkController.new,
+          ),
+          providerLocationTrackingControllerProvider.overrideWith(
+            _StubProviderLocationController.new,
+          ),
+          providerWalletControllerProvider.overrideWith(
+            _StubProviderWalletController.new,
+          ),
+          professionalProfileProvider.overrideWith(
+            (ref) async => const ProfessionalProfile(
+              bio: 'Cứu hộ xe máy tại TP.HCM',
+              yearsOfExperience: 4,
+              serviceRadiusKm: 12,
+              tier: 'STANDARD',
+              skills: ['Vá lốp'],
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: ProviderShell()),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tài khoản').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Hồ sơ nghề nghiệp'), findsOneWidget);
+    expect(find.text('Cứu hộ xe máy tại TP.HCM'), findsOneWidget);
+    expect(find.text('4 năm'), findsOneWidget);
+    expect(find.text('Vá lốp'), findsOneWidget);
+    expect(find.byTooltip('Chỉnh sửa hồ sơ Thợ'), findsOneWidget);
+  });
+
   testWidgets('pending provider sees the saved approval state', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

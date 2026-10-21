@@ -1,6 +1,8 @@
 abstract final class VehicleValidation {
   static String normalizePlate(String plate) =>
       plate.trim().toUpperCase().replaceAll(RegExp(r'\s+'), ' ');
+  static String normalizePlateForApi(String plate) =>
+      normalizePlate(plate).replaceAll(' ', '');
   static String plateKey(String plate) =>
       normalizePlate(plate).replaceAll(RegExp(r'[^A-Z0-9]'), '');
 

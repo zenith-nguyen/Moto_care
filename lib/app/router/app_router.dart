@@ -27,6 +27,7 @@ import '../../features/location/screens/select_location_screen.dart';
 import '../../features/partner/screens/dang_ky_tho_screen.dart';
 import '../../features/partner/screens/partner_detail_screen.dart';
 import '../../features/partner/screens/partner_list_screen.dart';
+import '../../features/payments/screens/bank_transfer_screen.dart';
 import '../../features/places/screens/tram_sac_tiem_sua_screen.dart';
 import '../../features/policy/screens/cam_ket_dich_vu_screen.dart';
 import '../../features/pricing/screens/bang_gia_screen.dart';
@@ -181,6 +182,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             OrderTrackingScreen(orderId: state.uri.queryParameters['id']),
       ),
       GoRoute(
+        path: '/bank-transfer',
+        builder: (context, state) => BankTransferScreen(
+          orderId: int.tryParse(state.uri.queryParameters['id'] ?? ''),
+        ),
+      ),
+      GoRoute(
         path: '/rescue-tracking',
         builder: (context, state) =>
             RescueTrackingScreen(orderId: state.uri.queryParameters['id']),
@@ -317,6 +324,7 @@ const _publicAuthLocations = {
 const _customerLocations = {
   '/customer',
   '/checkout',
+  '/bank-transfer',
   '/order-tracking',
   '/rescue-tracking',
   '/service-rating',
