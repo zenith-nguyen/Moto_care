@@ -1,3 +1,4 @@
+import '../../../core/money/money_amount.dart';
 import '../../../core/network/json_api.dart';
 import '../../orders/domain/order_status.dart';
 import '../../orders/domain/price_decision_result.dart';
@@ -55,6 +56,17 @@ abstract interface class AdminRepository {
   Future<WithdrawalCreationResult> resolveWithdrawal({
     required int requestId,
     required AdminDecision decision,
+    String? reason,
+  });
+
+  Future<List<AdminWithdrawalPayout>> listPendingWithdrawalPayouts();
+
+  Future<AdminWithdrawalPayout> reconcileWithdrawalPayout({
+    required int payoutId,
+    required PayoutReconciliationDecision decision,
+    String? externalTransactionId,
+    String? referenceCode,
+    String? observedAmount,
     String? reason,
   });
 }
@@ -228,6 +240,64 @@ class HttpAdminRepository implements AdminRepository {
       },
     );
     return WithdrawalCreationResult.fromJson(response);
+  }
+
+  @override
+  Future<List<AdminWithdrawalPayout>> listPendingWithdrawalPayouts() async {
+    final response = await _api.getList('/admin/withdrawal-payouts/pending');
+    return response.map(AdminWithdrawalPayout.fromJson).toList(growable: false);
+  }
+
+  @override
+  Future<AdminWithdrawalPayout> reconcileWithdrawalPayout({
+    required int payoutId,
+    required PayoutReconciliationDecision decision,
+    String? externalTransactionId,
+    String? referenceCode,
+    String? observedAmount,
+    String? reason,
+  }) async {
+    _requirePositiveId(payoutId, 'payoutId');
+    final data = <String, dynamic>{'decision': decision.wireValue};
+    if (decision == PayoutReconciliationDecision.confirm) {
+      final transactionId = (externalTransactionId ?? '').trim();
+      if (transactionId.length < 3 || transactionId.length > 120) {
+        throw ArgumentError.value(
+          externalTransactionId,
+          'externalTransactionId',
+          'Must contain 3-120 characters.',
+        );
+      }
+      if (observedAmount == null) {
+        throw ArgumentError.notNull('observedAmount');
+      }
+      // Validates the two-decimal money format before it reaches the backend.
+      final amount = MoneyAmount.parse(observedAmount);
+      data['externalTransactionId'] = transactionId;
+      data['observedAmount'] = amount.value;
+      final normalizedReference = referenceCode?.trim();
+      if (normalizedReference != null && normalizedReference.isNotEmpty) {
+        if (normalizedReference.length > 120) {
+          throw ArgumentError.value(
+            referenceCode,
+            'referenceCode',
+            'Must be at most 120 characters.',
+          );
+        }
+        data['referenceCode'] = normalizedReference;
+      }
+      final normalizedReason = reason?.trim();
+      if (normalizedReason != null && normalizedReason.isNotEmpty) {
+        data['reason'] = _requireReason(normalizedReason, minLength: 3);
+      }
+    } else {
+      data['reason'] = _requireReason(reason ?? '', minLength: 3);
+    }
+    final response = await _api.patchObject(
+      '/admin/withdrawal-payouts/$payoutId/reconcile',
+      data: data,
+    );
+    return AdminWithdrawalPayout.fromJson(response);
   }
 }
 

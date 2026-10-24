@@ -325,6 +325,95 @@ class AdminWithdrawalProvider {
   }
 }
 
+enum WithdrawalPayoutStatus {
+  awaitingTransfer('AWAITING_TRANSFER'),
+  manualReview('MANUAL_REVIEW'),
+  reconciled('RECONCILED');
+
+  const WithdrawalPayoutStatus(this.wireValue);
+  final String wireValue;
+
+  static WithdrawalPayoutStatus fromWire(Object? raw) {
+    return values.firstWhere(
+      (status) => status.wireValue == raw,
+      orElse: () =>
+          throw FormatException('Unknown withdrawal payout status: $raw'),
+    );
+  }
+}
+
+enum PayoutReconciliationDecision {
+  confirm('CONFIRM'),
+  flag('FLAG');
+
+  const PayoutReconciliationDecision(this.wireValue);
+  final String wireValue;
+}
+
+/// A provider payout that is waiting for the owner's manual bank transfer to be
+/// confirmed. This is the RECONCILED stage of the money guardrail: the owner
+/// transfers money by hand, then records the bank transaction here. The app
+/// never moves money on its own.
+class AdminWithdrawalPayout {
+  const AdminWithdrawalPayout({
+    required this.id,
+    required this.withdrawalId,
+    required this.payoutCode,
+    required this.expectedAmount,
+    required this.status,
+    required this.externalTransactionId,
+    required this.externalReferenceCode,
+    required this.observedAmount,
+    required this.reviewReason,
+    required this.reconciledById,
+    required this.reconciledAt,
+    required this.bankTransferConfirmed,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.provider,
+  });
+
+  final int id;
+  final int withdrawalId;
+  final String payoutCode;
+  final MoneyAmount expectedAmount;
+  final WithdrawalPayoutStatus status;
+  final String? externalTransactionId;
+  final String? externalReferenceCode;
+  final MoneyAmount? observedAmount;
+  final String? reviewReason;
+  final int? reconciledById;
+  final DateTime? reconciledAt;
+  final bool bankTransferConfirmed;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final AdminWithdrawalProvider? provider;
+
+  factory AdminWithdrawalPayout.fromJson(Map<String, dynamic> json) {
+    final reader = JsonReader(json);
+    final providerJson = reader.nullableObject('provider');
+    return AdminWithdrawalPayout(
+      id: reader.positiveInt('id'),
+      withdrawalId: reader.positiveInt('withdrawalId'),
+      payoutCode: reader.string('payoutCode'),
+      expectedAmount: MoneyAmount.parse(reader.value('expectedAmount')),
+      status: WithdrawalPayoutStatus.fromWire(reader.value('status')),
+      externalTransactionId: reader.nullableString('externalTransactionId'),
+      externalReferenceCode: reader.nullableString('externalReferenceCode'),
+      observedAmount: _nullableMoney(reader.value('observedAmount')),
+      reviewReason: reader.nullableString('reviewReason'),
+      reconciledById: reader.nullablePositiveInt('reconciledById'),
+      reconciledAt: reader.nullableDateTime('reconciledAt'),
+      bankTransferConfirmed: reader.boolean('bankTransferConfirmed'),
+      createdAt: reader.dateTime('createdAt'),
+      updatedAt: reader.dateTime('updatedAt'),
+      provider: providerJson == null
+          ? null
+          : AdminWithdrawalProvider.fromJson(providerJson),
+    );
+  }
+}
+
 MoneyAmount? _nullableMoney(Object? raw) {
   return raw == null ? null : MoneyAmount.parse(raw);
 }
