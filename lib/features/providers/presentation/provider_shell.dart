@@ -294,19 +294,11 @@ class _ProviderDashboard extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
-          Text(
-            'Xin chào, $name',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: RevoBrandColors.ink,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Bật sẵn sàng để nhận yêu cầu cứu hộ gần vị trí hiện tại.',
-          ),
+          _ProviderHomeHeader(name: name),
           const SizedBox(height: 20),
           _AvailabilityCard(location: location),
+          const SizedBox(height: 22),
+          const _ProviderServicesSection(),
           const SizedBox(height: 22),
           work.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -316,6 +308,146 @@ class _ProviderDashboard extends ConsumerWidget {
             ),
             data: (state) => _DashboardWork(state: state),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// REVO-style home header: gradient avatar with initials + greeting.
+class _ProviderHomeHeader extends StatelessWidget {
+  const _ProviderHomeHeader({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: const BoxDecoration(
+            gradient: RevoGradients.balance,
+            shape: BoxShape.circle,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            _initials(name),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Xin chào,', style: RevoTypography.caption),
+              Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  static String _initials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return 'T';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+}
+
+/// "Dịch vụ của bạn": the provider's own skills from the real profile API.
+class _ProviderServicesSection extends ConsumerWidget {
+  const _ProviderServicesSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(professionalProfileProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionTitle(
+          title: 'Dịch vụ của bạn',
+          count: profile.asData?.value.skills.length ?? 0,
+        ),
+        const SizedBox(height: 10),
+        profile.when(
+          loading: () => const _EmptyCard(
+            icon: Icons.handyman_outlined,
+            text: 'Đang tải danh sách dịch vụ...',
+          ),
+          error: (error, _) => const _EmptyCard(
+            icon: Icons.error_outline_rounded,
+            text: 'Không tải được dịch vụ. Kéo xuống để thử lại.',
+          ),
+          data: (p) => p.skills.isEmpty
+              ? const _EmptyCard(
+                  icon: Icons.handyman_outlined,
+                  text: 'Chưa có dịch vụ nào. Thêm trong mục Tài khoản.',
+                )
+              : Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    for (final skill in p.skills) _ServiceTile(label: skill),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ServiceTile extends StatelessWidget {
+  const _ServiceTile({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: RevoBrandColors.surface,
+        borderRadius: BorderRadius.circular(RevoRadius.md),
+        border: Border.all(color: RevoBrandColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: RevoBrandColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.build_rounded,
+              size: 18,
+              color: RevoBrandColors.primary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         ],
       ),
     );
