@@ -19,6 +19,7 @@ import '../application/professional_profile_provider.dart';
 import '../domain/provider_models.dart';
 import '../domain/professional_profile.dart';
 import 'provider_formatters.dart';
+import 'provider_incoming_offer.dart';
 
 class ProviderShell extends ConsumerStatefulWidget {
   const ProviderShell({super.key});
@@ -30,6 +31,12 @@ class ProviderShell extends ConsumerStatefulWidget {
 class _ProviderShellState extends ConsumerState<ProviderShell> {
   var _index = 0;
 
+  /// Offer ids already surfaced as a full-screen incoming request, so a silent
+  /// realtime refresh does not re-pop the same request.
+  final Set<int> _announcedOffers = <int>{};
+  bool _offerDialogOpen = false;
+  bool _offersInitialized = false;
+
   static const _titles = ['Tổng quan', 'Đơn cứu hộ', 'Ví sandbox', 'Tài khoản'];
 
   @override
@@ -39,6 +46,16 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
         session.session.user.status == AppUserStatus.pendingApproval) {
       return _PendingProviderApprovalPage(user: session.session.user);
     }
+
+    // Ride-hailing style dispatch: when a new offer arrives in realtime
+    // (Socket.IO offer.created -> pendingOffers), surface it prominently.
+    ref.listen<AsyncValue<ProviderWorkState>>(providerWorkControllerProvider, (
+      _,
+      next,
+    ) {
+      _maybeShowIncomingOffer(next.value);
+    });
+
     return Scaffold(
       backgroundColor: _index == 0
           ? RevoBrandColors.surface
@@ -82,6 +99,47 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
     } else {
       ref.read(providerWorkControllerProvider.notifier).refresh();
     }
+  }
+
+  void _maybeShowIncomingOffer(ProviderWorkState? state) {
+    if (state == null || _offerDialogOpen) return;
+    // First snapshot (e.g. offers already pending when the app opens): record
+    // them as seen so only requests arriving afterwards pop up as dispatch.
+    if (!_offersInitialized) {
+      _offersInitialized = true;
+      for (final offer in state.pendingOffers) {
+        _announcedOffers.add(offer.id);
+      }
+      return;
+    }
+    PendingOffer? fresh;
+    for (final offer in state.pendingOffers) {
+      if (!_announcedOffers.contains(offer.id) && !offer.isExpired) {
+        fresh = offer;
+        break;
+      }
+    }
+    if (fresh == null) return;
+    final offer = fresh;
+    _announcedOffers.add(offer.id);
+    _offerDialogOpen = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) {
+        _offerDialogOpen = false;
+        return;
+      }
+      if (_index != 0) setState(() => _index = 0);
+      final result = await showIncomingOfferDialog(context, offer);
+      _offerDialogOpen = false;
+      if (!mounted || result == null) return;
+      if (result.outcome == IncomingOfferOutcome.accepted &&
+          result.orderId != null) {
+        await ref
+            .read(providerLocationTrackingControllerProvider.notifier)
+            .trackOrder(result.orderId!);
+        if (mounted) context.push('/provider/orders/${result.orderId}');
+      }
+    });
   }
 }
 
