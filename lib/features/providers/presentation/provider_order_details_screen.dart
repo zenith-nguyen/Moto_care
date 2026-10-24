@@ -110,6 +110,10 @@ class _OrderDetailsBody extends ConsumerWidget {
             ],
           ),
         ),
+        if (_isJourneyStatus(order.status)) ...[
+          const SizedBox(height: 16),
+          _OrderProgressCard(status: order.status),
+        ],
         if (state.lastFailure != null) ...[
           const SizedBox(height: 14),
           _DetailsFailure(message: 'Thao tác thất bại: ${state.lastFailure}'),
@@ -413,6 +417,169 @@ Future<String?> _showTextDialog(
   );
   controller.dispose();
   return result?.isEmpty == true ? null : result;
+}
+
+bool _isJourneyStatus(OrderStatus status) => switch (status) {
+  OrderStatus.accepted ||
+  OrderStatus.arrived ||
+  OrderStatus.inProgress ||
+  OrderStatus.awaitingPriceApproval ||
+  OrderStatus.priceDisputed ||
+  OrderStatus.awaitingPayment ||
+  OrderStatus.paid ||
+  OrderStatus.completed => true,
+  _ => false,
+};
+
+/// Horizontal progress stepper for the provider's job journey, mirroring the
+/// REVO reference. Driven by the real [OrderStatus].
+class _OrderProgressCard extends StatelessWidget {
+  const _OrderProgressCard({required this.status});
+
+  final OrderStatus status;
+
+  static const _labels = [
+    'Đã nhận',
+    'Đến nơi',
+    'Đang sửa',
+    'Chốt giá',
+    'Hoàn tất',
+  ];
+
+  int get _currentStep => switch (status) {
+    OrderStatus.accepted => 0,
+    OrderStatus.arrived => 1,
+    OrderStatus.inProgress => 2,
+    OrderStatus.awaitingPriceApproval ||
+    OrderStatus.priceDisputed ||
+    OrderStatus.awaitingPayment ||
+    OrderStatus.paid => 3,
+    OrderStatus.completed => 4,
+    _ => 0,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final current = _currentStep;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 18, 12, 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var i = 0; i < _labels.length; i++)
+              Expanded(
+                child: _StepNode(
+                  label: _labels[i],
+                  done: i < current,
+                  active: i == current,
+                  showLeftLine: i != 0,
+                  showRightLine: i != _labels.length - 1,
+                  leftLineDone: i <= current,
+                  rightLineDone: i < current,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StepNode extends StatelessWidget {
+  const _StepNode({
+    required this.label,
+    required this.done,
+    required this.active,
+    required this.showLeftLine,
+    required this.showRightLine,
+    required this.leftLineDone,
+    required this.rightLineDone,
+  });
+
+  final String label;
+  final bool done;
+  final bool active;
+  final bool showLeftLine;
+  final bool showRightLine;
+  final bool leftLineDone;
+  final bool rightLineDone;
+
+  Color _line(bool lineDone) =>
+      lineDone ? RevoBrandColors.primary : RevoBrandColors.border;
+
+  @override
+  Widget build(BuildContext context) {
+    final reached = done || active;
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: 3,
+                color: showLeftLine ? _line(leftLineDone) : Colors.transparent,
+              ),
+            ),
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: reached
+                    ? RevoBrandColors.primary
+                    : RevoBrandColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: reached
+                      ? RevoBrandColors.primary
+                      : RevoBrandColors.border,
+                  width: 2,
+                ),
+              ),
+              child: done
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    )
+                  : active
+                  ? const Center(
+                      child: SizedBox(
+                        width: 8,
+                        height: 8,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+            Expanded(
+              child: Container(
+                height: 3,
+                color: showRightLine
+                    ? _line(rightLineDone)
+                    : Colors.transparent,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+            color: reached ? RevoBrandColors.ink : RevoBrandColors.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _DetailsCard extends StatelessWidget {
