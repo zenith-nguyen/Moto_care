@@ -354,7 +354,11 @@ class _ProviderDashboard extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
-          _ProviderHomeHeader(name: name),
+          _ProviderHero(
+            name: name,
+            online: location.asData?.value.isTracking ?? false,
+            newRequests: work.asData?.value.pendingOffers.length ?? 0,
+          ),
           const SizedBox(height: 20),
           _AvailabilityCard(location: location),
           const SizedBox(height: 22),
@@ -374,50 +378,90 @@ class _ProviderDashboard extends ConsumerWidget {
   }
 }
 
-/// REVO-style home header: gradient avatar with initials + greeting.
-class _ProviderHomeHeader extends StatelessWidget {
-  const _ProviderHomeHeader({required this.name});
+/// REVO-style home hero: gradient banner with avatar, greeting and a quick
+/// status row (online state + number of new requests). All from real state.
+class _ProviderHero extends StatelessWidget {
+  const _ProviderHero({
+    required this.name,
+    required this.online,
+    required this.newRequests,
+  });
 
   final String name;
+  final bool online;
+  final int newRequests;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: const BoxDecoration(
-            gradient: RevoGradients.balance,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            _initials(name),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: RevoGradients.balance,
+        borderRadius: BorderRadius.circular(RevoRadius.hero),
+        boxShadow: RevoShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text('Xin chào,', style: RevoTypography.caption),
-              Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: const BoxDecoration(
+                  color: Colors.white24,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _initials(name),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Xin chào,',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _HeroPill(
+                icon: online ? Icons.bolt_rounded : Icons.nightlight_round,
+                label: online ? 'Trực tuyến' : 'Ngoại tuyến',
+              ),
+              const SizedBox(width: 10),
+              _HeroPill(
+                icon: Icons.notifications_active_rounded,
+                label: '$newRequests yêu cầu mới',
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -431,6 +475,39 @@ class _ProviderHomeHeader extends StatelessWidget {
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
+  }
+}
+
+class _HeroPill extends StatelessWidget {
+  const _HeroPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white24,
+        borderRadius: BorderRadius.circular(RevoRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
