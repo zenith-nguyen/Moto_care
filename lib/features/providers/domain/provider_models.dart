@@ -98,3 +98,33 @@ class ProviderSkillOption {
     );
   }
 }
+
+class ProviderWeeklyStats {
+  const ProviderWeeklyStats({
+    required this.weekStart,
+    required this.completedOrders,
+    required this.reviewCount,
+    required this.averageRating,
+    required this.creditedAmount,
+    required this.debitedAmount,
+  });
+
+  final String weekStart;
+  final int completedOrders;
+  final int reviewCount;
+  final double? averageRating;
+  final MoneyAmount creditedAmount;
+  final MoneyAmount debitedAmount;
+
+  factory ProviderWeeklyStats.fromJson(Map<String, dynamic> json) {
+    final avgRaw = json['averageRating'];
+    return ProviderWeeklyStats(
+      weekStart: (json['weekStart'] ?? '').toString(),
+      completedOrders: (json['completedOrders'] as num?)?.toInt() ?? 0,
+      reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+      averageRating: avgRaw == null ? null : double.tryParse(avgRaw.toString()),
+      creditedAmount: MoneyAmount.parse(json['creditedAmount']),
+      debitedAmount: MoneyAmount.parse(json['debitedAmount']),
+    );
+  }
+}

@@ -36,6 +36,7 @@ import '../../features/profile/screens/thong_tin_ca_nhan_screen.dart';
 import '../../features/providers/presentation/provider_chat_screen.dart';
 import '../../features/providers/presentation/provider_order_details_screen.dart';
 import '../../features/providers/presentation/provider_shell.dart';
+import '../../features/providers/presentation/provider_stats_screen.dart';
 import '../../features/rescue/models/marketplace_booking.dart';
 import '../../features/rescue/screens/checkout_screen.dart';
 import '../../features/rescue/screens/order_tracking_screen.dart';
@@ -129,6 +130,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ProviderChatScreen(
           orderId: int.parse(state.pathParameters['orderId']!),
         ),
+      ),
+      GoRoute(
+        path: '/provider/stats',
+        builder: (context, state) => const ProviderStatsScreen(),
       ),
       GoRoute(
         path: '/admin',

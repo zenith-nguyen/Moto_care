@@ -1702,6 +1702,16 @@ class _ProviderAccountPage extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.insights_rounded),
+            title: const Text('Thống kê & đánh giá'),
+            subtitle: const Text('Thu nhập tuần, đánh giá và hạng thợ'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/provider/stats'),
+          ),
+        ),
         const SizedBox(height: 24),
         OutlinedButton.icon(
           onPressed: () =>
