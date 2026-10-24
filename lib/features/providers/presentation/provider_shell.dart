@@ -870,11 +870,33 @@ class _OfferCard extends ConsumerWidget {
   }
 }
 
-class _ProviderOrdersPage extends ConsumerWidget {
+enum _OrderFilter { all, active, done }
+
+class _ProviderOrdersPage extends ConsumerStatefulWidget {
   const _ProviderOrdersPage();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ProviderOrdersPage> createState() =>
+      _ProviderOrdersPageState();
+}
+
+class _ProviderOrdersPageState extends ConsumerState<_ProviderOrdersPage> {
+  _OrderFilter _filter = _OrderFilter.all;
+
+  bool _matches(OrderSummary order) => switch (_filter) {
+    _OrderFilter.all => true,
+    _OrderFilter.active => providerOrderIsActive(order.status),
+    _OrderFilter.done => order.status.isTerminal,
+  };
+
+  String _label(_OrderFilter filter) => switch (filter) {
+    _OrderFilter.all => 'Tất cả',
+    _OrderFilter.active => 'Đang xử lý',
+    _OrderFilter.done => 'Hoàn tất',
+  };
+
+  @override
+  Widget build(BuildContext context) {
     final work = ref.watch(providerWorkControllerProvider);
     return work.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -882,30 +904,44 @@ class _ProviderOrdersPage extends ConsumerWidget {
         message: 'Không tải được danh sách đơn: $error',
         onRetry: () => ref.invalidate(providerWorkControllerProvider),
       ),
-      data: (state) => RefreshIndicator(
-        onRefresh: () =>
-            ref.read(providerWorkControllerProvider.notifier).refresh(),
-        child: state.orders.isEmpty
-            ? const CustomScrollView(
-                physics: AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverFillRemaining(
-                    child: _EmptyCard(
-                      icon: Icons.receipt_long_outlined,
-                      text: 'Chưa có đơn cứu hộ nào.',
+      data: (state) {
+        final filtered = state.orders.where(_matches).toList(growable: false);
+        return RefreshIndicator(
+          onRefresh: () =>
+              ref.read(providerWorkControllerProvider.notifier).refresh(),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(20),
+            children: [
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final filter in _OrderFilter.values)
+                    ChoiceChip(
+                      label: Text(_label(filter)),
+                      selected: _filter == filter,
+                      onSelected: (_) => setState(() => _filter = filter),
                     ),
-                  ),
                 ],
-              )
-            : ListView.separated(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
-                itemCount: state.orders.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 12),
-                itemBuilder: (context, index) =>
-                    _OrderCard(order: state.orders[index]),
               ),
-      ),
+              const SizedBox(height: 16),
+              if (filtered.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: _EmptyCard(
+                    icon: Icons.receipt_long_outlined,
+                    text: 'Chưa có đơn phù hợp.',
+                  ),
+                )
+              else
+                for (final order in filtered) ...[
+                  _OrderCard(order: order),
+                  const SizedBox(height: 12),
+                ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
