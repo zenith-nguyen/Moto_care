@@ -192,15 +192,30 @@ class _DashboardBody extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: RevoBrandColors.border),
           ),
-          child: ListTile(
-            leading: const Icon(
-              Icons.how_to_reg_rounded,
-              color: RevoBrandColors.primary,
-            ),
-            title: const Text('Duyệt hồ sơ thợ'),
-            subtitle: Text('${providers.pending} hồ sơ chờ duyệt'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.push('/admin/providers'),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.how_to_reg_rounded,
+                  color: RevoBrandColors.primary,
+                ),
+                title: const Text('Duyệt hồ sơ thợ'),
+                subtitle: Text('${providers.pending} hồ sơ chờ duyệt'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/admin/providers'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(
+                  Icons.receipt_long_rounded,
+                  color: RevoBrandColors.primary,
+                ),
+                title: const Text('Đơn gần đây'),
+                subtitle: Text('${orders.total} đơn trong kỳ'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/admin/orders'),
+              ),
+            ],
           ),
         ),
         if (state.lastFailure != null) ...[
