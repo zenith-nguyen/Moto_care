@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/money/money_amount.dart';
 import '../../../core/theme/revo_brand.dart';
 import '../../../core/theme/revo_theme.dart';
 import '../../auth/application/session_controller.dart';
@@ -917,9 +918,11 @@ class _ProviderWalletPage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'SỐ DƯ KHẢ DỤNG • SANDBOX',
-                    style: TextStyle(color: Colors.white70),
+                  Text(
+                    state.wallet.demoOnly
+                        ? 'SỐ DƯ KHẢ DỤNG • SANDBOX'
+                        : 'SỐ DƯ KHẢ DỤNG',
+                    style: const TextStyle(color: Colors.white70),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -939,18 +942,29 @@ class _ProviderWalletPage extends ConsumerWidget {
                   FilledButton.tonalIcon(
                     onPressed: state.isBusy
                         ? null
-                        : () => _showWithdrawalDialog(context, ref),
+                        : () => _showWithdrawalDialog(
+                            context,
+                            ref,
+                            demoOnly: state.wallet.demoOnly,
+                            available: state.wallet.summary.availableBalance,
+                          ),
                     icon: const Icon(Icons.account_balance_outlined),
-                    label: const Text('Tạo yêu cầu rút thử nghiệm'),
+                    label: Text(
+                      state.wallet.demoOnly
+                          ? 'Tạo yêu cầu rút thử nghiệm'
+                          : 'Yêu cầu rút tiền',
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              'Đây là số dư mô phỏng phục vụ kiểm thử; không phải tiền ngân hàng thật.',
-              style: TextStyle(color: RevoBrandColors.textSubtle),
-            ),
+            if (state.wallet.demoOnly) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Đây là số dư mô phỏng phục vụ kiểm thử; không phải tiền ngân hàng thật.',
+                style: TextStyle(color: RevoBrandColors.textSubtle),
+              ),
+            ],
             if (state.lastFailure != null) ...[
               const SizedBox(height: 14),
               _FailureCard(
@@ -991,21 +1005,36 @@ class _ProviderWalletPage extends ConsumerWidget {
 
   Future<void> _showWithdrawalDialog(
     BuildContext context,
-    WidgetRef ref,
-  ) async {
+    WidgetRef ref, {
+    required bool demoOnly,
+    required MoneyAmount available,
+  }) async {
     final controller = TextEditingController();
     final amount = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Rút tiền sandbox'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(
-            labelText: 'Số tiền (VND)',
-            hintText: 'Ví dụ: 100000',
-          ),
+        title: Text(demoOnly ? 'Rút tiền sandbox' : 'Yêu cầu rút tiền'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Số dư khả dụng: ${formatProviderMoney(available)}',
+              style: const TextStyle(color: RevoBrandColors.textSubtle),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Số tiền (VND)',
+                hintText: 'Ví dụ: 100000',
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -1033,11 +1062,16 @@ class _WalletTransactionTile extends StatelessWidget {
 
   final WalletTransaction transaction;
 
+  String get _title => transaction.orderId == null
+      ? 'Rút tiền'
+      : 'Quyết toán đơn #${transaction.orderId}';
+
   @override
   Widget build(BuildContext context) {
     final isCredit = transaction.type == WalletTransactionType.credit;
     return Card(
       child: ListTile(
+        onTap: () => _showDetail(context, isCredit),
         leading: CircleAvatar(
           backgroundColor: isCredit
               ? RevoBrandColors.success.withValues(alpha: 0.12)
@@ -1049,11 +1083,7 @@ class _WalletTransactionTile extends StatelessWidget {
                 : RevoBrandColors.dangerDark,
           ),
         ),
-        title: Text(
-          transaction.orderId == null
-              ? 'Rút tiền sandbox'
-              : 'Quyết toán đơn #${transaction.orderId}',
-        ),
+        title: Text(_title),
         subtitle: Text(formatProviderDateTime(transaction.createdAt)),
         trailing: Text(
           '${isCredit ? '+' : '-'}${formatProviderMoney(transaction.amount)}',
@@ -1067,6 +1097,110 @@ class _WalletTransactionTile extends StatelessWidget {
       ),
     );
   }
+
+  void _showDetail(BuildContext context, bool isCredit) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Chi tiết giao dịch', style: RevoTypography.title),
+              const SizedBox(height: 16),
+              Center(
+                child: Text(
+                  '${isCredit ? '+' : '-'}${formatProviderMoney(transaction.amount)}',
+                  style: RevoTypography.amount.copyWith(
+                    color: isCredit
+                        ? RevoBrandColors.success
+                        : RevoBrandColors.dangerDark,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _DetailLine(label: 'Loại', value: _title),
+              _DetailLine(
+                label: 'Chiều',
+                value: isCredit ? 'Tiền vào' : 'Tiền ra',
+              ),
+              _DetailLine(label: 'Mã giao dịch', value: '#${transaction.id}'),
+              if (transaction.orderId != null)
+                _DetailLine(label: 'Đơn', value: '#${transaction.orderId}'),
+              if (transaction.withdrawalId != null)
+                _DetailLine(
+                  label: 'Yêu cầu rút',
+                  value: '#${transaction.withdrawalId}',
+                ),
+              _DetailLine(
+                label: 'Thời gian',
+                value: formatProviderDateTime(transaction.createdAt),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailLine extends StatelessWidget {
+  const _DetailLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(label, style: RevoTypography.caption),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: RevoTypography.label,
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WalletStatusChip extends StatelessWidget {
+  const _WalletStatusChip({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(RevoRadius.pill),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
 }
 
 class _WithdrawalTile extends StatelessWidget {
@@ -1076,18 +1210,44 @@ class _WithdrawalTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = switch (withdrawal.status) {
-      WithdrawalStatus.pending => 'Chờ duyệt',
-      WithdrawalStatus.approved => 'Đã duyệt',
-      WithdrawalStatus.rejected => 'Bị từ chối',
+    final (label, color) = switch (withdrawal.status) {
+      WithdrawalStatus.pending => ('Chờ duyệt', RevoBrandColors.warning),
+      WithdrawalStatus.approved => ('Đã duyệt', RevoBrandColors.success),
+      WithdrawalStatus.rejected => ('Bị từ chối', RevoBrandColors.dangerDark),
     };
     return Card(
-      child: ListTile(
-        title: Text(formatProviderMoney(withdrawal.amount)),
-        subtitle: Text(formatProviderDateTime(withdrawal.createdAt)),
-        trailing: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    formatProviderMoney(withdrawal.amount),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                _WalletStatusChip(label: label, color: color),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              formatProviderDateTime(withdrawal.createdAt),
+              style: const TextStyle(
+                color: RevoBrandColors.textSubtle,
+                fontSize: 12,
+              ),
+            ),
+            if (withdrawal.decisionReason?.isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              Text('Lý do: ${withdrawal.decisionReason}'),
+            ],
+          ],
         ),
       ),
     );
