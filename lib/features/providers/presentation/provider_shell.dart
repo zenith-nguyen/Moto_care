@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../../core/money/money_amount.dart';
 import '../../../core/theme/revo_brand.dart';
 import '../../../core/theme/revo_theme.dart';
@@ -1388,6 +1389,109 @@ class _ProviderAccountPage extends ConsumerWidget {
     }
   }
 
+  Future<void> _manageSkills(
+    BuildContext context,
+    WidgetRef ref,
+    ProfessionalProfile profile,
+  ) async {
+    final repo = ref.read(providersRepositoryProvider);
+    List<ProviderSkillOption> catalog;
+    try {
+      catalog = await repo.listSkillCatalog();
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không tải được danh mục dịch vụ.')),
+        );
+      }
+      return;
+    }
+    if (!context.mounted) return;
+    final selected = <int>{
+      for (final option in catalog)
+        if (profile.skills.contains(option.name)) option.id,
+    };
+    var saving = false;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Quản lý dịch vụ', style: RevoTypography.title),
+              const SizedBox(height: 4),
+              const Text(
+                'Chọn các dịch vụ bạn nhận. Dịch vụ mới cần quản trị viên '
+                'duyệt trước khi áp dụng.',
+                style: TextStyle(color: RevoBrandColors.textSubtle),
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: catalog.isEmpty
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Text('Chưa có dịch vụ nào trong danh mục.'),
+                      )
+                    : ListView(
+                        shrinkWrap: true,
+                        children: [
+                          for (final option in catalog)
+                            CheckboxListTile(
+                              value: selected.contains(option.id),
+                              title: Text(option.name),
+                              contentPadding: EdgeInsets.zero,
+                              onChanged: saving
+                                  ? null
+                                  : (checked) => setSheetState(() {
+                                      if (checked == true) {
+                                        selected.add(option.id);
+                                      } else {
+                                        selected.remove(option.id);
+                                      }
+                                    }),
+                            ),
+                        ],
+                      ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: saving
+                    ? null
+                    : () async {
+                        setSheetState(() => saving = true);
+                        try {
+                          await repo.replaceMySkills(selected.toList());
+                          if (sheetContext.mounted) {
+                            ref.invalidate(professionalProfileProvider);
+                            Navigator.pop(sheetContext);
+                          }
+                        } catch (_) {
+                          if (sheetContext.mounted) {
+                            setSheetState(() => saving = false);
+                            ScaffoldMessenger.of(sheetContext).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Chưa lưu được dịch vụ. Hãy thử lại.',
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                child: Text(saving ? 'Đang lưu...' : 'Lưu dịch vụ'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(sessionControllerProvider);
@@ -1469,11 +1573,16 @@ class _ProviderAccountPage extends ConsumerWidget {
                   trailing: Text('${value.serviceRadiusKm} km'),
                 ),
                 ListTile(
-                  title: const Text('Kỹ năng'),
+                  title: const Text('Dịch vụ / kỹ năng'),
                   subtitle: Text(
                     value.skills.isEmpty
-                        ? 'Chưa có kỹ năng được đăng ký'
+                        ? 'Chưa có dịch vụ được đăng ký'
                         : value.skills.join(', '),
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Quản lý dịch vụ',
+                    icon: const Icon(Icons.tune_rounded),
+                    onPressed: () => _manageSkills(context, ref, value),
                   ),
                 ),
               ],
