@@ -96,13 +96,23 @@ void main() {
           providerWalletControllerProvider.overrideWith(
             _StubProviderWalletController.new,
           ),
+          professionalProfileProvider.overrideWith(
+            (ref) async => const ProfessionalProfile(
+              bio: 'Cứu hộ xe máy tại TP.HCM',
+              yearsOfExperience: 4,
+              serviceRadiusKm: 12,
+              tier: 'STANDARD',
+              skills: ['Vá lốp'],
+            ),
+          ),
         ],
         child: const MaterialApp(home: ProviderShell()),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Xin chào, Nguyễn Minh Tuấn'), findsOneWidget);
+    expect(find.text('Xin chào,'), findsOneWidget);
+    expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
     expect(find.text('Đang sẵn sàng'), findsOneWidget);
     expect(find.text('Thủng lốp'), findsOneWidget);
     expect(find.text('Nhận đơn'), findsOneWidget);
@@ -125,6 +135,15 @@ void main() {
           ),
           providerWalletControllerProvider.overrideWith(
             _StubProviderWalletController.new,
+          ),
+          professionalProfileProvider.overrideWith(
+            (ref) async => const ProfessionalProfile(
+              bio: 'Cứu hộ xe máy tại TP.HCM',
+              yearsOfExperience: 4,
+              serviceRadiusKm: 12,
+              tier: 'STANDARD',
+              skills: ['Vá lốp'],
+            ),
           ),
         ],
         child: const MaterialApp(home: ProviderShell()),
