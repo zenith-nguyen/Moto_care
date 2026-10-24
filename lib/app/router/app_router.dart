@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/activity/models/rescue_order.dart';
 import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
 import '../../features/activity/screens/hoat_dong_screen.dart';
+import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/activity/screens/order_details_screen.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/application/session_state.dart';
@@ -48,7 +49,6 @@ import '../../features/rescue_station/models/station_model.dart';
 import '../../features/rescue_station/screens/station_detail_screen.dart';
 import '../../features/rescue_station/screens/tram_cuu_ho_screen.dart';
 import '../../features/services/screens/services_screen.dart';
-import '../../features/shell/presentation/role_integration_page.dart';
 import '../../features/tips/screens/meo_xu_ly_screen.dart';
 import '../../features/vehicle/screens/xe_cua_toi_screen.dart';
 import '../app_dependencies.dart';
@@ -147,8 +147,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admin',
-        builder: (context, state) =>
-            const RoleIntegrationPage(role: AppRole.admin),
+        builder: (context, state) => const AdminDashboardScreen(),
       ),
       GoRoute(
         path: '/stations/:stationId',
