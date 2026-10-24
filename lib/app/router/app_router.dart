@@ -6,6 +6,7 @@ import '../../features/activity/models/rescue_order.dart';
 import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
 import '../../features/activity/screens/hoat_dong_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
+import '../../features/admin/presentation/admin_orders_screen.dart';
 import '../../features/admin/presentation/admin_provider_approval_screen.dart';
 import '../../features/activity/screens/order_details_screen.dart';
 import '../../features/auth/application/session_controller.dart';
@@ -153,6 +154,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/providers',
         builder: (context, state) => const AdminProviderApprovalScreen(),
+      ),
+      GoRoute(
+        path: '/admin/orders',
+        builder: (context, state) => const AdminOrdersScreen(),
       ),
       GoRoute(
         path: '/stations/:stationId',
