@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_dependencies.dart';
+import '../../../core/network/api_failure.dart';
 import '../../activity/data/activity_api_orders.dart';
 import '../../activity/widgets/order_summary.dart';
 import '../../orders/domain/order_status.dart';
@@ -64,6 +65,15 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
       );
     } catch (error) {
       if (!mounted) return;
+      // 409 (conflict) nghĩa là đơn không còn chờ chuyển khoản, gần như chắc
+      // chắn đã thanh toán xong (webhook SePay đã xác nhận). Thay vì hiện màn
+      // lỗi (nút "Thử lại" sẽ chỉ lặp lại 409), kiểm tra trạng thái đơn và tự
+      // điều hướng sang màn theo dõi đơn.
+      if (error is ApiFailure && error.kind == ApiFailureKind.conflict) {
+        final moved = await _checkPayment(silent: true);
+        if (moved || !mounted) return;
+      }
+      if (!mounted) return;
       setState(() {
         _failure = error;
         _loading = false;
@@ -71,18 +81,18 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
     }
   }
 
-  Future<void> _checkPayment({bool silent = false}) async {
+  Future<bool> _checkPayment({bool silent = false}) async {
     final orderId = widget.orderId;
-    if (_checking || orderId == null) return;
+    if (_checking || orderId == null) return false;
     setState(() => _checking = true);
     try {
       final order = await ref.read(ordersRepositoryProvider).getById(orderId);
-      if (!mounted) return;
+      if (!mounted) return false;
       if (order.status != OrderStatus.awaitingPrepayment) {
         _poller?.cancel();
         ref.invalidate(activityApiOrdersProvider);
         context.go('/order-tracking?id=$orderId');
-        return;
+        return true;
       }
       if (!silent) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -91,12 +101,14 @@ class _BankTransferScreenState extends ConsumerState<BankTransferScreen> {
           ),
         );
       }
+      return false;
     } catch (error) {
       if (mounted && !silent) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Chưa kiểm tra được thanh toán: $error')),
         );
       }
+      return false;
     } finally {
       if (mounted) setState(() => _checking = false);
     }
