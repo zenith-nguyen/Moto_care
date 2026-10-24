@@ -39,7 +39,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Đã kết nối vai trò Admin'), findsOneWidget);
+    expect(find.text('Quản trị REVO'), findsOneWidget);
   });
 }
 
