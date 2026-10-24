@@ -77,3 +77,24 @@ class PendingOfferOrder {
     );
   }
 }
+
+class ProviderSkillOption {
+  const ProviderSkillOption({
+    required this.id,
+    required this.code,
+    required this.name,
+  });
+
+  final int id;
+  final String code;
+  final String name;
+
+  factory ProviderSkillOption.fromJson(Map<String, dynamic> json) {
+    final reader = JsonReader(json);
+    return ProviderSkillOption(
+      id: reader.positiveInt('id'),
+      code: reader.string('code'),
+      name: reader.string('name'),
+    );
+  }
+}

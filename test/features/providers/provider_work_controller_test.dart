@@ -92,6 +92,12 @@ class FakeProvidersRepository implements ProvidersRepository {
   }
 
   @override
+  Future<List<ProviderSkillOption>> listSkillCatalog() async => const [];
+
+  @override
+  Future<void> replaceMySkills(List<int> skillIds) async {}
+
+  @override
   Future<ProviderPresence> setOnline(bool isOnline) =>
       throw UnimplementedError();
 
