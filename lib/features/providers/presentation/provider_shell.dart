@@ -9,6 +9,7 @@ import '../../../core/theme/revo_theme.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/application/session_state.dart';
 import '../../auth/domain/app_user.dart';
+import '../../notifications/application/notification_inbox_controller.dart';
 import '../../orders/domain/order_models.dart';
 import '../../orders/domain/order_status.dart';
 import '../../wallet/application/provider_wallet_controller.dart';
@@ -444,6 +445,7 @@ class _ProviderHero extends StatelessWidget {
                   ],
                 ),
               ),
+              const _NotificationBell(),
             ],
           ),
           const SizedBox(height: 16),
@@ -507,6 +509,48 @@ class _HeroPill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NotificationBell extends ConsumerWidget {
+  const _NotificationBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread =
+        ref.watch(notificationInboxControllerProvider).value?.unreadCount ?? 0;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        IconButton(
+          tooltip: 'Thông báo',
+          onPressed: () => context.push('/provider/notifications'),
+          icon: const Icon(Icons.notifications_rounded, color: Colors.white),
+        ),
+        if (unread > 0)
+          Positioned(
+            right: 6,
+            top: 6,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              decoration: const BoxDecoration(
+                color: RevoBrandColors.danger,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                unread > 9 ? '9+' : '$unread',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -1704,12 +1748,30 @@ class _ProviderAccountPage extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         Card(
-          child: ListTile(
-            leading: const Icon(Icons.insights_rounded),
-            title: const Text('Thống kê & đánh giá'),
-            subtitle: const Text('Thu nhập tuần, đánh giá và hạng thợ'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => context.push('/provider/stats'),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.insights_rounded),
+                title: const Text('Thống kê & đánh giá'),
+                subtitle: const Text('Thu nhập tuần, đánh giá và hạng thợ'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/provider/stats'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.notifications_rounded),
+                title: const Text('Thông báo'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/provider/notifications'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.support_agent_rounded),
+                title: const Text('Hỗ trợ'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/provider/support'),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 24),
