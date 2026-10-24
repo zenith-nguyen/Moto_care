@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/notifications/push_session_coordinator.dart';
 import '../core/realtime/realtime_session_coordinator.dart';
-import '../core/theme/app_theme.dart';
+import '../core/theme/revo_theme.dart';
 import 'router/app_router.dart';
 
 /// Provider-branded entrypoint that keeps the shared authenticated router,
@@ -28,7 +28,7 @@ class ProviderMotoCareApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: AppTheme.light,
+      theme: buildRevoTheme(),
       routerConfig: router,
     );
   }
