@@ -80,7 +80,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ? null
               : sessionLocation,
         SessionSignedIn(:final session) =>
-          _isAllowedForRole(location, session.user.role)
+          isAllowedForRole(location, session.user.role)
               ? null
               : _roleLocation(session.user.role),
       };
@@ -377,7 +377,8 @@ const _customerLocations = {
   '/incident-map-picker',
 };
 
-bool _isAllowedForRole(String location, AppRole role) {
+@visibleForTesting
+bool isAllowedForRole(String location, AppRole role) {
   return switch (role) {
     AppRole.customer =>
       _customerLocations.contains(location) ||
@@ -386,7 +387,7 @@ bool _isAllowedForRole(String location, AppRole role) {
           location.startsWith('/partners/'),
     AppRole.provider =>
       location == '/provider' || location.startsWith('/provider/'),
-    AppRole.admin => location == '/admin',
+    AppRole.admin => location == '/admin' || location.startsWith('/admin/'),
   };
 }
 

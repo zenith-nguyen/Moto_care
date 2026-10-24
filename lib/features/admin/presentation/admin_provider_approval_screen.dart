@@ -13,6 +13,21 @@ class AdminProviderApprovalScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(adminOperationsControllerProvider);
+
+    ref.listen(adminOperationsControllerProvider, (previous, next) {
+      final failure = next.value?.lastFailure;
+      if (failure != null && previous?.value?.lastFailure != failure) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              backgroundColor: RevoBrandColors.dangerDark,
+              content: Text('Thao tác không thành công: $failure'),
+            ),
+          );
+      }
+    });
+
     return Scaffold(
       backgroundColor: RevoBrandColors.bg,
       appBar: AppBar(

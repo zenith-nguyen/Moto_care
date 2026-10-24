@@ -245,8 +245,9 @@ class _WithdrawalCard extends ConsumerWidget {
           requestId: item.request.id,
           decision: AdminDecision.approve,
         );
-    if (context.mounted)
+    if (context.mounted) {
       _reportSuccess(context, ref, 'Đã duyệt yêu cầu rút tiền.');
+    }
   }
 
   Future<void> _reject(BuildContext context, WidgetRef ref) async {
@@ -264,8 +265,9 @@ class _WithdrawalCard extends ConsumerWidget {
           decision: AdminDecision.reject,
           reason: reason,
         );
-    if (context.mounted)
+    if (context.mounted) {
       _reportSuccess(context, ref, 'Đã từ chối yêu cầu rút tiền.');
+    }
   }
 }
 
@@ -423,8 +425,9 @@ class _PayoutCard extends ConsumerWidget {
           referenceCode: result.referenceCode,
           reason: result.reason,
         );
-    if (context.mounted)
+    if (context.mounted) {
       _reportSuccess(context, ref, 'Đã ghi nhận chi tiền cho thợ.');
+    }
   }
 
   Future<void> _flag(BuildContext context, WidgetRef ref) async {
@@ -442,8 +445,9 @@ class _PayoutCard extends ConsumerWidget {
           decision: PayoutReconciliationDecision.flag,
           reason: reason,
         );
-    if (context.mounted)
+    if (context.mounted) {
       _reportSuccess(context, ref, 'Đã gắn cờ lệnh chi để kiểm tra lại.');
+    }
   }
 }
 
@@ -516,8 +520,9 @@ class _ReconcileConfirmSheetState extends State<_ReconcileConfirmSheet> {
                   hint: 'VD: MBVCB.123456789',
                   validator: (value) {
                     final text = value?.trim() ?? '';
-                    if (text.length < 3)
+                    if (text.length < 3) {
                       return 'Nhập mã giao dịch (tối thiểu 3 ký tự).';
+                    }
                     if (text.length > 120) return 'Tối đa 120 ký tự.';
                     return null;
                   },
@@ -771,8 +776,9 @@ class _FullRefundCard extends ConsumerWidget {
     await ref
         .read(adminOperationsControllerProvider.notifier)
         .refundFullOrder(refund.orderId);
-    if (context.mounted)
+    if (context.mounted) {
       _reportSuccess(context, ref, 'Đã xử lý hoàn tiền đơn ${refund.code}.');
+    }
   }
 }
 
