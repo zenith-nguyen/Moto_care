@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/revo_brand.dart';
+import '../../../core/theme/revo_theme.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/application/session_state.dart';
 import '../../auth/domain/app_user.dart';
@@ -39,6 +40,9 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
       return _PendingProviderApprovalPage(user: session.session.user);
     }
     return Scaffold(
+      backgroundColor: _index == 0
+          ? RevoBrandColors.surface
+          : RevoBrandColors.bg,
       appBar: AppBar(
         title: Text(_titles[_index]),
         actions: [
@@ -60,36 +64,14 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
           _ProviderAccountPage(),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (value) {
+      bottomNavigationBar: _RevoBottomNav(
+        currentIndex: _index,
+        onChanged: (value) {
           setState(() => _index = value);
           if (value == 2) {
             ref.invalidate(providerWalletControllerProvider);
           }
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Trang chủ',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded),
-            label: 'Đơn hàng',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-            label: 'Ví',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Tài khoản',
-          ),
-        ],
       ),
     );
   }
@@ -100,6 +82,125 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
     } else {
       ref.read(providerWorkControllerProvider.notifier).refresh();
     }
+  }
+}
+
+/// Floating capsule bottom navigation matching the REVO provider UI reference.
+class _RevoBottomNav extends StatelessWidget {
+  const _RevoBottomNav({required this.currentIndex, required this.onChanged});
+
+  final int currentIndex;
+  final ValueChanged<int> onChanged;
+
+  static const _items = <(String, IconData, IconData)>[
+    ('Trang chủ', Icons.home_outlined, Icons.home_rounded),
+    ('Đơn hàng', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
+    (
+      'Ví',
+      Icons.account_balance_wallet_outlined,
+      Icons.account_balance_wallet_rounded,
+    ),
+    ('Tài khoản', Icons.person_outline_rounded, Icons.person_rounded),
+  ];
+  static const _radius = 36.0;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.fromLTRB(
+      14,
+      6,
+      14,
+      MediaQuery.viewPaddingOf(context).bottom + 10,
+    ),
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: RevoBrandColors.surface,
+        borderRadius: BorderRadius.circular(_radius),
+        border: Border.all(color: RevoBrandColors.border, width: .8),
+        boxShadow: RevoShadows.navigation,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(_radius),
+        clipBehavior: Clip.antiAlias,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < _items.length; i++)
+                Expanded(
+                  child: _RevoNavItem(
+                    label: _items[i].$1,
+                    icon: i == currentIndex ? _items[i].$3 : _items[i].$2,
+                    active: i == currentIndex,
+                    onTap: () => onChanged(i),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _RevoNavItem extends StatelessWidget {
+  const _RevoNavItem({
+    required this.label,
+    required this.icon,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? RevoBrandColors.primary : RevoBrandColors.inactive;
+    return Semantics(
+      selected: active,
+      button: true,
+      label: label,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                width: 46,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: active
+                      ? RevoBrandColors.surfaceSoft
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Icon(icon, color: color, size: 23),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: RevoTypography.caption.copyWith(
+                  color: color,
+                  fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
