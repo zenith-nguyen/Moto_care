@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/revo_brand.dart';
 import '../application/admin_dashboard_controller.dart';
@@ -181,6 +182,26 @@ class _DashboardBody extends StatelessWidget {
               RevoBrandColors.navy,
             ),
           ],
+        ),
+        const SizedBox(height: 20),
+        const _SectionLabel('Tác vụ'),
+        const SizedBox(height: 10),
+        Container(
+          decoration: BoxDecoration(
+            color: RevoBrandColors.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: RevoBrandColors.border),
+          ),
+          child: ListTile(
+            leading: const Icon(
+              Icons.how_to_reg_rounded,
+              color: RevoBrandColors.primary,
+            ),
+            title: const Text('Duyệt hồ sơ thợ'),
+            subtitle: Text('${providers.pending} hồ sơ chờ duyệt'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => context.push('/admin/providers'),
+          ),
         ),
         if (state.lastFailure != null) ...[
           const SizedBox(height: 16),
