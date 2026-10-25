@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../../core/router/main_navigation.dart';
 import '../../home/models/home_destination.dart';
 import '../../home/widgets/home_bottom_navigation.dart';
@@ -71,14 +72,16 @@ class ChiTietDonHangScreen extends ConsumerWidget {
                           icon: const Icon(Icons.timeline_rounded),
                           label: const Text('Xem tiến trình cứu hộ'),
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Dữ liệu mẫu',
-                          style: TextStyle(
-                            color: ActivityTheme.mutedText,
-                            fontSize: 12,
+                        if (!ref.watch(runtimeApiIntegrationProvider)) ...[
+                          const SizedBox(height: 12),
+                          const Text(
+                            'Dữ liệu mẫu',
+                            style: TextStyle(
+                              color: ActivityTheme.mutedText,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
+                        ],
                         const SizedBox(height: 12),
                         if (order.status.isActive) ...[
                           ActiveOrderCard(
