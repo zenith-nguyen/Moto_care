@@ -4,6 +4,7 @@ import { IncidentType } from '../incident-types/incident-type.entity';
 import { Message } from '../messages/message.entity';
 import { OrderOffer } from '../orders/order-offer.entity';
 import { Order } from '../orders/order.entity';
+import { OrderPhoto } from '../order-photos/order-photo.entity';
 import { Payment } from '../payments/payment.entity';
 import { WalletTransaction } from '../payments/wallet-transaction.entity';
 import { Wallet } from '../payments/wallet.entity';
@@ -37,6 +38,7 @@ export default new DataSource({
     Provider,
     IncidentType,
     Order,
+    OrderPhoto,
     OrderOffer,
     Message,
     Review,
