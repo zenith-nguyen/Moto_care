@@ -53,6 +53,55 @@ class _EmergencyBookingBottomSheetState
     if (order != null && mounted) Navigator.pop(context, order);
   }
 
+  /// In live mode the server owns the price (the selected option is only a
+  /// description), so the total reflects the real incident base price fetched
+  /// from the backend. In the offline demo we keep the catalog option price.
+  Widget _buildTotalValue(bool runtimeIntegration, RescueRequestDraft draft) {
+    const key = ValueKey('rescue-request-total');
+    const amountStyle = TextStyle(
+      color: HomeColors.red,
+      fontWeight: FontWeight.w700,
+      fontSize: 20,
+    );
+    const pendingStyle = TextStyle(
+      color: HomeColors.secondary,
+      fontWeight: FontWeight.w700,
+      fontSize: 15,
+    );
+    if (!runtimeIntegration) {
+      final options = draft.configuration.options;
+      return Text(
+        formatOrderPrice(options[draft.selectedOption].price),
+        key: key,
+        textAlign: TextAlign.end,
+        style: amountStyle,
+      );
+    }
+    final basePrice = ref.watch(
+      incidentBasePriceProvider(draft.configuration.type),
+    );
+    return basePrice.when(
+      loading: () => const Text(
+        'Đang tính…',
+        key: key,
+        textAlign: TextAlign.end,
+        style: pendingStyle,
+      ),
+      error: (_, _) => const Text(
+        'Báo khi ghép thợ',
+        key: key,
+        textAlign: TextAlign.end,
+        style: pendingStyle,
+      ),
+      data: (price) => Text(
+        price == null ? 'Liên hệ khi ghép thợ' : formatOrderPrice(price),
+        key: key,
+        textAlign: TextAlign.end,
+        style: price == null ? pendingStyle : amountStyle,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final location = ref.watch(rescueLocationProvider);
@@ -282,31 +331,27 @@ class _EmergencyBookingBottomSheetState
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Flexible(
-                  child: Text(
-                    'Tổng tiền',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
-                ),
                 Flexible(
                   child: Text(
-                    formatOrderPrice(options[draft.selectedOption].price),
-                    key: const ValueKey('rescue-request-total'),
-                    textAlign: TextAlign.end,
+                    runtimeIntegration
+                        ? 'Giá khởi điểm (tạm tính)'
+                        : 'Tổng tiền',
                     style: const TextStyle(
-                      color: HomeColors.red,
                       fontWeight: FontWeight.w700,
-                      fontSize: 20,
+                      fontSize: 16,
                     ),
                   ),
                 ),
+                Flexible(child: _buildTotalValue(runtimeIntegration, draft)),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               runtimeIntegration
-                  ? 'Bạn sẽ thanh toán bằng QR chuyển khoản trước khi hệ thống bắt đầu ghép thợ.'
+                  ? 'Giá cuối do thợ xác nhận tại hiện trường. Nếu phát sinh thêm, '
+                        'bạn sẽ được hỏi duyệt trước khi thanh toán QR chuyển khoản.'
                   : 'Yêu cầu thử nghiệm, chỉ lưu trong phiên. Chưa điều phối thợ hoặc thu phí.',
               style: const TextStyle(
                 color: HomeColors.secondary,
