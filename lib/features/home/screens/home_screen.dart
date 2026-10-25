@@ -14,6 +14,7 @@ import '../../chat/providers/chat_directory_provider.dart';
 import '../../profile/providers/profile_provider.dart';
 import '../../location/services/device_location_service.dart';
 import '../../rescue/widgets/create_rescue_request_bottom_sheet.dart';
+import '../../rescue_station/providers/rescue_station_provider.dart';
 import '../../rescue_station/providers/station_details_provider.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
 import '../data/home_media_assets.dart';
@@ -297,12 +298,86 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
+  Widget _stationsLoadingSliver() => SliverPadding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    sliver: SliverToBoxAdapter(
+      child: Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: RevoHomeColors.surface,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Column(
+          children: [
+            SizedBox.square(
+              dimension: 28,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            SizedBox(height: 14),
+            Text(
+              'Đang tìm trạm gần bạn…',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _stationsNoticeSliver({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Widget? action,
+  }) => SliverPadding(
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    sliver: SliverToBoxAdapter(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: RevoHomeColors.surface,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 36),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: RevoHomeColors.muted,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+            ?action,
+          ],
+        ),
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider);
     final location = ref.watch(rescueLocationProvider);
     final discovery = ref.watch(homeDiscoveryProvider);
     final stations = ref.watch(homeDiscoveryStationsProvider);
+    // Only react to the live fetch status in API mode; the offline demo
+    // resolves synchronously and must not flash a spinner.
+    final stationsAsync = ref.watch(runtimeApiIntegrationProvider)
+        ? ref.watch(rescueStationsAsyncProvider)
+        : null;
+    final stationsLoading = stationsAsync?.isLoading ?? false;
+    final stationsHasError = stationsAsync?.hasError ?? false;
     final weather = ref.watch(homeWeatherProvider);
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -496,50 +571,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           ),
                         ),
                       ),
-                      if (stations.isEmpty)
-                        SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          sliver: SliverToBoxAdapter(
-                            child: Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: RevoHomeColors.surface,
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Icon(
-                                    Icons.location_off_outlined,
-                                    size: 36,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  const Text(
-                                    'Không tìm thấy trạm phù hợp',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Thử từ khóa khác hoặc mở rộng bộ lọc.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: RevoHomeColors.muted,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      ref
-                                          .read(homeDiscoveryProvider.notifier)
-                                          .reset();
-                                    },
-                                    child: const Text('Xóa tìm kiếm và bộ lọc'),
-                                  ),
-                                ],
-                              ),
-                            ),
+                      if (stations.isEmpty && stationsLoading)
+                        _stationsLoadingSliver()
+                      else if (stations.isEmpty && stationsHasError)
+                        _stationsNoticeSliver(
+                          icon: Icons.cloud_off_rounded,
+                          title: 'Không tải được danh sách trạm',
+                          subtitle: 'Kiểm tra kết nối mạng rồi thử lại.',
+                          action: TextButton(
+                            onPressed: () =>
+                                ref.invalidate(rescueStationsAsyncProvider),
+                            child: const Text('Thử lại'),
+                          ),
+                        )
+                      else if (stations.isEmpty)
+                        _stationsNoticeSliver(
+                          icon: Icons.location_off_outlined,
+                          title: 'Không tìm thấy trạm phù hợp',
+                          subtitle: 'Thử từ khóa khác hoặc mở rộng bộ lọc.',
+                          action: TextButton(
+                            onPressed: () => ref
+                                .read(homeDiscoveryProvider.notifier)
+                                .reset(),
+                            child: const Text('Xóa tìm kiếm và bộ lọc'),
                           ),
                         ),
                       SliverPadding(
