@@ -263,10 +263,7 @@ class _OrderAction extends ConsumerWidget {
       OrderStatus.awaitingPayment => const _WaitingMessage(
         text: 'Đang chờ quyết toán phần chênh lệch sandbox.',
       ),
-      OrderStatus.completed => const _WaitingMessage(
-        text: 'Đơn đã hoàn tất. Số dư ví sẽ được tải lại từ máy chủ.',
-        success: true,
-      ),
+      OrderStatus.completed => _CompletedState(order: order),
       _ => _WaitingMessage(
         text:
             'Không có thao tác dành cho trạng thái '
@@ -671,28 +668,150 @@ class _StatusLabel extends StatelessWidget {
 }
 
 class _WaitingMessage extends StatelessWidget {
-  const _WaitingMessage({required this.text, this.success = false});
+  const _WaitingMessage({required this.text});
 
   final String text;
-  final bool success;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: (success ? RevoBrandColors.success : RevoBrandColors.warning)
-            .withValues(alpha: 0.12),
+        color: RevoBrandColors.warning.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          Icon(
-            success ? Icons.check_circle_outline : Icons.hourglass_top_rounded,
-            color: success ? RevoBrandColors.success : RevoBrandColors.warning,
+          const Icon(
+            Icons.hourglass_top_rounded,
+            color: RevoBrandColors.warning,
           ),
           const SizedBox(width: 12),
           Expanded(child: Text(text)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompletedState extends StatefulWidget {
+  const _CompletedState({required this.order});
+
+  final OrderDetails order;
+
+  @override
+  State<_CompletedState> createState() => _CompletedStateState();
+}
+
+class _CompletedStateState extends State<_CompletedState>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 600),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _controller.value = 1;
+      } else {
+        _controller.forward();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final finalPrice = widget.order.finalPrice;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: RevoBrandColors.success.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: RevoBrandColors.success.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        children: [
+          ScaleTransition(
+            scale: CurvedAnimation(
+              parent: _controller,
+              curve: Curves.easeOutBack,
+            ),
+            child: Container(
+              width: 72,
+              height: 72,
+              decoration: const BoxDecoration(
+                color: RevoBrandColors.success,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                color: Colors.white,
+                size: 42,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Đơn đã hoàn tất',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: RevoBrandColors.ink,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Cảm ơn bạn đã hoàn thành đơn cứu hộ.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: RevoBrandColors.textSubtle),
+          ),
+          if (finalPrice != null) ...[
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Tổng thanh toán',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Text(
+                    formatProviderMoney(finalPrice),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: RevoBrandColors.ink,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          const Text(
+            'Thu nhập đã được cộng vào ví của bạn.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: RevoBrandColors.textSubtle, fontSize: 12),
+          ),
         ],
       ),
     );
