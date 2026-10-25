@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_dependencies.dart';
+import '../../../core/network/api_failure.dart';
 import '../../../core/widgets/photo_attachment_field.dart';
 import '../../../core/widgets/service_scaffold.dart';
+import '../../providers/data/provider_application_repository.dart';
+import '../models/partner_registration_draft.dart';
 import '../providers/partner_registration_draft_provider.dart';
 import '../services/partner_registration_service.dart';
 
@@ -23,6 +27,7 @@ class _DangKyThoScreenState extends ConsumerState<DangKyThoScreen> {
   PartnerRegistrationDraftController get _controller =>
       ref.read(partnerRegistrationDraftProvider(_draftKey).notifier);
   int get _step => ref.read(partnerRegistrationDraftProvider(_draftKey)).step;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -47,6 +52,7 @@ class _DangKyThoScreenState extends ConsumerState<DangKyThoScreen> {
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
     if (ref.read(partnerRegistrationDraftProvider(_draftKey)).submitted) return;
     for (var step = 0; step < 3; step++) {
       if (!_validate(step)) {
@@ -55,7 +61,22 @@ class _DangKyThoScreenState extends ConsumerState<DangKyThoScreen> {
       }
     }
     FocusScope.of(context).unfocus();
+
+    // In live API mode, submit to the backend first so the application really
+    // reaches Admin. Only mark the draft submitted once the server accepts it,
+    // so a transient failure leaves the form usable.
+    final draft = ref.read(partnerRegistrationDraftProvider(_draftKey));
+    final liveMode = ref.read(runtimeApiIntegrationProvider);
+    if (liveMode) {
+      setState(() => _submitting = true);
+      final sent = await _sendToBackend(draft);
+      if (!mounted) return;
+      setState(() => _submitting = false);
+      if (!sent) return;
+    }
+
     if (!_controller.submit(_name.text, _citizenId.text)) return;
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -65,8 +86,13 @@ class _DangKyThoScreenState extends ConsumerState<DangKyThoScreen> {
           size: 48,
         ),
         title: const Text('Đăng ký thành công'),
-        content: const Text(
-          'Hồ sơ của bạn đã được ghi nhận. Admin sẽ liên hệ xác minh trong 24h.\n\nHồ sơ đang được lưu trong phiên dùng thử; chưa gửi đến Admin.',
+        content: Text(
+          liveMode
+              ? 'Hồ sơ của bạn đã được gửi đến Admin. Bạn sẽ nhận được thông '
+                    'báo khi hồ sơ được duyệt.'
+              : 'Hồ sơ của bạn đã được ghi nhận. Admin sẽ liên hệ xác minh '
+                    'trong 24h.\n\nHồ sơ đang được lưu trong phiên dùng thử; '
+                    'chưa gửi đến Admin.',
         ),
         actions: [
           TextButton(
@@ -78,6 +104,68 @@ class _DangKyThoScreenState extends ConsumerState<DangKyThoScreen> {
     );
   }
 
+  // Returns true when the application was accepted (or already exists), false
+  // when the caller should let the applicant retry.
+  Future<bool> _sendToBackend(PartnerRegistrationDraft draft) async {
+    try {
+      await ref
+          .read(providerApplicationRepositoryProvider)
+          .submit(
+            ProviderApplicationInput(
+              bio: _composeBio(draft),
+              yearsOfExperience: _yearsFrom(draft.experience),
+            ),
+          );
+      return true;
+    } on ApiFailure catch (failure) {
+      if (failure.kind == ApiFailureKind.conflict) {
+        // Already applied: treat as submitted so the form settles.
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              const SnackBar(
+                content: Text('Bạn đã nộp hồ sơ trước đó, vui lòng chờ duyệt.'),
+              ),
+            );
+        }
+        return true;
+      }
+      _showSubmitError('Không gửi được hồ sơ: ${failure.message}');
+      return false;
+    } catch (error) {
+      _showSubmitError('Không gửi được hồ sơ: $error');
+      return false;
+    }
+  }
+
+  void _showSubmitError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // The backend application stores a free-text bio; compose it from the public
+  // details collected here. The CCCD number and ID photos are intentionally
+  // left out of this text (admin verification of documents is a later step).
+  String? _composeBio(PartnerRegistrationDraft draft) {
+    final parts = <String>[
+      if (draft.experience != null) 'Kinh nghiệm: ${draft.experience}',
+      if (draft.district != null) 'Khu vực: ${draft.district}',
+      if (draft.tools.isNotEmpty) 'Dụng cụ: ${draft.tools.join(', ')}',
+    ];
+    return parts.isEmpty ? null : parts.join('. ');
+  }
+
+  int? _yearsFrom(String? experience) => switch (experience) {
+    'Dưới 1 năm' => 0,
+    '1 - 3 năm' => 1,
+    '3 - 5 năm' => 3,
+    'Trên 5 năm' => 5,
+    _ => null,
+  };
+
   @override
   Widget build(BuildContext context) {
     final draft = ref.watch(partnerRegistrationDraftProvider(_draftKey));
@@ -88,9 +176,15 @@ class _DangKyThoScreenState extends ConsumerState<DangKyThoScreen> {
       bottomBar: SizedBox(
         width: double.infinity,
         child: FilledButton(
-          onPressed: _step == 2 && !draft.submitted ? _submit : null,
+          onPressed: _step == 2 && !draft.submitted && !_submitting
+              ? _submit
+              : null,
           child: Text(
-            draft.submitted ? 'Đã ghi nhận hồ sơ' : 'Gửi hồ sơ đăng ký',
+            draft.submitted
+                ? 'Đã ghi nhận hồ sơ'
+                : _submitting
+                ? 'Đang gửi...'
+                : 'Gửi hồ sơ đăng ký',
           ),
         ),
       ),
@@ -239,12 +333,17 @@ class _DangKyThoScreenState extends ConsumerState<DangKyThoScreen> {
                         validator: service.validateDistrict,
                       ),
                       const SizedBox(height: 18),
-                      const Card(
+                      Card(
                         child: Padding(
-                          padding: EdgeInsets.all(18),
+                          padding: const EdgeInsets.all(18),
                           child: Text(
-                            'Hồ sơ được lưu trong phiên dùng thử. Chức năng gửi đến Admin chưa được kết nối.',
-                            style: TextStyle(color: ServiceColors.muted),
+                            ref.watch(runtimeApiIntegrationProvider)
+                                ? 'Khi gửi, hồ sơ sẽ được chuyển đến Admin để '
+                                      'duyệt. Bạn vẫn dùng ứng dụng như khách '
+                                      'hàng cho tới khi được duyệt.'
+                                : 'Hồ sơ được lưu trong phiên dùng thử. Chức '
+                                      'năng gửi đến Admin chưa được kết nối.',
+                            style: const TextStyle(color: ServiceColors.muted),
                           ),
                         ),
                       ),
