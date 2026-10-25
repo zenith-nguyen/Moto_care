@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/app_dependencies.dart';
+import '../../../core/realtime/realtime_session_coordinator.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../partner/providers/partner_provider.dart';
@@ -46,6 +47,20 @@ class OrderTrackingController extends Notifier<OrderTrackingState> {
         .read(partnerShopsProvider)
         .where((shop) => shop.id == order?.partnerId);
     ref.onDispose(() => _timer?.cancel());
+    // In real API mode, join the order's realtime room so the backend streams
+    // the assigned provider's GPS (provider.location_updated) to the tracking
+    // feed. Gated on the API flag (not liveMode) so injected test feeds never
+    // touch the real socket connection.
+    if (ref.read(runtimeApiIntegrationProvider) &&
+        order != null &&
+        order.status.isActive) {
+      final target = int.tryParse(order.id);
+      if (target != null) {
+        final coordinator = ref.read(realtimeSessionCoordinatorProvider);
+        coordinator.followOrder(target);
+        ref.onDispose(coordinator.leaveOrder);
+      }
+    }
     ref.listen(activityProvider, (_, next) {
       if (!_active(next.orderById(key.$2))) stop();
     });
