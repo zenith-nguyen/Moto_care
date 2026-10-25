@@ -60,7 +60,7 @@ final homeDiscoveryStationsProvider =
           HomeStationListing(
             station: shop.station,
             services: shop.services,
-            details: details[shop.id] ?? defaultHomeStationDetails,
+            details: homeStationDetailsFor(shop.id, details),
             distanceKm: stationDistanceKm(shop.station, location),
           ),
       ];

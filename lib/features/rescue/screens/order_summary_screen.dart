@@ -8,6 +8,7 @@ import '../../../app/app_dependencies.dart';
 import '../../activity/models/rescue_order.dart';
 import '../../activity/providers/activity_provider.dart';
 import '../../activity/widgets/order_summary.dart';
+import '../../home/data/home_station_details.dart';
 import '../../home/providers/home_discovery_provider.dart';
 import '../../vehicle/providers/vehicle_provider.dart';
 import '../models/marketplace_booking.dart';
@@ -119,7 +120,10 @@ class _OrderSummaryScreenState extends ConsumerState<OrderSummaryScreen> {
     final activeOrders = ref.watch(activityProvider).activeOrders;
     final photo = shop == null
         ? null
-        : ref.watch(homeStationDetailsProvider)[shop.id]?.imageAsset;
+        : homeStationDetailsFor(
+            shop.id,
+            ref.watch(homeStationDetailsProvider),
+          ).imageAsset;
     final scale = MediaQuery.textScalerOf(context).scale(20) / 20;
 
     return Theme(

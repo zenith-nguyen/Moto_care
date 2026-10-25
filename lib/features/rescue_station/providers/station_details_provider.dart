@@ -29,9 +29,10 @@ final stationModelProvider = Provider.autoDispose.family<StationModel?, String>(
         .watch(stationDetailsServiceProvider)
         .build(
           shop: shop,
-          details:
-              ref.watch(homeStationDetailsProvider)[id] ??
-              defaultHomeStationDetails,
+          details: homeStationDetailsFor(
+            id,
+            ref.watch(homeStationDetailsProvider),
+          ),
           profile:
               ref.watch(stationProfilesProvider)[id] ?? defaultStationProfile,
           distanceKm: stationDistanceKm(
