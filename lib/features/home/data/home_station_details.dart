@@ -4,10 +4,16 @@ import '../models/home_discovery.dart';
 // for the offline-demo directory below and spread deterministically across live
 // stations so each card shows a distinct, professional-looking building.
 const stationPhotoAssets = [
-  'assets/images/Tiemsua1.png',
-  'assets/images/Tiemsua2.png',
-  'assets/images/Tiemsua3.png',
-  'assets/images/Tiemsua4.png',
+  'assets/images/repair-shop-1.png',
+  'assets/images/repair-shop-2.png',
+  'assets/images/repair-shop-3.png',
+  'assets/images/repair-shop-4.png',
+  'assets/images/repair-shop-5.png',
+  'assets/images/repair-shop-6.png',
+  'assets/images/repair-shop-7.png',
+  'assets/images/repair-shop-8.png',
+  'assets/images/repair-shop-9.png',
+  'assets/images/repair-shop-10.png',
 ];
 
 // Station photos and sample review/response data for the offline demo
