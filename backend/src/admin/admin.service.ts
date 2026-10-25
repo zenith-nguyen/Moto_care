@@ -8,10 +8,14 @@ import { Order } from '../orders/order.entity';
 import { Payment } from '../payments/payment.entity';
 import { Provider } from '../providers/provider.entity';
 import { User } from '../users/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly database: DataSource) {}
+  constructor(
+    private readonly database: DataSource,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   async recentOrders() {
     const orders = await this.database.getRepository(Order).find({ order: { createdAt: 'DESC', id: 'DESC' }, take: 50 });
@@ -52,7 +56,7 @@ export class AdminService {
     if (![ApprovalStatus.APPROVED, ApprovalStatus.REJECTED].includes(status)) {
       throw new ConflictException('Review must approve or reject');
     }
-    return this.database.transaction(async (manager) => {
+    const result = await this.database.transaction(async (manager) => {
       const provider = await manager.getRepository(Provider).findOne({
         where: { id: providerId }, lock: { mode: 'pessimistic_write' },
       });
@@ -69,5 +73,16 @@ export class AdminService {
       await manager.getRepository(User).save(user);
       return { id: provider.id, userId: provider.userId, approvalStatus: provider.approvalStatus, accountStatus: user.status };
     });
+    // Tell the applicant the outcome. Best-effort: a failed notification must
+    // not roll back a completed review decision.
+    try {
+      await this.notifications.notifyProviderReviewed(
+        result.userId,
+        status === ApprovalStatus.APPROVED,
+      );
+    } catch {
+      // Swallow: the review stands regardless of notification delivery.
+    }
+    return result;
   }
 }

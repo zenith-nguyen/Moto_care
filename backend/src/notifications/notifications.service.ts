@@ -184,6 +184,19 @@ export class NotificationsService {
     });
   }
 
+  async notifyProviderReviewed(userId: number, approved: boolean): Promise<void> {
+    await this.create({
+      userId,
+      type: NotificationType.SYSTEM,
+      title: approved ? 'Hồ sơ thợ đã được duyệt' : 'Hồ sơ thợ chưa được duyệt',
+      body: approved
+        ? 'Chúc mừng! Hồ sơ thợ của bạn đã được duyệt. Vui lòng đăng nhập lại để bắt đầu nhận đơn.'
+        : 'Rất tiếc, hồ sơ thợ của bạn chưa được duyệt lần này. Vui lòng liên hệ hỗ trợ để biết thêm chi tiết.',
+      data: { route: approved ? 'provider_home' : 'support' },
+      dedupeKey: `provider:${userId}:review:${approved ? 'approved' : 'rejected'}`,
+    });
+  }
+
   async notifyProviderNearby(orderId: number): Promise<void> {
     const order = await this.database.getRepository(Order).findOneBy({ id: orderId });
     if (!order) return;

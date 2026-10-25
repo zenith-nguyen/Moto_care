@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { DataSource } from 'typeorm';
 import { AdminService } from '../src/admin/admin.service';
+import { NotificationsService } from '../src/notifications/notifications.service';
 import { AdminAnalyticsService } from '../src/admin/admin-analytics.service';
 import 'dotenv/config';
 import { ApprovalStatus } from '../src/common/enums/approval-status.enum';
@@ -116,7 +117,9 @@ describe('Orders and matching on PostGIS', () => {
     orderQueries = new OrdersQueryService(database, paymentAccounting);
     demoPayments = new DemoPaymentsService(database, config, matching);
     priceAdjustments = new PriceAdjustmentsService(database, paymentAccounting, paymentAccounting);
-    admin = new AdminService(database);
+    admin = new AdminService(database, {
+      notifyProviderReviewed: async () => {},
+    } as unknown as NotificationsService);
     analytics = new AdminAnalyticsService(database, config);
     withdrawals = new WithdrawalsService(database, new PayoutReconciliationService(database, config));
     messages = new MessagesService(
