@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../chat/models/chat_conversation.dart';
 import '../models/order_cancellation_reason.dart';
 import '../models/rescue_order.dart';
@@ -144,7 +145,7 @@ abstract final class ActivityActions {
     );
     if (!context.mounted || request == null) return false;
     try {
-      await ref
+      final created = await ref
           .read(activityProvider.notifier)
           .createOrderFromApi(
             serviceType: order.serviceType,
@@ -154,10 +155,15 @@ abstract final class ActivityActions {
             locationLongitude: order.locationLongitude,
           );
       if (!context.mounted) return false;
-      feedback(
-        context,
-        'Đã tạo đơn cứu hộ. Vui lòng thực hiện bước thanh toán.',
-      );
+      if (ref.read(runtimeApiIntegrationProvider) &&
+          created.awaitingPrepayment) {
+        // Take the user straight to payment, like the emergency/checkout flows.
+        // Returns false so the caller does not navigate on top of the payment
+        // screen; the new order is reached through the payment flow.
+        context.push('/bank-transfer?id=${created.id}');
+        return false;
+      }
+      feedback(context, 'Đã tạo đơn cứu hộ đặt lại.');
       return true;
     } on StateError {
       if (!context.mounted) return false;
