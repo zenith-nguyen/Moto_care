@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/app_dependencies.dart';
+import '../../auth/application/session_controller.dart';
+import '../../auth/application/session_state.dart';
+import '../../auth/domain/app_user.dart';
 import '../../orders/domain/order_models.dart';
 import '../../orders/domain/order_status.dart';
 import '../models/rescue_order.dart';
@@ -10,6 +13,13 @@ final activityApiOrdersProvider = FutureProvider<List<RescueOrder>>((
 ) async {
   if (!ref.watch(runtimeApiIntegrationProvider)) return const [];
   final repository = ref.watch(ordersRepositoryProvider);
+  // The customer is the owner of these orders, so their account identity is the
+  // requester shown on the order. This avoids the "Chưa cập nhật" fallback when
+  // the profile tab has not been opened/refreshed yet.
+  final sessionState = ref.read(sessionControllerProvider);
+  final requester = sessionState is SessionSignedIn
+      ? sessionState.session.user
+      : null;
   final summaries = await repository.listMine();
   final orders = await Future.wait(
     summaries.map((summary) async {
@@ -22,7 +32,7 @@ final activityApiOrdersProvider = FutureProvider<List<RescueOrder>>((
           // Contact is intentionally unavailable outside an active assignment.
         }
       }
-      return _toLegacyOrder(details, summary.createdAt, contact);
+      return _toLegacyOrder(details, summary.createdAt, contact, requester);
     }),
   );
   orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -33,6 +43,7 @@ RescueOrder _toLegacyOrder(
   OrderDetails order,
   DateTime createdAt,
   ParticipantContact? contact,
+  AppUser? requester,
 ) {
   final status = _status(order.status);
   final coordinates = order.customerLocation;
@@ -40,6 +51,8 @@ RescueOrder _toLegacyOrder(
     id: order.id.toString(),
     orderCode: order.code,
     status: status,
+    requesterName: requester?.name ?? '',
+    requesterPhone: requester?.phone ?? '',
     serviceType: _serviceType(order.incidentType.name),
     userVehicle: order.vehicle?.displayName ?? 'Chưa có thông tin xe',
     locationAddress:
