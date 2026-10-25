@@ -7,6 +7,7 @@ import '../../../app/app_dependencies.dart';
 import '../../../core/theme/revo_brand.dart';
 import '../../orders/domain/order_models.dart';
 import '../../orders/domain/order_status.dart';
+import '../../orders/presentation/incident_photos_card.dart';
 import '../../wallet/application/provider_wallet_controller.dart';
 import '../application/provider_location_tracking_controller.dart';
 import '../application/provider_work_controller.dart';
@@ -135,6 +136,7 @@ class _OrderDetailsBody extends ConsumerWidget {
             ),
           ],
         ),
+        IncidentPhotosCard(orderId: order.id),
         const SizedBox(height: 14),
         _DetailsCard(
           title: 'Thông tin dịch vụ',

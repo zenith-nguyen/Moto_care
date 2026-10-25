@@ -138,6 +138,17 @@ class ActivityController extends Notifier<ActivityState> {
             longitude: locationLongitude,
           ),
         );
+    // Best-effort: attach the incident photo so the mechanic can see it. The
+    // order already exists, so a failed upload must not fail order creation.
+    if (incidentPhotoBytes != null && incidentPhotoBytes.isNotEmpty) {
+      try {
+        await ref
+            .read(orderPhotosRepositoryProvider)
+            .upload(orderId: created.id, bytes: incidentPhotoBytes);
+      } catch (_) {
+        // Swallow: the order stands even if the photo could not be stored.
+      }
+    }
     ref.invalidate(activityApiOrdersProvider);
     final orders = await ref.read(activityApiOrdersProvider.future);
     return orders.firstWhere((order) => order.id == created.id.toString());

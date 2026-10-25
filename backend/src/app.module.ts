@@ -13,6 +13,7 @@ import { envValidationSchema } from './config/env.validation';
 import { HealthModule } from './health/health.module';
 import { IncidentTypesModule } from './incident-types/incident-types.module';
 import { OrdersModule } from './orders/orders.module';
+import { OrderPhotosModule } from './order-photos/order-photos.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ProvidersModule } from './providers/providers.module';
 import { RealtimeModule } from './realtime/realtime.module';
@@ -59,6 +60,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     HealthModule,
     IncidentTypesModule,
     OrdersModule,
+    OrderPhotosModule,
     RealtimeModule,
     PaymentsModule,
     ProvidersModule,
