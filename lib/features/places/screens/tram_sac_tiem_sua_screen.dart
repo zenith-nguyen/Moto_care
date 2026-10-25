@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart' as osm_map;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart' as osm;
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../../core/services/service_actions.dart';
 import '../../../core/widgets/service_scaffold.dart';
+import '../../home/providers/home_provider.dart';
 import '../models/service_place.dart';
 import '../providers/service_place_provider.dart';
 export '../providers/service_place_provider.dart' show servicePlacesProvider;
@@ -32,8 +37,30 @@ class _TramSacTiemSuaScreenState extends ConsumerState<TramSacTiemSuaScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final places = ref.watch(
-      filteredServicePlacesProvider((_query, Set.unmodifiable(_filters))),
+    final placesAsync = ref.watch(servicePlacesAsyncProvider);
+    return ServiceScaffold(
+      title: 'Trạm sạc & Tiệm sửa xe gần nhất',
+      body: placesAsync.when(
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(48),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+        error: (_, _) => _ErrorState(
+          onRetry: () => ref.invalidate(servicePlacesAsyncProvider),
+        ),
+        data: (allPlaces) => _buildContent(context, allPlaces),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, List<ServicePlace> allPlaces) {
+    final live = ref.watch(runtimeApiIntegrationProvider);
+    final places = filterServicePlaces(
+      allPlaces,
+      _query,
+      Set.unmodifiable(_filters),
     );
     final selected = places.isEmpty
         ? null
@@ -41,111 +68,133 @@ class _TramSacTiemSuaScreenState extends ConsumerState<TramSacTiemSuaScreen> {
             (p) => p.id == _selectedId,
             orElse: () => places.first,
           );
-    return ServiceScaffold(
-      title: 'Trạm sạc & Tiệm sửa xe gần nhất',
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          ServiceSearchBar(
-            controller: _search,
-            hint: 'Tìm kiếm theo địa chỉ',
-            onChanged: (value) =>
-                setState(() => _query = normalizeServiceSearch(value)),
-          ),
-          const SizedBox(height: 12),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final (label, icon) in const [
-                  ('Trạm sạc', Icons.ev_station_outlined),
-                  ('Mở 24/7', Icons.schedule),
-                  ('Sửa xe xăng', Icons.two_wheeler),
-                ])
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ActionChip(
-                      avatar: Icon(
-                        _filters.contains(label) ? Icons.check : icon,
-                        size: 18,
-                      ),
-                      label: Text(label),
-                      tooltip: _filters.contains(label)
-                          ? 'Bỏ lọc $label'
-                          : 'Lọc $label',
-                      backgroundColor: _filters.contains(label)
-                          ? ServiceColors.orange.withValues(alpha: .22)
-                          : ServiceColors.surface,
-                      side: BorderSide(
-                        color: _filters.contains(label)
-                            ? ServiceColors.orange
-                            : ServiceColors.border,
-                      ),
-                      onPressed: () => setState(() {
-                        if (!_filters.add(label)) _filters.remove(label);
-                      }),
+    final userLocation = ref.watch(rescueLocationProvider);
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      children: [
+        ServiceSearchBar(
+          controller: _search,
+          hint: 'Tìm kiếm theo địa chỉ',
+          onChanged: (value) =>
+              setState(() => _query = normalizeServiceSearch(value)),
+        ),
+        const SizedBox(height: 12),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (final (label, icon) in const [
+                ('Trạm sạc', Icons.ev_station_outlined),
+                ('Mở 24/7', Icons.schedule),
+                ('Sửa xe xăng', Icons.two_wheeler),
+              ])
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    avatar: Icon(
+                      _filters.contains(label) ? Icons.check : icon,
+                      size: 18,
                     ),
+                    label: Text(label),
+                    tooltip: _filters.contains(label)
+                        ? 'Bỏ lọc $label'
+                        : 'Lọc $label',
+                    backgroundColor: _filters.contains(label)
+                        ? ServiceColors.orange.withValues(alpha: .22)
+                        : ServiceColors.surface,
+                    side: BorderSide(
+                      color: _filters.contains(label)
+                          ? ServiceColors.orange
+                          : ServiceColors.border,
+                    ),
+                    onPressed: () => setState(() {
+                      if (!_filters.add(label)) _filters.remove(label);
+                    }),
                   ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          SegmentedButton<_PlaceView>(
-            segments: const [
-              ButtonSegment(
-                value: _PlaceView.map,
-                label: Text('Bản đồ'),
-                icon: Icon(Icons.map_outlined),
-              ),
-              ButtonSegment(
-                value: _PlaceView.list,
-                label: Text('Danh sách'),
-                icon: Icon(Icons.format_list_bulleted),
-              ),
+                ),
             ],
-            selected: {_view},
-            showSelectedIcon: false,
-            onSelectionChanged: (value) => setState(() => _view = value.single),
           ),
-          const SizedBox(height: 16),
-          Text(
-            '${places.length} địa điểm • Khoảng cách minh họa',
-            style: const TextStyle(color: ServiceColors.muted),
+        ),
+        const SizedBox(height: 16),
+        SegmentedButton<_PlaceView>(
+          segments: const [
+            ButtonSegment(
+              value: _PlaceView.map,
+              label: Text('Bản đồ'),
+              icon: Icon(Icons.map_outlined),
+            ),
+            ButtonSegment(
+              value: _PlaceView.list,
+              label: Text('Danh sách'),
+              icon: Icon(Icons.format_list_bulleted),
+            ),
+          ],
+          selected: {_view},
+          showSelectedIcon: false,
+          onSelectionChanged: (value) => setState(() => _view = value.single),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          live
+              ? '${places.length} địa điểm gần bạn'
+              : '${places.length} địa điểm • Khoảng cách minh họa',
+          style: const TextStyle(color: ServiceColors.muted),
+        ),
+        const SizedBox(height: 12),
+        if (places.isEmpty)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Không tìm thấy địa điểm phù hợp. Hãy thử địa chỉ khác hoặc bỏ bớt bộ lọc.',
+              ),
+            ),
+          )
+        else if (_view == _PlaceView.map) ...[
+          _PlacesMap(
+            places: places,
+            selectedId: selected!.id,
+            onSelected: (id) => setState(() => _selectedId = id),
+            userLatitude: userLocation?.latitude,
+            userLongitude: userLocation?.longitude,
           ),
           const SizedBox(height: 12),
-          if (places.isEmpty)
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Không tìm thấy địa điểm phù hợp. Hãy thử địa chỉ khác hoặc bỏ bớt bộ lọc.',
-                ),
-              ),
-            )
-          else if (_view == _PlaceView.map) ...[
-            _MockMap(
-              places: places,
-              selectedId: selected!.id,
-              onSelected: (id) => setState(() => _selectedId = id),
+          _PlaceCard(place: selected, live: live),
+        ] else ...[
+          for (final place in places)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _PlaceCard(place: place, live: live),
             ),
-            const SizedBox(height: 12),
-            _PlaceCard(place: selected),
-          ] else ...[
-            for (final place in places)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _PlaceCard(place: place),
-              ),
-          ],
         ],
-      ),
+      ],
     );
   }
 }
 
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.error_outline_rounded, size: 40),
+        const SizedBox(height: 12),
+        const Text('Không tải được danh sách địa điểm.'),
+        const SizedBox(height: 12),
+        OutlinedButton(onPressed: onRetry, child: const Text('Thử lại')),
+      ],
+    ),
+  );
+}
+
 class _PlaceCard extends ConsumerWidget {
-  const _PlaceCard({required this.place});
+  const _PlaceCard({required this.place, required this.live});
   final ServicePlace place;
+  final bool live;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Card(
@@ -186,27 +235,26 @@ class _PlaceCard extends ConsumerWidget {
             spacing: 16,
             runSpacing: 8,
             children: [
-              Text('${place.distanceKm.toStringAsFixed(1)} km'),
-              Text(
-                place.isOpen ? 'Mở cửa' : 'Đóng cửa',
-                style: TextStyle(
-                  color: place.isOpen
-                      ? const Color(0xFF69D49B)
-                      : ServiceColors.orange,
+              if (place.hasDistance)
+                Text('${place.distanceKm.toStringAsFixed(1)} km'),
+              if (place.is24Hours)
+                const Text(
+                  'Mở 24/7',
+                  style: TextStyle(color: Color(0xFF69D49B)),
                 ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.star_rounded,
-                    color: ServiceColors.gold,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(place.rating.toStringAsFixed(1)),
-                ],
-              ),
+              if (place.hasRating)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.star_rounded,
+                      color: ServiceColors.gold,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(place.rating.toStringAsFixed(1)),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -220,7 +268,9 @@ class _PlaceCard extends ConsumerWidget {
                   ref,
                   Uri.https('www.google.com', '/maps/dir/', {
                     'api': '1',
-                    'destination': place.address,
+                    'destination': place.hasCoordinates
+                        ? '${place.latitude},${place.longitude}'
+                        : place.address,
                   }),
                   'Không thể mở bản đồ. Địa chỉ: ${place.address}',
                 ),
@@ -233,7 +283,9 @@ class _PlaceCard extends ConsumerWidget {
                   if (phone == null || phone.isEmpty) {
                     showServiceMessage(
                       context,
-                      'Địa điểm minh họa chưa có số điện thoại.',
+                      live
+                          ? 'Địa điểm này chưa có số điện thoại.'
+                          : 'Địa điểm minh họa chưa có số điện thoại.',
                     );
                     return;
                   }
@@ -255,118 +307,170 @@ class _PlaceCard extends ConsumerWidget {
   );
 }
 
-class _MockMap extends StatelessWidget {
-  const _MockMap({
+/// A real OpenStreetMap view of the service places plus the user's location.
+/// Uses OSM tiles (no API key needed), matching the rescue tracking map.
+class _PlacesMap extends StatefulWidget {
+  const _PlacesMap({
     required this.places,
     required this.selectedId,
     required this.onSelected,
+    this.userLatitude,
+    this.userLongitude,
   });
   final List<ServicePlace> places;
   final String selectedId;
   final ValueChanged<String> onSelected;
+  final double? userLatitude;
+  final double? userLongitude;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(18),
-    child: SizedBox(
-      height: 300,
-      child: LayoutBuilder(
-        builder: (context, constraints) => Stack(
-          children: [
-            Positioned.fill(child: CustomPaint(painter: _MapPainter())),
-            for (final place in places)
-              Positioned(
-                left:
-                    constraints.maxWidth *
-                        switch (place.id) {
-                          '1' => .22,
-                          '2' => .65,
-                          '3' => .38,
-                          _ => .75,
-                        } -
-                    24,
-                top:
-                    300 *
-                        switch (place.id) {
-                          '1' => .3,
-                          '2' => .22,
-                          '3' => .6,
-                          _ => .64,
-                        } -
-                    24,
-                child: IconButton.filled(
-                  tooltip: place.name,
-                  style: IconButton.styleFrom(
-                    backgroundColor: place.id == selectedId
-                        ? ServiceColors.orange
-                        : const Color(0xFF3E5351),
-                  ),
-                  onPressed: () => onSelected(place.id),
-                  icon: Icon(place.isCharging ? Icons.ev_station : Icons.build),
-                ),
-              ),
-            const Align(
-              alignment: Alignment.bottomLeft,
-              child: Padding(
-                padding: EdgeInsets.all(12),
-                child: Text(
-                  'Google Map • Mô phỏng',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: ServiceColors.text,
-                    backgroundColor: ServiceColors.surface,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  State<_PlacesMap> createState() => _PlacesMapState();
 }
 
-class _MapPainter extends CustomPainter {
+class _PlacesMapState extends State<_PlacesMap> {
+  final _controller = osm_map.MapController();
+
+  List<ServicePlace> get _located =>
+      widget.places.where((p) => p.hasCoordinates).toList(growable: false);
+
+  List<osm.LatLng> get _points => [
+    for (final p in _located) osm.LatLng(p.latitude!, p.longitude!),
+    if (widget.userLatitude != null && widget.userLongitude != null)
+      osm.LatLng(widget.userLatitude!, widget.userLongitude!),
+  ];
+
+  void _fit() {
+    final points = _points;
+    if (points.isEmpty) return;
+    if (points.length == 1) {
+      _controller.move(points.first, 15);
+      return;
+    }
+    _controller.fitCamera(
+      osm_map.CameraFit.bounds(
+        bounds: osm_map.LatLngBounds.fromPoints(points),
+        padding: const EdgeInsets.all(48),
+      ),
+    );
+  }
+
   @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = const Color(0xFFE8F1E9),
-    );
-    final river = Path()
-      ..moveTo(size.width * .8, 0)
-      ..cubicTo(
-        size.width * .4,
-        size.height * .4,
-        size.width * .95,
-        size.height * .7,
-        size.width * .62,
-        size.height,
-      );
-    canvas.drawPath(
-      river,
-      Paint()
-        ..color = const Color(0xFFB9DFF3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 35,
-    );
-    final road = Paint()
-      ..color = const Color(0xFFFFFFFF)
-      ..strokeWidth = 12;
-    for (var i = 1; i <= 4; i++) {
-      canvas.drawLine(
-        Offset(0, size.height * i / 5),
-        Offset(size.width, size.height * (i / 5 + .1)),
-        road,
-      );
-      canvas.drawLine(
-        Offset(size.width * i / 5, 0),
-        Offset(size.width * (i / 5 - .1), size.height),
-        road,
-      );
+  void didUpdateWidget(_PlacesMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.places.length != widget.places.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _fit();
+      });
     }
   }
 
   @override
-  bool shouldRepaint(_MapPainter oldDelegate) => false;
+  Widget build(BuildContext context) {
+    final located = _located;
+    final center = located.isNotEmpty
+        ? osm.LatLng(located.first.latitude!, located.first.longitude!)
+        : const osm.LatLng(10.7769, 106.7009);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: SizedBox(
+        height: 300,
+        child: osm_map.FlutterMap(
+          mapController: _controller,
+          options: osm_map.MapOptions(
+            initialCenter: center,
+            initialZoom: 13,
+            minZoom: 5,
+            maxZoom: 19,
+            onMapReady: _fit,
+          ),
+          children: [
+            osm_map.TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.motocare.app',
+              maxNativeZoom: 19,
+            ),
+            osm_map.MarkerLayer(
+              markers: [
+                if (widget.userLatitude != null && widget.userLongitude != null)
+                  osm_map.Marker(
+                    point: osm.LatLng(
+                      widget.userLatitude!,
+                      widget.userLongitude!,
+                    ),
+                    width: 22,
+                    height: 22,
+                    child: const _UserDot(),
+                  ),
+                for (final place in located)
+                  osm_map.Marker(
+                    point: osm.LatLng(place.latitude!, place.longitude!),
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.topCenter,
+                    child: GestureDetector(
+                      onTap: () => widget.onSelected(place.id),
+                      child: Tooltip(
+                        message: place.name,
+                        child: _PlaceMarker(
+                          selected: place.id == widget.selectedId,
+                          isCharging: place.isCharging,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            osm_map.RichAttributionWidget(
+              showFlutterMapAttribution: false,
+              attributions: [
+                osm_map.TextSourceAttribution(
+                  'OpenStreetMap contributors',
+                  onTap: () => launchUrl(
+                    Uri.parse('https://www.openstreetmap.org/copyright'),
+                    mode: LaunchMode.externalApplication,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceMarker extends StatelessWidget {
+  const _PlaceMarker({required this.selected, required this.isCharging});
+  final bool selected;
+  final bool isCharging;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: selected ? ServiceColors.orange : const Color(0xFF3E5351),
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 2),
+      boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 6)],
+    ),
+    alignment: Alignment.center,
+    child: Icon(
+      isCharging ? Icons.ev_station : Icons.build,
+      color: Colors.white,
+      size: 22,
+    ),
+  );
+}
+
+class _UserDot extends StatelessWidget {
+  const _UserDot();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: const Color(0xFF2F80ED),
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 3),
+      boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 4)],
+    ),
+  );
 }
