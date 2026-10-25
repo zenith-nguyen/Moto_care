@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/widgets.dart' show StringCharacters;
 import 'package:intl/intl.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../activity/models/rescue_order.dart';
 import '../data/service_rating_tags.dart';
 import '../models/service_rating.dart';
@@ -12,9 +13,25 @@ final serviceRatingServiceProvider = Provider<ServiceRatingService>(
   (ref) => ServiceRatingService(),
 );
 
-/// Override with the real review API when available. Default storage is session-only.
+/// Sends the customer's rating to the backend in live mode, where it is linked
+/// to the order's provider (feeding the provider/station rating). The offline
+/// demo keeps ratings session-only.
 final serviceRatingSubmitterProvider =
-    Provider<Future<void> Function(ServiceRating)>((ref) => (_) async {});
+    Provider<Future<void> Function(ServiceRating)>((ref) {
+      return (rating) async {
+        if (!ref.read(runtimeApiIntegrationProvider)) return;
+        final orderId = int.tryParse(rating.orderId);
+        if (orderId == null) return;
+        final comment = rating.comment.trim();
+        await ref
+            .read(reviewsRepositoryProvider)
+            .create(
+              orderId: orderId,
+              rating: rating.stars,
+              comment: comment.isEmpty ? null : comment,
+            );
+      };
+    });
 
 class ServiceRatingService {
   ServiceRatingService({DateTime Function()? clock})
