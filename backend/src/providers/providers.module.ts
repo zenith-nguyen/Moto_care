@@ -6,6 +6,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
 import { User } from '../users/user.entity';
 import { Provider } from './provider.entity';
 import { ProvidersController } from './providers.controller';
+import { ProviderApplicationsController } from './provider-applications.controller';
 import { ProvidersService } from './providers.service';
 import { ProviderSkill } from './provider-skill.entity';
 import { Skill } from './skill.entity';
@@ -14,7 +15,7 @@ import { AdminProviderDirectoryController, ProviderDirectoryController } from '.
 
 @Module({
   imports: [TypeOrmModule.forFeature([Provider, ProviderSkill, Skill, OrderOffer, Order, User]), RealtimeModule],
-  controllers: [ProvidersController, ProviderDirectoryController, AdminProviderDirectoryController],
+  controllers: [ProvidersController, ProviderApplicationsController, ProviderDirectoryController, AdminProviderDirectoryController],
   providers: [ProvidersService, ProviderProfilesService],
   exports: [ProviderProfilesService],
 })
