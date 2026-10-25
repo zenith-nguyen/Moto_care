@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/revo_brand.dart';
 import '../../../core/theme/revo_theme.dart';
 import '../application/professional_profile_provider.dart';
+import '../application/provider_reviews_provider.dart';
 import '../application/provider_stats_provider.dart';
+import '../../reviews/domain/order_review.dart';
 import '../domain/provider_models.dart';
 import 'provider_formatters.dart';
 
@@ -272,62 +274,139 @@ class _RankCard extends ConsumerWidget {
   };
 }
 
-class _ReviewsSection extends StatelessWidget {
+class _ReviewsSection extends ConsumerWidget {
   const _ReviewsSection();
 
-  static const _samples = [
-    ('Anh Minh', 5, 'Thợ tới nhanh, sửa gọn, giá đúng báo.'),
-    ('Chị Lan', 5, 'Nhiệt tình, hướng dẫn kỹ, rất yên tâm.'),
-    ('Anh Dũng', 4, 'Ổn, thời gian chờ hơi lâu một chút.'),
-  ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviews = ref.watch(providerReviewsProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Expanded(
-              child: Text('Đánh giá gần đây', style: RevoTypography.title),
+              child: Text('Đánh giá khách hàng', style: RevoTypography.title),
             ),
-            const _DemoBadge(),
+            reviews.maybeWhen(
+              data: (data) => data.count == 0
+                  ? const SizedBox.shrink()
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 18,
+                          color: RevoBrandColors.warning,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${data.averageRating.toStringAsFixed(1)} · ${data.count} đánh giá',
+                          style: RevoTypography.label,
+                        ),
+                      ],
+                    ),
+              orElse: () => const SizedBox.shrink(),
+            ),
           ],
         ),
         const SizedBox(height: 12),
-        for (final (name, stars, comment) in _samples) ...[
-          Card(
+        reviews.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.all(20),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (_, _) => Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(child: Text(name, style: RevoTypography.label)),
-                      Row(
-                        children: [
-                          for (var i = 0; i < 5; i++)
-                            Icon(
-                              i < stars
-                                  ? Icons.star_rounded
-                                  : Icons.star_border_rounded,
-                              size: 16,
-                              color: RevoBrandColors.warning,
-                            ),
-                        ],
-                      ),
-                    ],
+                  const Expanded(child: Text('Không tải được đánh giá.')),
+                  TextButton(
+                    onPressed: () => ref.invalidate(providerReviewsProvider),
+                    child: const Text('Thử lại'),
                   ),
-                  const SizedBox(height: 6),
-                  Text(comment, style: RevoTypography.body),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 10),
-        ],
+          data: (data) => data.items.isEmpty
+              ? const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Text(
+                      'Chưa có đánh giá nào. Hoàn tất đơn để nhận đánh giá từ khách.',
+                    ),
+                  ),
+                )
+              : Column(
+                  children: [
+                    for (final review in data.items)
+                      _ReviewCard(review: review),
+                  ],
+                ),
+        ),
       ],
+    );
+  }
+}
+
+class _ReviewCard extends StatelessWidget {
+  const _ReviewCard({required this.review});
+
+  final OrderReview review;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = review.createdAt.toLocal();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Đơn #${review.orderId}',
+                      style: RevoTypography.label,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      for (var i = 0; i < 5; i++)
+                        Icon(
+                          i < review.rating
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          size: 16,
+                          color: RevoBrandColors.warning,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              if (review.comment != null &&
+                  review.comment!.trim().isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(review.comment!.trim(), style: RevoTypography.body),
+              ],
+              const SizedBox(height: 6),
+              Text(
+                '${date.day.toString().padLeft(2, '0')}/'
+                '${date.month.toString().padLeft(2, '0')}/${date.year}',
+                style: RevoTypography.body.copyWith(
+                  color: RevoBrandColors.textSubtle,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

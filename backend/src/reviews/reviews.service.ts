@@ -45,4 +45,14 @@ export class ReviewsService {
       select: { id: true, orderId: true, reviewerId: true, revieweeId: true, rating: true, comment: true, createdAt: true },
     });
   }
+
+  async listForReviewee(revieweeId: number) {
+    const reviews = await this.database.getRepository(Review).find({
+      where: { revieweeId }, order: { createdAt: 'DESC', id: 'DESC' }, take: 50,
+      select: { id: true, orderId: true, reviewerId: true, revieweeId: true, rating: true, comment: true, createdAt: true },
+    });
+    const count = reviews.length;
+    const averageRating = count === 0 ? 0 : Math.round((reviews.reduce((sum, review) => sum + review.rating, 0) / count) * 10) / 10;
+    return { count, averageRating, items: reviews };
+  }
 }
