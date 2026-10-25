@@ -24,6 +24,7 @@ import '../features/messages/data/chat_image_picker.dart';
 import '../features/orders/data/order_photos_repository.dart';
 import '../features/orders/data/orders_repository.dart';
 import '../features/payments/data/payments_repository.dart';
+import '../features/providers/data/provider_application_repository.dart';
 import '../features/providers/data/providers_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/reviews/data/reviews_repository.dart';
@@ -117,6 +118,11 @@ final messagesRepositoryProvider = Provider<MessagesRepository>((ref) {
 final orderPhotosRepositoryProvider = Provider<OrderPhotosRepository>((ref) {
   return HttpOrderPhotosRepository(ref.watch(jsonApiProvider));
 });
+
+final providerApplicationRepositoryProvider =
+    Provider<ProviderApplicationRepository>((ref) {
+      return HttpProviderApplicationRepository(ref.watch(jsonApiProvider));
+    });
 
 final chatImagePickerProvider = Provider<ChatImagePicker>((ref) {
   return SystemChatImagePicker();
