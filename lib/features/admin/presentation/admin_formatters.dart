@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../core/money/money_amount.dart';
 import '../../orders/domain/order_status.dart';
 import '../../wallet/domain/wallet_models.dart';
+import '../domain/admin_analytics_models.dart';
 import '../domain/admin_operation_models.dart';
 
 final _adminCurrency = NumberFormat.currency(
@@ -53,4 +54,24 @@ String adminOrderStatusLabel(OrderStatus status) => switch (status) {
   OrderStatus.cancelled => 'Đã hủy',
   OrderStatus.refundPending => 'Chờ hoàn tiền',
   OrderStatus.refunded => 'Đã hoàn tiền',
+};
+
+String paymentStatusLabel(PaymentStatus status) => switch (status) {
+  PaymentStatus.pending => 'Chờ thanh toán',
+  PaymentStatus.paid => 'Đã thanh toán',
+  PaymentStatus.failed => 'Thất bại',
+  PaymentStatus.cancelled => 'Đã hủy',
+  PaymentStatus.refundPending => 'Chờ hoàn tiền',
+  PaymentStatus.refunded => 'Đã hoàn tiền',
+};
+
+String reconciliationFlagLabel(ReconciliationFlag flag) => switch (flag) {
+  ReconciliationFlag.completedMissingPaidPayment =>
+    'Hoàn tất nhưng chưa có thanh toán',
+  ReconciliationFlag.paymentFinalPriceMismatch => 'Lệch tiền thu vs giá cuối',
+  ReconciliationFlag.completedWalletCreditMismatch => 'Lệch ghi có ví thợ',
+  ReconciliationFlag.refundStatusMismatch => 'Lệch trạng thái hoàn tiền',
+  ReconciliationFlag.refundedWithWalletCredit => 'Đã hoàn nhưng vẫn ghi có ví',
+  ReconciliationFlag.multiplePayments => 'Nhiều lần thanh toán',
+  ReconciliationFlag.adjustmentStatusMismatch => 'Lệch trạng thái điều chỉnh',
 };

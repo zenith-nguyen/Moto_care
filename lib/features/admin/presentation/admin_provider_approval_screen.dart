@@ -105,8 +105,42 @@ class _ProviderCard extends ConsumerWidget {
   final bool busy;
   final bool acting;
 
-  Future<void> _review(WidgetRef ref, ProviderApprovalStatus status) {
-    return ref
+  Future<void> _review(
+    BuildContext context,
+    WidgetRef ref,
+    ProviderApprovalStatus status,
+  ) async {
+    final approve = status == ProviderApprovalStatus.approved;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(approve ? 'Duyệt hồ sơ thợ' : 'Từ chối hồ sơ thợ'),
+        content: Text(
+          approve
+              ? 'Duyệt hồ sơ "${application.name}"? Thợ sẽ được kích hoạt và '
+                    'có thể nhận đơn.'
+              : 'Từ chối hồ sơ "${application.name}"? Thao tác này không thể '
+                    'hoàn tác.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Huỷ'),
+          ),
+          FilledButton(
+            style: approve
+                ? null
+                : FilledButton.styleFrom(
+                    backgroundColor: RevoBrandColors.dangerDark,
+                  ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(approve ? 'Duyệt' : 'Từ chối'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await ref
         .read(adminOperationsControllerProvider.notifier)
         .reviewProvider(providerId: application.id, status: status);
   }
@@ -187,7 +221,11 @@ class _ProviderCard extends ConsumerWidget {
                 child: OutlinedButton(
                   onPressed: busy
                       ? null
-                      : () => _review(ref, ProviderApprovalStatus.rejected),
+                      : () => _review(
+                          context,
+                          ref,
+                          ProviderApprovalStatus.rejected,
+                        ),
                   child: const Text('Từ chối'),
                 ),
               ),
@@ -197,7 +235,11 @@ class _ProviderCard extends ConsumerWidget {
                 child: FilledButton(
                   onPressed: busy
                       ? null
-                      : () => _review(ref, ProviderApprovalStatus.approved),
+                      : () => _review(
+                          context,
+                          ref,
+                          ProviderApprovalStatus.approved,
+                        ),
                   child: acting
                       ? const SizedBox.square(
                           dimension: 18,

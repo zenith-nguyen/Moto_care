@@ -9,6 +9,7 @@ import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/admin/presentation/admin_finance_screen.dart';
 import '../../features/admin/presentation/admin_orders_screen.dart';
 import '../../features/admin/presentation/admin_provider_approval_screen.dart';
+import '../../features/admin/presentation/admin_reconciliation_screen.dart';
 import '../../features/activity/screens/order_details_screen.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/application/session_state.dart';
@@ -163,6 +164,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/finance',
         builder: (context, state) => const AdminFinanceScreen(),
+      ),
+      GoRoute(
+        path: '/admin/reconciliation',
+        builder: (context, state) => const AdminReconciliationScreen(),
       ),
       GoRoute(
         path: '/stations/:stationId',
