@@ -65,6 +65,10 @@ flutter:
     - assets/images/repair-shop-2.png
     - assets/images/repair-shop-3.png
     - assets/images/repair-shop-4.png
+    - assets/images/Tiemsua1.png
+    - assets/images/Tiemsua2.png
+    - assets/images/Tiemsua3.png
+    - assets/images/Tiemsua4.png
     - assets/fonts/Montserrat_LICENSE.txt
 
   fonts:

@@ -18,9 +18,10 @@ class RescueStationCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final details =
-        ref.watch(homeStationDetailsProvider)[station.id] ??
-        defaultHomeStationDetails;
+    final details = homeStationDetailsFor(
+      station.id,
+      ref.watch(homeStationDetailsProvider),
+    );
     final listing = HomeStationListing(
       station: station,
       services: const [],
