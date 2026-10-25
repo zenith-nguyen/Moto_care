@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/revo_brand.dart';
 import '../application/admin_dashboard_controller.dart';
 import '../application/admin_dashboard_state.dart';
+import '../domain/admin_analytics_models.dart';
 import 'admin_formatters.dart';
 
 /// Admin dashboard wired to the real AdminDashboardController
@@ -171,7 +172,7 @@ class _DashboardBody extends StatelessWidget {
             ),
             _Metric(
               'Tỉ lệ hoàn tất',
-              '${(orders.completionRate * 100).toStringAsFixed(0)}%',
+              '${orders.completionRate.toStringAsFixed(0)}%',
               Icons.task_alt_rounded,
               RevoBrandColors.success,
             ),
@@ -183,6 +184,10 @@ class _DashboardBody extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 20),
+        const _SectionLabel('Doanh thu theo ngày'),
+        const SizedBox(height: 10),
+        _RevenueChart(points: state.timeseries.data),
         const SizedBox(height: 20),
         const _SectionLabel('Tác vụ'),
         const SizedBox(height: 10),
@@ -217,6 +222,20 @@ class _DashboardBody extends StatelessWidget {
                 ),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => context.push('/admin/finance'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(
+                  Icons.fact_check_rounded,
+                  color: RevoBrandColors.primary,
+                ),
+                title: const Text('Sổ đối soát'),
+                subtitle: Text(
+                  '${state.reconciliation.total} bản ghi'
+                  '${state.reconciliation.total > 0 ? " · soát lệch thu/chi" : ""}',
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/admin/reconciliation'),
               ),
               const Divider(height: 1),
               ListTile(
@@ -342,6 +361,121 @@ class _SectionLabel extends StatelessWidget {
       color: RevoBrandColors.ink,
     ),
   );
+}
+
+/// A dependency-free daily revenue bar chart (single series: money collected
+/// per day). One brand hue, thin bars anchored to the baseline, the peak day
+/// direct-labelled; no legend is needed because the section title names it.
+class _RevenueChart extends StatelessWidget {
+  const _RevenueChart({required this.points});
+
+  final List<AdminTimeseriesPoint> points;
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = points.length > 14
+        ? points.sublist(points.length - 14)
+        : points;
+    final values = [
+      for (final point in shown) double.tryParse(point.collected.value) ?? 0,
+    ];
+    final maxValue = values.fold<double>(0, (m, v) => v > m ? v : m);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      decoration: BoxDecoration(
+        color: RevoBrandColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: RevoBrandColors.border),
+      ),
+      child: shown.isEmpty || maxValue <= 0
+          ? const SizedBox(
+              height: 120,
+              child: Center(
+                child: Text(
+                  'Chưa có dữ liệu doanh thu trong kỳ.',
+                  style: TextStyle(color: RevoBrandColors.textSubtle),
+                ),
+              ),
+            )
+          : _buildChart(shown, values, maxValue),
+    );
+  }
+
+  Widget _buildChart(
+    List<AdminTimeseriesPoint> shown,
+    List<double> values,
+    double maxValue,
+  ) {
+    final peakIndex = values.indexOf(maxValue);
+    final peak = shown[peakIndex];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Cao nhất ${formatAdminMoney(peak.collected)} · ${_dmLabel(peak.day)}',
+          style: const TextStyle(
+            color: RevoBrandColors.textSubtle,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 140,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < shown.length; i++)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.bottomCenter,
+                      heightFactor: (values[i] / maxValue).clamp(0.02, 1.0),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: i == peakIndex
+                              ? RevoBrandColors.primaryDeep
+                              : RevoBrandColors.primary,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _dmLabel(shown.first.day),
+              style: const TextStyle(
+                color: RevoBrandColors.textSubtle,
+                fontSize: 11,
+              ),
+            ),
+            Text(
+              _dmLabel(shown.last.day),
+              style: const TextStyle(
+                color: RevoBrandColors.textSubtle,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static String _dmLabel(String isoDay) {
+    final parts = isoDay.split('-');
+    return parts.length == 3 ? '${parts[2]}/${parts[1]}' : isoDay;
+  }
 }
 
 class _Badge extends StatelessWidget {
