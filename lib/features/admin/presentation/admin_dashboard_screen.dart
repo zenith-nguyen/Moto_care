@@ -207,6 +207,20 @@ class _DashboardBody extends StatelessWidget {
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(
+                  Icons.account_balance_rounded,
+                  color: RevoBrandColors.primary,
+                ),
+                title: const Text('Tài chính & đối soát'),
+                subtitle: Text(
+                  'Chờ rút ${formatAdminMoney(money.pendingWithdrawalAmountCurrent)}'
+                  ' · hoàn ${formatAdminMoney(money.refundPendingCurrent)}',
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push('/admin/finance'),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(
                   Icons.receipt_long_rounded,
                   color: RevoBrandColors.primary,
                 ),

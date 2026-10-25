@@ -64,13 +64,45 @@ void main() {
       expect(reviewed.lastFailure, isNull);
     },
   );
+
+  test('confirming a payout refreshes only the payout queue', () async {
+    final repository = FakeAdminRepository();
+    final container = ProviderContainer(
+      overrides: [adminRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+
+    final initial = await container.read(
+      adminOperationsControllerProvider.future,
+    );
+    expect(initial.pendingWithdrawalPayouts.single.id, 42);
+
+    await container
+        .read(adminOperationsControllerProvider.notifier)
+        .reconcileWithdrawalPayout(
+          payoutId: 42,
+          decision: PayoutReconciliationDecision.confirm,
+          externalTransactionId: 'MBVCB.123456789',
+          observedAmount: '50000.00',
+        );
+
+    final reconciled = container.read(adminOperationsControllerProvider).value!;
+    expect(repository.reconcileCount, 1);
+    expect(repository.lastPayoutDecision, PayoutReconciliationDecision.confirm);
+    expect(reconciled.pendingWithdrawalPayouts, isEmpty);
+    expect(reconciled.isBusy, isFalse);
+    expect(reconciled.lastFailure, isNull);
+  });
 }
 
 class FakeAdminRepository implements AdminRepository {
   int reconciliationLoads = 0;
   int reviewCount = 0;
+  int reconcileCount = 0;
   PaymentStatus? lastPaymentStatus;
+  PayoutReconciliationDecision? lastPayoutDecision;
   var _providerPending = true;
+  var _payoutPending = true;
 
   @override
   Future<AdminDashboardSummary> getDashboardSummary({
@@ -154,6 +186,26 @@ class FakeAdminRepository implements AdminRepository {
     required AdminDecision decision,
     String? reason,
   }) => throw UnimplementedError();
+
+  @override
+  Future<List<AdminWithdrawalPayout>> listPendingWithdrawalPayouts() async {
+    return _payoutPending ? [_payout] : const [];
+  }
+
+  @override
+  Future<AdminWithdrawalPayout> reconcileWithdrawalPayout({
+    required int payoutId,
+    required PayoutReconciliationDecision decision,
+    String? externalTransactionId,
+    String? referenceCode,
+    String? observedAmount,
+    String? reason,
+  }) async {
+    reconcileCount += 1;
+    lastPayoutDecision = decision;
+    _payoutPending = false;
+    return _payout;
+  }
 }
 
 final _money0 = MoneyAmount.parse('0.00');
@@ -217,6 +269,24 @@ final _reconciliation = AdminReconciliationPage(
   total: 0,
   totalPages: 0,
   items: const [],
+);
+
+final _payout = AdminWithdrawalPayout(
+  id: 42,
+  withdrawalId: 7,
+  payoutCode: 'RP7',
+  expectedAmount: MoneyAmount.parse('50000.00'),
+  status: WithdrawalPayoutStatus.awaitingTransfer,
+  externalTransactionId: null,
+  externalReferenceCode: null,
+  observedAmount: null,
+  reviewReason: null,
+  reconciledById: null,
+  reconciledAt: null,
+  bankTransferConfirmed: false,
+  createdAt: DateTime.utc(2026, 10, 20),
+  updatedAt: DateTime.utc(2026, 10, 20),
+  provider: const AdminWithdrawalProvider(id: 3, userId: 8, name: 'Tho mot'),
 );
 
 const _pendingProvider = PendingProviderApplication(

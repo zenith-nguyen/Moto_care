@@ -6,6 +6,7 @@ import '../../features/activity/models/rescue_order.dart';
 import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
 import '../../features/activity/screens/hoat_dong_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
+import '../../features/admin/presentation/admin_finance_screen.dart';
 import '../../features/admin/presentation/admin_orders_screen.dart';
 import '../../features/admin/presentation/admin_provider_approval_screen.dart';
 import '../../features/activity/screens/order_details_screen.dart';
@@ -79,7 +80,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ? null
               : sessionLocation,
         SessionSignedIn(:final session) =>
-          _isAllowedForRole(location, session.user.role)
+          isAllowedForRole(location, session.user.role)
               ? null
               : _roleLocation(session.user.role),
       };
@@ -158,6 +159,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/orders',
         builder: (context, state) => const AdminOrdersScreen(),
+      ),
+      GoRoute(
+        path: '/admin/finance',
+        builder: (context, state) => const AdminFinanceScreen(),
       ),
       GoRoute(
         path: '/stations/:stationId',
@@ -372,7 +377,8 @@ const _customerLocations = {
   '/incident-map-picker',
 };
 
-bool _isAllowedForRole(String location, AppRole role) {
+@visibleForTesting
+bool isAllowedForRole(String location, AppRole role) {
   return switch (role) {
     AppRole.customer =>
       _customerLocations.contains(location) ||
@@ -381,7 +387,7 @@ bool _isAllowedForRole(String location, AppRole role) {
           location.startsWith('/partners/'),
     AppRole.provider =>
       location == '/provider' || location.startsWith('/provider/'),
-    AppRole.admin => location == '/admin',
+    AppRole.admin => location == '/admin' || location.startsWith('/admin/'),
   };
 }
 

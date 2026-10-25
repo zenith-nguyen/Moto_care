@@ -7,6 +7,7 @@ enum AdminOperationsAction {
   resolvePriceDispute,
   refundAdjustment,
   resolveWithdrawal,
+  reconcileWithdrawalPayout,
 }
 
 class AdminOperationsState {
@@ -17,6 +18,7 @@ class AdminOperationsState {
     required this.pendingPriceDisputes,
     required this.pendingRefundAdjustments,
     required this.pendingWithdrawals,
+    required this.pendingWithdrawalPayouts,
     this.action,
     this.actionTargetId,
     this.lastFailure,
@@ -28,6 +30,7 @@ class AdminOperationsState {
   final List<AdminPriceDispute> pendingPriceDisputes;
   final List<PendingRefundAdjustment> pendingRefundAdjustments;
   final List<AdminWithdrawal> pendingWithdrawals;
+  final List<AdminWithdrawalPayout> pendingWithdrawalPayouts;
   final AdminOperationsAction? action;
   final int? actionTargetId;
   final Object? lastFailure;
@@ -41,6 +44,7 @@ class AdminOperationsState {
     List<AdminPriceDispute>? pendingPriceDisputes,
     List<PendingRefundAdjustment>? pendingRefundAdjustments,
     List<AdminWithdrawal>? pendingWithdrawals,
+    List<AdminWithdrawalPayout>? pendingWithdrawalPayouts,
     Object? action = _unchanged,
     Object? actionTargetId = _unchanged,
     Object? lastFailure = _unchanged,
@@ -53,6 +57,8 @@ class AdminOperationsState {
       pendingRefundAdjustments:
           pendingRefundAdjustments ?? this.pendingRefundAdjustments,
       pendingWithdrawals: pendingWithdrawals ?? this.pendingWithdrawals,
+      pendingWithdrawalPayouts:
+          pendingWithdrawalPayouts ?? this.pendingWithdrawalPayouts,
       action: identical(action, _unchanged)
           ? this.action
           : action as AdminOperationsAction?,

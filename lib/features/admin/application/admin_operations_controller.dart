@@ -97,11 +97,49 @@ class AdminOperationsController extends AsyncNotifier<AdminOperationsState> {
         decision: decision,
         reason: reason,
       );
-      final withdrawals = await repository.listPendingWithdrawals();
+      // Approving a withdrawal opens a payout awaiting the manual bank
+      // transfer, so refresh both queues.
+      final withdrawalsFuture = repository.listPendingWithdrawals();
+      final payoutsFuture = repository.listPendingWithdrawalPayouts();
       state = AsyncData(
-        _requireState().copyWith(pendingWithdrawals: withdrawals),
+        _requireState().copyWith(
+          pendingWithdrawals: await withdrawalsFuture,
+          pendingWithdrawalPayouts: await payoutsFuture,
+        ),
       );
     });
+  }
+
+  /// Records the outcome of the owner's manual bank transfer for a provider
+  /// payout. CONFIRM marks it reconciled with the bank transaction code; FLAG
+  /// sends it to manual review. This never initiates a transfer.
+  Future<void> reconcileWithdrawalPayout({
+    required int payoutId,
+    required PayoutReconciliationDecision decision,
+    String? externalTransactionId,
+    String? referenceCode,
+    String? observedAmount,
+    String? reason,
+  }) async {
+    await _run(
+      AdminOperationsAction.reconcileWithdrawalPayout,
+      payoutId,
+      () async {
+        final repository = ref.read(adminRepositoryProvider);
+        await repository.reconcileWithdrawalPayout(
+          payoutId: payoutId,
+          decision: decision,
+          externalTransactionId: externalTransactionId,
+          referenceCode: referenceCode,
+          observedAmount: observedAmount,
+          reason: reason,
+        );
+        final payouts = await repository.listPendingWithdrawalPayouts();
+        state = AsyncData(
+          _requireState().copyWith(pendingWithdrawalPayouts: payouts),
+        );
+      },
+    );
   }
 
   Future<void> _run(
@@ -142,6 +180,7 @@ class AdminOperationsController extends AsyncNotifier<AdminOperationsState> {
     final disputesFuture = repository.listPendingPriceDisputes();
     final adjustmentsFuture = repository.listPendingRefundAdjustments();
     final withdrawalsFuture = repository.listPendingWithdrawals();
+    final payoutsFuture = repository.listPendingWithdrawalPayouts();
     return AdminOperationsSnapshot(
       recentOrders: await ordersFuture,
       pendingProviders: await providersFuture,
@@ -149,6 +188,7 @@ class AdminOperationsController extends AsyncNotifier<AdminOperationsState> {
       pendingPriceDisputes: await disputesFuture,
       pendingRefundAdjustments: await adjustmentsFuture,
       pendingWithdrawals: await withdrawalsFuture,
+      pendingWithdrawalPayouts: await payoutsFuture,
     );
   }
 
@@ -160,6 +200,7 @@ class AdminOperationsController extends AsyncNotifier<AdminOperationsState> {
       pendingPriceDisputes: snapshot.pendingPriceDisputes,
       pendingRefundAdjustments: snapshot.pendingRefundAdjustments,
       pendingWithdrawals: snapshot.pendingWithdrawals,
+      pendingWithdrawalPayouts: snapshot.pendingWithdrawalPayouts,
     );
   }
 
@@ -177,6 +218,7 @@ class AdminOperationsSnapshot {
     required this.pendingPriceDisputes,
     required this.pendingRefundAdjustments,
     required this.pendingWithdrawals,
+    required this.pendingWithdrawalPayouts,
   });
 
   final List<AdminRecentOrder> recentOrders;
@@ -185,4 +227,5 @@ class AdminOperationsSnapshot {
   final List<AdminPriceDispute> pendingPriceDisputes;
   final List<PendingRefundAdjustment> pendingRefundAdjustments;
   final List<AdminWithdrawal> pendingWithdrawals;
+  final List<AdminWithdrawalPayout> pendingWithdrawalPayouts;
 }

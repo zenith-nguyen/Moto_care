@@ -2,6 +2,8 @@ import 'package:intl/intl.dart';
 
 import '../../../core/money/money_amount.dart';
 import '../../orders/domain/order_status.dart';
+import '../../wallet/domain/wallet_models.dart';
+import '../domain/admin_operation_models.dart';
 
 final _adminCurrency = NumberFormat.currency(
   locale: 'vi_VN',
@@ -16,7 +18,25 @@ String formatAdminMoney(MoneyAmount amount) {
   return _adminCurrency.format(value);
 }
 
+final _adminDateTime = DateFormat('dd/MM/yyyy HH:mm');
+
 String formatAdminDate(DateTime value) => _adminDate.format(value.toLocal());
+
+String formatAdminDateTime(DateTime value) =>
+    _adminDateTime.format(value.toLocal());
+
+String withdrawalStatusLabel(WithdrawalStatus status) => switch (status) {
+  WithdrawalStatus.pending => 'Chờ duyệt',
+  WithdrawalStatus.approved => 'Đã duyệt',
+  WithdrawalStatus.rejected => 'Đã từ chối',
+};
+
+String withdrawalPayoutStatusLabel(WithdrawalPayoutStatus status) =>
+    switch (status) {
+      WithdrawalPayoutStatus.awaitingTransfer => 'Chờ chuyển khoản',
+      WithdrawalPayoutStatus.manualReview => 'Cần kiểm tra',
+      WithdrawalPayoutStatus.reconciled => 'Đã đối soát',
+    };
 
 String adminOrderStatusLabel(OrderStatus status) => switch (status) {
   OrderStatus.awaitingPrepayment => 'Chờ thanh toán',
