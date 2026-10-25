@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/revo_brand.dart';
 import '../../../core/theme/revo_theme.dart';
+import '../application/professional_profile_provider.dart';
 import '../application/provider_stats_provider.dart';
 import '../domain/provider_models.dart';
 import 'provider_formatters.dart';
@@ -194,11 +195,14 @@ class _DemoBadge extends StatelessWidget {
   }
 }
 
-class _RankCard extends StatelessWidget {
+class _RankCard extends ConsumerWidget {
   const _RankCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tier = ref.watch(professionalProfileProvider).asData?.value.tier;
+    final tierName = _tierName(tier);
+    final isReal = tierName != null;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -223,13 +227,15 @@ class _RankCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const _DemoBadge(),
+              // The tier is real backend data; only the progress toward the
+              // next tier below is illustrative.
+              if (!isReal) const _DemoBadge(),
             ],
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Vàng',
-            style: TextStyle(
+          Text(
+            tierName ?? 'Vàng',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 28,
               fontWeight: FontWeight.w900,
@@ -246,14 +252,24 @@ class _RankCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Còn 3 đơn nữa để lên hạng Bạch Kim (minh họa).',
-            style: TextStyle(color: Colors.white70, fontSize: 12),
+          Text(
+            isReal
+                ? 'Tiến độ lên hạng tiếp theo là minh họa.'
+                : 'Còn 3 đơn nữa để lên hạng Bạch Kim (minh họa).',
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
         ],
       ),
     );
   }
+
+  static String? _tierName(String? tier) => switch (tier?.toUpperCase()) {
+    'STANDARD' => 'Tiêu chuẩn',
+    'SILVER' => 'Bạc',
+    'GOLD' => 'Vàng',
+    'PLATINUM' => 'Bạch Kim',
+    _ => null,
+  };
 }
 
 class _ReviewsSection extends StatelessWidget {
