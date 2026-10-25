@@ -18,7 +18,8 @@ import 'package:moto_care/features/chat/screens/tin_nhan_screen.dart';
 import 'package:moto_care/features/home/models/home_user.dart';
 import 'package:moto_care/features/partner/providers/partner_registration_provider.dart';
 import 'package:moto_care/features/places/models/service_place.dart';
-import 'package:moto_care/features/places/screens/tram_sac_tiem_sua_screen.dart';
+import 'package:moto_care/features/places/providers/service_place_provider.dart'
+    show servicePlacesAsyncProvider;
 import 'package:moto_care/features/policy/providers/compensation_provider.dart';
 
 const _user = HomeUser(displayName: 'Nguyễn Văn An', memberId: 'MC15335206');
@@ -54,7 +55,8 @@ Future<GoRouter> _open(
                   (await rootBundle.load('assets/images/logo-revo.png')).buffer
                       .asUint8List(),
         ),
-        if (places != null) servicePlacesProvider.overrideWithValue(places),
+        if (places != null)
+          servicePlacesAsyncProvider.overrideWith((ref) async => places),
         if (orders != null)
           initialRescueOrdersProvider.overrideWithValue(orders),
       ],
