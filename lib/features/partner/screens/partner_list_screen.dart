@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../app/app_dependencies.dart';
 import '../../activity/widgets/order_summary.dart';
 import '../providers/partner_search_provider.dart';
 import '../../home/theme/home_theme.dart';
@@ -63,11 +64,13 @@ class _PartnerListScreenState extends ConsumerState<PartnerListScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Danh sách và giá tham khảo trong phiên dùng thử.',
-                  style: TextStyle(color: HomeColors.secondary, fontSize: 12),
-                ),
-                const SizedBox(height: 12),
+                if (!ref.watch(runtimeApiIntegrationProvider)) ...[
+                  const Text(
+                    'Danh sách và giá tham khảo trong phiên dùng thử.',
+                    style: TextStyle(color: HomeColors.secondary, fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 if (listings.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),

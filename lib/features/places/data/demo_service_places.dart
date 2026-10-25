@@ -12,6 +12,8 @@ const demoServicePlaces = [
     isCharging: true,
     is24Hours: true,
     repairsPetrol: false,
+    latitude: 10.7625,
+    longitude: 106.6818,
   ),
   ServicePlace(
     id: '2',
@@ -23,6 +25,8 @@ const demoServicePlaces = [
     isCharging: false,
     is24Hours: true,
     repairsPetrol: true,
+    latitude: 10.7902,
+    longitude: 106.6766,
   ),
   ServicePlace(
     id: '3',
@@ -34,6 +38,8 @@ const demoServicePlaces = [
     isCharging: true,
     is24Hours: false,
     repairsPetrol: true,
+    latitude: 10.7793,
+    longitude: 106.6882,
   ),
   ServicePlace(
     id: '4',
@@ -45,5 +51,7 @@ const demoServicePlaces = [
     isCharging: false,
     is24Hours: false,
     repairsPetrol: true,
+    latitude: 10.7731,
+    longitude: 106.6938,
   ),
 ];
