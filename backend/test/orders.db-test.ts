@@ -286,6 +286,34 @@ describe('Orders and matching on PostGIS', () => {
     expect((await database.getRepository(User).findOneByOrFail({ id: rejected.user.id })).status).toBe(UserStatus.SUSPENDED);
   });
 
+  it('promotes a customer to provider when their application is approved', async () => {
+    const applicant = await makeUser(UserRole.CUSTOMER);
+    const before = await database.getRepository(User).findOneByOrFail({ id: applicant.id });
+    const application = await providersService.apply(applicant.id, { yearsOfExperience: 3 });
+    expect(application.approvalStatus).toBe(ApprovalStatus.PENDING);
+    // The account stays a customer while the application is pending.
+    expect((await database.getRepository(User).findOneByOrFail({ id: applicant.id })).role).toBe(UserRole.CUSTOMER);
+    // A second application for the same account is rejected.
+    await expect(providersService.apply(applicant.id, {})).rejects.toBeInstanceOf(ConflictException);
+
+    const reviewed = await admin.reviewProvider(application.id, ApprovalStatus.APPROVED);
+    expect(reviewed.role).toBe(UserRole.PROVIDER);
+    const promoted = await database.getRepository(User).findOneByOrFail({ id: applicant.id });
+    expect(promoted.role).toBe(UserRole.PROVIDER);
+    expect(promoted.status).toBe(UserStatus.ACTIVE);
+    // The role switch invalidates the applicant's existing customer session.
+    expect(promoted.authVersion).toBe(before.authVersion + 1);
+  });
+
+  it('leaves a customer account untouched when their application is rejected', async () => {
+    const applicant = await makeUser(UserRole.CUSTOMER);
+    const application = await providersService.apply(applicant.id, {});
+    await admin.reviewProvider(application.id, ApprovalStatus.REJECTED);
+    const after = await database.getRepository(User).findOneByOrFail({ id: applicant.id });
+    expect(after.role).toBe(UserRole.CUSTOMER);
+    expect(after.status).toBe(UserStatus.ACTIVE);
+  });
+
   it('updates own profile and keeps exactly one default vehicle', async () => {
     const users = new UsersService(database.getRepository(User), database);
     const vehicles = new VehiclesService(database);

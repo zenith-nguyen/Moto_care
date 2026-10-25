@@ -63,15 +63,39 @@ export class AdminService {
       if (!provider) throw new NotFoundException('Provider not found');
       if (provider.approvalStatus !== ApprovalStatus.PENDING) throw new ConflictException('Provider was already reviewed');
       const user = await manager.getRepository(User).findOneBy({ id: provider.userId });
-      if (!user || user.role !== UserRole.PROVIDER || user.status !== UserStatus.PENDING_APPROVAL) {
+      // Two valid pending shapes: a provider sign-up (already role PROVIDER,
+      // status PENDING_APPROVAL) and an existing customer applying to become a
+      // provider (still role CUSTOMER, status ACTIVE).
+      const isProviderSignup =
+        user?.role === UserRole.PROVIDER &&
+        user.status === UserStatus.PENDING_APPROVAL;
+      const isCustomerApplication =
+        user?.role === UserRole.CUSTOMER && user.status === UserStatus.ACTIVE;
+      if (!user || (!isProviderSignup && !isCustomerApplication)) {
         throw new ConflictException('Provider account is not awaiting approval');
       }
       provider.approvalStatus = status;
       provider.isOnline = false;
-      user.status = status === ApprovalStatus.APPROVED ? UserStatus.ACTIVE : UserStatus.SUSPENDED;
+      if (status === ApprovalStatus.APPROVED) {
+        // Promote: a customer becomes a provider (which invalidates their
+        // current customer session via authVersion); a sign-up is activated.
+        user.role = UserRole.PROVIDER;
+        user.status = UserStatus.ACTIVE;
+        if (isCustomerApplication) user.authVersion += 1;
+      } else if (isProviderSignup) {
+        // A rejected provider sign-up is suspended, as before.
+        user.status = UserStatus.SUSPENDED;
+      }
+      // A rejected customer application leaves the customer account untouched.
       await manager.getRepository(Provider).save(provider);
       await manager.getRepository(User).save(user);
-      return { id: provider.id, userId: provider.userId, approvalStatus: provider.approvalStatus, accountStatus: user.status };
+      return {
+        id: provider.id,
+        userId: provider.userId,
+        approvalStatus: provider.approvalStatus,
+        accountStatus: user.status,
+        role: user.role,
+      };
     });
     // Tell the applicant the outcome. Best-effort: a failed notification must
     // not roll back a completed review decision.
