@@ -128,6 +128,15 @@ export class AdminController {
     return this.admin.recentOrders();
   }
 
+  @Get('orders/:orderId')
+  @ApiOkResponse({
+    description:
+      'Full order detail for admin: customer, provider, location and pricing',
+  })
+  orderDetail(@Param('orderId', ParseIntPipe) orderId: number) {
+    return this.admin.orderDetail(orderId);
+  }
+
   @Get('refunds/pending')
   @ApiOkResponse({ description: 'Orders awaiting a full demo refund' })
   pendingRefunds() {

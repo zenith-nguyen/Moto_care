@@ -133,6 +133,10 @@ class FakeAdminRepository implements AdminRepository {
   Future<List<AdminRecentOrder>> listRecentOrders() async => const [];
 
   @override
+  Future<AdminOrderDetail> getOrderDetail(int orderId) async =>
+      throw UnimplementedError();
+
+  @override
   Future<List<PendingProviderApplication>> listPendingProviders() async {
     return _providerPending ? [_pendingProvider] : const [];
   }

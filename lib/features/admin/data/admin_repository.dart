@@ -28,6 +28,8 @@ abstract interface class AdminRepository {
 
   Future<List<AdminRecentOrder>> listRecentOrders();
 
+  Future<AdminOrderDetail> getOrderDetail(int orderId);
+
   Future<List<PendingProviderApplication>> listPendingProviders();
 
   Future<ProviderReviewResult> reviewProvider({
@@ -131,6 +133,12 @@ class HttpAdminRepository implements AdminRepository {
   Future<List<AdminRecentOrder>> listRecentOrders() async {
     final response = await _api.getList('/admin/orders');
     return response.map(AdminRecentOrder.fromJson).toList(growable: false);
+  }
+
+  @override
+  Future<AdminOrderDetail> getOrderDetail(int orderId) async {
+    final response = await _api.getObject('/admin/orders/$orderId');
+    return AdminOrderDetail.fromJson(response);
   }
 
   @override
