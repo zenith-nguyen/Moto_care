@@ -9,6 +9,7 @@ import '../services/activity_actions.dart';
 import '../theme/order_details_theme.dart';
 import '../widgets/mechanic_contact_card.dart';
 import '../widgets/order_details_header.dart';
+import '../widgets/order_details_map_preview.dart';
 import '../widgets/order_summary.dart';
 import '../widgets/order_timeline.dart';
 import '../widgets/rescue_details_card.dart';
@@ -42,8 +43,9 @@ class OrderDetailsScreen extends ConsumerWidget {
       data: OrderDetailsTheme.light,
       child: Builder(
         builder: (context) => Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: OrderDetailsTheme.background,
           appBar: AppBar(
+            backgroundColor: OrderDetailsTheme.background,
             toolbarHeight: MediaQuery.textScalerOf(context).scale(18) > 23
                 ? 76
                 : 56,
@@ -63,8 +65,18 @@ class OrderDetailsScreen extends ConsumerWidget {
               overflow: TextOverflow.visible,
               textAlign: TextAlign.center,
             ),
+            actions: [
+              IconButton(
+                key: const ValueKey('order-details-support'),
+                tooltip: 'Trung tâm hỗ trợ',
+                onPressed: () => context.push('/faq'),
+                icon: const Icon(Icons.headset_mic_outlined, size: 20),
+              ),
+              const SizedBox(width: 4),
+            ],
           ),
           body: SafeArea(
+            bottom: false,
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 600),
@@ -74,49 +86,36 @@ class OrderDetailsScreen extends ConsumerWidget {
                       )
                     : SingleChildScrollView(
                         key: const ValueKey('order-details-scroll'),
-                        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            OrderDetailsHeader(
-                              details: details,
-                              onCopy: () => _copy(context, order.orderCode),
+                            _Card(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  OrderDetailsHeader(
+                                    details: details,
+                                    onCopy: () =>
+                                        _copy(context, order.orderCode),
+                                  ),
+                                  const SizedBox(height: 18),
+                                  RescueProgressStepper(steps: details.steps),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: 24),
-                            RescueProgressStepper(steps: details.steps),
-                            const SizedBox(height: 24),
-                            FilledButton(
-                              key: const ValueKey('order-details-tracking'),
-                              onPressed: order.status.isActive
+                            const SizedBox(height: 14),
+                            OrderDetailsMapPreview(
+                              details: details,
+                              onTracking: order.status.isActive
                                   ? () => context.push(
                                       order.awaitingPrepayment
                                           ? '/bank-transfer?id=${Uri.encodeQueryComponent(order.id)}'
                                           : '/order-tracking?id=${Uri.encodeQueryComponent(order.id)}',
                                     )
                                   : null,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    order.awaitingPrepayment
-                                        ? Icons.qr_code_rounded
-                                        : Icons.map_outlined,
-                                    size: 21,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      order.awaitingPrepayment
-                                          ? 'Tiếp tục thanh toán chuyển khoản'
-                                          : 'Xem vị trí thợ trên bản đồ',
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
-                            const SizedBox(height: 20),
-                            RescueDetailsCard(details: details),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             MechanicContactCard(
                               details: details,
                               onChat: order.hasProvider
@@ -131,52 +130,112 @@ class OrderDetailsScreen extends ConsumerWidget {
                                     )
                                   : null,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
+                            RescueDetailsCard(details: details),
+                            const SizedBox(height: 14),
                             OrderTimeline(entries: details.timeline),
-                            const SizedBox(height: 16),
-                            OutlinedButton(
-                              key: const ValueKey('order-details-invoice'),
-                              onPressed: () => context.push(
-                                '/chi-tiet-don-hang?id=${Uri.encodeQueryComponent(order.id)}',
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.receipt_long_outlined,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      order.status ==
-                                              RescueOrderStatus.completed
-                                          ? 'Xem hóa đơn & đánh giá'
-                                          : 'Xem chi phí & thông tin đơn',
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (order.status.isActive)
-                              TextButton(
-                                key: const ValueKey('order-details-cancel'),
-                                onPressed: () =>
-                                    ActivityActions.cancel(context, ref, order),
-                                child: const Text(
-                                  'Hủy đơn cứu hộ',
-                                  style: TextStyle(
-                                    color: OrderDetailsTheme.muted,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),
               ),
             ),
           ),
+          bottomNavigationBar: order == null
+              ? null
+              : _BottomActions(
+                  order: order,
+                  onInvoice: () => context.push(
+                    '/chi-tiet-don-hang?id=${Uri.encodeQueryComponent(order.id)}',
+                  ),
+                  onCancel: order.status.isActive
+                      ? () => ActivityActions.cancel(context, ref, order)
+                      : null,
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Card extends StatelessWidget {
+  const _Card({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: OrderDetailsTheme.border),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _BottomActions extends StatelessWidget {
+  const _BottomActions({
+    required this.order,
+    required this.onInvoice,
+    this.onCancel,
+  });
+
+  final RescueOrder order;
+  final VoidCallback onInvoice;
+  final VoidCallback? onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final completed = order.status == RescueOrderStatus.completed;
+    return SafeArea(
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: OrderDetailsTheme.border)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FilledButton.icon(
+              key: const ValueKey('order-details-invoice'),
+              onPressed: onInvoice,
+              style: FilledButton.styleFrom(
+                backgroundColor: OrderDetailsTheme.primary,
+                foregroundColor: Colors.white,
+                minimumSize: const Size.fromHeight(52),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                textStyle: const TextStyle(
+                  fontFamily: 'Montserrat',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              icon: const Icon(Icons.receipt_long_rounded, size: 20),
+              label: Text(
+                completed
+                    ? 'Xem hóa đơn & đánh giá'
+                    : 'Xem chi phí & thông tin đơn',
+              ),
+            ),
+            if (onCancel != null)
+              TextButton(
+                key: const ValueKey('order-details-cancel'),
+                onPressed: onCancel,
+                child: const Text(
+                  'Hủy đơn cứu hộ',
+                  style: TextStyle(
+                    color: OrderDetailsTheme.muted,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
