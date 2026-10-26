@@ -95,3 +95,17 @@ jobs:
 
       - name: Build Provider Android debug APK
         run: flutter build apk --debug --flavor provider -t lib/main_provider.dart
+
+      - name: Upload Customer APK (Khách + Admin)
+        uses: actions/upload-artifact@v4
+        with:
+          name: motocare-customer-debug-apk
+          path: build/app/outputs/flutter-apk/app-customer-debug.apk
+          if-no-files-found: error
+
+      - name: Upload Provider APK (Thợ)
+        uses: actions/upload-artifact@v4
+        with:
+          name: motocare-provider-debug-apk
+          path: build/app/outputs/flutter-apk/app-provider-debug.apk
+          if-no-files-found: error
