@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/revo_brand.dart';
 import '../application/admin_operations_controller.dart';
@@ -100,7 +101,7 @@ class _OrderCard extends StatelessWidget {
         border: Border.all(color: RevoBrandColors.border),
       ),
       child: ListTile(
-        onTap: () => _showDetail(context),
+        onTap: () => context.push('/admin/orders/${order.id}'),
         title: Row(
           children: [
             Expanded(
@@ -124,65 +125,6 @@ class _OrderCard extends StatelessWidget {
       ),
     );
   }
-
-  void _showDetail(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Đơn ${order.code}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _row('Trạng thái', adminOrderStatusLabel(order.status)),
-              _row('Mã khách', '#${order.customerId}'),
-              _row(
-                'Mã thợ',
-                order.providerId == null ? 'Chưa gán' : '#${order.providerId}',
-              ),
-              _row('Giá tạm tính', formatAdminMoney(order.estimatedPrice)),
-              if (order.finalPrice != null)
-                _row('Giá cuối', formatAdminMoney(order.finalPrice!)),
-              _row('Tạo lúc', formatAdminDate(order.createdAt)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _row(String label, String value) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 120,
-          child: Text(
-            label,
-            style: const TextStyle(color: RevoBrandColors.textSubtle),
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 class _StatusChip extends StatelessWidget {

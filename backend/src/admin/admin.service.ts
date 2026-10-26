@@ -26,6 +26,37 @@ export class AdminService {
     }));
   }
 
+  async orderDetail(orderId: number) {
+    const order = await this.database.getRepository(Order).findOne({
+      where: { id: orderId }, relations: { incidentType: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+    const customer = await this.database.getRepository(User).findOneBy({ id: order.customerId });
+    let provider: { id: number; name: string; phone: string | null; currentLocation: unknown } | null = null;
+    if (order.providerId) {
+      const row = await this.database.getRepository(Provider).findOne({
+        where: { id: order.providerId }, relations: { user: true },
+      });
+      if (row) {
+        provider = {
+          id: row.id, name: row.user?.name ?? 'Thợ', phone: row.user?.phone ?? null,
+          currentLocation: row.currentLocation ?? null,
+        };
+      }
+    }
+    return {
+      id: order.id, code: order.code, status: order.status, createdAt: order.createdAt,
+      incidentType: order.incidentType?.name ?? null,
+      estimatedPrice: order.estimatedPrice, extraCost: order.extraCost,
+      discountAmount: order.discountAmount, finalPrice: order.finalPrice,
+      customerLocation: order.customerLocation,
+      customer: customer
+        ? { id: customer.id, name: customer.name, phone: customer.phone, address: customer.homeAddress }
+        : null,
+      provider,
+    };
+  }
+
   async pendingRefunds() {
     const orders = await this.database.getRepository(Order).find({
       where: { status: In([OrderStatus.REFUND_PENDING]) }, order: { createdAt: 'ASC', id: 'ASC' }, take: 50,

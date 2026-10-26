@@ -7,6 +7,7 @@ import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
 import '../../features/activity/screens/hoat_dong_screen.dart';
 import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/admin/presentation/admin_finance_screen.dart';
+import '../../features/admin/presentation/admin_order_detail_screen.dart';
 import '../../features/admin/presentation/admin_orders_screen.dart';
 import '../../features/admin/presentation/admin_provider_approval_screen.dart';
 import '../../features/admin/presentation/admin_reconciliation_screen.dart';
@@ -160,6 +161,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/orders',
         builder: (context, state) => const AdminOrdersScreen(),
+      ),
+      GoRoute(
+        path: '/admin/orders/:orderId',
+        builder: (context, state) => AdminOrderDetailScreen(
+          orderId: int.tryParse(state.pathParameters['orderId'] ?? '') ?? 0,
+        ),
       ),
       GoRoute(
         path: '/admin/finance',

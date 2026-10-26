@@ -63,6 +63,112 @@ class AdminRecentOrder {
   }
 }
 
+double? _coordAt(Object? location, int index) {
+  if (location is Map && location['coordinates'] is List) {
+    final coordinates = location['coordinates'] as List;
+    if (coordinates.length > index && coordinates[index] is num) {
+      return (coordinates[index] as num).toDouble();
+    }
+  }
+  return null;
+}
+
+class AdminOrderParty {
+  const AdminOrderParty({this.name, this.phone, this.address});
+
+  final String? name;
+  final String? phone;
+  final String? address;
+
+  factory AdminOrderParty.fromJson(Map<String, dynamic> json) =>
+      AdminOrderParty(
+        name: json['name'] as String?,
+        phone: json['phone'] as String?,
+        address: json['address'] as String?,
+      );
+}
+
+class AdminOrderProviderInfo {
+  const AdminOrderProviderInfo({
+    this.name,
+    this.phone,
+    this.latitude,
+    this.longitude,
+  });
+
+  final String? name;
+  final String? phone;
+  final double? latitude;
+  final double? longitude;
+
+  factory AdminOrderProviderInfo.fromJson(Map<String, dynamic> json) =>
+      AdminOrderProviderInfo(
+        name: json['name'] as String?,
+        phone: json['phone'] as String?,
+        latitude: _coordAt(json['currentLocation'], 1),
+        longitude: _coordAt(json['currentLocation'], 0),
+      );
+}
+
+class AdminOrderDetail {
+  const AdminOrderDetail({
+    required this.id,
+    required this.code,
+    required this.status,
+    required this.createdAt,
+    required this.estimatedPrice,
+    required this.extraCost,
+    required this.discountAmount,
+    this.incidentType,
+    this.finalPrice,
+    this.customerLatitude,
+    this.customerLongitude,
+    this.customer,
+    this.provider,
+  });
+
+  final int id;
+  final String code;
+  final OrderStatus status;
+  final DateTime createdAt;
+  final MoneyAmount estimatedPrice;
+  final MoneyAmount extraCost;
+  final MoneyAmount discountAmount;
+  final String? incidentType;
+  final MoneyAmount? finalPrice;
+  final double? customerLatitude;
+  final double? customerLongitude;
+  final AdminOrderParty? customer;
+  final AdminOrderProviderInfo? provider;
+
+  factory AdminOrderDetail.fromJson(Map<String, dynamic> json) {
+    final reader = JsonReader(json);
+    return AdminOrderDetail(
+      id: reader.positiveInt('id'),
+      code: reader.string('code'),
+      status: OrderStatus.fromWire(reader.value('status')),
+      createdAt: reader.dateTime('createdAt'),
+      estimatedPrice: MoneyAmount.parse(reader.value('estimatedPrice')),
+      extraCost: MoneyAmount.parse(reader.value('extraCost')),
+      discountAmount: MoneyAmount.parse(reader.value('discountAmount')),
+      incidentType: json['incidentType'] as String?,
+      finalPrice: _nullableMoney(reader.value('finalPrice')),
+      customerLatitude: _coordAt(json['customerLocation'], 1),
+      customerLongitude: _coordAt(json['customerLocation'], 0),
+      customer: json['customer'] == null
+          ? null
+          : AdminOrderParty.fromJson(
+              Map<String, dynamic>.from(json['customer'] as Map),
+            ),
+      provider: json['provider'] == null
+          ? null
+          : AdminOrderProviderInfo.fromJson(
+              Map<String, dynamic>.from(json['provider'] as Map),
+            ),
+    );
+  }
+}
+
 class PendingProviderApplication {
   const PendingProviderApplication({
     required this.id,
