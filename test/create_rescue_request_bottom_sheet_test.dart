@@ -237,8 +237,7 @@ void main() {
   testWidgets('Changing services resets the option and total', (tester) async {
     await _open(tester, 'Vá xe', allowServiceSelection: true);
     await _tap(tester, find.text('Thay ruột mới (90k)'));
-    await _tap(tester, find.byKey(const ValueKey('incident-request-service')));
-    await _tap(tester, find.text('Chết máy').last);
+    await _tap(tester, find.text('Chết máy'));
     expect(find.text('Thay ruột mới (90k)'), findsNothing);
     expect(find.text('Kiểm tra & Cứu hộ tận nơi (50k)'), findsOneWidget);
     expect(tester.widget<Text>(_total).data, formatOrderPrice(50000));

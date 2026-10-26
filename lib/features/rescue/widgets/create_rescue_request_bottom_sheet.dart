@@ -264,26 +264,29 @@ class _EmergencyBookingBottomSheetState
             ),
             const SizedBox(height: 16),
             if (widget.allowServiceSelection) ...[
-              DropdownButtonFormField<RescueServiceType>(
-                key: const ValueKey('incident-request-service'),
-                initialValue: configuration.type,
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  labelText: 'Sự cố cần hỗ trợ',
-                  prefixIcon: Icon(Icons.build_outlined, color: HomeColors.red),
-                ),
-                items: [
-                  for (final service in incidentServiceTypes)
-                    DropdownMenuItem(
-                      value: service,
-                      child: Text(service.label),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Sự cố cần hỗ trợ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
                     ),
+                  ),
+                  _OtherIncidentDropdown(
+                    selected: configuration.type,
+                    onSelected: (service) =>
+                        _controller.selectService(service.label),
+                  ),
                 ],
-                onChanged: (service) {
-                  if (service != null) {
-                    _controller.selectService(service.label);
-                  }
-                },
+              ),
+              const SizedBox(height: 10),
+              _IncidentGrid(
+                selected: configuration.type,
+                onSelected: (service) =>
+                    _controller.selectService(service.label),
               ),
               const SizedBox(height: 16),
             ],
@@ -392,6 +395,202 @@ class _EmergencyBookingBottomSheetState
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+typedef _IncidentSpec = ({
+  RescueServiceType type,
+  IconData icon,
+  String subtitle,
+});
+
+const _primaryIncidents = <_IncidentSpec>[
+  (
+    type: RescueServiceType.engineFailure,
+    icon: Icons.build_rounded,
+    subtitle: 'Không khởi động',
+  ),
+  (
+    type: RescueServiceType.flatTire,
+    icon: Icons.tire_repair,
+    subtitle: 'Vá, thay lốp',
+  ),
+  (
+    type: RescueServiceType.batteryJump,
+    icon: Icons.battery_charging_full_rounded,
+    subtitle: 'Kích bình, sạc',
+  ),
+  (
+    type: RescueServiceType.outOfFuel,
+    icon: Icons.local_gas_station_rounded,
+    subtitle: 'Giao tận nơi',
+  ),
+];
+
+/// A 2x2 grid of the common incidents, matching the booking sheet design.
+class _IncidentGrid extends StatelessWidget {
+  const _IncidentGrid({required this.selected, required this.onSelected});
+
+  final RescueServiceType selected;
+  final ValueChanged<RescueServiceType> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var row = 0; row < _primaryIncidents.length; row += 2)
+          Padding(
+            padding: EdgeInsets.only(top: row == 0 ? 0 : 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var col = 0; col < 2; col++) ...[
+                  if (col == 1) const SizedBox(width: 10),
+                  Expanded(
+                    child: row + col < _primaryIncidents.length
+                        ? _IncidentCard(
+                            spec: _primaryIncidents[row + col],
+                            selected:
+                                selected == _primaryIncidents[row + col].type,
+                            onTap: () =>
+                                onSelected(_primaryIncidents[row + col].type),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _IncidentCard extends StatelessWidget {
+  const _IncidentCard({
+    required this.spec,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _IncidentSpec spec;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: selected ? HomeColors.redSelected : HomeColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? HomeColors.red : HomeColors.border,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: selected ? HomeColors.red : HomeColors.tint,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                spec.icon,
+                size: 22,
+                color: selected ? Colors.white : HomeColors.red,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    spec.type.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    spec.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: HomeColors.secondary,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(
+                Icons.check_circle_rounded,
+                size: 18,
+                color: HomeColors.red,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Dropdown for the less common incidents, shown beside the grid header.
+class _OtherIncidentDropdown extends StatelessWidget {
+  const _OtherIncidentDropdown({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final RescueServiceType selected;
+  final ValueChanged<RescueServiceType> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryTypes = _primaryIncidents.map((spec) => spec.type).toSet();
+    final others = incidentServiceTypes
+        .where((type) => !primaryTypes.contains(type))
+        .toList(growable: false);
+    final isOther = others.contains(selected);
+    return DropdownButtonHideUnderline(
+      child: DropdownButton<RescueServiceType>(
+        key: const ValueKey('incident-request-service'),
+        value: isOther ? selected : null,
+        isDense: true,
+        hint: const Text(
+          'Sự cố khác',
+          style: TextStyle(
+            color: HomeColors.red,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+        icon: const Icon(Icons.expand_more_rounded, color: HomeColors.red),
+        items: [
+          for (final type in others)
+            DropdownMenuItem(
+              value: type,
+              child: Text(type.label, style: const TextStyle(fontSize: 13)),
+            ),
+        ],
+        onChanged: (type) {
+          if (type != null) onSelected(type);
+        },
       ),
     );
   }
