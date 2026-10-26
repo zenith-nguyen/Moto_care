@@ -444,7 +444,6 @@ class _IncidentGrid extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(top: row == 0 ? 0 : 10),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var col = 0; col < 2; col++) ...[
                   if (col == 1) const SizedBox(width: 10),
