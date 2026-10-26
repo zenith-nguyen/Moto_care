@@ -9,6 +9,11 @@ abstract final class OrderDetailsTheme {
   static const text = Color(0xFF171717);
   static const muted = Color(0xFF747880);
   static const line = Color(0xFFE4E6E8);
+  // REVO blue accents for the refreshed card-based layout.
+  static const primary = Color(0xFF317CBB);
+  static const primaryTint = Color(0xFFEAF4FC);
+  static const background = Color(0xFFF4F6F9);
+  static const border = line;
 
   static final light = AppTheme.light.copyWith(
     scaffoldBackgroundColor: Colors.white,
