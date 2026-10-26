@@ -19,6 +19,7 @@ import '../application/provider_location_tracking_state.dart';
 import '../application/provider_work_controller.dart';
 import '../application/provider_work_state.dart';
 import '../application/professional_profile_provider.dart';
+import '../application/provider_stats_provider.dart';
 import '../domain/provider_models.dart';
 import '../domain/professional_profile.dart';
 import 'provider_formatters.dart';
@@ -1654,42 +1655,112 @@ class _ProviderAccountPage extends ConsumerWidget {
     final state = ref.watch(sessionControllerProvider);
     final user = state is SessionSignedIn ? state.session.user : null;
     final profile = ref.watch(professionalProfileProvider);
+    final weekly = ref.watch(providerWeeklyStatsProvider);
+    final tierName = _providerTierName(profile.asData?.value.tier);
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 34,
-                  backgroundColor: RevoBrandColors.surfaceSoft,
-                  child: Icon(
-                    Icons.handyman_rounded,
-                    size: 34,
-                    color: RevoBrandColors.primaryDeep,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user?.name ?? 'Tài khoản thợ',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if (user?.phone != null) Text(user!.phone!),
-                      if (user?.email != null) Text(user!.email!),
-                    ],
-                  ),
-                ),
-              ],
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [RevoBrandColors.primary, RevoBrandColors.primaryDeep],
             ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33317CBB),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white24,
+                    child: Icon(
+                      Icons.handyman_rounded,
+                      size: 30,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.name ?? 'Tài khoản thợ',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                        if (user?.phone != null)
+                          Text(
+                            user!.phone!,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        if (tierName != null) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white24,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.workspace_premium_rounded,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Hạng $tierName',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              weekly.when(
+                loading: () =>
+                    _HeaderStatRow(orders: '—', rating: '—', income: '—'),
+                error: (_, _) =>
+                    _HeaderStatRow(orders: '—', rating: '—', income: '—'),
+                data: (s) => _HeaderStatRow(
+                  orders: '${s.completedOrders}',
+                  rating: s.averageRating == null
+                      ? '—'
+                      : s.averageRating!.toStringAsFixed(1),
+                  income: formatProviderMoney(s.creditedAmount),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
@@ -1784,6 +1855,85 @@ class _ProviderAccountPage extends ConsumerWidget {
       ],
     );
   }
+}
+
+String? _providerTierName(String? tier) => switch (tier?.toUpperCase()) {
+  'STANDARD' => 'Tiêu chuẩn',
+  'SILVER' => 'Bạc',
+  'GOLD' => 'Vàng',
+  'PLATINUM' => 'Bạch Kim',
+  _ => null,
+};
+
+class _HeaderStatRow extends StatelessWidget {
+  const _HeaderStatRow({
+    required this.orders,
+    required this.rating,
+    required this.income,
+  });
+
+  final String orders;
+  final String rating;
+  final String income;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _HeaderStat(label: 'Đơn tuần này', value: orders),
+        const _HeaderStatDivider(),
+        _HeaderStat(label: 'Đánh giá', value: rating),
+        const _HeaderStatDivider(),
+        _HeaderStat(label: 'Thu nhập tuần', value: income),
+      ],
+    );
+  }
+}
+
+class _HeaderStat extends StatelessWidget {
+  const _HeaderStat({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeaderStatDivider extends StatelessWidget {
+  const _HeaderStatDivider();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 1,
+    height: 28,
+    margin: const EdgeInsets.symmetric(horizontal: 4),
+    color: Colors.white24,
+  );
 }
 
 class _SectionTitle extends StatelessWidget {
