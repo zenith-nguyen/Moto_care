@@ -98,6 +98,8 @@ class _DashboardBody extends StatelessWidget {
             if (summary.sandboxOnly) const _Badge(text: 'SANDBOX'),
           ],
         ),
+        const SizedBox(height: 12),
+        const _PeriodSelector(),
         const SizedBox(height: 16),
         const _SectionLabel('Tài chính'),
         const SizedBox(height: 10),
@@ -344,6 +346,68 @@ class _MetricCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PeriodSelector extends ConsumerWidget {
+  const _PeriodSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(adminDashboardControllerProvider).value;
+    if (state == null) return const SizedBox.shrink();
+    final period = state.summary.period;
+    final busy = state.isBusy;
+    final spanDays = period.to.difference(period.from).inDays;
+    final notifier = ref.read(adminDashboardControllerProvider.notifier);
+
+    void applyDays(int days) {
+      final now = DateTime.now();
+      final from = days == 0
+          ? DateTime(now.year, now.month, now.day)
+          : now.subtract(Duration(days: days));
+      notifier.changePeriod(from: from, to: now);
+    }
+
+    Future<void> pickCustom() async {
+      final now = DateTime.now();
+      final range = await showDateRangePicker(
+        context: context,
+        firstDate: DateTime(now.year - 2),
+        lastDate: now,
+        initialDateRange: DateTimeRange(start: period.from, end: period.to),
+      );
+      if (range != null) {
+        notifier.changePeriod(from: range.start, to: range.end);
+      }
+    }
+
+    bool matches(int days) =>
+        days == 0 ? spanDays <= 1 : (spanDays - days).abs() <= 1;
+    final isCustom = !(matches(0) || matches(7) || matches(30));
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final (label, days) in const [
+          ('Hôm nay', 0),
+          ('7 ngày', 7),
+          ('30 ngày', 30),
+        ])
+          ChoiceChip(
+            label: Text(label),
+            selected: matches(days),
+            onSelected: busy ? null : (_) => applyDays(days),
+          ),
+        ActionChip(
+          avatar: const Icon(Icons.date_range_rounded, size: 18),
+          label: const Text('Tùy chọn'),
+          onPressed: busy ? null : pickCustom,
+          backgroundColor: isCustom ? RevoBrandColors.surfaceSoft : null,
+        ),
+      ],
     );
   }
 }
