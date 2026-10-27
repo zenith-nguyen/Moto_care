@@ -7,8 +7,7 @@ import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
 import '../../features/activity/screens/hoat_dong_screen.dart';
 import '../../features/admin/presentation/admin_account_screen.dart';
 import '../../features/admin/presentation/admin_finance_screen.dart';
-import '../../features/admin/presentation/admin_order_detail_screen.dart';
-import '../../features/admin/presentation/admin_orders_screen.dart';
+import '../../features/admin/revo/admin_orders_screen.dart';
 import '../../features/admin/domain/admin_operation_models.dart';
 import '../../features/admin/revo/admin_provider_screen.dart';
 import '../../features/admin/presentation/admin_reconciliation_screen.dart';
@@ -168,7 +167,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/admin/orders',
-            builder: (context, state) => const AdminOrdersScreen(),
+            builder: (context, state) => const RevoAdminOrdersScreen(),
           ),
           GoRoute(
             path: '/admin/finance',
@@ -186,7 +185,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/admin/orders/:orderId',
-        builder: (context, state) => AdminOrderDetailScreen(
+        builder: (context, state) => RevoAdminOrderDetailScreen(
           orderId: int.tryParse(state.pathParameters['orderId'] ?? '') ?? 0,
         ),
       ),
