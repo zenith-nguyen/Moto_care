@@ -39,7 +39,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Quản trị REVO'), findsOneWidget);
+    expect(find.text('Tổng quan'), findsOneWidget);
   });
 }
 
