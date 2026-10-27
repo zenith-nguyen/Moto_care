@@ -39,6 +39,23 @@ class OrderDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final details = ref.watch(orderDetailsProvider(orderId));
     final order = details?.order;
+    // When a mechanic accepts (order gains a provider while still active),
+    // move the customer straight to live tracking.
+    ref.listen(orderDetailsProvider(orderId), (previous, next) {
+      if (previous != null &&
+          !previous.order.hasProvider &&
+          next?.order.hasProvider == true &&
+          next!.order.status.isActive &&
+          !next.order.awaitingPrepayment) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted && ModalRoute.of(context)?.isCurrent == true) {
+            context.pushReplacement(
+              '/order-tracking?id=${Uri.encodeQueryComponent(next.order.id)}',
+            );
+          }
+        });
+      }
+    });
     return Theme(
       data: OrderDetailsTheme.light,
       child: Builder(

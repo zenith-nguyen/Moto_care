@@ -53,6 +53,18 @@ Future<void> _openHome(
 }
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
+  // The home is a lazy CustomScrollView: a target below the build/cache extent
+  // (e.g. when the active-order card is shown) is not instantiated yet, so
+  // ensureVisible cannot find it. Scroll the home list to build it first.
+  // Persistent targets (nav bar, open bottom sheets) are already built, so this
+  // fallback is skipped for them.
+  if (finder.evaluate().isEmpty) {
+    final homeScroll = homePageScrollable();
+    if (homeScroll.evaluate().isNotEmpty) {
+      await tester.scrollUntilVisible(finder, 120, scrollable: homeScroll);
+      await tester.pumpAndSettle();
+    }
+  }
   await tester.ensureVisible(finder);
   await tester.pumpAndSettle();
   await tester.tap(finder);
@@ -304,11 +316,14 @@ void main() {
       await _tap(tester, find.byTooltip('Bộ lọc'));
       await _tap(tester, find.byKey(const ValueKey('home-filter-open24h')));
       await _tap(tester, find.byTooltip('Đóng'));
+      await scrollHomeToStations(tester);
       expect(find.byType(HomeStationGridCard), findsNWidgets(4));
+      await scrollHomeToSearch(tester);
       await _tap(tester, find.byTooltip('Bộ lọc'));
       await _tap(tester, find.byKey(const ValueKey('home-filter-open24h')));
       await _tap(tester, find.byKey(const ValueKey('home-filter-verified')));
       await _tap(tester, find.text('Áp dụng bộ lọc'));
+      await scrollHomeToStations(tester);
       expect(find.byType(HomeStationGridCard), findsNWidgets(2));
       expect(_state(tester).read(homeDiscoveryProvider).filters.activeCount, 2);
       expect(find.text('Đóng cửa'), findsNothing);

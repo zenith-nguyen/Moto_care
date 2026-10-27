@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import '../../../app/app_dependencies.dart';
 import '../../../core/router/main_navigation.dart';
 import '../../activity/models/rescue_order.dart';
+import '../../activity/providers/activity_provider.dart';
+import '../../activity/widgets/active_order_tracking_card.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/application/session_state.dart';
 import '../../chat/providers/chat_directory_provider.dart';
@@ -379,6 +381,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final stationsLoading = stationsAsync?.isLoading ?? false;
     final stationsHasError = stationsAsync?.hasError ?? false;
     final weather = ref.watch(homeWeatherProvider);
+    final activeOrder = ref.watch(
+      activityProvider.select(
+        (state) => state.activeOrders.isEmpty ? null : state.activeOrders.first,
+      ),
+    );
     final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -469,6 +476,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           ],
                         ),
                       ),
+                      if (activeOrder != null)
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                          sliver: SliverToBoxAdapter(
+                            child: ActiveOrderTrackingCard(
+                              key: const ValueKey('home-active-order'),
+                              order: activeOrder,
+                              onDetails: () => context.push(
+                                activeOrder.hasProvider
+                                    ? '/order-tracking?id=${Uri.encodeQueryComponent(activeOrder.id)}'
+                                    : '/order-details?id=${Uri.encodeQueryComponent(activeOrder.id)}',
+                              ),
+                            ),
+                          ),
+                        ),
                       SliverPadding(
                         padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
                         sliver: SliverToBoxAdapter(
