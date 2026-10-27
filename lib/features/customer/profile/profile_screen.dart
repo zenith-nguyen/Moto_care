@@ -588,13 +588,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     ),
     clipBehavior: Clip.antiAlias,
-    child: _buildGroupListTile(
-      id: id,
-      icon: icon,
-      title: title,
-      onTap: onTap,
-      accent: true,
-    ),
+    child: _buildGroupListTile(id: id, icon: icon, title: title, onTap: onTap),
   );
 
   Widget _buildSecurityGroup(
@@ -718,7 +712,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     VoidCallback? onTap,
     String? subtitle,
     Widget? trailing,
-    bool accent = false,
   }) => ListTile(
     key: ValueKey('account-$id'),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -726,18 +719,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       width: 38,
       height: 38,
       decoration: BoxDecoration(
-        color: accent
-            ? ProfileDashboardTheme.primaryContainer
-            : ProfileDashboardTheme.background,
+        color: ProfileDashboardTheme.primaryContainer,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(
-        icon,
-        size: 21,
-        color: accent
-            ? ProfileDashboardTheme.primary
-            : ProfileDashboardTheme.ink,
-      ),
+      child: Icon(icon, size: 21, color: ProfileDashboardTheme.primary),
     ),
     title: Text(
       title,
