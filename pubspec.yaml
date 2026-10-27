@@ -58,6 +58,14 @@ flutter:
     - assets/images/Background.png
     - assets/images/welcome-background.png
     - assets/images/weather-background.png
+    - assets/images/provider-sky.png
+    - assets/images/revo_hero_engine.jpg
+    - assets/images/revo_hero_tools.jpg
+    - assets/images/revo_hero_teamwork.jpg
+    - assets/images/home_battery_car.png
+    - assets/images/home_tire_suv.png
+    - assets/images/home_service_repair.png
+    - assets/images/home_service_tow.png
     - assets/images/rescue-tow.png
     - assets/images/rescue-team.png
     - assets/images/rescue-garage.png
