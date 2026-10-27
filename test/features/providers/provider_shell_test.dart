@@ -111,12 +111,23 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Xin chào,'), findsOneWidget);
-    expect(find.text('Nguyễn Minh Tuấn'), findsOneWidget);
-    expect(find.text('Đang sẵn sàng'), findsOneWidget);
+    // Job-board home: availability toggle + hero CTA visible at the top.
+    expect(find.text('Sẵn sàng nhận đơn'), findsOneWidget);
+    expect(find.text('Nhận đơn'), findsWidgets);
+
+    // The dispatched offer renders in the "Đơn gần bạn" feed (scroll to it).
+    await tester.scrollUntilVisible(
+      find.text('Thủng lốp'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Thủng lốp'), findsOneWidget);
-    expect(find.text('Nhận đơn'), findsOneWidget);
     expect(find.text('MC-42'), findsWidgets);
+
+    // The active order is reachable on the Đơn hàng tab.
+    await tester.tap(find.text('Đơn hàng').last);
+    await tester.pumpAndSettle();
     expect(find.text('Đang đến khách'), findsOneWidget);
   });
 
