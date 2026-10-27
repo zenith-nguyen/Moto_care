@@ -49,6 +49,9 @@ class AdminDashboardHighlights {
     required this.metrics,
     required this.points,
     required this.previousPoints,
+    required this.totalOrders,
+    required this.previousTotalOrders,
+    required this.collectedTotal,
   });
 
   /// Named current totals (Tổng khách, Thợ online, Tổng thợ, ...), from the
@@ -57,12 +60,17 @@ class AdminDashboardHighlights {
   final List<RevoTimeseriesPoint> points;
   final List<RevoTimeseriesPoint> previousPoints;
 
+  /// Authoritative totals from the backend summary (not the per-day sum, which
+  /// can differ): the headline order count and collected revenue.
+  final int totalOrders;
+  final int previousTotalOrders;
+  final int collectedTotal;
+
   int metric(String label) => metrics[label] ?? 0;
 
-  int get orders => points.fold(0, (sum, point) => sum + point.orders);
-  int get previousOrders =>
-      previousPoints.fold(0, (sum, point) => sum + point.orders);
-  int get collected => points.fold(0, (sum, point) => sum + point.collected);
+  int get orders => totalOrders;
+  int get previousOrders => previousTotalOrders;
+  int get collected => collectedTotal;
   double get dailyOrdersAverage => points.isEmpty ? 0 : orders / points.length;
   double get dailyAverage => points.isEmpty ? 0 : collected / points.length;
 

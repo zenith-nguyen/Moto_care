@@ -31,6 +31,8 @@ final adminDashboardHighlightsProvider = FutureProvider.autoDispose
         from: range.start,
         to: range.end,
       );
+      final AdminDashboardSummary previousSummary = await repo
+          .getDashboardSummary(from: previous.start, to: previous.end);
       final AdminTimeseries timeseries = await repo.getDashboardTimeseries(
         from: range.start,
         to: range.end,
@@ -67,6 +69,9 @@ final adminDashboardHighlightsProvider = FutureProvider.autoDispose
         },
         points: timeseries.data.map(_point).toList(growable: false),
         previousPoints: previousSeries.data.map(_point).toList(growable: false),
+        totalOrders: summary.orders.total,
+        previousTotalOrders: previousSummary.orders.total,
+        collectedTotal: _moneyToInt(summary.money.collectedInPeriod),
       );
     });
 
