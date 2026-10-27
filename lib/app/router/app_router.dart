@@ -6,13 +6,13 @@ import '../../features/activity/models/rescue_order.dart';
 import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
 import '../../features/activity/screens/hoat_dong_screen.dart';
 import '../../features/admin/presentation/admin_account_screen.dart';
-import '../../features/admin/presentation/admin_dashboard_screen.dart';
 import '../../features/admin/presentation/admin_finance_screen.dart';
 import '../../features/admin/presentation/admin_order_detail_screen.dart';
 import '../../features/admin/presentation/admin_orders_screen.dart';
 import '../../features/admin/presentation/admin_provider_approval_screen.dart';
 import '../../features/admin/presentation/admin_reconciliation_screen.dart';
 import '../../features/admin/presentation/admin_shell.dart';
+import '../../features/admin/revo/admin_dashboard_screen.dart';
 import '../../features/activity/screens/order_details_screen.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/application/session_state.dart';
@@ -158,7 +158,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/admin',
-            builder: (context, state) => const AdminDashboardScreen(),
+            builder: (context, state) => const AdminRevoDashboardScreen(),
           ),
           GoRoute(
             path: '/admin/providers',
