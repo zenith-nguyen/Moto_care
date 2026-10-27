@@ -447,7 +447,7 @@ void main() {
       }
       expect(hasBlack, isTrue);
     }
-    expect(data.polylines.single.color, const Color(0xFFE53935));
+    expect(data.polylines.single.color, const Color(0xFF317CBB));
     expect(data.polylines.single.width, 5);
     final bike =
         markers
