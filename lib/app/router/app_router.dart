@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/activity/models/rescue_order.dart';
 import '../../features/activity/screens/chi_tiet_don_hang_screen.dart';
 import '../../features/activity/screens/hoat_dong_screen.dart';
-import '../../features/admin/presentation/admin_account_screen.dart';
+import '../../features/admin/revo/admin_account_screen.dart';
 import '../../features/admin/presentation/admin_finance_screen.dart';
 import '../../features/admin/revo/admin_orders_screen.dart';
 import '../../features/admin/domain/admin_operation_models.dart';
@@ -179,7 +179,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/admin/account',
-            builder: (context, state) => const AdminAccountScreen(),
+            builder: (context, state) => const RevoAdminAccountScreen(),
           ),
         ],
       ),
