@@ -10,7 +10,7 @@ import '../../features/admin/presentation/admin_finance_screen.dart';
 import '../../features/admin/revo/admin_orders_screen.dart';
 import '../../features/admin/domain/admin_operation_models.dart';
 import '../../features/admin/revo/admin_provider_screen.dart';
-import '../../features/admin/presentation/admin_reconciliation_screen.dart';
+import '../../features/admin/revo/admin_reconciliation_screen.dart';
 import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/admin/revo/admin_dashboard_screen.dart';
 import '../../features/activity/screens/order_details_screen.dart';
@@ -175,7 +175,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/admin/reconciliation',
-            builder: (context, state) => const AdminReconciliationScreen(),
+            builder: (context, state) => const RevoAdminReconciliationScreen(),
           ),
           GoRoute(
             path: '/admin/account',
