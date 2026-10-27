@@ -9,7 +9,8 @@ import '../../features/admin/presentation/admin_account_screen.dart';
 import '../../features/admin/presentation/admin_finance_screen.dart';
 import '../../features/admin/presentation/admin_order_detail_screen.dart';
 import '../../features/admin/presentation/admin_orders_screen.dart';
-import '../../features/admin/presentation/admin_provider_approval_screen.dart';
+import '../../features/admin/domain/admin_operation_models.dart';
+import '../../features/admin/revo/admin_provider_screen.dart';
 import '../../features/admin/presentation/admin_reconciliation_screen.dart';
 import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/admin/revo/admin_dashboard_screen.dart';
@@ -162,7 +163,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/admin/providers',
-            builder: (context, state) => const AdminProviderApprovalScreen(),
+            builder: (context, state) =>
+                const RevoAdminProviderApprovalScreen(),
           ),
           GoRoute(
             path: '/admin/orders',
@@ -186,6 +188,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/admin/orders/:orderId',
         builder: (context, state) => AdminOrderDetailScreen(
           orderId: int.tryParse(state.pathParameters['orderId'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '/admin/providers/:providerId',
+        builder: (context, state) => RevoAdminProviderDetailScreen(
+          providerId:
+              int.tryParse(state.pathParameters['providerId'] ?? '') ?? 0,
+          application: state.extra is PendingProviderApplication
+              ? state.extra as PendingProviderApplication
+              : null,
         ),
       ),
       GoRoute(
