@@ -40,6 +40,22 @@ flutter pub get
 flutter run
 ```
 
+## Deployment and go-live
+
+The backend can run on any public HTTPS host. [`GO-LIVE.md`](GO-LIVE.md) is the
+operations runbook: it documents exposing the local backend publicly (Tailscale
+Funnel), the test → live switch, SePay webhook registration, and building the app
+against the public URL. `backend/Dockerfile` (multi-stage, runs migrations then
+starts) plus the `start:prod` / `migration:run:prod` scripts cover a container
+deploy (Render/Railway/Fly).
+
+Swagger UI is served at `/docs` in non-production, and can be enabled in
+production for a demo with `SWAGGER_ENABLED=true`.
+
+Money safety: real-money payment acceptance (`SEPAY_MODE=live`) and provider
+payouts are deliberate, owner-confirmed steps. Payouts stay manual; the system
+never transfers real money automatically.
+
 ## Startup and authentication UI
 
 Android and iOS show a white native splash screen with Revo branding. Once
