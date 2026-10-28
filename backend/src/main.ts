@@ -9,7 +9,10 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   configureApp(app, configService);
 
-  if (configService.get<string>('NODE_ENV') !== 'production' && !configService.get<boolean>('DEMO_MODE')) {
+  // Swagger UI is served at /docs in any non-production environment (including
+  // DEMO_MODE), so the API can be explored while testing. It stays disabled in
+  // production to avoid exposing the full API surface publicly.
+  if (configService.get<string>('NODE_ENV') !== 'production') {
     const swaggerConfig = new DocumentBuilder()
       .setTitle('MotoCare API')
       .setDescription('MotoCare mobile roadside-assistance backend')
