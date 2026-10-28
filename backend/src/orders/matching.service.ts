@@ -139,6 +139,23 @@ export class MatchingService {
     }
   }
 
+  /**
+   * Called after one broadcast offer is rejected or expires. While another
+   * provider still holds a live offer the order stays OFFERED; only when none
+   * remain does it reopen matching (which may broadcast to new providers).
+   */
+  async releaseOffer(manager: EntityManager, order: Order): Promise<OrderOffer[]> {
+    const stillPending = await manager
+      .getRepository(OrderOffer)
+      .countBy({ orderId: order.id, status: OfferStatus.PENDING });
+    if (stillPending > 0 || !canTransitionOrder(order.status, OrderStatus.PENDING_MATCH)) {
+      return [];
+    }
+    order.status = OrderStatus.PENDING_MATCH;
+    await manager.getRepository(Order).save(order);
+    return this.matchLockedOrder(manager, order);
+  }
+
   async expireOffer(offerId: number): Promise<void> {
     const event = await this.dataSource.transaction(async (manager) => {
       const found = await manager.getRepository(OrderOffer).findOneBy({ id: offerId });
@@ -160,19 +177,14 @@ export class MatchingService {
       if (!expired) return null;
       offer.status = OfferStatus.EXPIRED;
       await manager.getRepository(OrderOffer).save(offer);
-      if (canTransitionOrder(order.status, OrderStatus.PENDING_MATCH)) {
-        order.status = OrderStatus.PENDING_MATCH;
-        await manager.getRepository(Order).save(order);
-        const nextOffers = await this.matchLockedOrder(manager, order);
-        return { orderId: order.id, providerId: offer.providerId, offerId: offer.id, status: order.status, nextOffers };
-      }
-      return { orderId: order.id, providerId: offer.providerId, offerId: offer.id, status: order.status, nextOffers: [] };
+      const nextOffers = await this.releaseOffer(manager, order);
+      return { orderId: order.id, providerId: offer.providerId, offerId: offer.id, status: order.status, nextOffers };
     });
     if (!event) return;
     await this.realtime?.offerExpired(event.providerId, event.orderId, event.offerId);
     await this.realtime?.orderStatusChanged(event.orderId, event.status);
-    for (const offer of event.nextOffers) {
-      await this.realtime?.offerCreated(event.providerId, event.orderId, offer.id, offer.expiresAt);
+    for (const next of event.nextOffers) {
+      await this.realtime?.offerCreated(next.providerId, event.orderId, next.id, next.expiresAt);
     }
   }
 }

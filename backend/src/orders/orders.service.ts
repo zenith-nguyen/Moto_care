@@ -179,9 +179,7 @@ export class OrdersService {
       }
       offer.status = OfferStatus.REJECTED;
       await manager.getRepository(OrderOffer).save(offer);
-      order.status = OrderStatus.PENDING_MATCH;
-      await manager.getRepository(Order).save(order);
-      const nextOffers = await this.matching.matchLockedOrder(manager, order);
+      const nextOffers = await this.matching.releaseOffer(manager, order);
       return { response: { orderId: order.id, offerStatus: offer.status, ...presentOrderMatch(order, nextOffers[0] ?? null) }, nextOffers };
     });
     await this.realtime?.orderStatusChanged(orderId, response.status);

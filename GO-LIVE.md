@@ -7,13 +7,13 @@ Mọi lệnh chạy trong thư mục `backend/` trừ khi ghi khác.
 
 Hệ thống **đã public sẵn**, không cần thuê cloud:
 
-- **Public URL (HTTPS):** `https://hyzeniths.tailb56b46.ts.net` qua **Tailscale Funnel**
+- **Public URL (HTTPS):** `https://<your-host>.ts.net` qua **Tailscale Funnel**
   → trỏ về `http://127.0.0.1:3000` (backend chạy trên máy này).
   Kiểm: `tailscale funnel status` phải thấy `Funnel on` và proxy `/ → 127.0.0.1:3000`.
 - **Database:** PostgreSQL + PostGIS trong Docker (`motocare-postgres`), dữ liệu lưu ở volume.
 - **SePay / SMTP / secret production:** đã cấu hình đủ trong `backend/.env.go-live.backup`
   (đã kiểm độ dài: JWT 64, HMAC 64/64, DB pass 48, webhook secret 38 — hợp lệ).
-- **Webhook SePay:** `POST https://hyzeniths.tailb56b46.ts.net/payments/webhooks/sepay`
+- **Webhook SePay:** `POST https://<your-host>.ts.net/payments/webhooks/sepay`
   (payout: `.../payments/webhooks/sepay/payouts`).
 
 > Vì backend chạy trên máy cá nhân + Tailscale, **máy phải bật và Funnel phải chạy 24/7**
@@ -25,14 +25,14 @@ Hệ thống **đã public sẵn**, không cần thuê cloud:
 | | Test (hiện tại) | Live (tiền thật) |
 |---|---|---|
 | `.env` dùng | `.env` (NODE_ENV=development, DEMO_MODE=true) | `.env.go-live.backup` |
-| SePay | test VA `SBSEPAYX9KA2B7MN4QR` | TK thật `0367518550` |
+| SePay | test VA `<VA sandbox SBSEPAY…>` | TK thật `<số tài khoản nhận tiền>` |
 | Xác nhận thanh toán | nút "thanh toán thử" (demo) | webhook SePay thật |
 | Tiền | giả lập | **THẬT — vào TK ngân hàng** |
 
 ## 2. Trước khi go-live (bắt buộc)
 
-1. **Đăng ký webhook trên SePay dashboard** cho tài khoản thật `0367518550`:
-   - URL: `https://hyzeniths.tailb56b46.ts.net/payments/webhooks/sepay`
+1. **Đăng ký webhook trên SePay dashboard** cho tài khoản thật `<số tài khoản nhận tiền>`:
+   - URL: `https://<your-host>.ts.net/payments/webhooks/sepay`
    - Secret: lấy đúng `SEPAY_WEBHOOK_SECRET` trong `.env.go-live.backup`.
    - (Nếu dùng đối soát payout: đăng ký thêm `.../payments/webhooks/sepay/payouts`.)
 2. Đảm bảo Tailscale Funnel đang chạy (mục 0).
@@ -55,7 +55,7 @@ npm run start:prod        # chạy migration tự động? KHÔNG — chạy th�
 Kiểm backend đã lên production:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" https://hyzeniths.tailb56b46.ts.net/weather/current?latitude=10.77&longitude=106.7
+curl -s -o /dev/null -w "%{http_code}\n" https://<your-host>.ts.net/weather/current?latitude=10.77&longitude=106.7
 # 401 = backend sống (cần auth) — OK
 ```
 
@@ -70,10 +70,10 @@ thật thì phải build trỏ về URL public:
 ```bash
 # Tại thư mục gốc dự án
 flutter build apk --release --flavor customer -t lib/main.dart \
-  --dart-define=API_BASE_URL=https://hyzeniths.tailb56b46.ts.net
+  --dart-define=API_BASE_URL=https://<your-host>.ts.net
 
 flutter build apk --release --flavor provider -t lib/main_provider.dart \
-  --dart-define=API_BASE_URL=https://hyzeniths.tailb56b46.ts.net
+  --dart-define=API_BASE_URL=https://<your-host>.ts.net
 ```
 
 > Release build cần cấu hình ký (`android/key.properties` + keystore). Nếu chưa có keystore,
@@ -101,7 +101,7 @@ sang domain mới), rồi cập nhật `API_BASE_URL` khi build app.
 
 ## ⚠️ Ràng buộc an toàn tiền
 
-- Không tự ý bật `SEPAY_MODE=live`. Bước này nhận tiền thật vào TK `0367518550` → **chính
+- Không tự ý bật `SEPAY_MODE=live`. Bước này nhận tiền thật vào TK `<số tài khoản nhận tiền>` → **chính
   chủ (founder) xác nhận và thực hiện**.
 - `SEPAY_LIVE_CONFIRMATION=I_UNDERSTAND_THIS_ACCEPTS_REAL_MONEY` trong `.env.go-live.backup`
   là chốt chặn chủ ý: chỉ có khi thực sự muốn nhận tiền thật.

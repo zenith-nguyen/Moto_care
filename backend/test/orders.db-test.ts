@@ -884,7 +884,12 @@ describe('Orders and matching on PostGIS', () => {
     const offers = await providersService.pendingOffers(selected.user.id);
     expect(offers).toHaveLength(1);
     expect(offers[0].orderId).toBe(result.id);
-    expect(await providersService.pendingOffers(other.user.id)).toHaveLength(0);
+    // Broadcast matching offers the order to every nearby provider, but each
+    // provider only sees their own offer.
+    const otherOffers = await providersService.pendingOffers(other.user.id);
+    expect(otherOffers).toHaveLength(1);
+    expect(otherOffers[0].orderId).toBe(result.id);
+    expect(otherOffers[0].id).not.toBe(offers[0].id);
     await providersService.updateStatus(selected.user.id, false);
     await database.getRepository(Provider).update(selected.provider.id, { lastSeenAt: new Date(Date.now() - 300_000) });
     await expect(providersService.updateStatus(selected.user.id, true)).rejects.toThrow();

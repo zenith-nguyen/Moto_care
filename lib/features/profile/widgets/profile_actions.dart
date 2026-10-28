@@ -84,16 +84,17 @@ class ProfileActions {
         !context.mounted) {
       return;
     }
-    // Capture the router before the async gap: signing out can rebuild the
-    // tree and leave `context` unmounted, which would skip the redirect.
+    // signOut() flips the session to signed-out synchronously, so navigate
+    // right away and let the remote/token cleanup finish in the background.
     final router = GoRouter.of(context);
-    // Best-effort server sign-out: even if it fails (e.g. offline), the local
-    // session is still cleared and the user is returned to login.
-    try {
-      await ref.read(sessionControllerProvider.notifier).signOut();
-    } catch (_) {}
+    final signOut = ref.read(sessionControllerProvider.notifier).signOut();
     ref.read(profileProvider.notifier).clearSession();
     router.go('/login');
+    try {
+      await signOut;
+    } catch (_) {
+      // Best-effort: the local session is already cleared.
+    }
   }
 
   Future<void> deleteAccount() async {
