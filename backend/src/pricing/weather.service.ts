@@ -15,6 +15,7 @@ export interface WeatherSnapshot {
   precipitationMm: number | null;
   windSpeedKmh: number | null;
   windGustKmh: number | null;
+  isDay: boolean | null;
 }
 
 type CurrentWeatherResponse = {
@@ -26,6 +27,7 @@ type CurrentWeatherResponse = {
     rain?: unknown;
     wind_speed_10m?: unknown;
     wind_gusts_10m?: unknown;
+    is_day?: unknown;
   };
 };
 
@@ -82,7 +84,7 @@ export class WeatherService {
     const query = new URLSearchParams({
       latitude: roundedLatitude.toString(),
       longitude: roundedLongitude.toString(),
-      current: 'temperature_2m,weather_code,precipitation,rain,wind_speed_10m,wind_gusts_10m',
+      current: 'temperature_2m,weather_code,precipitation,rain,wind_speed_10m,wind_gusts_10m,is_day',
       wind_speed_unit: 'kmh',
       timezone: 'UTC',
     });
@@ -116,6 +118,7 @@ export class WeatherService {
     const windSpeedKmh = this.nonNegativeNumber(current?.wind_speed_10m);
     const windGustKmh = this.nonNegativeNumber(current?.wind_gusts_10m);
     const observedAt = this.utcDate(current?.time);
+    const isDay = this.dayFlag(current?.is_day);
     if (
       weatherCode === null ||
       temperatureCelsius === null ||
@@ -142,6 +145,7 @@ export class WeatherService {
       precipitationMm,
       windSpeedKmh,
       windGustKmh,
+      isDay,
     };
   }
 
@@ -155,7 +159,14 @@ export class WeatherService {
       precipitationMm: null,
       windSpeedKmh: null,
       windGustKmh: null,
+      isDay: null,
     };
+  }
+
+  private dayFlag(value: unknown): boolean | null {
+    if (value === 1 || value === '1' || value === true) return true;
+    if (value === 0 || value === '0' || value === false) return false;
+    return null;
   }
 
   private number(value: unknown): number | null {

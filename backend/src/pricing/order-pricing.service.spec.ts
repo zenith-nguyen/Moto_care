@@ -26,6 +26,7 @@ describe('OrderPricingService', () => {
       precipitationMm: null,
       windSpeedKmh: null,
       windGustKmh: null,
+      isDay: null,
     });
     expect(result).toMatchObject({
       basePrice: '100000.00',
@@ -45,6 +46,7 @@ describe('OrderPricingService', () => {
       precipitationMm: 1,
       windSpeedKmh: 1,
       windGustKmh: 1,
+      isDay: null,
     });
     expect(result.estimatedPrice).toBe('0.06');
   });

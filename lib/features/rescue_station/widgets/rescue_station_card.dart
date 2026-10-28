@@ -94,14 +94,6 @@ class RescueStationCard extends ConsumerWidget {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  if (station.isMapDirectory && !station.isVerified)
-                    Text(
-                      'Chưa xác minh đối tác',
-                      style: AppTextStyles.caption.copyWith(
-                        color: Colors.deepOrange,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: AppCardLayout.smallGap),

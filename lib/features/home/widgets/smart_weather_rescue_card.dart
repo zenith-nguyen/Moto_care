@@ -209,7 +209,11 @@ class _SmartWeatherRescueCardState extends State<SmartWeatherRescueCard> {
         const SizedBox(width: 12),
         Semantics(
           label: weather.description,
-          child: WeatherConditionIcon(condition: weather.condition, size: 72),
+          child: WeatherConditionIcon(
+            condition: weather.condition,
+            isNight: weather.isNight,
+            size: 72,
+          ),
         ),
       ],
     );

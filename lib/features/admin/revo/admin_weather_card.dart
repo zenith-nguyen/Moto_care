@@ -135,6 +135,7 @@ class _WeatherReadout extends StatelessWidget {
           offset: const Offset(4, -6),
           child: WeatherConditionIcon(
             condition: snapshot.weather.condition,
+            isNight: snapshot.weather.isNight,
             size: 72,
           ),
         ),
