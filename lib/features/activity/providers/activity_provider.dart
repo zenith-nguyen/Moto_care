@@ -51,6 +51,11 @@ class ActivityController extends Notifier<ActivityState> {
     if (!ref.watch(runtimeApiIntegrationProvider)) {
       return ActivityState(orders: initial);
     }
+    // Do not fire this listener while the Notifier is still inside build().
+    // With Riverpod 3, fireImmediately can invoke the callback before `state`
+    // has been initialized, which makes the customer app throw while opening
+    // Home/Activity. The initial loading state below covers that first frame;
+    // subsequent API updates still arrive through this listener.
     ref.listen(activityApiOrdersProvider, (_, next) {
       next.when(
         data: (orders) =>
@@ -66,7 +71,7 @@ class ActivityController extends Notifier<ActivityState> {
           loading: true,
         ),
       );
-    }, fireImmediately: true);
+    }, fireImmediately: false);
     return ActivityState(orders: const [], loading: true);
   }
 

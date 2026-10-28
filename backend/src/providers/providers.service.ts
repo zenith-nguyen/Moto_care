@@ -15,6 +15,7 @@ import { User } from '../users/user.entity';
 import { Provider } from './provider.entity';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { presentOrderVehicle } from '../orders/presentation/order.presenter';
+import { MatchingService } from '../orders/matching.service';
 
 @Injectable()
 export class ProvidersService {
@@ -23,6 +24,7 @@ export class ProvidersService {
     @InjectRepository(OrderOffer) private readonly offers: Repository<OrderOffer>,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly config: ConfigService,
+    private readonly matching: MatchingService,
     @Optional() @InjectRepository(Order) private readonly orders?: Repository<Order>,
     @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
@@ -123,6 +125,9 @@ export class ProvidersService {
       }
     }
     await this.providers.update(provider.id, { isOnline });
+    if (isOnline) {
+      await this.matching.matchPendingOrders();
+    }
     return { id: provider.id, isOnline, lastSeenAt: provider.lastSeenAt };
   }
 

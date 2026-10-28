@@ -42,12 +42,7 @@ class StationQuickSpecs extends StatelessWidget {
           '${rating.toStringAsFixed(1)} ($reviewCount)',
           'Đánh giá',
         ),
-        (
-          Icons.bolt_rounded,
-          StationDetailColors.red,
-          responseLabel,
-          'Tốc độ',
-        ),
+        (Icons.bolt_rounded, StationDetailColors.red, responseLabel, 'Tốc độ'),
         (
           Icons.handyman_outlined,
           StationDetailColors.text,

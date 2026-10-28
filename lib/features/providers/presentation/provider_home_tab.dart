@@ -119,12 +119,28 @@ class _Header extends ConsumerWidget {
     final unread =
         ref.watch(notificationInboxControllerProvider).value?.unreadCount ?? 0;
 
-    void toggle(bool value) {
+    Future<void> toggle(bool value) async {
       if (busy) return;
       final controller = ref.read(
         providerLocationTrackingControllerProvider.notifier,
       );
-      value ? controller.goOnline() : controller.goOffline();
+      if (value) {
+        await controller.goOnline();
+      } else {
+        await controller.goOffline();
+      }
+      if (!context.mounted) return;
+      final failure = ref
+          .read(providerLocationTrackingControllerProvider)
+          .value
+          ?.lastFailure;
+      if (failure != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể cập nhật trạng thái nhận đơn: $failure'),
+          ),
+        );
+      }
     }
 
     return Row(

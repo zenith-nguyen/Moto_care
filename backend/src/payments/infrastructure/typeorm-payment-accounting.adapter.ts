@@ -109,8 +109,8 @@ export class TypeOrmPaymentAccountingAdapter implements PaymentSettlementPort, P
       lock: { mode: 'pessimistic_write' },
       order: { id: 'ASC' },
     });
-    if (!payment?.isDemo || payment.status !== PaymentStatus.PAID || payment.amount !== command.estimatedPrice) {
-      throw new ConflictException('Only a paid demo order can be completed');
+    if (!payment || payment.status !== PaymentStatus.PAID || payment.amount !== command.estimatedPrice) {
+      throw new ConflictException('A paid prepayment matching the estimated price is required before completion');
     }
 
     const adjustment = await manager.getRepository(PaymentAdjustment).findOne({

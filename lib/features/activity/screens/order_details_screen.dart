@@ -14,6 +14,7 @@ import '../widgets/order_summary.dart';
 import '../widgets/order_timeline.dart';
 import '../widgets/rescue_details_card.dart';
 import '../widgets/rescue_progress_stepper.dart';
+import '../../orders/presentation/final_price_approval_card.dart';
 
 class OrderDetailsScreen extends ConsumerWidget {
   const OrderDetailsScreen({super.key, this.orderId});
@@ -122,6 +123,8 @@ class OrderDetailsScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 14),
+                            // Keep price approval beside the progress stepper.
+                            FinalPriceApprovalCard(orderId: order.id),
                             OrderDetailsMapPreview(
                               details: details,
                               onTracking: order.status.isActive

@@ -117,9 +117,14 @@ export class OrdersService {
   }
 
   async retry(orderId: number, customerId: number) {
-    const { order, offer } = await this.matching.retry(orderId, customerId);
-    if (offer) await this.realtime?.offerCreated(offer.providerId, order.id, offer.id, offer.expiresAt);
-    return presentOrderMatch(order, offer);
+    const { order, offers } = await this.matching.retry(orderId, customerId);
+    if (offers.length > 0) {
+      await this.realtime?.orderStatusChanged(order.id, order.status);
+      for (const offer of offers) {
+        await this.realtime?.offerCreated(offer.providerId, order.id, offer.id, offer.expiresAt);
+      }
+    }
+    return presentOrderMatch(order, offers[0] ?? null);
   }
 
   async accept(orderId: number, offerId: number, userId: number) {
@@ -150,6 +155,10 @@ export class OrdersService {
       if (busy.length > 0) throw new ConflictException('Provider is already handling an order');
 
       offer.status = OfferStatus.ACCEPTED;
+      await manager.getRepository(OrderOffer).update(
+        { orderId, status: OfferStatus.PENDING },
+        { status: OfferStatus.EXPIRED },
+      );
       order.providerId = provider.id;
       order.status = OrderStatus.ACCEPTED;
       await manager.getRepository(OrderOffer).save(offer);
@@ -161,7 +170,7 @@ export class OrdersService {
   }
 
   async reject(orderId: number, offerId: number, userId: number) {
-    const { response, nextOffer } = await this.dataSource.transaction(async (manager) => {
+    const { response, nextOffers } = await this.dataSource.transaction(async (manager) => {
       const order = await this.lockOrder(manager, orderId);
       const provider = await this.lockOwnProvider(manager, userId);
       const offer = await this.lockOffer(manager, orderId, offerId, provider.id);
@@ -172,11 +181,13 @@ export class OrdersService {
       await manager.getRepository(OrderOffer).save(offer);
       order.status = OrderStatus.PENDING_MATCH;
       await manager.getRepository(Order).save(order);
-      const nextOffer = await this.matching.matchLockedOrder(manager, order);
-      return { response: { orderId: order.id, offerStatus: offer.status, ...presentOrderMatch(order, nextOffer) }, nextOffer };
+      const nextOffers = await this.matching.matchLockedOrder(manager, order);
+      return { response: { orderId: order.id, offerStatus: offer.status, ...presentOrderMatch(order, nextOffers[0] ?? null) }, nextOffers };
     });
     await this.realtime?.orderStatusChanged(orderId, response.status);
-    if (nextOffer) await this.realtime?.offerCreated(nextOffer.providerId, orderId, nextOffer.id, nextOffer.expiresAt);
+    for (const offer of nextOffers) {
+      await this.realtime?.offerCreated(offer.providerId, orderId, offer.id, offer.expiresAt);
+    }
     return response;
   }
 

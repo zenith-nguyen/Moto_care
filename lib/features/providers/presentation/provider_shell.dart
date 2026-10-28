@@ -40,8 +40,6 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
   bool _offerDialogOpen = false;
   bool _offersInitialized = false;
 
-  static const _titles = ['Tổng quan', 'Đơn cứu hộ', 'Ví sandbox', 'Tài khoản'];
-
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionControllerProvider);
@@ -87,24 +85,12 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
     );
   }
 
-  void _refreshCurrent() {
-    if (_index == 2) {
-      ref.read(providerWalletControllerProvider.notifier).refresh();
-    } else {
-      ref.read(providerWorkControllerProvider.notifier).refresh();
-    }
-  }
-
   void _maybeShowIncomingOffer(ProviderWorkState? state) {
     if (state == null || _offerDialogOpen) return;
     // First snapshot (e.g. offers already pending when the app opens): record
     // them as seen so only requests arriving afterwards pop up as dispatch.
     if (!_offersInitialized) {
       _offersInitialized = true;
-      for (final offer in state.pendingOffers) {
-        _announcedOffers.add(offer.id);
-      }
-      return;
     }
     PendingOffer? fresh;
     for (final offer in state.pendingOffers) {

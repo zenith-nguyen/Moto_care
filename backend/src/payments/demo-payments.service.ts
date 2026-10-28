@@ -38,7 +38,7 @@ export class DemoPaymentsService {
       });
       if (!payment) throw new NotFoundException('Prepayment not found');
       if (payment.isDemo && payment.status === PaymentStatus.PAID) {
-        return { orderId, status: order.status, paymentStatus: payment.status, matched: order.status === OrderStatus.OFFERED, offer: null, changed: false };
+        return { orderId, status: order.status, paymentStatus: payment.status, matched: order.status === OrderStatus.OFFERED, offers: [], changed: false };
       }
       if (!canTransitionOrder(order.status, OrderStatus.PENDING_MATCH) || payment.status !== PaymentStatus.PENDING) {
         throw new ConflictException('Order is not awaiting a demo payment');
@@ -52,12 +52,12 @@ export class DemoPaymentsService {
       await manager.getRepository(Payment).save(payment);
       order.status = OrderStatus.PENDING_MATCH;
       await manager.getRepository(Order).save(order);
-      const offer = await this.matching.matchLockedOrder(manager, order);
-      return { orderId, status: order.status, paymentStatus: payment.status, matched: offer !== null, offer, changed: true };
+      const offers = await this.matching.matchLockedOrder(manager, order);
+      return { orderId, status: order.status, paymentStatus: payment.status, matched: offers.length > 0, offers, changed: true };
     });
     if (result.changed) await this.realtime?.orderStatusChanged(orderId, result.status);
-    if (result.offer) {
-      await this.realtime?.offerCreated(result.offer.providerId, orderId, result.offer.id, result.offer.expiresAt);
+    for (const offer of result.offers) {
+      await this.realtime?.offerCreated(offer.providerId, orderId, offer.id, offer.expiresAt);
     }
     return { orderId: result.orderId, status: result.status, paymentStatus: result.paymentStatus, matched: result.matched };
   }

@@ -24,6 +24,10 @@ class ProviderLocationTrackingController
 
   @override
   Future<ProviderLocationTrackingState> build() async {
+    // Availability and GPS heartbeat must survive tab/screen rebuilds. If
+    // this auto-disposed controller is recreated, the UI falls back to OFF
+    // even though the backend still has the provider online.
+    ref.keepAlive();
     ref.onDispose(_cancelTimer);
     return const ProviderLocationTrackingState();
   }

@@ -130,6 +130,7 @@ describe('Orders and matching on PostGIS', () => {
       database.getRepository(OrderOffer),
       database.getRepository(User),
       config,
+      matching,
     );
     passwordRecovery = new PasswordRecoveryService(
       database,
@@ -441,7 +442,7 @@ describe('Orders and matching on PostGIS', () => {
     await expect(messages.list(created.id, outsider.user.id)).rejects.toBeInstanceOf(NotFoundException);
     const providerService = new ProvidersService(
       database.getRepository(Provider), database.getRepository(OrderOffer), database.getRepository(User),
-      new ConfigService({ PROVIDER_LOCATION_MAX_AGE_SECONDS: 120 }), database.getRepository(Order),
+      new ConfigService({ PROVIDER_LOCATION_MAX_AGE_SECONDS: 120 }), matching, database.getRepository(Order),
       { providerLocation } as unknown as RealtimePublisher,
     );
     await providerService.updateOrderLocation(assigned.user.id, created.id, { latitude: 10.778, longitude: 106.702 });

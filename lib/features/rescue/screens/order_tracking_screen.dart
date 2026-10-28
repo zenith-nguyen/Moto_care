@@ -18,6 +18,7 @@ import '../widgets/order_tracking_header.dart';
 import '../widgets/order_tracking_map.dart';
 import '../widgets/order_tracking_status_card.dart';
 import '../widgets/service_start_code_card.dart';
+import '../../orders/presentation/final_price_approval_card.dart';
 
 class OrderTrackingScreen extends ConsumerStatefulWidget {
   const OrderTrackingScreen({super.key, required this.orderId});
@@ -381,6 +382,8 @@ class _OrderTrackingScreenState extends ConsumerState<OrderTrackingScreen>
                         order.status == RescueOrderStatus.enRoute &&
                         int.tryParse(order.id) != null)
                       ServiceStartCodeCard(orderId: int.parse(order.id)),
+                    if (runtimeIntegration && int.tryParse(order.id) != null)
+                      FinalPriceApprovalCard(orderId: order.id),
                   ],
                 ),
               ),
