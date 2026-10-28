@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/admin_tokens.dart';
 import '../../auth/application/session_controller.dart';
@@ -40,9 +41,19 @@ class AdminAccountScreen extends ConsumerWidget {
           _InfoCard(
             children: [
               _InfoTile(
+                icon: Icons.badge_outlined,
+                label: 'Mã tài khoản',
+                value: user == null ? '—' : '#${user.id}',
+              ),
+              _InfoTile(
                 icon: Icons.verified_user_outlined,
                 label: 'Vai trò',
                 value: 'Quản trị viên (ADMIN)',
+              ),
+              _InfoTile(
+                icon: Icons.toggle_on_outlined,
+                label: 'Trạng thái',
+                value: _statusLabel(user?.status),
               ),
               _InfoTile(
                 icon: Icons.shield_outlined,
@@ -52,27 +63,33 @@ class AdminAccountScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const _SectionLabel('Sắp có'),
+          const _SectionLabel('Quản trị nhanh'),
           const SizedBox(height: 10),
           _InfoCard(
             children: [
               _InfoTile(
-                icon: Icons.tune_rounded,
-                label: 'Cấu hình phí & phụ phí',
-                value: 'Cần API backend, sẽ bổ sung sau',
-                muted: true,
+                icon: Icons.verified_outlined,
+                label: 'Duyệt hồ sơ thợ',
+                value: 'Xét duyệt thợ đăng ký mới',
+                onTap: () => context.go('/admin/providers'),
               ),
               _InfoTile(
-                icon: Icons.notifications_active_outlined,
-                label: 'Cảnh báo SOS',
-                value: 'Cần API backend, sẽ bổ sung sau',
-                muted: true,
+                icon: Icons.receipt_long_outlined,
+                label: 'Đơn hàng',
+                value: 'Theo dõi và xử lý đơn cứu hộ',
+                onTap: () => context.go('/admin/orders'),
               ),
               _InfoTile(
-                icon: Icons.history_rounded,
-                label: 'Nhật ký thao tác (audit log)',
-                value: 'Cần API backend, sẽ bổ sung sau',
-                muted: true,
+                icon: Icons.account_balance_wallet_outlined,
+                label: 'Tài chính',
+                value: 'Doanh thu, hoa hồng và rút tiền',
+                onTap: () => context.go('/admin/finance'),
+              ),
+              _InfoTile(
+                icon: Icons.fact_check_outlined,
+                label: 'Đối soát',
+                value: 'Đối chiếu dòng tiền giao dịch',
+                onTap: () => context.go('/admin/reconciliation'),
               ),
             ],
           ),
@@ -219,46 +236,58 @@ class _InfoTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
-    this.muted = false,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
-  final bool muted;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(16),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 22,
-          color: muted ? AdminTokens.muted : AdminTokens.primaryBlue,
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: AdminTokens.text,
+  Widget build(BuildContext context) {
+    final content = Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 22, color: AdminTokens.primaryBlue),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: AdminTokens.text,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(color: AdminTokens.muted, fontSize: 13),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: AdminTokens.muted,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+          if (onTap != null)
+            const Icon(Icons.chevron_right_rounded, color: AdminTokens.muted),
+        ],
+      ),
+    );
+    if (onTap == null) return content;
+    return InkWell(onTap: onTap, child: content);
+  }
 }
+
+String _statusLabel(AppUserStatus? status) => switch (status) {
+  AppUserStatus.active => 'Đang hoạt động',
+  AppUserStatus.pendingApproval => 'Chờ phê duyệt',
+  AppUserStatus.suspended => 'Tạm khoá',
+  null => '—',
+};
