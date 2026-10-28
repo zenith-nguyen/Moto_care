@@ -250,7 +250,7 @@ class _OrderAction extends ConsumerWidget {
         label: const Text('Đề xuất giá cuối'),
       ),
       OrderStatus.paid => FilledButton.icon(
-        onPressed: busy ? null : () => _complete(ref, controller),
+        onPressed: busy ? null : () => _complete(context, ref, controller),
         icon: const Icon(Icons.task_alt_rounded),
         label: const Text('Hoàn tất dịch vụ'),
       ),
@@ -301,10 +301,12 @@ class _OrderAction extends ConsumerWidget {
   }
 
   Future<void> _complete(
+    BuildContext context,
     WidgetRef ref,
     ProviderWorkController controller,
   ) async {
     await controller.completeService();
+    if (!context.mounted) return;
     final latest = ref
         .read(providerWorkControllerProvider)
         .value
@@ -344,7 +346,6 @@ class _PriceProposalDialogState extends State<_PriceProposalDialog> {
         children: [
           TextField(
             controller: _price,
-            autofocus: true,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: const InputDecoration(
               labelText: 'Giá cuối (VND)',
@@ -397,7 +398,6 @@ Future<String?> _showTextDialog(
       title: Text(title),
       content: TextField(
         controller: controller,
-        autofocus: true,
         minLines: minLines,
         maxLines: minLines == 1 ? 1 : 5,
         decoration: InputDecoration(labelText: label),
