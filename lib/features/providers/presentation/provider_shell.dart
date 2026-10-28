@@ -63,26 +63,17 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
       backgroundColor: _index == 0
           ? RevoBrandColors.surface
           : RevoBrandColors.bg,
-      appBar: AppBar(
-        title: Text(_titles[_index]),
-        actions: [
-          IconButton(
-            tooltip: 'Tải lại dữ liệu',
-            onPressed: _index == 3
-                ? () => ref.invalidate(professionalProfileProvider)
-                : _refreshCurrent,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _index,
-        children: const [
-          ProviderHomeTab(),
-          _ProviderOrdersPage(),
-          _ProviderWalletPage(),
-          _ProviderAccountPage(),
-        ],
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(
+          index: _index,
+          children: const [
+            ProviderHomeTab(),
+            _ProviderOrdersPage(),
+            _ProviderWalletPage(),
+            _ProviderAccountPage(),
+          ],
+        ),
       ),
       bottomNavigationBar: _RevoBottomNav(
         currentIndex: _index,

@@ -1099,7 +1099,14 @@ class _NearbyJobCard extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: () {},
+                      onPressed: () => ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Đơn mẫu minh họa. Đơn thật sẽ hiện ở đây khi có khách đặt gần bạn.',
+                              ),
+                            ),
+                          ),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF0F172A),
                         foregroundColor: Colors.white,

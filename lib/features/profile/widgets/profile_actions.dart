@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/application/session_controller.dart';
 import '../providers/profile_actions_provider.dart';
 import '../providers/profile_provider.dart';
 import '../services/profile_account_service.dart';
@@ -83,8 +84,9 @@ class ProfileActions {
         !context.mounted) {
       return;
     }
+    await ref.read(sessionControllerProvider.notifier).signOut();
     ref.read(profileProvider.notifier).clearSession();
-    context.go('/login');
+    if (context.mounted) context.go('/login');
   }
 
   Future<void> deleteAccount() async {
