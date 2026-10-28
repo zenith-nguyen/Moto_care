@@ -1,0 +1,71 @@
+import '../../home/models/home_service.dart';
+import '../models/service_catalog_item.dart';
+
+const serviceCatalogItems = <ServiceCatalogItem>[
+  ServiceCatalogItem(
+    service: HomeService.battery,
+    title: 'Kích bình ắc quy',
+    description: 'Xử lý nhanh khi xe không đề được, hết điện',
+    imageAsset: 'assets/images/home_battery_car.png',
+    badge: 'Phổ biến',
+    responseLabel: '15–20 phút',
+    categories: {ServiceCatalogCategory.rescue, ServiceCatalogCategory.onSite},
+  ),
+  ServiceCatalogItem(
+    service: HomeService.tire,
+    title: 'Vá lốp & Thay lốp dự phòng',
+    description: 'Hỗ trợ sự cố lốp xẹp, cán đinh trên đường',
+    imageAsset: 'assets/images/home_tire_suv.png',
+    badge: 'Phổ biến',
+    responseLabel: '20–30 phút',
+    categories: {ServiceCatalogCategory.rescue, ServiceCatalogCategory.onSite},
+  ),
+  ServiceCatalogItem(
+    service: HomeService.towing,
+    title: 'Xe cẩu / Kéo xe cứu hộ',
+    description: 'Vận chuyển xe hư hỏng nặng về garage hoặc trạm',
+    imageAsset: 'assets/images/rescue-tow.png',
+    badge: 'Cứu hộ 24/7',
+    responseLabel: '24/7',
+    categories: {ServiceCatalogCategory.rescue},
+  ),
+  ServiceCatalogItem(
+    service: HomeService.flood,
+    title: 'Cứu hộ xe ngập nước / Chết máy',
+    description: 'Kiểm tra & xử lý sự cố động cơ tại chỗ',
+    imageAsset: 'assets/images/home_service_repair.png',
+    badge: 'Sửa tận nơi',
+    responseLabel: 'Khẩn cấp',
+    categories: {ServiceCatalogCategory.rescue, ServiceCatalogCategory.onSite},
+  ),
+  ServiceCatalogItem(
+    service: HomeService.maintenance,
+    title: 'Thay nhớt & Chăm sóc xe',
+    description: 'Bảo dưỡng định kỳ tận nhà hoặc tại trạm',
+    imageAsset: 'assets/images/rescue-garage.png',
+    badge: 'Chăm sóc xe',
+    responseLabel: 'Đặt lịch trước',
+    categories: {
+      ServiceCatalogCategory.maintenance,
+      ServiceCatalogCategory.onSite,
+    },
+  ),
+  ServiceCatalogItem(
+    service: HomeService.fuel,
+    title: 'Tiếp nhiên liệu tận nơi',
+    description: 'Hỗ trợ khi xe hết xăng, không thể di chuyển',
+    imageAsset: 'assets/images/rescue-team.png',
+    badge: 'Cứu hộ 24/7',
+    responseLabel: 'Phục vụ ngay',
+    categories: {ServiceCatalogCategory.rescue, ServiceCatalogCategory.onSite},
+  ),
+  ServiceCatalogItem(
+    service: HomeService.night,
+    title: 'Cứu hộ đêm 24/7',
+    description: 'Hỗ trợ sự cố xe vào ban đêm và ngoài giờ',
+    imageAsset: 'assets/images/home_service_tow.png',
+    badge: 'Cứu hộ 24/7',
+    responseLabel: '24/7',
+    categories: {ServiceCatalogCategory.rescue},
+  ),
+];
