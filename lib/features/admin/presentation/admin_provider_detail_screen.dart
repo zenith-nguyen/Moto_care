@@ -465,10 +465,7 @@ class _BioCard extends StatelessWidget {
         const SizedBox(height: 10),
         Text(
           bio,
-          style: const TextStyle(
-            color: RevoBrandColors.navy,
-            height: 1.5,
-          ),
+          style: const TextStyle(color: RevoBrandColors.navy, height: 1.5),
         ),
       ],
     ),
@@ -491,9 +488,7 @@ class _DocumentsCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                hasDoc
-                    ? Icons.description_rounded
-                    : Icons.description_outlined,
+                hasDoc ? Icons.description_rounded : Icons.description_outlined,
                 size: 18,
                 color: hasDoc
                     ? RevoBrandColors.primary
