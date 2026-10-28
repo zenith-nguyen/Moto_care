@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/revo_brand.dart';
 import '../application/admin_operations_controller.dart';
@@ -159,36 +160,46 @@ class _ProviderCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                backgroundColor: RevoBrandColors.surfaceSoft,
-                child: Icon(
-                  Icons.engineering_rounded,
-                  color: RevoBrandColors.primary,
+          InkWell(
+            onTap: () => context.push('/admin/providers/${application.id}'),
+            borderRadius: BorderRadius.circular(12),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  backgroundColor: RevoBrandColors.surfaceSoft,
+                  child: Icon(
+                    Icons.engineering_rounded,
+                    color: RevoBrandColors.primary,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      application.name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        application.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      contact,
-                      style: const TextStyle(color: RevoBrandColors.textSubtle),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        contact,
+                        style: const TextStyle(
+                          color: RevoBrandColors.textSubtle,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: RevoBrandColors.textSubtle,
+                ),
+              ],
+            ),
           ),
           if (application.documentUrl != null) ...[
             const SizedBox(height: 10),

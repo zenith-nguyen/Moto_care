@@ -178,6 +178,12 @@ class PendingProviderApplication {
     required this.phone,
     required this.approvalStatus,
     required this.documentUrl,
+    this.bio,
+    this.yearsOfExperience,
+    this.serviceRadiusKm,
+    this.tier,
+    this.createdAt,
+    this.skills = const <String>[],
   });
   final int id;
   final int userId;
@@ -186,9 +192,23 @@ class PendingProviderApplication {
   final String? phone;
   final ProviderApprovalStatus approvalStatus;
   final String? documentUrl;
+  final String? bio;
+  final int? yearsOfExperience;
+  final double? serviceRadiusKm;
+  final String? tier;
+  final DateTime? createdAt;
+  final List<String> skills;
 
   factory PendingProviderApplication.fromJson(Map<String, dynamic> json) {
     final reader = JsonReader(json);
+    final rawSkills = reader.value('skills');
+    final skills = rawSkills is List
+        ? rawSkills
+              .map((entry) => entry?.toString().trim() ?? '')
+              .where((entry) => entry.isNotEmpty)
+              .toList(growable: false)
+        : const <String>[];
+    final rawRadius = reader.value('serviceRadiusKm');
     return PendingProviderApplication(
       id: reader.positiveInt('id'),
       userId: reader.positiveInt('userId'),
@@ -199,6 +219,14 @@ class PendingProviderApplication {
         reader.value('approvalStatus'),
       ),
       documentUrl: reader.nullableString('documentUrl'),
+      bio: reader.nullableString('bio'),
+      yearsOfExperience: reader.nullableInt('yearsOfExperience'),
+      serviceRadiusKm: rawRadius == null
+          ? null
+          : double.tryParse(rawRadius.toString()),
+      tier: reader.nullableString('tier'),
+      createdAt: reader.nullableDateTime('createdAt'),
+      skills: skills,
     );
   }
 }
