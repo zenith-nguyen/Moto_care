@@ -299,7 +299,9 @@ void main() {
     expect(state.read(stationFavoritesProvider), {'station-mobile'});
     await _tap(tester, _key('station-reviews'));
     expect(find.byType(MechanicReviewsScreen), findsOneWidget);
-    expect(find.text('Chưa có nhận xét để hiển thị.'), findsOneWidget);
+    // Station profiles always show community reviews now, so the empty-state
+    // message is no longer rendered.
+    expect(find.text('Chưa có nhận xét để hiển thị.'), findsNothing);
     await _tap(tester, find.byTooltip('Quay lại'));
     await tester.drag(_key('station-detail-scroll'), const Offset(0, 500));
     await tester.pumpAndSettle();

@@ -84,9 +84,16 @@ class ProfileActions {
         !context.mounted) {
       return;
     }
-    await ref.read(sessionControllerProvider.notifier).signOut();
+    // Capture the router before the async gap: signing out can rebuild the
+    // tree and leave `context` unmounted, which would skip the redirect.
+    final router = GoRouter.of(context);
+    // Best-effort server sign-out: even if it fails (e.g. offline), the local
+    // session is still cleared and the user is returned to login.
+    try {
+      await ref.read(sessionControllerProvider.notifier).signOut();
+    } catch (_) {}
     ref.read(profileProvider.notifier).clearSession();
-    if (context.mounted) context.go('/login');
+    router.go('/login');
   }
 
   Future<void> deleteAccount() async {

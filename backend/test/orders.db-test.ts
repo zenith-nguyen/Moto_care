@@ -37,6 +37,8 @@ import { ReviewsService } from '../src/reviews/reviews.service';
 import { OrdersService } from '../src/orders/orders.service';
 import { OrdersQueryService } from '../src/orders/application/orders-query.service';
 import { Provider } from '../src/providers/provider.entity';
+import { ProviderSkill } from '../src/providers/provider-skill.entity';
+import { Skill } from '../src/providers/skill.entity';
 import { ProvidersService } from '../src/providers/providers.service';
 import { User } from '../src/users/user.entity';
 import { UsersService } from '../src/users/users.service';
@@ -95,7 +97,7 @@ describe('Orders and matching on PostGIS', () => {
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: testDatabase,
-      entities: [User, Provider, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, WithdrawalPayout, SepayPayoutWebhookEvent, Review, PasswordResetCode, Vehicle],
+      entities: [User, Provider, ProviderSkill, Skill, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, WithdrawalPayout, SepayPayoutWebhookEvent, Review, PasswordResetCode, Vehicle],
       synchronize: false,
       logging: false,
     });

@@ -91,6 +91,10 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
     // them as seen so only requests arriving afterwards pop up as dispatch.
     if (!_offersInitialized) {
       _offersInitialized = true;
+      for (final offer in state.pendingOffers) {
+        _announcedOffers.add(offer.id);
+      }
+      return;
     }
     PendingOffer? fresh;
     for (final offer in state.pendingOffers) {
@@ -2082,40 +2086,43 @@ class _ProviderAccountPage extends ConsumerWidget {
     String label,
     VoidCallback onTap, {
     String? subtitle,
-  }) => ListTile(
-    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-    minLeadingWidth: 36,
-    leading: Container(
-      width: 36,
-      height: 36,
-      decoration: const BoxDecoration(
-        color: RevoBrandColors.surfaceSoft,
-        shape: BoxShape.circle,
+  }) => Material(
+    type: MaterialType.transparency,
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      minLeadingWidth: 36,
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: RevoBrandColors.surfaceSoft,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: RevoBrandColors.primary),
       ),
-      child: Icon(icon, size: 20, color: RevoBrandColors.primary),
-    ),
-    title: Text(
-      label,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: RevoBrandColors.ink,
+      title: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: RevoBrandColors.ink,
+        ),
       ),
+      subtitle: subtitle == null
+          ? null
+          : Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RevoTypography.caption.copyWith(fontSize: 11.5),
+            ),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: RevoBrandColors.textSubtle,
+      ),
+      onTap: onTap,
     ),
-    subtitle: subtitle == null
-        ? null
-        : Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: RevoTypography.caption.copyWith(fontSize: 11.5),
-          ),
-    trailing: const Icon(
-      Icons.chevron_right_rounded,
-      size: 18,
-      color: RevoBrandColors.textSubtle,
-    ),
-    onTap: onTap,
   );
 
   String _initials(String name) {
@@ -2141,35 +2148,38 @@ class _LogoutCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(RevoRadius.md),
       border: Border.all(color: RevoBrandColors.border),
     ),
-    child: ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-      leading: Container(
-        width: 36,
-        height: 36,
-        decoration: const BoxDecoration(
-          color: RevoBrandColors.dangerSoft,
-          shape: BoxShape.circle,
+    child: Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: RevoBrandColors.dangerSoft,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.logout_rounded,
+            size: 20,
+            color: RevoBrandColors.dangerDark,
+          ),
         ),
-        child: const Icon(
-          Icons.logout_rounded,
-          size: 20,
+        title: const Text(
+          'Đăng xuất',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: RevoBrandColors.dangerDark,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          size: 18,
           color: RevoBrandColors.dangerDark,
         ),
+        onTap: onLogout,
       ),
-      title: const Text(
-        'Đăng xuất',
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: RevoBrandColors.dangerDark,
-        ),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right_rounded,
-        size: 18,
-        color: RevoBrandColors.dangerDark,
-      ),
-      onTap: onLogout,
     ),
   );
 }
