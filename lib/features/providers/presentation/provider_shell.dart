@@ -1163,7 +1163,6 @@ class _ProviderWalletPageState extends ConsumerState<_ProviderWalletPage> {
             const SizedBox(height: 12),
             TextField(
               controller: controller,
-              autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),

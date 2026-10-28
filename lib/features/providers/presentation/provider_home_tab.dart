@@ -228,7 +228,9 @@ class _Header extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Quận 1, TP.HCM',
+                          online
+                              ? 'Vị trí GPS hiện tại'
+                              : 'Bật nhận đơn để định vị',
                           style: _t(
                             10,
                             weight: FontWeight.w500,
