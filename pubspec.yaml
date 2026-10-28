@@ -46,6 +46,14 @@ dev_dependencies:
   video_player_platform_interface: ^6.9.0
   flutter_native_splash: ^2.4.8
   image: ^4.10.1
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/REVO.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/REVO.png"
 
 flutter:
   # Preserve existing `flutter run` / `flutter build apk` commands for the

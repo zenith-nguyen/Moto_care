@@ -467,11 +467,28 @@ class _OrderCard extends StatelessWidget {
   }
 }
 
-class _ProviderWalletPage extends ConsumerWidget {
+// REVO mechanic wallet palette (emerald balance card on a light surface).
+const _walletEmerald1 = Color(0xFF1F9877);
+const _walletEmerald2 = Color(0xFF0E6B56);
+const _walletEmerald3 = Color(0xFF05433F);
+const _walletNavy = Color(0xFF172638);
+const _walletSecondary = Color(0xFF71839E);
+const _walletBorder = Color(0xFFE3EAF3);
+const _walletIvory = Color(0xFFF4FBF7);
+
+class _ProviderWalletPage extends ConsumerStatefulWidget {
   const _ProviderWalletPage();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ProviderWalletPage> createState() =>
+      _ProviderWalletPageState();
+}
+
+class _ProviderWalletPageState extends ConsumerState<_ProviderWalletPage> {
+  bool _sortNewest = true;
+
+  @override
+  Widget build(BuildContext context) {
     final wallet = ref.watch(providerWalletControllerProvider);
     return wallet.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -479,111 +496,274 @@ class _ProviderWalletPage extends ConsumerWidget {
         message: 'Không tải được ví sandbox: $error',
         onRetry: () => ref.invalidate(providerWalletControllerProvider),
       ),
-      data: (state) => RefreshIndicator(
-        onRefresh: () =>
-            ref.read(providerWalletControllerProvider.notifier).refresh(),
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    RevoBrandColors.primaryDeep,
-                    RevoBrandColors.primary,
+      data: (state) {
+        final sortNewest = _sortNewest;
+        final txs = [...state.wallet.transactions]
+          ..sort(
+            (a, b) => sortNewest
+                ? b.createdAt.compareTo(a.createdAt)
+                : a.createdAt.compareTo(b.createdAt),
+          );
+        return RefreshIndicator(
+          onRefresh: () =>
+              ref.read(providerWalletControllerProvider.notifier).refresh(),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_walletEmerald1, _walletEmerald2, _walletEmerald3],
+                    stops: [0, 0.45, 1],
+                  ),
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x330E6B56),
+                      blurRadius: 22,
+                      offset: Offset(0, 10),
+                    ),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    state.wallet.demoOnly
-                        ? 'SỐ DƯ KHẢ DỤNG • SANDBOX'
-                        : 'SỐ DƯ KHẢ DỤNG',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    formatProviderMoney(state.wallet.summary.availableBalance),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Đang khóa: ${formatProviderMoney(state.wallet.summary.lockedBalance)}',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton.tonalIcon(
-                    onPressed: state.isBusy
-                        ? null
-                        : () => _showWithdrawalDialog(
-                            context,
-                            ref,
-                            demoOnly: state.wallet.demoOnly,
-                            available: state.wallet.summary.availableBalance,
-                          ),
-                    icon: const Icon(Icons.account_balance_outlined),
-                    label: Text(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       state.wallet.demoOnly
-                          ? 'Tạo yêu cầu rút thử nghiệm'
-                          : 'Yêu cầu rút tiền',
+                          ? 'Số dư khả dụng • Sandbox'
+                          : 'Số dư khả dụng',
+                      style: const TextStyle(
+                        color: _walletIvory,
+                        fontSize: 13.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        formatProviderMoney(
+                          state.wallet.summary.availableBalance,
+                        ),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w700,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Đang khóa: '
+                      '${formatProviderMoney(state.wallet.summary.lockedBalance)}',
+                      style: const TextStyle(
+                        color: _walletIvory,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (state.wallet.demoOnly) ...[
+                const SizedBox(height: 12),
+                const Text(
+                  'Đây là số dư mô phỏng phục vụ kiểm thử; không phải tiền '
+                  'ngân hàng thật.',
+                  style: TextStyle(color: RevoBrandColors.textSubtle),
+                ),
+              ],
+              const SizedBox(height: 16),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: _actionTile(
+                        Icons.account_balance_wallet_outlined,
+                        'Nạp tiền',
+                        'Qua ngân hàng',
+                        () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Nạp tiền chưa khả dụng. Ví chỉ ghi nhận thu '
+                              'nhập từ đơn hoàn thành.',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: _actionTile(
+                        Icons.credit_card_outlined,
+                        'Rút tiền',
+                        'Về tài khoản',
+                        state.isBusy
+                            ? null
+                            : () => _showWithdrawalDialog(
+                                context,
+                                ref,
+                                demoOnly: state.wallet.demoOnly,
+                                available:
+                                    state.wallet.summary.availableBalance,
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: _actionTile(
+                        Icons.bar_chart_rounded,
+                        'Thống kê',
+                        'Thu nhập',
+                        () => ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Thống kê thu nhập sẽ sớm có.'),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (state.lastFailure != null) ...[
+                const SizedBox(height: 14),
+                _FailureCard(
+                  message: 'Thao tác ví thất bại: ${state.lastFailure}',
+                ),
+              ],
+              const SizedBox(height: 26),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Lịch sử giao dịch',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: _walletNavy,
                     ),
                   ),
+                  _sortButton(sortNewest),
                 ],
               ),
-            ),
-            if (state.wallet.demoOnly) ...[
               const SizedBox(height: 12),
-              const Text(
-                'Đây là số dư mô phỏng phục vụ kiểm thử; không phải tiền ngân hàng thật.',
-                style: TextStyle(color: RevoBrandColors.textSubtle),
+              if (txs.isEmpty)
+                const _EmptyCard(
+                  icon: Icons.payments_outlined,
+                  text: 'Chưa có giao dịch ví.',
+                )
+              else
+                ...txs.map(_WalletTransactionTile.new),
+              const SizedBox(height: 22),
+              _SectionTitle(
+                title: 'Yêu cầu rút',
+                count: state.withdrawals.items.length,
               ),
+              const SizedBox(height: 10),
+              if (state.withdrawals.items.isEmpty)
+                const _EmptyCard(
+                  icon: Icons.history_rounded,
+                  text: 'Chưa có yêu cầu rút thử nghiệm.',
+                )
+              else
+                ...state.withdrawals.items.map(_WithdrawalTile.new),
             ],
-            if (state.lastFailure != null) ...[
-              const SizedBox(height: 14),
-              _FailureCard(
-                message: 'Thao tác ví thất bại: ${state.lastFailure}',
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _actionTile(
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback? onTap,
+  ) => Material(
+    color: const Color(0xFFF1F7FD),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(17),
+      side: const BorderSide(color: _walletBorder),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(17),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(6, 14, 6, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 28, color: RevoBrandColors.primary),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: _walletNavy,
+                height: 1.25,
               ),
-            ],
-            const SizedBox(height: 24),
-            _SectionTitle(
-              title: 'Giao dịch gần đây',
-              count: state.wallet.transactions.length,
             ),
-            const SizedBox(height: 10),
-            if (state.wallet.transactions.isEmpty)
-              const _EmptyCard(
-                icon: Icons.payments_outlined,
-                text: 'Chưa có giao dịch ví.',
-              )
-            else
-              ...state.wallet.transactions.map(_WalletTransactionTile.new),
-            const SizedBox(height: 22),
-            _SectionTitle(
-              title: 'Yêu cầu rút',
-              count: state.withdrawals.items.length,
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 10.5,
+                color: _walletSecondary,
+                height: 1.3,
+              ),
             ),
-            const SizedBox(height: 10),
-            if (state.withdrawals.items.isEmpty)
-              const _EmptyCard(
-                icon: Icons.history_rounded,
-                text: 'Chưa có yêu cầu rút thử nghiệm.',
-              )
-            else
-              ...state.withdrawals.items.map(_WithdrawalTile.new),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+
+  Widget _sortButton(bool newest) => PopupMenuButton<bool>(
+    tooltip: 'Sắp xếp giao dịch',
+    initialValue: newest,
+    onSelected: (v) => setState(() => _sortNewest = v),
+    itemBuilder: (_) => const [
+      PopupMenuItem(value: true, child: Text('Mới nhất')),
+      PopupMenuItem(value: false, child: Text('Cũ nhất')),
+    ],
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _walletBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.swap_vert_rounded, size: 18, color: _walletNavy),
+          const SizedBox(width: 6),
+          Text(
+            newest ? 'Mới nhất' : 'Cũ nhất',
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: _walletNavy,
+            ),
+          ),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 18,
+            color: _walletNavy,
+          ),
+        ],
+      ),
+    ),
+  );
 
   Future<void> _showWithdrawalDialog(
     BuildContext context,

@@ -164,7 +164,7 @@ void main() {
     await tester.tap(find.text('Ví'));
     await tester.pumpAndSettle();
 
-    expect(find.text('SỐ DƯ KHẢ DỤNG • SANDBOX'), findsOneWidget);
+    expect(find.text('Số dư khả dụng • Sandbox'), findsOneWidget);
     expect(
       find.textContaining('không phải tiền ngân hàng thật'),
       findsOneWidget,
