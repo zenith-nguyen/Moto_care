@@ -17,6 +17,7 @@ const corsOrigins = Joi.string().custom((value: string, helpers) => {
 export const envValidationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
   PORT: Joi.number().port().default(3000),
+  SWAGGER_ENABLED: Joi.boolean().default(false),
   PUBLIC_BASE_URL: Joi.string().uri({ scheme: ['https'] }).optional(),
   CORS_ORIGIN: corsOrigins.default('http://localhost:3000'),
   DATABASE_HOST: Joi.string().required(),
