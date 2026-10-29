@@ -1,5 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 
+import 'location_fix_validation.dart';
 import '../../features/orders/domain/geo_point.dart';
 
 enum DeviceLocationFailureKind {
@@ -35,7 +36,7 @@ class GeolocatorDeviceLocationSource implements DeviceLocationSource {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw const DeviceLocationException(
         DeviceLocationFailureKind.serviceDisabled,
-        'Location services are disabled.',
+        'GPS đang tắt. Hãy bật vị trí trên thiết bị.',
       );
     }
 
@@ -46,13 +47,13 @@ class GeolocatorDeviceLocationSource implements DeviceLocationSource {
     if (permission == LocationPermission.deniedForever) {
       throw const DeviceLocationException(
         DeviceLocationFailureKind.permissionDeniedForever,
-        'Location permission is permanently denied.',
+        'Quyền vị trí đã bị từ chối. Hãy cấp quyền trong Cài đặt.',
       );
     }
     if (permission == LocationPermission.denied) {
       throw const DeviceLocationException(
         DeviceLocationFailureKind.permissionDenied,
-        'Location permission was denied.',
+        'Ứng dụng chưa được cấp quyền vị trí.',
       );
     }
 
@@ -63,6 +64,13 @@ class GeolocatorDeviceLocationSource implements DeviceLocationSource {
           timeLimit: Duration(seconds: 12),
         ),
       );
+      if (!isRecentLocationFix(position.timestamp, DateTime.now()) ||
+          !isInHoChiMinhCity(position.latitude, position.longitude)) {
+        throw const DeviceLocationException(
+          DeviceLocationFailureKind.unavailable,
+          'GPS cũ hoặc ngoài vùng phục vụ TP.HCM. Nếu dùng máy ảo, hãy đặt lại Location.',
+        );
+      }
       return GeoPoint(
         latitude: position.latitude,
         longitude: position.longitude,
@@ -72,7 +80,7 @@ class GeolocatorDeviceLocationSource implements DeviceLocationSource {
     } catch (_) {
       throw const DeviceLocationException(
         DeviceLocationFailureKind.unavailable,
-        'A current location could not be obtained.',
+        'Chưa lấy được vị trí hiện tại. Hãy thử lại.',
       );
     }
   }

@@ -40,6 +40,7 @@ describe('WeatherService', () => {
       json: async () => ({
         current: {
           time: '2026-10-06T08:00',
+          temperature_2m: 28.5,
           weather_code: 61,
           precipitation: 1.2,
           rain: 1.2,
@@ -59,6 +60,7 @@ describe('WeatherService', () => {
     const first = await service.current(10.7769, 106.7009);
     const second = await service.current(10.7771, 106.7011);
     expect(first.category).toBe(WeatherCategory.MODERATE);
+    expect(first.temperatureCelsius).toBe(28.5);
     expect(second).toEqual(first);
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(fetcher.mock.calls[0][0]).toContain('latitude=10.78');

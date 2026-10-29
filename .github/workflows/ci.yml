@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   quality:
-    name: quality
+    name: Flutter CI / quality
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -53,6 +53,18 @@ jobs:
             exit 1
           fi
 
+          grep -q "MotoCareApp" lib/main.dart || {
+            echo "lib/main.dart must preserve the shared Customer runtime; add role entrypoints separately."
+            exit 1
+          }
+
+          for dependency in flutter_riverpod go_router dio flutter_secure_storage socket_io_client; do
+            grep -Eq "^[[:space:]]+$dependency:" pubspec.yaml || {
+              echo "Shared runtime dependency was removed from pubspec.yaml: $dependency"
+              exit 1
+            }
+          done
+
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
@@ -78,5 +90,22 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build Android debug APK
-        run: flutter build apk --debug
+      - name: Build Customer Android debug APK
+        run: flutter build apk --debug --flavor customer -t lib/main.dart
+
+      - name: Build Provider Android debug APK
+        run: flutter build apk --debug --flavor provider -t lib/main_provider.dart
+
+      - name: Upload Customer APK (Khách + Admin)
+        uses: actions/upload-artifact@v4
+        with:
+          name: motocare-customer-debug-apk
+          path: build/app/outputs/flutter-apk/app-customer-debug.apk
+          if-no-files-found: error
+
+      - name: Upload Provider APK (Thợ)
+        uses: actions/upload-artifact@v4
+        with:
+          name: motocare-provider-debug-apk
+          path: build/app/outputs/flutter-apk/app-provider-debug.apk
+          if-no-files-found: error

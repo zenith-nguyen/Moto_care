@@ -92,6 +92,12 @@ class FakeProvidersRepository implements ProvidersRepository {
   }
 
   @override
+  Future<List<ProviderSkillOption>> listSkillCatalog() async => const [];
+
+  @override
+  Future<void> replaceMySkills(List<int> skillIds) async {}
+
+  @override
   Future<ProviderPresence> setOnline(bool isOnline) =>
       throw UnimplementedError();
 
@@ -108,6 +114,10 @@ class FakeProvidersRepository implements ProvidersRepository {
 
 class FakeProviderOrdersRepository implements OrdersRepository {
   int acceptCount = 0;
+
+  @override
+  Future<ParticipantContact> participantContact(int orderId) =>
+      throw UnimplementedError();
 
   @override
   Future<void> acceptOffer({required int orderId, required int offerId}) async {

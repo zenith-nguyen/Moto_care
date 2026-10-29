@@ -46,6 +46,16 @@ export class CreateVehicleDto {
   @IsOptional()
   @IsBoolean()
   isDefault?: boolean;
+
+  @ApiPropertyOptional({ enum: ['tubed', 'tubeless'] })
+  @IsOptional()
+  @IsEnum(['tubed', 'tubeless'])
+  tireType?: 'tubed' | 'tubeless';
+
+  @ApiPropertyOptional({ enum: ['gas', 'electric'] })
+  @IsOptional()
+  @IsEnum(['gas', 'electric'])
+  engineType?: 'gas' | 'electric';
 }
 
 export class UpdateVehicleDto extends PartialType(CreateVehicleDto) {}
@@ -71,4 +81,10 @@ export class VehicleResponseDto {
 
   @ApiProperty()
   isDefault!: boolean;
+
+  @ApiProperty({ enum: ['tubed', 'tubeless'] })
+  tireType!: string;
+
+  @ApiProperty({ enum: ['gas', 'electric'] })
+  engineType!: string;
 }

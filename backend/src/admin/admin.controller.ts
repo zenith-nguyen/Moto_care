@@ -24,6 +24,8 @@ import { PriceAdjustmentsService } from '../orders/price-adjustments.service';
 import { ResolvePriceDisputeDto } from '../orders/dto/price-proposal.dto';
 import { ResolveWithdrawalDto } from '../payments/dto/withdrawal.dto';
 import { WithdrawalsService } from '../payments/withdrawals.service';
+import { PayoutReconciliationService } from '../payments/payout-reconciliation.service';
+import { ReconcileWithdrawalPayoutDto } from '../payments/dto/payout-reconciliation.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -35,6 +37,7 @@ export class AdminController {
     private readonly analytics: AdminAnalyticsService,
     private readonly priceAdjustments: PriceAdjustmentsService,
     private readonly withdrawals: WithdrawalsService,
+    private readonly payoutReconciliation: PayoutReconciliationService,
   ) {}
 
   @Get('dashboard/summary')
@@ -101,12 +104,37 @@ export class AdminController {
     return this.withdrawals.resolve(requestId, user.sub, dto.decision, dto.reason);
   }
 
+  @Get('withdrawal-payouts/pending')
+  @ApiOkResponse({ description: 'Payouts awaiting a bank transfer or manual bank-receipt review' })
+  pendingWithdrawalPayouts() {
+    return this.payoutReconciliation.pending();
+  }
+
+  @Patch('withdrawal-payouts/:payoutId/reconcile')
+  @ApiOkResponse({ description: 'Confirm or flag a provider payout without changing customer payment state' })
+  reconcileWithdrawalPayout(
+    @Param('payoutId', ParseIntPipe) payoutId: number,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ReconcileWithdrawalPayoutDto,
+  ) {
+    return this.payoutReconciliation.reconcile(payoutId, user.sub, dto);
+  }
+
   @Get('orders')
   @ApiOkResponse({
     description: 'Latest 50 orders for the admin demo dashboard',
   })
   recentOrders() {
     return this.admin.recentOrders();
+  }
+
+  @Get('orders/:orderId')
+  @ApiOkResponse({
+    description:
+      'Full order detail for admin: customer, provider, location and pricing',
+  })
+  orderDetail(@Param('orderId', ParseIntPipe) orderId: number) {
+    return this.admin.orderDetail(orderId);
   }
 
   @Get('refunds/pending')

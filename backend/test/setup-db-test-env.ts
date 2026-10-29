@@ -7,6 +7,13 @@ if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
   throw new Error('Set TEST_DATABASE_NAME to a dedicated MotoCare test database');
 }
 
+// ConfigModule in the HTTP integration test intentionally skips Joi coercion.
+// Remove developer-machine feature flags so string values such as "false" do
+// not become truthy and make DB tests call external services.
+delete process.env.WEATHER_PRICING_ENABLED;
+delete process.env.EMAIL_ENABLED;
+delete process.env.PUSH_NOTIFICATIONS_ENABLED;
+
 Object.assign(process.env, {
   NODE_ENV: 'test',
   DATABASE_NAME: testDatabase,
@@ -28,4 +35,9 @@ Object.assign(process.env, {
   SEPAY_TRANSFER_MEMO_PREFIX: '',
   SEPAY_WEBHOOK_SECRET: 'db-test-only-sepay-webhook-secret-32-characters',
   SEPAY_WEBHOOK_MAX_AGE_SECONDS: '300',
+  SEPAY_PAYOUT_RECONCILIATION_ENABLED: 'true',
+  SEPAY_PAYOUT_SOURCE_ACCOUNT: 'SBSEPAYX9KA2B7MN4QR',
+  SEPAY_PAYOUT_CODE_PREFIX: 'RP',
+  SEPAY_PAYOUT_WEBHOOK_SECRET: 'db-test-only-payout-webhook-secret-32-characters',
+  SEPAY_PAYOUT_WEBHOOK_MAX_AGE_SECONDS: '300',
 });

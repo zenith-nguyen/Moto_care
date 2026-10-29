@@ -1,0 +1,77 @@
+import 'package:intl/intl.dart';
+
+import '../../../core/money/money_amount.dart';
+import '../../orders/domain/order_status.dart';
+import '../../wallet/domain/wallet_models.dart';
+import '../domain/admin_analytics_models.dart';
+import '../domain/admin_operation_models.dart';
+
+final _adminCurrency = NumberFormat.currency(
+  locale: 'vi_VN',
+  symbol: 'đ',
+  decimalDigits: 0,
+);
+
+final _adminDate = DateFormat('dd/MM/yyyy');
+
+String formatAdminMoney(MoneyAmount amount) {
+  final value = int.tryParse(amount.value.split('.').first) ?? 0;
+  return _adminCurrency.format(value);
+}
+
+final _adminDateTime = DateFormat('dd/MM/yyyy HH:mm');
+
+String formatAdminDate(DateTime value) => _adminDate.format(value.toLocal());
+
+String formatAdminDateTime(DateTime value) =>
+    _adminDateTime.format(value.toLocal());
+
+String withdrawalStatusLabel(WithdrawalStatus status) => switch (status) {
+  WithdrawalStatus.pending => 'Chờ duyệt',
+  WithdrawalStatus.approved => 'Đã duyệt',
+  WithdrawalStatus.rejected => 'Đã từ chối',
+};
+
+String withdrawalPayoutStatusLabel(WithdrawalPayoutStatus status) =>
+    switch (status) {
+      WithdrawalPayoutStatus.awaitingTransfer => 'Chờ chuyển khoản',
+      WithdrawalPayoutStatus.manualReview => 'Cần kiểm tra',
+      WithdrawalPayoutStatus.reconciled => 'Đã đối soát',
+    };
+
+String adminOrderStatusLabel(OrderStatus status) => switch (status) {
+  OrderStatus.awaitingPrepayment => 'Chờ thanh toán',
+  OrderStatus.pendingMatch => 'Đang tìm thợ',
+  OrderStatus.offered => 'Đã gửi offer',
+  OrderStatus.accepted => 'Đã nhận',
+  OrderStatus.arrived => 'Đã đến nơi',
+  OrderStatus.inProgress => 'Đang xử lý',
+  OrderStatus.awaitingPriceApproval => 'Chờ duyệt giá',
+  OrderStatus.priceDisputed => 'Tranh chấp giá',
+  OrderStatus.awaitingPayment => 'Chờ quyết toán',
+  OrderStatus.paid => 'Đã thanh toán',
+  OrderStatus.completed => 'Hoàn tất',
+  OrderStatus.cancelled => 'Đã hủy',
+  OrderStatus.refundPending => 'Chờ hoàn tiền',
+  OrderStatus.refunded => 'Đã hoàn tiền',
+};
+
+String paymentStatusLabel(PaymentStatus status) => switch (status) {
+  PaymentStatus.pending => 'Chờ thanh toán',
+  PaymentStatus.paid => 'Đã thanh toán',
+  PaymentStatus.failed => 'Thất bại',
+  PaymentStatus.cancelled => 'Đã hủy',
+  PaymentStatus.refundPending => 'Chờ hoàn tiền',
+  PaymentStatus.refunded => 'Đã hoàn tiền',
+};
+
+String reconciliationFlagLabel(ReconciliationFlag flag) => switch (flag) {
+  ReconciliationFlag.completedMissingPaidPayment =>
+    'Hoàn tất nhưng chưa có thanh toán',
+  ReconciliationFlag.paymentFinalPriceMismatch => 'Lệch tiền thu vs giá cuối',
+  ReconciliationFlag.completedWalletCreditMismatch => 'Lệch ghi có ví thợ',
+  ReconciliationFlag.refundStatusMismatch => 'Lệch trạng thái hoàn tiền',
+  ReconciliationFlag.refundedWithWalletCredit => 'Đã hoàn nhưng vẫn ghi có ví',
+  ReconciliationFlag.multiplePayments => 'Nhiều lần thanh toán',
+  ReconciliationFlag.adjustmentStatusMismatch => 'Lệch trạng thái điều chỉnh',
+};

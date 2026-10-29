@@ -32,6 +32,8 @@ Chi tiết cấu hình và thu hồi credential: [NOTIFICATIONS_EMAIL.md](NOTIFI
 
 Adapter mặc định tắt, schema cấu hình chỉ chấp nhận `SEPAY_MODE=test` và chỉ cho phép VA giả đúng mẫu `SBSEPAY[A-Z0-9]{12}`. Adapter kiểm tra lại mẫu này trước khi tạo QR để tránh validation bị gọi vòng. Endpoint public khỏi JWT nhưng không public khỏi xác thực: bắt buộc `X-SePay-Timestamp` và `X-SePay-Signature`, tính HMAC-SHA256 trên raw body, so sánh constant-time và từ chối timestamp quá cửa sổ cho phép. Transaction ID được khóa, lưu unique và gắn SHA-256 payload để retry cùng payload là idempotent còn transaction ID bị đổi payload bị từ chối.
 
+Webhook payout là endpoint riêng, mặc định tắt và bắt buộc secret khác webhook tiền vào. Transaction ID, payload hash và outcome được lưu ở bảng audit riêng. Dù account/code/amount khớp, webhook chỉ chuyển payout sang `MANUAL_REVIEW`; không tự xác nhận người nhận, không gọi payment/order của khách và không khởi tạo chuyển khoản. MBBank không hỗ trợ webhook tiền ra của SePay nên cấu hình này phải giữ tắt cho tài khoản hiện tại.
+
 Trước khi một payment chuyển `PENDING → PAID`, service kiểm tra đồng thời giao dịch tiền vào, đúng tài khoản/VA cấu hình, mã `MC<paymentId>`, đúng số tiền nguyên VND và trạng thái order/payment. Audit chỉ lưu transaction ID, mã thanh toán/tham chiếu, amount, hash và outcome; không lưu raw body, header chữ ký hay secret. Chỉ sau commit mới phát realtime. Xem [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md).
 
 ## Điều kiện còn thiếu trước thanh toán Live

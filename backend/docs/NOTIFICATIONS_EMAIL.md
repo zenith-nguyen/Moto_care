@@ -23,7 +23,7 @@ flowchart LR
 - FCM token không được trả lại qua API, không được log và bị vô hiệu khi logout. Token mới sau rotation được đăng ký lại.
 - Delivery retry tối đa 5 lần với backoff. Token bị FCM xác nhận không còn hợp lệ sẽ bị disable.
 - `offer.created`, `offer.expired`, thay đổi trạng thái đơn, tin nhắn mới và “thợ ở trong bán kính gần” đều tạo notification. Cảnh báo thợ gần chỉ tạo một lần mỗi đơn.
-- Email quên mật khẩu dùng mã sáu số một lần, hết hạn sau 10 phút. SMTP sai cấu hình làm backend fail-fast khi khởi động thay vì âm thầm bỏ email.
+- Email quên mật khẩu dùng mẫu HTML Revo responsive, mã sáu số một lần và hết hạn sau 1 phút. SMTP sai cấu hình làm backend fail-fast khi khởi động thay vì âm thầm bỏ email.
 
 ## API cho Flutter
 
@@ -49,7 +49,7 @@ SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=your-demo-account@gmail.com
 SMTP_PASSWORD=your-16-character-app-password
-SMTP_FROM=MotoCare <your-demo-account@gmail.com>
+SMTP_FROM=Revo <your-demo-account@gmail.com>
 SMTP_CONNECTION_TIMEOUT_MS=10000
 SMTP_SOCKET_TIMEOUT_MS=30000
 ```

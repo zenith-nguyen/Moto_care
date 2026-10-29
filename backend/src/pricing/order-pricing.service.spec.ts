@@ -22,9 +22,11 @@ describe('OrderPricingService', () => {
       source: category === WeatherCategory.UNAVAILABLE ? 'FALLBACK' : 'OPEN_METEO',
       observedAt: null,
       weatherCode: null,
+      temperatureCelsius: null,
       precipitationMm: null,
       windSpeedKmh: null,
       windGustKmh: null,
+      isDay: null,
     });
     expect(result).toMatchObject({
       basePrice: '100000.00',
@@ -40,9 +42,11 @@ describe('OrderPricingService', () => {
       source: 'OPEN_METEO',
       observedAt: null,
       weatherCode: 61,
+      temperatureCelsius: 28,
       precipitationMm: 1,
       windSpeedKmh: 1,
       windGustKmh: 1,
+      isDay: null,
     });
     expect(result.estimatedPrice).toBe('0.06');
   });

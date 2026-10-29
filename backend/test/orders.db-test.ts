@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { DataSource } from 'typeorm';
 import { AdminService } from '../src/admin/admin.service';
+import { NotificationsService } from '../src/notifications/notifications.service';
 import { AdminAnalyticsService } from '../src/admin/admin-analytics.service';
 import 'dotenv/config';
 import { ApprovalStatus } from '../src/common/enums/approval-status.enum';
@@ -36,6 +37,8 @@ import { ReviewsService } from '../src/reviews/reviews.service';
 import { OrdersService } from '../src/orders/orders.service';
 import { OrdersQueryService } from '../src/orders/application/orders-query.service';
 import { Provider } from '../src/providers/provider.entity';
+import { ProviderSkill } from '../src/providers/provider-skill.entity';
+import { Skill } from '../src/providers/skill.entity';
 import { ProvidersService } from '../src/providers/providers.service';
 import { User } from '../src/users/user.entity';
 import { UsersService } from '../src/users/users.service';
@@ -58,6 +61,9 @@ import { TypeOrmPaymentAccountingAdapter } from '../src/payments/infrastructure/
 import { Vehicle } from '../src/vehicles/vehicle.entity';
 import { VehicleType } from '../src/vehicles/vehicle-type.enum';
 import { VehiclesService } from '../src/vehicles/vehicles.service';
+import { WithdrawalPayout } from '../src/payments/withdrawal-payout.entity';
+import { SepayPayoutWebhookEvent } from '../src/payments/sepay-payout-webhook-event.entity';
+import { PayoutReconciliationService } from '../src/payments/payout-reconciliation.service';
 
 const testDatabase = process.env.TEST_DATABASE_NAME;
 if (!testDatabase || !/^motocare_[a-z0-9_]*test$/.test(testDatabase)) {
@@ -91,7 +97,7 @@ describe('Orders and matching on PostGIS', () => {
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: testDatabase,
-      entities: [User, Provider, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, Review, PasswordResetCode, Vehicle],
+      entities: [User, Provider, ProviderSkill, Skill, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, WithdrawalPayout, SepayPayoutWebhookEvent, Review, PasswordResetCode, Vehicle],
       synchronize: false,
       logging: false,
     });
@@ -113,9 +119,11 @@ describe('Orders and matching on PostGIS', () => {
     orderQueries = new OrdersQueryService(database, paymentAccounting);
     demoPayments = new DemoPaymentsService(database, config, matching);
     priceAdjustments = new PriceAdjustmentsService(database, paymentAccounting, paymentAccounting);
-    admin = new AdminService(database);
+    admin = new AdminService(database, {
+      notifyProviderReviewed: async () => {},
+    } as unknown as NotificationsService);
     analytics = new AdminAnalyticsService(database, config);
-    withdrawals = new WithdrawalsService(database);
+    withdrawals = new WithdrawalsService(database, new PayoutReconciliationService(database, config));
     messages = new MessagesService(
       database, { messageCreated } as unknown as RealtimePublisher, new ChatImageStorageService(config),
     );
@@ -124,6 +132,7 @@ describe('Orders and matching on PostGIS', () => {
       database.getRepository(OrderOffer),
       database.getRepository(User),
       config,
+      matching,
     );
     passwordRecovery = new PasswordRecoveryService(
       database,
@@ -280,20 +289,67 @@ describe('Orders and matching on PostGIS', () => {
     expect((await database.getRepository(User).findOneByOrFail({ id: rejected.user.id })).status).toBe(UserStatus.SUSPENDED);
   });
 
+  it('promotes a customer to provider when their application is approved', async () => {
+    const applicant = await makeUser(UserRole.CUSTOMER);
+    const before = await database.getRepository(User).findOneByOrFail({ id: applicant.id });
+    const application = await providersService.apply(applicant.id, { yearsOfExperience: 3 });
+    expect(application.approvalStatus).toBe(ApprovalStatus.PENDING);
+    // The account stays a customer while the application is pending.
+    expect((await database.getRepository(User).findOneByOrFail({ id: applicant.id })).role).toBe(UserRole.CUSTOMER);
+    // A second application for the same account is rejected.
+    await expect(providersService.apply(applicant.id, {})).rejects.toBeInstanceOf(ConflictException);
+
+    const reviewed = await admin.reviewProvider(application.id, ApprovalStatus.APPROVED);
+    expect(reviewed.role).toBe(UserRole.PROVIDER);
+    const promoted = await database.getRepository(User).findOneByOrFail({ id: applicant.id });
+    expect(promoted.role).toBe(UserRole.PROVIDER);
+    expect(promoted.status).toBe(UserStatus.ACTIVE);
+    // The role switch invalidates the applicant's existing customer session.
+    expect(promoted.authVersion).toBe(before.authVersion + 1);
+  });
+
+  it('leaves a customer account untouched when their application is rejected', async () => {
+    const applicant = await makeUser(UserRole.CUSTOMER);
+    const application = await providersService.apply(applicant.id, {});
+    await admin.reviewProvider(application.id, ApprovalStatus.REJECTED);
+    const after = await database.getRepository(User).findOneByOrFail({ id: applicant.id });
+    expect(after.role).toBe(UserRole.CUSTOMER);
+    expect(after.status).toBe(UserStatus.ACTIVE);
+  });
+
   it('updates own profile and keeps exactly one default vehicle', async () => {
     const users = new UsersService(database.getRepository(User), database);
     const vehicles = new VehiclesService(database);
     const otherCustomer = await makeUser(UserRole.CUSTOMER);
     await users.updateProfile(otherCustomer.id, { phone: '0909999999' });
     await expect(users.updateProfile(customer.id, { phone: '0909999999' })).rejects.toBeInstanceOf(ConflictException);
-    const profile = await users.updateProfile(customer.id, { name: 'Customer Updated', phone: '0901234567' });
-    expect(profile).toMatchObject({ name: 'Customer Updated', phone: '0901234567', role: UserRole.CUSTOMER });
+    const profile = await users.updateProfile(customer.id, {
+      name: 'Customer Updated',
+      phone: '0901234567',
+      emergencyContactName: 'Relative',
+      emergencyContactPhone: '0912345678',
+      medicalNote: 'Allergic to medicine A',
+      homeAddress: 'District 1, HCMC',
+      workAddress: 'District 3, HCMC',
+    });
+    expect(profile).toMatchObject({
+      name: 'Customer Updated',
+      phone: '0901234567',
+      emergencyContactName: 'Relative',
+      emergencyContactPhone: '0912345678',
+      medicalNote: 'Allergic to medicine A',
+      homeAddress: 'District 1, HCMC',
+      workAddress: 'District 3, HCMC',
+      role: UserRole.CUSTOMER,
+    });
 
     const first = await vehicles.create(customer.id, {
       type: VehicleType.MOTORBIKE,
       brand: 'Honda',
       model: 'Wave Alpha',
       licensePlate: '59A1-123.45',
+      tireType: 'tubeless',
+      engineType: 'gas',
     });
     const second = await vehicles.create(customer.id, {
       type: VehicleType.ELECTRIC_MOTORBIKE,
@@ -303,6 +359,11 @@ describe('Orders and matching on PostGIS', () => {
       isDefault: true,
     });
     expect(first.isDefault).toBe(true);
+    expect(first).toMatchObject({ tireType: 'tubeless', engineType: 'gas' });
+    expect(second.engineType).toBe('electric');
+    expect((await vehicles.update(customer.id, first.id, { tireType: 'tubed' })).tireType).toBe('tubed');
+    expect((await vehicles.update(customer.id, first.id, { engineType: 'electric' })).type)
+      .toBe(VehicleType.ELECTRIC_MOTORBIKE);
     expect((await vehicles.list(customer.id)).map((vehicle) => [vehicle.id, vehicle.isDefault])).toEqual([
       [second.id, true],
       [first.id, false],
@@ -383,7 +444,7 @@ describe('Orders and matching on PostGIS', () => {
     await expect(messages.list(created.id, outsider.user.id)).rejects.toBeInstanceOf(NotFoundException);
     const providerService = new ProvidersService(
       database.getRepository(Provider), database.getRepository(OrderOffer), database.getRepository(User),
-      new ConfigService({ PROVIDER_LOCATION_MAX_AGE_SECONDS: 120 }), database.getRepository(Order),
+      new ConfigService({ PROVIDER_LOCATION_MAX_AGE_SECONDS: 120 }), matching, database.getRepository(Order),
       { providerLocation } as unknown as RealtimePublisher,
     );
     await providerService.updateOrderLocation(assigned.user.id, created.id, { latitude: 10.778, longitude: 106.702 });
@@ -675,7 +736,7 @@ describe('Orders and matching on PostGIS', () => {
       ok: true,
       json: async () => ({
         current: {
-          time: '2026-10-06T08:00', weather_code: 95, precipitation: 8, rain: 8,
+          time: '2026-10-06T08:00', weather_code: 95, temperature_2m: 28, precipitation: 8, rain: 8,
           wind_speed_10m: 45, wind_gusts_10m: 65,
         },
       }),
@@ -823,7 +884,12 @@ describe('Orders and matching on PostGIS', () => {
     const offers = await providersService.pendingOffers(selected.user.id);
     expect(offers).toHaveLength(1);
     expect(offers[0].orderId).toBe(result.id);
-    expect(await providersService.pendingOffers(other.user.id)).toHaveLength(0);
+    // Broadcast matching offers the order to every nearby provider, but each
+    // provider only sees their own offer.
+    const otherOffers = await providersService.pendingOffers(other.user.id);
+    expect(otherOffers).toHaveLength(1);
+    expect(otherOffers[0].orderId).toBe(result.id);
+    expect(otherOffers[0].id).not.toBe(offers[0].id);
     await providersService.updateStatus(selected.user.id, false);
     await database.getRepository(Provider).update(selected.provider.id, { lastSeenAt: new Date(Date.now() - 300_000) });
     await expect(providersService.updateStatus(selected.user.id, true)).rejects.toThrow();
@@ -832,8 +898,12 @@ describe('Orders and matching on PostGIS', () => {
   });
 
   it('resets a password once and increments the JWT auth version', async () => {
+    const requestedAt = Date.now();
     await passwordRecovery.forgot(customer.email!);
     expect(deliveredCode).toMatch(/^\d{6}$/);
+    const resetRecord = await database.getRepository(PasswordResetCode).findOneByOrFail({ userId: customer.id });
+    expect(resetRecord.expiresAt.getTime()).toBeGreaterThanOrEqual(requestedAt + 59_000);
+    expect(resetRecord.expiresAt.getTime()).toBeLessThanOrEqual(requestedAt + 61_000);
     await expect(passwordRecovery.reset(customer.email!, '999999', 'NewPassword123!'))
       .rejects.toBeInstanceOf(BadRequestException);
     await passwordRecovery.reset(customer.email!, deliveredCode!, 'NewPassword123!');

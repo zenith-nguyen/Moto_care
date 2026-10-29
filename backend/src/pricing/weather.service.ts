@@ -11,19 +11,23 @@ export interface WeatherSnapshot {
   source: 'OPEN_METEO' | 'FALLBACK';
   observedAt: Date | null;
   weatherCode: number | null;
+  temperatureCelsius: number | null;
   precipitationMm: number | null;
   windSpeedKmh: number | null;
   windGustKmh: number | null;
+  isDay: boolean | null;
 }
 
 type CurrentWeatherResponse = {
   current?: {
     time?: unknown;
     weather_code?: unknown;
+    temperature_2m?: unknown;
     precipitation?: unknown;
     rain?: unknown;
     wind_speed_10m?: unknown;
     wind_gusts_10m?: unknown;
+    is_day?: unknown;
   };
 };
 
@@ -80,7 +84,7 @@ export class WeatherService {
     const query = new URLSearchParams({
       latitude: roundedLatitude.toString(),
       longitude: roundedLongitude.toString(),
-      current: 'weather_code,precipitation,rain,wind_speed_10m,wind_gusts_10m',
+      current: 'temperature_2m,weather_code,precipitation,rain,wind_speed_10m,wind_gusts_10m,is_day',
       wind_speed_unit: 'kmh',
       timezone: 'UTC',
     });
@@ -108,13 +112,16 @@ export class WeatherService {
   private parse(value: unknown): WeatherSnapshot {
     const current = (value as CurrentWeatherResponse | null)?.current;
     const weatherCode = this.weatherCode(current?.weather_code);
+    const temperatureCelsius = this.temperature(current?.temperature_2m);
     const precipitationMm = this.nonNegativeNumber(current?.precipitation);
     const rainMm = this.nonNegativeNumber(current?.rain);
     const windSpeedKmh = this.nonNegativeNumber(current?.wind_speed_10m);
     const windGustKmh = this.nonNegativeNumber(current?.wind_gusts_10m);
     const observedAt = this.utcDate(current?.time);
+    const isDay = this.dayFlag(current?.is_day);
     if (
       weatherCode === null ||
+      temperatureCelsius === null ||
       precipitationMm === null ||
       rainMm === null ||
       windSpeedKmh === null ||
@@ -134,9 +141,11 @@ export class WeatherService {
       source: 'OPEN_METEO',
       observedAt,
       weatherCode,
+      temperatureCelsius,
       precipitationMm,
       windSpeedKmh,
       windGustKmh,
+      isDay,
     };
   }
 
@@ -146,10 +155,18 @@ export class WeatherService {
       source: 'FALLBACK',
       observedAt: null,
       weatherCode: null,
+      temperatureCelsius: null,
       precipitationMm: null,
       windSpeedKmh: null,
       windGustKmh: null,
+      isDay: null,
     };
+  }
+
+  private dayFlag(value: unknown): boolean | null {
+    if (value === 1 || value === '1' || value === true) return true;
+    if (value === 0 || value === '0' || value === false) return false;
+    return null;
   }
 
   private number(value: unknown): number | null {
@@ -164,6 +181,11 @@ export class WeatherService {
   private weatherCode(value: unknown): number | null {
     const parsed = this.number(value);
     return parsed !== null && Number.isInteger(parsed) && parsed >= 0 && parsed <= 255 ? parsed : null;
+  }
+
+  private temperature(value: unknown): number | null {
+    const parsed = this.number(value);
+    return parsed !== null && parsed >= -100 && parsed <= 100 ? parsed : null;
   }
 
   private utcDate(value: unknown): Date | null {

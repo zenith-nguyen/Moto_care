@@ -5,15 +5,29 @@ This document defines the approved baseline dependencies for Moto Care. Add a pa
 ## Project identity
 
 - Flutter package name: `moto_care`
-- Android application ID and Apple bundle ID: `com.motocare.app`
+- Customer Android application ID and Apple bundle ID: `com.motocare.app`
+- Provider Android application ID: `com.motocare.app.provider`
 - User-facing application name: `Moto Care`
 
-Treat the application and bundle IDs as permanent after the first store release. Changing them later creates a different application identity for users and stores.
+Treat these application and bundle IDs as permanent after the first store release. Changing them later creates a different application identity for users and stores. The Android `customer` and `provider` product flavors share source code but use separate secure-storage sandboxes, allowing both roles to be installed together.
 
 | Package | Responsibility | Use when |
 | --- | --- | --- |
 | `flutter_riverpod` | Application state and dependency injection | A screen needs shared, asynchronous, or testable state. |
 | `go_router` | Navigation, deep links, and auth redirects | The application has more than one screen or an authentication flow. |
+| `url_launcher` | Open system applications through URL schemes | Opening the phone app with a `tel:` URI or a map through a Google Maps URL from rescue features. |
+| `geolocator` | Foreground GPS and permission handling | Acquiring the current incident location during marketplace checkout. |
+| `geocoding` | Native reverse geocoding | Resolving device coordinates into an incident address when supported. |
+| `google_maps_flutter` | Native Google Maps and camera control | Selecting incident coordinates and animating to a Places result. |
+| `google_maps_flutter_ios_sdk9` | iOS 15 / Swift Package Manager Maps implementation | Replacing the legacy default iOS adapter in this SwiftPM project. |
+| `image_picker` | Select images from the device photo library or capture with the camera | Changing the profile avatar or photographing a rescue incident; keep local bytes in session state until an upload API exists. |
+| `carousel_slider` | Swipeable station photo carousel | Browsing the selected station's gallery without automatic playback. |
+| `share_plus` | Open the platform share sheet | Sharing the selected station's name, address, phone and map coordinates. |
+| `video_player` | Native/web asset video playback | The muted, looping Home hero background. `video_player_platform_interface` is a development dependency for native-boundary tests. |
+| `local_auth` | Device biometric authentication | Verifying Face ID / fingerprint before editing profile information when the option is enabled. |
+| `font_awesome_flutter` | Font Awesome icons | Displaying icons, including password visibility controls. |
+| `flutter_native_splash` | Generate native Android and iOS splash screens (development only). | Regenerating launch resources after a logo or splash configuration change. |
+| `image` | Trim the Revo PNG and export temporary native splash images (development only). | Running `dart run tool/generate_splash.dart`. |
 | `intl` and `flutter_localizations` | Locale-aware dates, currency, and translated UI | Presenting dates, VND amounts, or more than one language. |
 | `dio` | HTTP client | Calling the Moto Care backend. Configure timeouts and interceptors in one client. |
 | `flutter_secure_storage` | Encrypted device storage | Persisting credentials, access tokens, or refresh tokens. Never use it for non-sensitive UI preferences. |

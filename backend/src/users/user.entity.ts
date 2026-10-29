@@ -16,6 +16,21 @@ export class User {
   @Column({ type: 'varchar', length: 20, unique: true, nullable: true })
   phone!: string | null;
 
+  @Column({ name: 'emergency_contact_name', type: 'varchar', length: 80, nullable: true })
+  emergencyContactName!: string | null;
+
+  @Column({ name: 'emergency_contact_phone', type: 'varchar', length: 20, nullable: true })
+  emergencyContactPhone!: string | null;
+
+  @Column({ name: 'medical_note', type: 'varchar', length: 240, nullable: true })
+  medicalNote!: string | null;
+
+  @Column({ name: 'home_address', type: 'varchar', length: 240, nullable: true })
+  homeAddress!: string | null;
+
+  @Column({ name: 'work_address', type: 'varchar', length: 240, nullable: true })
+  workAddress!: string | null;
+
   @Column({ name: 'password_hash', select: false })
   passwordHash!: string;
 

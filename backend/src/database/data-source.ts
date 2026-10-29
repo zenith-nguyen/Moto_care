@@ -4,6 +4,7 @@ import { IncidentType } from '../incident-types/incident-type.entity';
 import { Message } from '../messages/message.entity';
 import { OrderOffer } from '../orders/order-offer.entity';
 import { Order } from '../orders/order.entity';
+import { OrderPhoto } from '../order-photos/order-photo.entity';
 import { Payment } from '../payments/payment.entity';
 import { WalletTransaction } from '../payments/wallet-transaction.entity';
 import { Wallet } from '../payments/wallet.entity';
@@ -22,6 +23,8 @@ import { ServiceLocation } from '../service-locations/service-location.entity';
 import { Notification } from '../notifications/notification.entity';
 import { NotificationDelivery } from '../notifications/notification-delivery.entity';
 import { UserDevice } from '../notifications/user-device.entity';
+import { WithdrawalPayout } from '../payments/withdrawal-payout.entity';
+import { SepayPayoutWebhookEvent } from '../payments/sepay-payout-webhook-event.entity';
 
 export default new DataSource({
   type: 'postgres',
@@ -35,6 +38,7 @@ export default new DataSource({
     Provider,
     IncidentType,
     Order,
+    OrderPhoto,
     OrderOffer,
     Message,
     Review,
@@ -42,10 +46,12 @@ export default new DataSource({
     Wallet,
     WalletTransaction,
     WithdrawalRequest,
+    WithdrawalPayout,
     PasswordResetCode,
     OrderPriceProposal,
     PaymentAdjustment,
     SepayWebhookEvent,
+    SepayPayoutWebhookEvent,
     Vehicle,
     Skill,
     ProviderSkill,

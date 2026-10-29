@@ -13,6 +13,21 @@ This folder is the single source of truth for technical guides, collaboration ru
 
 ## Contents
 
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): feature boundaries, data flow, injected services, route drafts and UI-preserving refactor.
+
+- [`MARKETPLACE.md`](MARKETPLACE.md): partner discovery, package cart, GPS, checkout and rescue tracking.
+- [`ORDER_TRACKING.md`](ORDER_TRACKING.md): order status, map markers, simulated mechanic movement, contacts and cancellation.
+- [`ORDER_DETAILS.md`](ORDER_DETAILS.md): rescue progress details, timeline events, requester snapshots and map/contact navigation.
+- [`SERVICE_RATING.md`](SERVICE_RATING.md): service/mechanic rating, quick tags, comments, photos, Home navigation and review session storage.
+- [`STATION_DETAILS.md`](STATION_DETAILS.md): station gallery, profile, services, favorites, sharing, reviews, chat and booking navigation.
+- [`HOME.md`](HOME.md): Revo station grid, search/filtering, emergency selection, navigation and session boundaries.
+- [`HOME_ASSETS.md`](HOME_ASSETS.md): generated station illustration paths and final prompts.
+- [`LOCATION.md`](LOCATION.md): Places autocomplete, geocoding, Google Maps confirmation and rescue request details.
+- [`VEHICLES_AND_RESCUE_STATIONS.md`](VEHICLES_AND_RESCUE_STATIONS.md): vehicle management, station discovery, native actions and bottom tab routing.
+- [`SERVICE_SCREENS.md`](SERVICE_SCREENS.md): places, pricing, partner forms, policies, FAQ and emergency tips.
+- [`ACTIVITY.md`](ACTIVITY.md): Activity module models, routes, state and demo boundaries.
+- [`PROFILE.md`](PROFILE.md): Profile models, editing, account services and native plugin configuration.
+- [`CHAT.md`](CHAT.md): monochrome conversation layout, contacts, quick replies, attachments and keyboard behavior.
 - [`AI_GUIDE.md`](AI_GUIDE.md): mandatory rules for coding agents.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): branches, commits, and pull requests.
 - [`DEPENDENCIES.md`](DEPENDENCIES.md): approved dependencies and usage boundaries.
@@ -25,6 +40,7 @@ This folder is the single source of truth for technical guides, collaboration ru
 - [`FLUTTER_PROVIDER_INTEGRATION.md`](FLUTTER_PROVIDER_INTEGRATION.md): Provider online/GPS, offer, service lifecycle, final price, wallet, and withdrawal controller contract.
 - [`FLUTTER_ADMIN_INTEGRATION.md`](FLUTTER_ADMIN_INTEGRATION.md): Admin analytics, reconciliation, provider review, dispute, refund, and withdrawal controller contract.
 - [`FLUTTER_DEVICE_SERVICES.md`](FLUTTER_DEVICE_SERVICES.md): foreground Provider GPS lifecycle and validated camera/gallery chat-image selection.
+- [`REAL_SERVICES_SETUP.md`](REAL_SERVICES_SETUP.md): current live-service matrix and local activation steps for GPS/maps, profile persistence, SMTP, public HTTPS and payment safety.
 - [`../backend/docs/API_CATALOG.md`](../backend/docs/API_CATALOG.md): current REST and Socket.IO inventory (kept under `backend/docs`, not this folder).
 - [`../backend/docs/PROFILE_VEHICLE_CONTACT_WORKFLOW.md`](../backend/docs/PROFILE_VEHICLE_CONTACT_WORKFLOW.md): editable profile, Customer vehicles, order snapshots, and tap-to-call privacy contract.
 - [`../backend/docs/UPCOMING_DOMAINS.md`](../backend/docs/UPCOMING_DOMAINS.md): staged Provider skills/statistics, service-location, and marketplace backend plan.

@@ -5,11 +5,12 @@ import 'package:moto_care/app/moto_care_app.dart';
 import 'package:moto_care/features/auth/data/auth_repository.dart';
 import 'package:moto_care/features/auth/domain/app_user.dart';
 import 'package:moto_care/features/auth/domain/auth_session.dart';
+import 'package:moto_care/features/auth/screens/welcome_screen.dart';
 
 import 'support/memory_token_store.dart';
 
 void main() {
-  testWidgets('boots into the temporary integration sign-in slot', (
+  testWidgets('boots into the integration sign-in slot', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -20,8 +21,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Nền tích hợp MotoCare'), findsOneWidget);
-    expect(find.text('Đăng nhập để kiểm tra'), findsOneWidget);
+    expect(find.byType(WelcomeScreen), findsOneWidget);
+    expect(find.text('Tiếp'), findsOneWidget);
   });
 
   testWidgets('restores an admin session into the admin integration slot', (
@@ -38,7 +39,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Đã kết nối vai trò Admin'), findsOneWidget);
+    expect(find.text('Tổng quan'), findsOneWidget);
   });
 }
 

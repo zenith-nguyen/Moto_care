@@ -13,6 +13,8 @@ This guide is mandatory for every coding agent before it proposes or changes Mot
 
 ## Change conventions
 
+- Follow [`ARCHITECTURE.md`](ARCHITECTURE.md): keep sample records, business rules and asynchronous state outside Widgets; use feature services and Riverpod providers.
+
 - Use idiomatic Dart and Flutter names and structure. Prefer small widgets with one clear responsibility.
 - Do not mix unrelated UI, business-logic, and dependency changes in one pull request.
 - Use Conventional Commits: `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, or `chore:`.

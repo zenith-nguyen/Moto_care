@@ -8,10 +8,15 @@ import { CreateWithdrawalDto, WithdrawalDecision } from './dto/withdrawal.dto';
 import { WalletTransaction } from './wallet-transaction.entity';
 import { Wallet } from './wallet.entity';
 import { WithdrawalRequest } from './withdrawal-request.entity';
+import { PayoutReconciliationService } from './payout-reconciliation.service';
+import { WithdrawalPayout } from './withdrawal-payout.entity';
 
 @Injectable()
 export class WithdrawalsService {
-  constructor(private readonly database: DataSource) {}
+  constructor(
+    private readonly database: DataSource,
+    private readonly payouts: PayoutReconciliationService,
+  ) {}
 
   async create(providerUserId: number, dto: CreateWithdrawalDto) {
     return this.database.transaction(async (manager) => {
@@ -47,19 +52,31 @@ export class WithdrawalsService {
   async mine(providerUserId: number) {
     const provider = await this.database.getRepository(Provider).findOneBy({ userId: providerUserId });
     if (!provider) throw new NotFoundException('Provider profile not found');
-    const [wallet, withdrawals] = await Promise.all([
+    const [wallet, withdrawals, payouts] = await Promise.all([
       this.database.getRepository(Wallet).findOneBy({ providerId: provider.id }),
       this.database.getRepository(WithdrawalRequest).find({
         where: { providerId: provider.id },
         order: { createdAt: 'DESC', id: 'DESC' },
         take: 50,
       }),
+      this.database.getRepository(WithdrawalPayout)
+        .createQueryBuilder('payout')
+        .innerJoin('payout.withdrawal', 'withdrawal')
+        .where('withdrawal.provider_id = :providerId', { providerId: provider.id })
+        .getMany(),
     ]);
+    const payoutsByWithdrawal = new Map(payouts.map((payout) => [payout.withdrawalId, payout]));
     return {
       providerId: provider.id,
       wallet: this.walletSummary(wallet),
       sandboxOnly: true,
-      items: withdrawals.map((withdrawal) => this.format(withdrawal)),
+      payoutMode: 'MANUAL_BANK_TRANSFER',
+      items: withdrawals.map((withdrawal) => ({
+        ...this.format(withdrawal),
+        payout: payoutsByWithdrawal.has(withdrawal.id)
+          ? this.payouts.format(payoutsByWithdrawal.get(withdrawal.id)!)
+          : null,
+      })),
     };
   }
 
@@ -93,7 +110,10 @@ export class WithdrawalsService {
       if (withdrawal.status !== WithdrawalStatus.PENDING) {
         if (withdrawal.status === targetStatus) {
           const currentWallet = await manager.getRepository(Wallet).findOneByOrFail({ providerId: withdrawal.providerId });
-          return this.response(withdrawal, currentWallet);
+          const payout = targetStatus === WithdrawalStatus.APPROVED
+            ? await this.payouts.ensureForApproved(manager, withdrawal)
+            : null;
+          return this.response(withdrawal, currentWallet, payout);
         }
         throw new ConflictException('Withdrawal request was already resolved differently');
       }
@@ -126,7 +146,10 @@ export class WithdrawalsService {
       withdrawal.decisionReason = reason?.trim() || null;
       await manager.getRepository(Wallet).save(wallet);
       await manager.getRepository(WithdrawalRequest).save(withdrawal);
-      return this.response(withdrawal, wallet);
+      const payout = decision === WithdrawalDecision.APPROVE
+        ? await this.payouts.ensureForApproved(manager, withdrawal)
+        : null;
+      return this.response(withdrawal, wallet, payout);
     });
   }
 
@@ -148,11 +171,13 @@ export class WithdrawalsService {
     return wallet;
   }
 
-  private response(withdrawal: WithdrawalRequest, wallet: Wallet) {
+  private response(withdrawal: WithdrawalRequest, wallet: Wallet, payout: WithdrawalPayout | null = null) {
     return {
       withdrawal: this.format(withdrawal),
       wallet: this.walletSummary(wallet),
       sandboxOnly: true,
+      payoutMode: 'MANUAL_BANK_TRANSFER',
+      payout: payout ? this.payouts.format(payout) : null,
     };
   }
 

@@ -20,7 +20,7 @@ export class UsersController {
 
   @Patch('me')
   @ApiOkResponse({
-    description: 'Updates the authenticated user name and phone; email and role cannot be changed here',
+    description: 'Updates the authenticated user profile; email and role cannot be changed here',
     type: UserProfileResponseDto,
   })
   updateMe(@CurrentUser() currentUser: JwtPayload, @Body() dto: UpdateProfileDto) {

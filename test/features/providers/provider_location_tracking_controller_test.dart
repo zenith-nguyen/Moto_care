@@ -142,6 +142,12 @@ class FakeTrackingProvidersRepository implements ProvidersRepository {
 
   @override
   Future<List<PendingOffer>> listPendingOffers() async => const [];
+
+  @override
+  Future<List<ProviderSkillOption>> listSkillCatalog() async => const [];
+
+  @override
+  Future<void> replaceMySkills(List<int> skillIds) async {}
 }
 
 ProviderPresence _presence(bool online) => ProviderPresence(

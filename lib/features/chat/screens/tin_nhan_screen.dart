@@ -1,0 +1,441 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../models/admin_message.dart';
+import '../providers/chat_directory_provider.dart';
+import '../services/chat_service.dart';
+
+import '../../../app/app_dependencies.dart';
+import '../../../core/router/main_navigation.dart';
+import '../../home/models/home_destination.dart';
+import '../../home/widgets/home_bottom_navigation.dart';
+import '../../notifications/application/notification_inbox_controller.dart';
+import '../models/chat_conversation.dart';
+import '../theme/chat_theme.dart';
+
+class TinNhanScreen extends ConsumerWidget {
+  const TinNhanScreen({super.key, this.launchPhone, this.initialTabIndex = 0});
+
+  final Future<bool> Function(Uri)? launchPhone;
+  final int initialTabIndex;
+
+  Future<void> _callMechanic(
+    BuildContext context,
+    ChatConversation conversation,
+    WidgetRef ref,
+  ) async {
+    final opened = await ref
+        .read(chatServiceProvider)
+        .call(conversation.phoneNumber, launcher: launchPhone);
+    if (!context.mounted || opened) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            'Không thể mở ứng dụng gọi điện. '
+            'Bạn có thể gọi số ${conversation.phoneNumber}.',
+          ),
+        ),
+      );
+  }
+
+  void _selectDestination(BuildContext context, HomeDestination destination) {
+    navigateMainTab(context, destination);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final conversations = ref.watch(chatConversationsProvider);
+    final conversationsState = ref.watch(chatConversationsAsyncProvider);
+    return Theme(
+      data: ChatTheme.light,
+      child: DefaultTabController(
+        length: 3,
+        initialIndex: initialTabIndex,
+        child: Scaffold(
+          backgroundColor: ChatTheme.background,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              tooltip: 'Quay lại',
+              onPressed: () =>
+                  context.canPop() ? context.pop() : context.go('/trang-chu'),
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+            title: const Text(
+              'Tin nhắn',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            bottom: const TabBar(
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              labelColor: ChatTheme.red,
+              unselectedLabelColor: ChatTheme.mutedText,
+              indicatorColor: ChatTheme.red,
+              indicatorSize: TabBarIndicatorSize.label,
+              labelStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              tabs: [
+                Tab(text: 'Cứu hộ'),
+                Tab(text: 'Hỗ trợ CSKH'),
+                Tab(text: 'Thông báo'),
+              ],
+            ),
+          ),
+          body: SafeArea(
+            top: false,
+            bottom: false,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: TabBarView(
+                  children: [
+                    if (conversationsState.isLoading && conversations.isEmpty)
+                      const Center(child: CircularProgressIndicator())
+                    else if (conversationsState.hasError &&
+                        conversations.isEmpty)
+                      _ChatDirectoryError(
+                        onRetry: () =>
+                            ref.invalidate(chatConversationsAsyncProvider),
+                      )
+                    else if (conversations.isEmpty)
+                      const Center(
+                        child: Text('Chưa có cuộc trò chuyện cứu hộ.'),
+                      )
+                    else
+                      ListView.builder(
+                        key: const PageStorageKey('rescue-conversations'),
+                        padding: const EdgeInsets.all(16),
+                        itemCount: conversations.length,
+                        itemBuilder: (context, index) {
+                          final conversation = conversations[index];
+                          return _RescueConversationCard(
+                            conversation: conversation,
+                            onTap: () => context.push(
+                              '/chat-detail',
+                              extra: conversation,
+                            ),
+                            onCall: conversation.phoneNumber.trim().isEmpty
+                                ? null
+                                : () =>
+                                      _callMechanic(context, conversation, ref),
+                          );
+                        },
+                      ),
+                    _AdminMessageList(
+                      storageKey: 'customer-support',
+                      icon: Icons.support_agent_rounded,
+                      messages: ref.watch(chatSupportMessagesProvider),
+                    ),
+                    const _NotificationInbox(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          bottomNavigationBar: HomeBottomNavigation(
+            selectedDestination: HomeDestination.account,
+            backgroundColor: ChatTheme.navigationSurface,
+            selectedIconColor: ChatTheme.red,
+            unselectedIconColor: ChatTheme.red,
+            onSelected: (destination) =>
+                _selectDestination(context, destination),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationInbox extends ConsumerWidget {
+  const _NotificationInbox();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!ref.watch(runtimeApiIntegrationProvider)) {
+      return _AdminMessageList(
+        storageKey: 'admin-notifications',
+        icon: Icons.notifications_outlined,
+        messages: ref.watch(chatNotificationsProvider),
+      );
+    }
+    final inbox = ref.watch(notificationInboxControllerProvider);
+    return inbox.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, _) => _ChatDirectoryError(
+        onRetry: () => ref.invalidate(notificationInboxControllerProvider),
+      ),
+      data: (_) {
+        final messages = ref.watch(chatNotificationsProvider);
+        if (messages.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.notifications_none_rounded, size: 52),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Bạn chưa có thông báo mới.',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Cập nhật đơn cứu hộ và thanh toán sẽ xuất hiện tại đây.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () => ref
+                        .read(notificationInboxControllerProvider.notifier)
+                        .refresh(),
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Tải lại'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () =>
+              ref.read(notificationInboxControllerProvider.notifier).refresh(),
+          child: _AdminMessageList(
+            storageKey: 'admin-notifications',
+            icon: Icons.notifications_outlined,
+            messages: messages,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RescueConversationCard extends StatelessWidget {
+  const _RescueConversationCard({
+    required this.conversation,
+    required this.onTap,
+    this.onCall,
+  });
+
+  final ChatConversation conversation;
+  final VoidCallback onTap;
+  final VoidCallback? onCall;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = conversation.status == RescueStatus.completed
+        ? ChatTheme.green
+        : ChatTheme.orange;
+    return Card(
+      color: ChatTheme.surface,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: ChatTheme.background,
+                    foregroundColor: ChatTheme.orange,
+                    child: Text(conversation.avatarInitials),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          conversation.mechanicName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          conversation.licensePlate,
+                          style: const TextStyle(
+                            color: ChatTheme.mutedText,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Gọi ${conversation.mechanicName}',
+                    onPressed: onCall,
+                    color: ChatTheme.red,
+                    icon: const Icon(Icons.phone),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Chip(
+                label: Text(
+                  conversation.statusLabel ?? conversation.status.label,
+                ),
+                labelStyle: const TextStyle(
+                  color: ChatTheme.background,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+                backgroundColor: statusColor,
+                side: BorderSide(color: statusColor),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      conversation.lastMessage,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: ChatTheme.mutedText,
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    conversation.timeLabel,
+                    style: const TextStyle(
+                      color: ChatTheme.mutedText,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatDirectoryError extends StatelessWidget {
+  const _ChatDirectoryError({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Chưa tải được danh sách trò chuyện.'),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Thử lại'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _AdminMessageList extends StatelessWidget {
+  const _AdminMessageList({
+    required this.storageKey,
+    required this.icon,
+    required this.messages,
+  });
+
+  final String storageKey;
+  final IconData icon;
+  final List<AdminMessage> messages;
+
+  @override
+  Widget build(BuildContext context) {
+    if (messages.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text('Chưa có nội dung trong mục này.'),
+        ),
+      );
+    }
+    return ListView.builder(
+      key: PageStorageKey(storageKey),
+      padding: const EdgeInsets.all(16),
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final message = messages[index];
+        return Card(
+          color: ChatTheme.surface,
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundColor: ChatTheme.background,
+                  child: Icon(icon, color: ChatTheme.red),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        message.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        message.message,
+                        style: const TextStyle(
+                          color: ChatTheme.mutedText,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        message.time,
+                        style: const TextStyle(
+                          color: ChatTheme.mutedText,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

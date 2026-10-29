@@ -1,8 +1,8 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { moneyToCents } from '../../common/utils/money';
 import { BankTransferGateway, BankTransferInstructions } from '../application/bank-transfer.gateway';
+import { verifySepayWebhook } from './sepay-webhook-auth';
 
 @Injectable()
 export class SepayBankTransferAdapter implements BankTransferGateway {
@@ -16,7 +16,8 @@ export class SepayBankTransferAdapter implements BankTransferGateway {
 
     const bank = this.config.getOrThrow<string>('SEPAY_BANK');
     const accountNumber = this.config.getOrThrow<string>('SEPAY_ACCOUNT_NUMBER');
-    if (!/^SBSEPAY[A-Z0-9]{12}$/.test(accountNumber)) {
+    const mode = this.config.getOrThrow<'test' | 'live'>('SEPAY_MODE');
+    if (mode === 'test' && !/^SBSEPAY[A-Z0-9]{12}$/.test(accountNumber)) {
       throw new ConflictException('SePay Test mode QR requires an official SBSEPAY virtual account');
     }
     const accountHolder = this.config.getOrThrow<string>('SEPAY_ACCOUNT_HOLDER');
@@ -35,8 +36,8 @@ export class SepayBankTransferAdapter implements BankTransferGateway {
 
     return {
       provider: 'SEPAY',
-      mode: 'test',
-      simulationOnly: true,
+      mode,
+      simulationOnly: mode === 'test',
       paymentCode,
       amount: command.amount,
       bank,
@@ -52,29 +53,11 @@ export class SepayBankTransferAdapter implements BankTransferGateway {
     timestamp: string | undefined;
     signature: string | undefined;
   }): string {
-    if (!command.rawBody || !command.timestamp || !command.signature) {
-      throw new UnauthorizedException('Invalid webhook signature');
-    }
-    if (!/^\d{10}$/.test(command.timestamp) || !/^sha256=[a-f0-9]{64}$/i.test(command.signature)) {
-      throw new UnauthorizedException('Invalid webhook signature');
-    }
-
-    const timestamp = Number(command.timestamp);
-    const maxAge = this.config.getOrThrow<number>('SEPAY_WEBHOOK_MAX_AGE_SECONDS');
-    if (!Number.isSafeInteger(timestamp) || Math.abs(Math.floor(Date.now() / 1000) - timestamp) > maxAge) {
-      throw new UnauthorizedException('Expired webhook timestamp');
-    }
-
-    const expected = createHmac('sha256', this.config.getOrThrow<string>('SEPAY_WEBHOOK_SECRET'))
-      .update(command.timestamp)
-      .update('.')
-      .update(command.rawBody)
-      .digest();
-    const received = Buffer.from(command.signature.slice('sha256='.length), 'hex');
-    if (received.length !== expected.length || !timingSafeEqual(received, expected)) {
-      throw new UnauthorizedException('Invalid webhook signature');
-    }
-    return createHash('sha256').update(command.rawBody).digest('hex');
+    return verifySepayWebhook({
+      ...command,
+      secret: this.config.getOrThrow<string>('SEPAY_WEBHOOK_SECRET'),
+      maxAgeSeconds: this.config.getOrThrow<number>('SEPAY_WEBHOOK_MAX_AGE_SECONDS'),
+    });
   }
 
   paymentCode(paymentId: number): string {

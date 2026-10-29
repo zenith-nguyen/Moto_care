@@ -46,17 +46,20 @@ void main() {
     expect(api.lastQueryParameters, {'limit': 30, 'unreadOnly': true});
   });
 
-  test('uses the backend timestamp when all notifications are marked read', () async {
-    final api = RecordingJsonApi()
-      ..objectResponse = {
-        'updatedCount': 2,
-        'readAt': '2026-10-12T09:00:00.000Z',
-      };
+  test(
+    'uses the backend timestamp when all notifications are marked read',
+    () async {
+      final api = RecordingJsonApi()
+        ..objectResponse = {
+          'updatedCount': 2,
+          'readAt': '2026-10-12T09:00:00.000Z',
+        };
 
-    final readAt = await HttpNotificationsRepository(api).markAllRead();
+      final readAt = await HttpNotificationsRepository(api).markAllRead();
 
-    expect(readAt, DateTime.utc(2026, 10, 12, 9));
-    expect(api.lastMethod, 'PATCH');
-    expect(api.lastPath, '/notifications/read-all');
-  });
+      expect(readAt, DateTime.utc(2026, 10, 12, 9));
+      expect(api.lastMethod, 'PATCH');
+      expect(api.lastPath, '/notifications/read-all');
+    },
+  );
 }

@@ -7,21 +7,29 @@ import 'push_token_source.dart';
 class FirebasePushTokenSource implements PushTokenSource {
   FirebasePushTokenSource._(this._messaging);
 
+  static const initializationTimeout = Duration(seconds: 3);
+
   final FirebaseMessaging _messaging;
 
   static Future<PushTokenSource> initialize(AppConfig config) async {
     if (!config.pushNotificationsEnabled) {
       return const DisabledPushTokenSource();
     }
-    await Firebase.initializeApp(
-      options: FirebaseOptions(
-        apiKey: config.firebaseApiKey,
-        appId: config.firebaseAppId,
-        messagingSenderId: config.firebaseMessagingSenderId,
-        projectId: config.firebaseProjectId,
-      ),
-    );
-    return FirebasePushTokenSource._(FirebaseMessaging.instance);
+    try {
+      await Firebase.initializeApp(
+        options: FirebaseOptions(
+          apiKey: config.firebaseApiKey,
+          appId: config.firebaseAppId,
+          messagingSenderId: config.firebaseMessagingSenderId,
+          projectId: config.firebaseProjectId,
+        ),
+      ).timeout(initializationTimeout);
+      return FirebasePushTokenSource._(FirebaseMessaging.instance);
+    } catch (_) {
+      // Push delivery is optional. A missing/slow Google Play service must not
+      // keep Android on the native splash long enough to trigger an ANR.
+      return const DisabledPushTokenSource();
+    }
   }
 
   @override

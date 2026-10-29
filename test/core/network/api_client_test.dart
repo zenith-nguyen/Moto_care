@@ -142,6 +142,33 @@ void main() {
     await bus.dispose();
   });
 
+  test('maps duplicate registration to a useful Vietnamese message', () async {
+    final bus = SessionInvalidationBus();
+    final adapter = RecordingAdapter((options) {
+      return jsonResponse(409, {
+        'statusCode': 409,
+        'message': 'Email or phone number is already registered',
+      });
+    });
+    final dio = Dio(BaseOptions(baseUrl: 'https://api.example.test'))
+      ..httpClientAdapter = adapter;
+    final api = ApiClient(dio, MemoryTokenStore(), bus);
+
+    await expectLater(
+      api.postObject('/auth/register', data: const {}),
+      throwsA(
+        isA<ApiFailure>()
+            .having((failure) => failure.kind, 'kind', ApiFailureKind.conflict)
+            .having(
+              (failure) => failure.message,
+              'message',
+              'Email hoặc số điện thoại đã được đăng ký. Hãy đăng nhập hoặc dùng thông tin khác.',
+            ),
+      ),
+    );
+    await bus.dispose();
+  });
+
   test(
     'uploads multipart bytes with the declared field and MIME type',
     () async {

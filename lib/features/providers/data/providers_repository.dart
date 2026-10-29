@@ -13,6 +13,10 @@ abstract interface class ProvidersRepository {
   });
 
   Future<List<PendingOffer>> listPendingOffers();
+
+  Future<List<ProviderSkillOption>> listSkillCatalog();
+
+  Future<void> replaceMySkills(List<int> skillIds);
 }
 
 class HttpProvidersRepository implements ProvidersRepository {
@@ -59,6 +63,17 @@ class HttpProvidersRepository implements ProvidersRepository {
   Future<List<PendingOffer>> listPendingOffers() async {
     final response = await _api.getList('/providers/me/offers/pending');
     return response.map(PendingOffer.fromJson).toList(growable: false);
+  }
+
+  @override
+  Future<List<ProviderSkillOption>> listSkillCatalog() async {
+    final response = await _api.getList('/provider-skills');
+    return response.map(ProviderSkillOption.fromJson).toList(growable: false);
+  }
+
+  @override
+  Future<void> replaceMySkills(List<int> skillIds) async {
+    await _api.putObject('/providers/me/skills', data: {'skillIds': skillIds});
   }
 }
 

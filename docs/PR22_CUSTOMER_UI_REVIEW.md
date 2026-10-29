@@ -1,6 +1,6 @@
 # PR #22 Customer UI review
 
-Review date: 2026-10-11  
+Review date: 2026-10-11
 Reviewed head commit: `1e55e8c` (`feat/cam-thu/be-light-screens`)
 
 ## Decision

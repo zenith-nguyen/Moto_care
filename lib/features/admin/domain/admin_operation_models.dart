@@ -63,6 +63,112 @@ class AdminRecentOrder {
   }
 }
 
+double? _coordAt(Object? location, int index) {
+  if (location is Map && location['coordinates'] is List) {
+    final coordinates = location['coordinates'] as List;
+    if (coordinates.length > index && coordinates[index] is num) {
+      return (coordinates[index] as num).toDouble();
+    }
+  }
+  return null;
+}
+
+class AdminOrderParty {
+  const AdminOrderParty({this.name, this.phone, this.address});
+
+  final String? name;
+  final String? phone;
+  final String? address;
+
+  factory AdminOrderParty.fromJson(Map<String, dynamic> json) =>
+      AdminOrderParty(
+        name: json['name'] as String?,
+        phone: json['phone'] as String?,
+        address: json['address'] as String?,
+      );
+}
+
+class AdminOrderProviderInfo {
+  const AdminOrderProviderInfo({
+    this.name,
+    this.phone,
+    this.latitude,
+    this.longitude,
+  });
+
+  final String? name;
+  final String? phone;
+  final double? latitude;
+  final double? longitude;
+
+  factory AdminOrderProviderInfo.fromJson(Map<String, dynamic> json) =>
+      AdminOrderProviderInfo(
+        name: json['name'] as String?,
+        phone: json['phone'] as String?,
+        latitude: _coordAt(json['currentLocation'], 1),
+        longitude: _coordAt(json['currentLocation'], 0),
+      );
+}
+
+class AdminOrderDetail {
+  const AdminOrderDetail({
+    required this.id,
+    required this.code,
+    required this.status,
+    required this.createdAt,
+    required this.estimatedPrice,
+    required this.extraCost,
+    required this.discountAmount,
+    this.incidentType,
+    this.finalPrice,
+    this.customerLatitude,
+    this.customerLongitude,
+    this.customer,
+    this.provider,
+  });
+
+  final int id;
+  final String code;
+  final OrderStatus status;
+  final DateTime createdAt;
+  final MoneyAmount estimatedPrice;
+  final MoneyAmount extraCost;
+  final MoneyAmount discountAmount;
+  final String? incidentType;
+  final MoneyAmount? finalPrice;
+  final double? customerLatitude;
+  final double? customerLongitude;
+  final AdminOrderParty? customer;
+  final AdminOrderProviderInfo? provider;
+
+  factory AdminOrderDetail.fromJson(Map<String, dynamic> json) {
+    final reader = JsonReader(json);
+    return AdminOrderDetail(
+      id: reader.positiveInt('id'),
+      code: reader.string('code'),
+      status: OrderStatus.fromWire(reader.value('status')),
+      createdAt: reader.dateTime('createdAt'),
+      estimatedPrice: MoneyAmount.parse(reader.value('estimatedPrice')),
+      extraCost: MoneyAmount.parse(reader.value('extraCost')),
+      discountAmount: MoneyAmount.parse(reader.value('discountAmount')),
+      incidentType: json['incidentType'] as String?,
+      finalPrice: _nullableMoney(reader.value('finalPrice')),
+      customerLatitude: _coordAt(json['customerLocation'], 1),
+      customerLongitude: _coordAt(json['customerLocation'], 0),
+      customer: json['customer'] == null
+          ? null
+          : AdminOrderParty.fromJson(
+              Map<String, dynamic>.from(json['customer'] as Map),
+            ),
+      provider: json['provider'] == null
+          ? null
+          : AdminOrderProviderInfo.fromJson(
+              Map<String, dynamic>.from(json['provider'] as Map),
+            ),
+    );
+  }
+}
+
 class PendingProviderApplication {
   const PendingProviderApplication({
     required this.id,
@@ -72,6 +178,12 @@ class PendingProviderApplication {
     required this.phone,
     required this.approvalStatus,
     required this.documentUrl,
+    this.bio,
+    this.yearsOfExperience,
+    this.serviceRadiusKm,
+    this.tier,
+    this.createdAt,
+    this.skills = const <String>[],
   });
   final int id;
   final int userId;
@@ -80,9 +192,23 @@ class PendingProviderApplication {
   final String? phone;
   final ProviderApprovalStatus approvalStatus;
   final String? documentUrl;
+  final String? bio;
+  final int? yearsOfExperience;
+  final double? serviceRadiusKm;
+  final String? tier;
+  final DateTime? createdAt;
+  final List<String> skills;
 
   factory PendingProviderApplication.fromJson(Map<String, dynamic> json) {
     final reader = JsonReader(json);
+    final rawSkills = reader.value('skills');
+    final skills = rawSkills is List
+        ? rawSkills
+              .map((entry) => entry?.toString().trim() ?? '')
+              .where((entry) => entry.isNotEmpty)
+              .toList(growable: false)
+        : const <String>[];
+    final rawRadius = reader.value('serviceRadiusKm');
     return PendingProviderApplication(
       id: reader.positiveInt('id'),
       userId: reader.positiveInt('userId'),
@@ -93,6 +219,14 @@ class PendingProviderApplication {
         reader.value('approvalStatus'),
       ),
       documentUrl: reader.nullableString('documentUrl'),
+      bio: reader.nullableString('bio'),
+      yearsOfExperience: reader.nullableInt('yearsOfExperience'),
+      serviceRadiusKm: rawRadius == null
+          ? null
+          : double.tryParse(rawRadius.toString()),
+      tier: reader.nullableString('tier'),
+      createdAt: reader.nullableDateTime('createdAt'),
+      skills: skills,
     );
   }
 }
@@ -321,6 +455,95 @@ class AdminWithdrawalProvider {
       id: reader.positiveInt('id'),
       userId: reader.positiveInt('userId'),
       name: reader.string('name'),
+    );
+  }
+}
+
+enum WithdrawalPayoutStatus {
+  awaitingTransfer('AWAITING_TRANSFER'),
+  manualReview('MANUAL_REVIEW'),
+  reconciled('RECONCILED');
+
+  const WithdrawalPayoutStatus(this.wireValue);
+  final String wireValue;
+
+  static WithdrawalPayoutStatus fromWire(Object? raw) {
+    return values.firstWhere(
+      (status) => status.wireValue == raw,
+      orElse: () =>
+          throw FormatException('Unknown withdrawal payout status: $raw'),
+    );
+  }
+}
+
+enum PayoutReconciliationDecision {
+  confirm('CONFIRM'),
+  flag('FLAG');
+
+  const PayoutReconciliationDecision(this.wireValue);
+  final String wireValue;
+}
+
+/// A provider payout that is waiting for the owner's manual bank transfer to be
+/// confirmed. This is the RECONCILED stage of the money guardrail: the owner
+/// transfers money by hand, then records the bank transaction here. The app
+/// never moves money on its own.
+class AdminWithdrawalPayout {
+  const AdminWithdrawalPayout({
+    required this.id,
+    required this.withdrawalId,
+    required this.payoutCode,
+    required this.expectedAmount,
+    required this.status,
+    required this.externalTransactionId,
+    required this.externalReferenceCode,
+    required this.observedAmount,
+    required this.reviewReason,
+    required this.reconciledById,
+    required this.reconciledAt,
+    required this.bankTransferConfirmed,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.provider,
+  });
+
+  final int id;
+  final int withdrawalId;
+  final String payoutCode;
+  final MoneyAmount expectedAmount;
+  final WithdrawalPayoutStatus status;
+  final String? externalTransactionId;
+  final String? externalReferenceCode;
+  final MoneyAmount? observedAmount;
+  final String? reviewReason;
+  final int? reconciledById;
+  final DateTime? reconciledAt;
+  final bool bankTransferConfirmed;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final AdminWithdrawalProvider? provider;
+
+  factory AdminWithdrawalPayout.fromJson(Map<String, dynamic> json) {
+    final reader = JsonReader(json);
+    final providerJson = reader.nullableObject('provider');
+    return AdminWithdrawalPayout(
+      id: reader.positiveInt('id'),
+      withdrawalId: reader.positiveInt('withdrawalId'),
+      payoutCode: reader.string('payoutCode'),
+      expectedAmount: MoneyAmount.parse(reader.value('expectedAmount')),
+      status: WithdrawalPayoutStatus.fromWire(reader.value('status')),
+      externalTransactionId: reader.nullableString('externalTransactionId'),
+      externalReferenceCode: reader.nullableString('externalReferenceCode'),
+      observedAmount: _nullableMoney(reader.value('observedAmount')),
+      reviewReason: reader.nullableString('reviewReason'),
+      reconciledById: reader.nullablePositiveInt('reconciledById'),
+      reconciledAt: reader.nullableDateTime('reconciledAt'),
+      bankTransferConfirmed: reader.boolean('bankTransferConfirmed'),
+      createdAt: reader.dateTime('createdAt'),
+      updatedAt: reader.dateTime('updatedAt'),
+      provider: providerJson == null
+          ? null
+          : AdminWithdrawalProvider.fromJson(providerJson),
     );
   }
 }

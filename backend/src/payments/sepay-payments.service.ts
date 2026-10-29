@@ -51,6 +51,9 @@ export class SepayPaymentsService {
       timestamp,
       signature,
     });
+    // SePay's dashboard uses transaction id 0 for an authenticated test
+    // delivery. Acknowledge it without auditing or touching payment state.
+    if (payload.id === 0) return { success: true };
     const result = await this.database.transaction(async (manager) => {
       const externalTransactionId = String(payload.id);
       await manager.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [externalTransactionId]);
@@ -137,15 +140,15 @@ export class SepayPaymentsService {
       await manager.getRepository(Payment).save(payment);
       order.status = OrderStatus.PENDING_MATCH;
       await manager.getRepository(Order).save(order);
-      const offer = await this.matching.matchLockedOrder(manager, order);
+      const offers = await this.matching.matchLockedOrder(manager, order);
       await this.audit(manager, payload, payloadSha256, payment.id, 'APPLIED');
-      return { changed: true, orderId: order.id, status: order.status, offer };
+      return { changed: true, orderId: order.id, status: order.status, offers };
     });
 
     if (result.changed && result.orderId && result.status) {
       await this.realtime?.orderStatusChanged(result.orderId, result.status);
-      if (result.offer) {
-        await this.realtime?.offerCreated(result.offer.providerId, result.orderId, result.offer.id, result.offer.expiresAt);
+      for (const offer of result.offers) {
+        await this.realtime?.offerCreated(offer.providerId, result.orderId, offer.id, offer.expiresAt);
       }
     }
     return { success: true };
@@ -155,8 +158,12 @@ export class SepayPaymentsService {
     if (!this.config.get<boolean>('SEPAY_ENABLED')) {
       throw new ForbiddenException('SePay Test mode is disabled');
     }
-    if (this.config.get<string>('SEPAY_MODE') !== 'test') {
-      throw new ForbiddenException('Only SePay Test mode is supported');
+    const mode = this.config.get<string>('SEPAY_MODE');
+    if (mode !== 'test' && mode !== 'live') {
+      throw new ForbiddenException('Unsupported SePay mode');
+    }
+    if (mode === 'live' && this.config.get<string>('NODE_ENV') !== 'production') {
+      throw new ForbiddenException('SePay Live requires production mode');
     }
   }
 

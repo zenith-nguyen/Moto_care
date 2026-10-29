@@ -173,6 +173,10 @@ class FakeOrdersRepository implements OrdersRepository {
   bool _created = false;
 
   @override
+  Future<ParticipantContact> participantContact(int orderId) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> acceptOffer({required int orderId, required int offerId}) {
     throw UnimplementedError();
   }
@@ -296,7 +300,7 @@ class FakePaymentsRepository implements PaymentsRepository {
   }
 
   @override
-  Future<BankTransferInstructions> getTestModeInstructions(int orderId) {
+  Future<BankTransferInstructions> getTransferInstructions(int orderId) {
     throw UnimplementedError();
   }
 }

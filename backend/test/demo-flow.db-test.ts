@@ -203,10 +203,10 @@ describe('Sandbox demo flow over HTTP', () => {
     return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
   }
 
-  function signedSepayPayload(payload: object) {
+  function signedSepayPayload(payload: object, secret = process.env.SEPAY_WEBHOOK_SECRET!) {
     const rawBody = JSON.stringify(payload);
     const timestamp = String(Math.floor(Date.now() / 1000));
-    const signature = `sha256=${createHmac('sha256', process.env.SEPAY_WEBHOOK_SECRET!)
+    const signature = `sha256=${createHmac('sha256', secret)
       .update(timestamp)
       .update('.')
       .update(rawBody)
@@ -219,9 +219,25 @@ describe('Sandbox demo flow over HTTP', () => {
     await request(app.getHttpServer())
       .patch('/users/me')
       .set('Authorization', `Bearer ${customer.token}`)
-      .send({ name: 'HTTP Customer Updated', phone: '0901234567' })
+      .send({
+        name: 'HTTP Customer Updated',
+        phone: '0901234567',
+        emergencyContactName: 'Relative',
+        emergencyContactPhone: '0912345678',
+        medicalNote: 'Allergic to medicine A',
+        homeAddress: 'District 1, HCMC',
+        workAddress: 'District 3, HCMC',
+      })
       .expect(200)
-      .expect(({ body }) => expect(body).toMatchObject({ name: 'HTTP Customer Updated', phone: '0901234567' }));
+      .expect(({ body }) => expect(body).toMatchObject({
+        name: 'HTTP Customer Updated',
+        phone: '0901234567',
+        emergencyContactName: 'Relative',
+        emergencyContactPhone: '0912345678',
+        medicalNote: 'Allergic to medicine A',
+        homeAddress: 'District 1, HCMC',
+        workAddress: 'District 3, HCMC',
+      }));
     await request(app.getHttpServer())
       .patch('/users/me')
       .set('Authorization', `Bearer ${provider.token}`)
@@ -242,9 +258,13 @@ describe('Sandbox demo flow over HTTP', () => {
         model: 'Wave Alpha',
         licensePlate: '59a1-123.45',
         color: 'Black',
+        tireType: 'tubeless',
+        engineType: 'gas',
       })
       .expect(201);
-    expect(vehicle.body).toMatchObject({ licensePlate: '59A1-123.45', isDefault: true });
+    expect(vehicle.body).toMatchObject({
+      licensePlate: '59A1-123.45', isDefault: true, tireType: 'tubeless', engineType: 'gas',
+    });
     await request(app.getHttpServer())
       .post('/users/me/vehicles')
       .set('Authorization', `Bearer ${provider.token}`)
@@ -310,6 +330,43 @@ describe('Sandbox demo flow over HTTP', () => {
       .get(`/orders/${created.body.id}/participant-contact`)
       .set('Authorization', `Bearer ${customer.token}`)
       .expect(409);
+  });
+
+  it('accepts only an authenticated SePay dashboard test probe without persisting it', async () => {
+    const payload = {
+      id: 0,
+      gateway: 'MBBank',
+      transactionDate: '2026-10-19 01:30:00',
+      accountNumber: 'TEST-ACCOUNT-001',
+      subAccount: null,
+      code: 'MC1',
+      content: 'SePay dashboard test delivery',
+      transferType: 'in',
+      description: 'Dashboard test',
+      transferAmount: 1000,
+      accumulated: 1000,
+      referenceCode: 'SEPAY-DASHBOARD-TEST',
+    };
+    const signed = signedSepayPayload(payload);
+
+    await request(app.getHttpServer())
+      .post('/payments/webhooks/sepay')
+      .set('Content-Type', 'application/json')
+      .send(signed.rawBody)
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .post('/payments/webhooks/sepay')
+      .set('Content-Type', 'application/json')
+      .set('X-SePay-Timestamp', signed.timestamp)
+      .set('X-SePay-Signature', signed.signature)
+      .send(signed.rawBody)
+      .expect(200, { success: true });
+
+    expect(await database.query(
+      'SELECT count(*)::int AS count FROM sepay_webhook_events WHERE external_transaction_id = $1',
+      ['0'],
+    )).toEqual([{ count: 0 }]);
   });
 
   it('confirms an exact SePay Test mode prepayment once and starts matching', async () => {
@@ -426,6 +483,66 @@ describe('Sandbox demo flow over HTTP', () => {
       ['900002'],
     )) as Array<{ outcome: string }>;
     expect(mismatch.outcome).toBe('AMOUNT_MISMATCH');
+  });
+
+  it('audits an outgoing payout amount mismatch without touching customer payments', async () => {
+    const { provider } = await prepareActors();
+    const providerProfile = await database.getRepository(Provider).findOneByOrFail({ userId: provider.userId });
+    await database.getRepository(Wallet).save(database.getRepository(Wallet).create({
+      providerId: providerProfile.id,
+      balance: '30000.00',
+      lockedBalance: '0.00',
+    }));
+    const withdrawal = await request(app.getHttpServer())
+      .post('/withdrawals')
+      .set('Authorization', `Bearer ${provider.token}`)
+      .send({ amount: '20000.00' })
+      .expect(201);
+    const approved = await request(app.getHttpServer())
+      .patch(`/admin/withdrawals/${withdrawal.body.withdrawal.id}/resolve`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .send({ decision: 'APPROVE' })
+      .expect(200);
+    const payload = {
+      id: 910002,
+      gateway: 'MBBank',
+      transactionDate: '2026-10-18 20:45:00',
+      accountNumber: 'SBSEPAYX9KA2B7MN4QR',
+      subAccount: null,
+      code: approved.body.payout.payoutCode,
+      content: approved.body.payout.payoutCode,
+      transferType: 'out',
+      description: 'Wrong payout amount fixture',
+      transferAmount: 19999,
+      accumulated: 10001,
+      referenceCode: 'SBPAYOUT910002',
+    };
+    const signed = signedSepayPayload(payload, process.env.SEPAY_PAYOUT_WEBHOOK_SECRET!);
+    await request(app.getHttpServer())
+      .post('/payments/webhooks/sepay/payouts')
+      .set('Content-Type', 'application/json')
+      .set('X-SePay-Timestamp', signed.timestamp)
+      .set('X-SePay-Signature', signed.signature)
+      .send(signed.rawBody)
+      .expect(200, { success: true });
+
+    expect(await database.query(
+      'SELECT outcome FROM sepay_payout_webhook_events WHERE external_transaction_id = $1',
+      [String(payload.id)],
+    )).toEqual([{ outcome: 'AMOUNT_MISMATCH' }]);
+    await request(app.getHttpServer())
+      .get('/admin/withdrawal-payouts/pending')
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toEqual([
+        expect.objectContaining({
+          id: approved.body.payout.id,
+          status: 'MANUAL_REVIEW',
+          expectedAmount: '20000.00',
+          observedAmount: '19999.00',
+          bankTransferConfirmed: false,
+        }),
+      ]));
   });
 
   it('completes the customer, provider and admin sandbox lifecycle', async () => {
@@ -547,6 +664,8 @@ describe('Sandbox demo flow over HTTP', () => {
       withdrawal: { amount: '40000.00', status: 'PENDING' },
       wallet: { balance: '100000.00', lockedBalance: '40000.00', availableBalance: '60000.00' },
       sandboxOnly: true,
+      payoutMode: 'MANUAL_BANK_TRANSFER',
+      payout: null,
     });
     await request(app.getHttpServer())
       .get('/admin/withdrawals/pending')
@@ -555,7 +674,7 @@ describe('Sandbox demo flow over HTTP', () => {
       .expect(({ body }) => expect(body).toEqual([
         expect.objectContaining({ id: withdrawal.body.withdrawal.id, provider: expect.objectContaining({ name: 'HTTP Provider' }) }),
       ]));
-    await request(app.getHttpServer())
+    const approvedWithdrawal = await request(app.getHttpServer())
       .patch(`/admin/withdrawals/${withdrawal.body.withdrawal.id}/resolve`)
       .set('Authorization', `Bearer ${admin.token}`)
       .send({ decision: 'APPROVE', reason: 'Sandbox payout reviewed' })
@@ -563,6 +682,91 @@ describe('Sandbox demo flow over HTTP', () => {
       .expect(({ body }) => expect(body).toMatchObject({
         withdrawal: { status: 'APPROVED' },
         wallet: { balance: '60000.00', lockedBalance: '0.00', availableBalance: '60000.00' },
+        payout: {
+          payoutCode: `RP${withdrawal.body.withdrawal.id}`,
+          expectedAmount: '40000.00',
+          status: 'AWAITING_TRANSFER',
+          bankTransferConfirmed: false,
+        },
+      }));
+
+    const payoutPayload = {
+      id: 910001,
+      gateway: 'MBBank',
+      transactionDate: '2026-10-18 20:30:00',
+      accountNumber: 'SBSEPAYX9KA2B7MN4QR',
+      subAccount: null,
+      code: approvedWithdrawal.body.payout.payoutCode,
+      content: `${approvedWithdrawal.body.payout.payoutCode} provider payout`,
+      transferType: 'out',
+      description: 'Provider payout awaiting recipient verification',
+      transferAmount: 40000,
+      accumulated: 60000,
+      referenceCode: 'SBPAYOUT910001',
+    };
+    const signedPayout = signedSepayPayload(
+      payoutPayload,
+      process.env.SEPAY_PAYOUT_WEBHOOK_SECRET!,
+    );
+    const sendPayoutWebhook = () => request(app.getHttpServer())
+      .post('/payments/webhooks/sepay/payouts')
+      .set('Content-Type', 'application/json')
+      .set('X-SePay-Timestamp', signedPayout.timestamp)
+      .set('X-SePay-Signature', signedPayout.signature)
+      .send(signedPayout.rawBody);
+    await sendPayoutWebhook().expect(200, { success: true });
+    await sendPayoutWebhook().expect(200, { success: true });
+    const changedReplay = signedSepayPayload(
+      { ...payoutPayload, transferAmount: 39999 },
+      process.env.SEPAY_PAYOUT_WEBHOOK_SECRET!,
+    );
+    await request(app.getHttpServer())
+      .post('/payments/webhooks/sepay/payouts')
+      .set('Content-Type', 'application/json')
+      .set('X-SePay-Timestamp', changedReplay.timestamp)
+      .set('X-SePay-Signature', changedReplay.signature)
+      .send(changedReplay.rawBody)
+      .expect(409);
+    expect(await database.query(
+      'SELECT outcome FROM sepay_payout_webhook_events WHERE external_transaction_id = $1',
+      [String(payoutPayload.id)],
+    )).toEqual([{ outcome: 'MANUAL_REVIEW_REQUIRED' }]);
+    await request(app.getHttpServer())
+      .get('/admin/withdrawal-payouts/pending')
+      .set('Authorization', `Bearer ${admin.token}`)
+      .expect(200)
+      .expect(({ body }) => expect(body).toEqual([
+        expect.objectContaining({
+          id: approvedWithdrawal.body.payout.id,
+          status: 'MANUAL_REVIEW',
+          observedAmount: '40000.00',
+          bankTransferConfirmed: false,
+        }),
+      ]));
+    await request(app.getHttpServer())
+      .patch(`/admin/withdrawal-payouts/${approvedWithdrawal.body.payout.id}/reconcile`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .send({
+        decision: 'CONFIRM',
+        externalTransactionId: String(payoutPayload.id),
+        referenceCode: payoutPayload.referenceCode,
+        observedAmount: '39999.00',
+      })
+      .expect(409);
+    await request(app.getHttpServer())
+      .patch(`/admin/withdrawal-payouts/${approvedWithdrawal.body.payout.id}/reconcile`)
+      .set('Authorization', `Bearer ${admin.token}`)
+      .send({
+        decision: 'CONFIRM',
+        externalTransactionId: String(payoutPayload.id),
+        referenceCode: payoutPayload.referenceCode,
+        observedAmount: '40000.00',
+        reason: 'Recipient name and bank receipt verified',
+      })
+      .expect(200)
+      .expect(({ body }) => expect(body).toMatchObject({
+        status: 'RECONCILED',
+        bankTransferConfirmed: true,
       }));
     await request(app.getHttpServer())
       .get('/withdrawals/me')
@@ -570,7 +774,11 @@ describe('Sandbox demo flow over HTTP', () => {
       .expect(200)
       .expect(({ body }) => expect(body).toMatchObject({
         wallet: { balance: '60000.00', lockedBalance: '0.00', availableBalance: '60000.00' },
-        items: [expect.objectContaining({ status: 'APPROVED', amount: '40000.00' })],
+        items: [expect.objectContaining({
+          status: 'APPROVED',
+          amount: '40000.00',
+          payout: expect.objectContaining({ status: 'RECONCILED', bankTransferConfirmed: true }),
+        })],
       }));
     await request(app.getHttpServer())
       .post(`/orders/${orderId}/reviews`)

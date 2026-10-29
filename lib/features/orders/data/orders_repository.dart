@@ -14,6 +14,8 @@ abstract interface class OrdersRepository {
 
   Future<OrderDetails> getById(int orderId);
 
+  Future<ParticipantContact> participantContact(int orderId);
+
   Future<OrderCreationResult> retryMatching(int orderId);
 
   Future<OrderCancellationResult> cancel(int orderId, String reason);
@@ -88,6 +90,15 @@ class HttpOrdersRepository implements OrdersRepository {
     _requireOrderId(orderId);
     final response = await _api.getObject('/orders/$orderId');
     return OrderDetails.fromJson(response);
+  }
+
+  @override
+  Future<ParticipantContact> participantContact(int orderId) async {
+    _requireOrderId(orderId);
+    final response = await _api.getObject(
+      '/orders/$orderId/participant-contact',
+    );
+    return ParticipantContact.fromJson(response);
   }
 
   @override

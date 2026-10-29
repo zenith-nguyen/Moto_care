@@ -9,9 +9,13 @@ mock profile or vehicle store.
 ## Editable profile
 
 - `GET /users/me` returns the authenticated profile.
-- `PATCH /users/me` accepts only `name` and `phone`.
+- `PATCH /users/me` accepts `name`, `phone`, `emergencyContactName`,
+  `emergencyContactPhone`, `medicalNote`, `homeAddress` and `workAddress`.
 - Email, role, status and security fields cannot be changed through this
   endpoint. Email changes need a separate verification flow later.
+- Emergency, medical and address fields are nullable, length-limited and
+  persisted in PostgreSQL. Empty optional values clear the corresponding
+  column.
 - Phone is normalized and must contain 9–15 digits with an optional leading
   `+`. A duplicate phone returns `409`.
 

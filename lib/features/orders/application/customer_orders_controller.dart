@@ -156,13 +156,13 @@ class CustomerOrdersController extends AsyncNotifier<CustomerOrdersState> {
     });
   }
 
-  Future<void> loadTestModeTransferInstructions() async {
+  Future<void> loadTransferInstructions() async {
     await _withSelectedOrder(CustomerOrderAction.loadTransferInstructions, (
       orderId,
     ) async {
       final instructions = await ref
           .read(paymentsRepositoryProvider)
-          .getTestModeInstructions(orderId);
+          .getTransferInstructions(orderId);
       state = AsyncData(
         _requireState().copyWith(transferInstructions: instructions),
       );

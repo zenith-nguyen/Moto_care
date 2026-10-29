@@ -1,10 +1,12 @@
-import { ForbiddenException, Injectable, NotFoundException, Optional, UnprocessableEntityException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException, Optional, UnprocessableEntityException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
 import { ApprovalStatus } from '../common/enums/approval-status.enum';
 import { OfferStatus } from '../common/enums/offer-status.enum';
+import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
+import { ApplyProviderDto } from './dto/apply-provider.dto';
 import { OrderOffer } from '../orders/order-offer.entity';
 import { Order } from '../orders/order.entity';
 import { OrderStatus } from '../common/enums/order-status.enum';
@@ -13,6 +15,7 @@ import { User } from '../users/user.entity';
 import { Provider } from './provider.entity';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { presentOrderVehicle } from '../orders/presentation/order.presenter';
+import { MatchingService } from '../orders/matching.service';
 
 @Injectable()
 export class ProvidersService {
@@ -21,6 +24,7 @@ export class ProvidersService {
     @InjectRepository(OrderOffer) private readonly offers: Repository<OrderOffer>,
     @InjectRepository(User) private readonly users: Repository<User>,
     private readonly config: ConfigService,
+    private readonly matching: MatchingService,
     @Optional() @InjectRepository(Order) private readonly orders?: Repository<Order>,
     @Optional() private readonly realtime?: RealtimePublisher,
   ) {}
@@ -29,6 +33,54 @@ export class ProvidersService {
     const provider = await this.providers.findOneBy({ userId });
     if (!provider) throw new NotFoundException('Provider profile not found');
     return provider;
+  }
+
+  // An existing customer submits a provider application. The account stays a
+  // customer until an admin approves it (admin.reviewProvider promotes the
+  // role then). One application per account.
+  async apply(userId: number, dto: ApplyProviderDto) {
+    const user = await this.users.findOneBy({ id: userId });
+    if (!user) throw new NotFoundException('Account not found');
+    if (user.role !== UserRole.CUSTOMER) {
+      throw new ConflictException('Only a customer account can apply to become a provider');
+    }
+    const existing = await this.providers.findOneBy({ userId });
+    if (existing) {
+      throw new ConflictException('A provider application already exists for this account');
+    }
+    const provider = await this.providers.save(
+      this.providers.create({
+        userId,
+        approvalStatus: ApprovalStatus.PENDING,
+        bio: dto.bio?.trim() || null,
+        documentUrl: dto.documentUrl?.trim() || null,
+        yearsOfExperience: dto.yearsOfExperience ?? 0,
+        ...(dto.serviceRadiusKm != null
+          ? { serviceRadiusKm: dto.serviceRadiusKm.toFixed(2) }
+          : {}),
+      }),
+    );
+    return this.presentApplication(provider);
+  }
+
+  // The applicant's own application, or { approvalStatus: 'NONE' } when they
+  // have never applied.
+  async getApplication(userId: number) {
+    const provider = await this.providers.findOneBy({ userId });
+    if (!provider) return { approvalStatus: 'NONE' as const };
+    return this.presentApplication(provider);
+  }
+
+  private presentApplication(provider: Provider) {
+    return {
+      id: provider.id,
+      approvalStatus: provider.approvalStatus,
+      bio: provider.bio,
+      documentUrl: provider.documentUrl,
+      yearsOfExperience: provider.yearsOfExperience,
+      serviceRadiusKm: Number(provider.serviceRadiusKm),
+      createdAt: provider.createdAt,
+    };
   }
 
   async updateLocation(userId: number, location: UpdateLocationDto) {
@@ -73,6 +125,9 @@ export class ProvidersService {
       }
     }
     await this.providers.update(provider.id, { isOnline });
+    if (isOnline) {
+      await this.matching.matchPendingOrders();
+    }
     return { id: provider.id, isOnline, lastSeenAt: provider.lastSeenAt };
   }
 

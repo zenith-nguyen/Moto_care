@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/realtime/realtime_session_coordinator.dart';
 import '../core/notifications/push_session_coordinator.dart';
+import '../core/theme/app_theme.dart';
 import 'router/app_router.dart';
 
 class MotoCareApp extends ConsumerWidget {
@@ -25,10 +26,7 @@ class MotoCareApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       routerConfig: router,
     );
   }

@@ -1,6 +1,6 @@
 # MotoCare Backend — danh mục API hiện tại
 
-Cập nhật: 2026-10-12. Có 77 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
+Cập nhật: 2026-10-18. Có 80 REST endpoints và 5 Socket.IO events. Mặc định mọi API cần `Authorization: Bearer <JWT>`; chỉ Auth, Health và webhook SePay có HMAC riêng là public khỏi JWT. Swagger local: `http://localhost:3000/docs` khi `DEMO_MODE=false` và không chạy production. Luồng màn hình/trạng thái dành cho Flutter nằm ở [UI_WORKFLOW_CONTRACT.md](UI_WORKFLOW_CONTRACT.md).
 
 ## Auth, tài khoản và health
 
@@ -11,7 +11,7 @@ Cập nhật: 2026-10-12. Có 77 REST endpoints và 5 Socket.IO events. Mặc đ
 | POST | `/auth/password/forgot` | Public, 3 lần/phút | Nếu email tồn tại, gửi mã sáu số dùng một lần; response luôn chung chung |
 | POST | `/auth/password/reset` | Public, 10 lần/phút | Đổi mật khẩu bằng email + mã + mật khẩu mới; vô hiệu mọi JWT cũ |
 | GET | `/users/me` | Đã đăng nhập | Hồ sơ tài khoản hiện tại |
-| PATCH | `/users/me` | Đã đăng nhập | Sửa tên/số điện thoại; không cho đổi role/email/status |
+| PATCH | `/users/me` | Đã đăng nhập | Sửa tên, số điện thoại, liên hệ khẩn cấp, ghi chú y tế và địa chỉ nhà/cơ quan; không cho đổi role/email/status |
 | GET | `/users/me/vehicles` | Customer | Danh sách xe, xe mặc định đứng trước |
 | POST | `/users/me/vehicles` | Customer | Thêm xe; xe đầu tiên tự thành mặc định |
 | PATCH | `/users/me/vehicles/:vehicleId` | Customer sở hữu | Sửa xe/chọn mặc định atomic |
@@ -19,7 +19,7 @@ Cập nhật: 2026-10-12. Có 77 REST endpoints và 5 Socket.IO events. Mặc đ
 | GET | `/health` | Public | NestJS process đang phản hồi |
 | GET | `/health/ready` | Public | API gọi được PostgreSQL |
 
-Mã đặt lại mật khẩu hết hạn sau 10 phút, giới hạn năm lần nhập sai và chỉ gửi lại sau 60 giây. Sau năm lần đăng nhập sai liên tiếp, tài khoản tạm khóa 15 phút. Chưa có refresh token, xác minh email và đăng xuất server-side.
+Mã đặt lại mật khẩu hết hạn sau 1 phút, giới hạn năm lần nhập sai và chỉ gửi lại sau 60 giây. Sau năm lần đăng nhập sai liên tiếp, tài khoản tạm khóa 15 phút. Chưa có refresh token, xác minh email và đăng xuất server-side.
 
 ## Thông báo
 
@@ -68,6 +68,17 @@ Chi tiết hồ sơ nghề nghiệp và thống kê: [PROVIDER_DIRECTORY.md](PRO
 Dữ liệu OSM chỉ mang tính tham khảo, không phải đối tác MotoCare và không có
 đặt lịch/thanh toán. Xem [SERVICE_LOCATION_MARKERS.md](SERVICE_LOCATION_MARKERS.md).
 
+## Thời tiết hiện tại
+
+| Method | Path | Quyền | Trạng thái / mục đích |
+| --- | --- | --- | --- |
+| GET | `/weather/current?latitude=...&longitude=...` | Đã đăng nhập | Snapshot Open-Meteo có nhiệt độ, mã thời tiết, mưa và gió; trả `FALLBACK` khi adapter tắt/lỗi |
+
+Flutter chỉ trình bày thời tiết là dữ liệu thật khi `source=OPEN_METEO`. Để bật
+trong môi trường demo, đặt `WEATHER_PRICING_ENABLED=true`; Open-Meteo không cần
+API key. Khi provider lỗi, UI hiển thị trạng thái không khả dụng và backend vẫn
+không áp phụ phí.
+
 ## Đơn cứu hộ
 
 | Method | Path | Quyền | Trạng thái / mục đích |
@@ -111,6 +122,7 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | POST | `/payments/demo/orders/:orderId/adjustment/refund` | Admin | Giả lập hoàn phần chênh lệch đã duyệt |
 | GET | `/payments/orders/:orderId/instructions` | Customer sở hữu đơn | Chỉ khi bật adapter: VietQR mô phỏng đúng payment, VA giả `SBSEPAY...`, `simulationOnly=true` |
 | POST | `/payments/webhooks/sepay` | Public khỏi JWT, bắt buộc HMAC | Nhận giao dịch SePay Test mode; idempotent theo transaction ID |
+| POST | `/payments/webhooks/sepay/payouts` | Public khỏi JWT, HMAC payout riêng | Ghi nhận tiền ra để Admin đối soát; không tự chuyển tiền và không sửa đơn khách |
 | GET | `/wallets/me` | Provider | Số dư/giao dịch demo, không rút tiền thật |
 | POST | `/withdrawals` | Provider | Khóa số dư khả dụng và tạo yêu cầu rút sandbox |
 | GET | `/withdrawals/me` | Provider | Lịch sử yêu cầu và tổng/khóa/khả dụng của ví |
@@ -126,6 +138,8 @@ Chi tiết chat: [CHAT_WORKFLOW.md](CHAT_WORKFLOW.md).
 | GET | `/admin/payment-adjustments/pending-refunds` | Admin | Danh sách hoàn chênh đang chờ |
 | GET | `/admin/withdrawals/pending` | Admin | Yêu cầu rút sandbox đang chờ, cũ trước |
 | PATCH | `/admin/withdrawals/:requestId/resolve` | Admin | Duyệt/từ chối atomic; duyệt tạo một debit, từ chối nhả tiền khóa |
+| GET | `/admin/withdrawal-payouts/pending` | Admin | Payout chờ chuyển khoản hoặc chờ kiểm tra biên lai |
+| PATCH | `/admin/withdrawal-payouts/:payoutId/reconcile` | Admin | Xác nhận/đánh dấu payout sau đối chiếu người nhận, số tiền và biên lai |
 
 Đã có thu bù/hoàn chênh lệch, tranh chấp và yêu cầu rút **sandbox**. Adapter QR/webhook SePay chỉ hỗ trợ Test mode, mặc định tắt, chưa có chuyển/hoàn/rút tiền thật. Không trình bày endpoint demo hay Test mode như giao dịch ngân hàng thật. Xem [SEPAY_TEST_MODE.md](SEPAY_TEST_MODE.md), [FINAL_PRICE_WORKFLOW.md](FINAL_PRICE_WORKFLOW.md) và [WITHDRAWAL_WORKFLOW.md](WITHDRAWAL_WORKFLOW.md).
 
@@ -154,4 +168,4 @@ Cần tăng cường theo thứ tự:
 1. Smoke-load REST đọc-only đã có qua `npm run test:smoke-load`; gateway có test quyền room và định tuyến event. Reconnect WebSocket, upload chậm và Android background GPS vẫn phải nghiệm thu trên thiết bị theo [SYSTEM_VERIFICATION.md](SYSTEM_VERIFICATION.md).
 2. Bổ sung rate limit WebSocket/phân tán nếu chuyển sang nhiều process hoặc public 24/7.
 3. Khi có nhu cầu 24/7: lịch backup tự động ra thiết bị khác, object storage, retention/cleanup file, secret manager và server công khai ổn định. Đây chưa phải yêu cầu bản demo không phí.
-4. Giá theo thời tiết đã được triển khai nhưng mặc định tắt (`WEATHER_PRICING_ENABLED=false`); khi tắt hoặc dịch vụ ngoài lỗi, hệ số luôn là `1.0000`. Xem [WEATHER_PRICING_PLAN.md](WEATHER_PRICING_PLAN.md).
+4. Giá và màn thời tiết dùng chung adapter Open-Meteo nhưng mặc định tắt (`WEATHER_PRICING_ENABLED=false`); khi tắt hoặc dịch vụ ngoài lỗi, hệ số luôn là `1.0000` và Flutter không giả dữ liệu live. Xem [WEATHER_PRICING_PLAN.md](WEATHER_PRICING_PLAN.md).

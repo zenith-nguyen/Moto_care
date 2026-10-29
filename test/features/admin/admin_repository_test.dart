@@ -113,7 +113,85 @@ void main() {
     expect(requests.single.request.amount.value, '75000.00');
     expect(requests.single.provider.name, 'Tho mot');
   });
+
+  test('parses pending payouts awaiting a manual bank transfer', () async {
+    final api = RecordingJsonApi()..listResponse = [_payoutJson()];
+
+    final payouts = await HttpAdminRepository(api)
+        .listPendingWithdrawalPayouts();
+
+    expect(api.lastPath, '/admin/withdrawal-payouts/pending');
+    expect(payouts.single.payoutCode, 'RP7');
+    expect(payouts.single.expectedAmount.value, '50000.00');
+    expect(payouts.single.status, WithdrawalPayoutStatus.awaitingTransfer);
+    expect(payouts.single.provider?.name, 'Tho mot');
+    expect(payouts.single.bankTransferConfirmed, isFalse);
+  });
+
+  test('confirms a payout with the exact bank-transaction payload', () async {
+    final confirmed = _payoutJson()
+      ..['status'] = 'RECONCILED'
+      ..['externalTransactionId'] = 'MBVCB.123456789'
+      ..['observedAmount'] = '50000.00'
+      ..['bankTransferConfirmed'] = true;
+    final api = RecordingJsonApi()..objectResponse = confirmed;
+    final repository = HttpAdminRepository(api);
+
+    await repository.reconcileWithdrawalPayout(
+      payoutId: 9,
+      decision: PayoutReconciliationDecision.confirm,
+      externalTransactionId: '  MBVCB.123456789  ',
+      observedAmount: '50000.00',
+      referenceCode: '  FT26010112345678  ',
+    );
+
+    expect(api.lastPath, '/admin/withdrawal-payouts/9/reconcile');
+    expect(api.lastData, {
+      'decision': 'CONFIRM',
+      'externalTransactionId': 'MBVCB.123456789',
+      'observedAmount': '50000.00',
+      'referenceCode': 'FT26010112345678',
+    });
+  });
+
+  test('refuses to confirm a payout without a bank transaction code', () async {
+    final repository = HttpAdminRepository(RecordingJsonApi());
+
+    expect(
+      () => repository.reconcileWithdrawalPayout(
+        payoutId: 9,
+        decision: PayoutReconciliationDecision.confirm,
+        observedAmount: '50000.00',
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => repository.reconcileWithdrawalPayout(
+        payoutId: 9,
+        decision: PayoutReconciliationDecision.flag,
+      ),
+      throwsArgumentError,
+    );
+  });
 }
+
+Map<String, dynamic> _payoutJson() => {
+  'id': 9,
+  'withdrawalId': 7,
+  'payoutCode': 'RP7',
+  'expectedAmount': '50000.00',
+  'status': 'AWAITING_TRANSFER',
+  'externalTransactionId': null,
+  'externalReferenceCode': null,
+  'observedAmount': null,
+  'reviewReason': null,
+  'reconciledById': null,
+  'reconciledAt': null,
+  'bankTransferConfirmed': false,
+  'createdAt': '2026-10-20T08:00:00.000Z',
+  'updatedAt': '2026-10-20T08:00:00.000Z',
+  'provider': {'id': 3, 'userId': 8, 'name': 'Tho mot'},
+};
 
 Map<String, dynamic> _periodJson() => {
   'from': '2026-10-01T00:00:00.000Z',

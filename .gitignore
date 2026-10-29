@@ -49,3 +49,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Local Google Maps/Places credentials
+/config/maps.local.json
+/ios/Flutter/MapsKeys.xcconfig
+.env
+.env.*

@@ -88,6 +88,57 @@ describe("environment validation", () => {
     expect(result.error?.message).toContain('SEPAY_ACCOUNT_NUMBER');
   });
 
+  it('accepts Live payments only behind every production safeguard', () => {
+    const incomplete = envValidationSchema.validate({
+      ...requiredEnvironment,
+      SEPAY_ENABLED: true,
+      SEPAY_MODE: 'live',
+      SEPAY_BANK: 'Vietcombank',
+      SEPAY_ACCOUNT_NUMBER: '0010000000355',
+      SEPAY_ACCOUNT_HOLDER: 'MOTOCARE',
+      SEPAY_WEBHOOK_SECRET: 's'.repeat(64),
+      SEPAY_LIVE_CONFIRMATION: 'I_UNDERSTAND_THIS_ACCEPTS_REAL_MONEY',
+    });
+    expect(incomplete.error).toBeDefined();
+
+    const enabled = envValidationSchema.validate({
+      ...requiredEnvironment,
+      NODE_ENV: 'production',
+      DEMO_MODE: false,
+      PUBLIC_BASE_URL: 'https://motocare.example.com',
+      ORDER_START_HMAC_SECRET: 'o'.repeat(64),
+      PASSWORD_RESET_HMAC_SECRET: 'p'.repeat(64),
+      SEPAY_ENABLED: true,
+      SEPAY_MODE: 'live',
+      SEPAY_BANK: 'Vietcombank',
+      SEPAY_ACCOUNT_NUMBER: '0010000000355',
+      SEPAY_ACCOUNT_HOLDER: 'MOTOCARE',
+      SEPAY_WEBHOOK_SECRET: 's'.repeat(64),
+      SEPAY_LIVE_CONFIRMATION: 'I_UNDERSTAND_THIS_ACCEPTS_REAL_MONEY',
+    });
+    expect(enabled.error).toBeUndefined();
+  });
+
+  it('keeps payout reconciliation separate and requires its own account and secret', () => {
+    const incomplete = envValidationSchema.validate(
+      { ...requiredEnvironment, SEPAY_PAYOUT_RECONCILIATION_ENABLED: true },
+      { abortEarly: false },
+    );
+    const message = incomplete.error?.message ?? '';
+    expect(message).toContain('SEPAY_PAYOUT_SOURCE_ACCOUNT');
+    expect(message).toContain('SEPAY_PAYOUT_WEBHOOK_SECRET');
+
+    const enabled = envValidationSchema.validate({
+      ...requiredEnvironment,
+      SEPAY_PAYOUT_RECONCILIATION_ENABLED: true,
+      SEPAY_PAYOUT_SOURCE_ACCOUNT: '0010000000355',
+      SEPAY_PAYOUT_CODE_PREFIX: 'RP',
+      SEPAY_PAYOUT_WEBHOOK_SECRET: 'p'.repeat(32),
+    });
+    expect(enabled.error).toBeUndefined();
+    expect(enabled.value.SEPAY_ENABLED).toBe(false);
+  });
+
   it('requires a Firebase project ID only when push delivery is enabled', () => {
     const disabled = envValidationSchema.validate(requiredEnvironment);
     expect(disabled.error).toBeUndefined();

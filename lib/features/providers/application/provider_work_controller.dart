@@ -162,6 +162,13 @@ class ProviderWorkController extends AsyncNotifier<ProviderWorkState> {
 
   Future<void> completeService() async {
     await _withSelected(ProviderWorkAction.completeService, (orderId) async {
+      // The selected order can be one realtime event behind the server. Fetch
+      // the authoritative status before allowing completion so an old button
+      // cannot issue a request while price approval is still pending.
+      final latest = await ref.read(ordersRepositoryProvider).getById(orderId);
+      state = AsyncData(_requireState().copyWith(selectedOrder: latest));
+      if (latest.status != OrderStatus.paid) return;
+
       await ref.read(ordersRepositoryProvider).completeService(orderId);
       await _reloadListsAndSelected();
     });

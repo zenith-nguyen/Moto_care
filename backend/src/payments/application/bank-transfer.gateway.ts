@@ -1,7 +1,7 @@
 export type BankTransferInstructions = {
   provider: 'SEPAY';
-  mode: 'test';
-  simulationOnly: true;
+  mode: 'test' | 'live';
+  simulationOnly: boolean;
   paymentCode: string;
   amount: string;
   bank: string;

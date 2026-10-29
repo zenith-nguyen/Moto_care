@@ -1,12 +1,12 @@
 # MotoCare — hợp đồng nghiệp vụ cho UI
 
-Cập nhật: 2026-10-08. Tài liệu này là điểm bắt đầu cho Cam Thu/Vy khi nối Flutter. Swagger là hợp đồng payload thực tế; tài liệu này giải thích **khi nào** hiển thị màn hình/nút nào. Backend hiện là sandbox demo, không chuyển tiền ngân hàng thật.
+Cập nhật: 2026-10-18. Tài liệu này là điểm bắt đầu cho Cam Thu/Vy khi nối Flutter. Swagger là hợp đồng payload thực tế; tài liệu này giải thích **khi nào** hiển thị màn hình/nút nào. Thu tiền Live chỉ hoạt động khi cấu hình production đầy đủ; payout cho thợ hiện là chuyển khoản ngân hàng thủ công có đối soát, không phải API tự chuyển tiền.
 
 ## Nguyên tắc tích hợp
 
 - REST là nguồn trạng thái chuẩn. Socket.IO chỉ báo có thay đổi; sau reconnect phải tải lại REST.
 - UI không tự chuyển trạng thái, tự tính tiền hay tự suy ra quyền. Luôn dùng response mới nhất từ backend.
-- Tiền là chuỗi decimal VND; không dùng `double`. Hiển thị `sandboxOnly=true` như giao dịch mô phỏng.
+- Tiền là chuỗi decimal VND; không dùng `double`. Dựa vào `simulationOnly`, `payout.status` và `bankTransferConfirmed`, không suy trạng thái ngân hàng từ withdrawal `APPROVED`.
 - `401`: xóa phiên và về đăng nhập. `403`: giữ phiên, báo thiếu quyền. `404`: không tiết lộ tài nguyên của người khác. `409`: tải lại snapshot vì trạng thái vừa thay đổi hoặc có request cạnh tranh. `429`: chờ rồi thử lại.
 - Nhãn phạm vi: **MVP** chạy được; **SANDBOX** mô phỏng tiền; **FUTURE** chưa được phép đưa vào UI như tính năng thật.
 
@@ -26,13 +26,13 @@ Cập nhật: 2026-10-08. Tài liệu này là điểm bắt đầu cho Cam Thu/
 | Provider | Offer đang chờ | `GET /providers/me/offers/pending`, accept/reject | `offer.created|expired` | MVP |
 | Provider | Đến nơi/bắt đầu/GPS theo đơn | `/arrive`, `/start`, location theo order | room `order:{id}` | MVP |
 | Provider | Giá cuối và tranh chấp | `/price-proposals`, `/dispute` | `order.status_changed` | SANDBOX |
-| Provider | Ví và yêu cầu rút | `/wallets/me`, `GET/POST /withdrawals` | Poll khi quay lại màn hình | SANDBOX |
+| Provider | Ví và yêu cầu rút | `/wallets/me`, `GET/POST /withdrawals`; hiển thị payout `AWAITING_TRANSFER`, `MANUAL_REVIEW`, `RECONCILED` | Poll khi quay lại màn hình | MVP |
 | Admin | Duyệt thợ | `/admin/providers/*` | Poll | MVP |
 | Admin | Dashboard/đối soát | `/admin/dashboard/*`, `/admin/reconciliation` | Poll/refresh | SANDBOX |
 | Admin | Hoàn tiền/giá tranh chấp | `/admin/refunds/*`, `/admin/price-disputes/*` | Poll | SANDBOX |
-| Admin | Duyệt rút tiền | `/admin/withdrawals/*` | Poll | SANDBOX |
-| Khách | QR mô phỏng + webhook SePay Test mode | `GET /payments/orders/:id/instructions`; chỉ VA giả `SBSEPAY...`, response `simulationOnly=true`; webhook do SePay gọi | Có, khi backend bật Test mode | OPTIONAL_TEST |
-| Mọi vai trò | SePay Live/chuyển-hoàn-rút ngân hàng thật | Chưa có | Không | FUTURE |
+| Admin | Duyệt rút và đối soát payout | `/admin/withdrawals/*`, `/admin/withdrawal-payouts/*` | Poll | MVP_MANUAL_BANK |
+| Khách | QR SePay Test/Live | `GET /payments/orders/:id/instructions`; `simulationOnly` phân biệt Test/Live; webhook do SePay gọi | Có khi backend bật | OPTIONAL_LIVE |
+| Mọi vai trò | Hoàn/chuyển tiền ngân hàng tự động | Chưa có adapter ngân hàng đủ điều kiện | Không | FUTURE |
 
 ## State machine đơn hàng và hành động UI
 

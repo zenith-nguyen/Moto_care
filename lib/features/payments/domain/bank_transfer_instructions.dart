@@ -3,6 +3,8 @@ import '../../../core/money/money_amount.dart';
 class BankTransferInstructions {
   const BankTransferInstructions({
     required this.paymentCode,
+    required this.mode,
+    required this.simulationOnly,
     required this.amount,
     required this.bank,
     required this.accountNumber,
@@ -12,6 +14,8 @@ class BankTransferInstructions {
   });
 
   final String paymentCode;
+  final String mode;
+  final bool simulationOnly;
   final MoneyAmount amount;
   final String bank;
   final String accountNumber;
@@ -20,12 +24,13 @@ class BankTransferInstructions {
   final Uri qrImageUri;
 
   factory BankTransferInstructions.fromJson(Map<String, dynamic> json) {
-    if (json['provider'] != 'SEPAY' ||
-        json['mode'] != 'test' ||
-        json['simulationOnly'] != true) {
-      throw const FormatException(
-        'Only SePay Test mode simulation instructions are supported.',
-      );
+    final mode = json['mode'];
+    final simulationOnly = json['simulationOnly'];
+    final validModePair =
+        (mode == 'test' && simulationOnly == true) ||
+        (mode == 'live' && simulationOnly == false);
+    if (json['provider'] != 'SEPAY' || !validModePair) {
+      throw const FormatException('Invalid SePay payment mode.');
     }
 
     final paymentCode = _requiredString(json, 'paymentCode');
@@ -35,11 +40,13 @@ class BankTransferInstructions {
     final transferContent = _requiredString(json, 'transferContent');
     final qrImageUri = Uri.tryParse(_requiredString(json, 'qrImageUrl'));
     if (qrImageUri == null || qrImageUri.scheme != 'https') {
-      throw const FormatException('Invalid SePay Test mode QR URL.');
+      throw const FormatException('Invalid SePay QR URL.');
     }
 
     return BankTransferInstructions(
       paymentCode: paymentCode,
+      mode: mode as String,
+      simulationOnly: simulationOnly as bool,
       amount: MoneyAmount.parse(json['amount']),
       bank: bank,
       accountNumber: accountNumber,

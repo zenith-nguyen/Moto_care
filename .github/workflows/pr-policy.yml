@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   branch-policy:
-    name: branch-policy
+    name: PR Policy / branch-policy
     runs-on: ubuntu-latest
     steps:
       - name: Validate source and target branches
