@@ -1,0 +1,8 @@
+# Copy to android/key.properties and fill in real values (never commit the copy).
+# Create a keystore once, keep it outside this repository and back it up:
+#   keytool -genkeypair -v -keystore ../revo-release.jks -storetype JKS \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias revo
+storeFile=../../revo-release.jks
+storePassword=CHANGE_ME
+keyAlias=revo
+keyPassword=CHANGE_ME

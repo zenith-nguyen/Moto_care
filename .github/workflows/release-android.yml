@@ -51,11 +51,28 @@ jobs:
           flutter analyze
           flutter test
 
+      - name: Resolve backend URL
+        shell: bash
+        env:
+          API_BASE_URL: ${{ vars.API_BASE_URL }}
+        run: |
+          if [[ -z "$API_BASE_URL" ]]; then
+            echo "Repository variable API_BASE_URL is not set."
+            echo "Release builds refuse to start without it, so the APKs would be unusable."
+            echo "Set it under Settings > Secrets and variables > Actions > Variables."
+            exit 1
+          fi
+          echo "API_BASE_URL=$API_BASE_URL" >> "$GITHUB_ENV"
+
       - name: Build Customer Android release APK
-        run: flutter build apk --release --flavor customer -t lib/main.dart
+        run: |
+          flutter build apk --release --flavor customer -t lib/main.dart \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
 
       - name: Build Provider Android release APK
-        run: flutter build apk --release --flavor provider -t lib/main_provider.dart
+        run: |
+          flutter build apk --release --flavor provider -t lib/main_provider.dart \
+            --dart-define=API_BASE_URL="$API_BASE_URL"
 
       - name: Prepare release asset
         run: |

@@ -27,7 +27,11 @@ The application supports three roles:
 
 ## Delivery target
 
-The project is a one-month mobile-development course project. Its required final deliverable is an Android APK.
+The project started as a one-month mobile-development course project whose
+required deliverable was an Android APK. It is now feature-complete: the two
+Android apps, the NestJS API, real SePay bank-transfer payments and the admin
+console all run against one deployment (see [Release builds](#release-builds)
+and [`GO-LIVE.md`](GO-LIVE.md)).
 
 ## Documentation
 
@@ -35,10 +39,47 @@ Project guides, contribution rules, AI instructions, CI/CD, and release procedur
 
 ## Run locally
 
+The Android build declares two flavors, so a flavor and an entrypoint are always
+required. `API_BASE_URL` defaults to `http://10.0.2.2:3000` (the host machine as
+seen from an Android emulator) in debug builds.
+
 ```bash
 flutter pub get
-flutter run
+
+# Customer app
+flutter run --flavor customer -t lib/main.dart
+
+# Provider (mechanic) app
+flutter run --flavor provider -t lib/main_provider.dart
 ```
+
+The admin console is not a separate app: signing in with an `ADMIN` account
+inside the customer app opens the admin shell.
+
+## Release builds
+
+Release APKs are signed with the keystore described by `android/key.properties`
+(git-ignored, created from [`android/key.properties.example`](android/key.properties.example)).
+Without that file the release build falls back to the debug keystore, which is
+fine for sideloading but not for Google Play.
+
+```bash
+flutter build apk --release --flavor customer -t lib/main.dart \
+  --dart-define=API_BASE_URL=https://your-backend.example.com
+
+flutter build apk --release --flavor provider -t lib/main_provider.dart \
+  --dart-define=API_BASE_URL=https://your-backend.example.com
+```
+
+Artifacts land in `build/app/outputs/flutter-apk/`. `API_BASE_URL` is mandatory
+in release mode and must be HTTPS; the app refuses to start without it.
+
+Pushing a `v*.*.*` tag that matches `pubspec.yaml` runs
+[`release-android.yml`](.github/workflows/release-android.yml), which builds both
+APKs and attaches them to a public GitHub release. It reads the backend URL from
+the `API_BASE_URL` repository variable and fails if that variable is missing.
+Keep the keystore and its passwords out of the repository, and remember that a
+published APK exposes whichever backend URL it was built with.
 
 ## Deployment and go-live
 
@@ -98,16 +139,17 @@ Commit the source logo, splash configuration and generated Android/iOS resources
 no duplicate source logos are kept in `assets/images/`. Stop and rebuild the app
 to see native splash changes; hot reload does not update them.
 
-The login screen has a temporary DEV bypass: pressing `Đăng nhập` opens home
-without validating credentials. Registration requires a valid phone number, a strong password and terms
-consent; submitting currently shows an availability notice.
+Login calls `POST /auth/login` and stores the returned tokens in secure storage;
+the session controller then routes to the customer, provider or admin shell by
+role. Registration requires a valid phone number, a strong password and terms
+consent, and creates the account through `POST /auth/register`.
 
-The login screen's recovery link opens `/forgot-password`, an email-only form.
-It supports email autofill, keyboard submission, large text and scrolling, but does
-not send email or claim that a code has been sent. Its email recovery API and
-account email association need to be provided by the backend before release.
-The registration terms and
-privacy links show update notices until the policy content is available.
+The login screen's recovery link opens `/forgot-password`, an email-only form
+backed by `POST /auth/password/forgot` and `POST /auth/password/reset`: the
+backend emails a one-time code over SMTP, and the same screen exchanges that
+code for a new password. The form supports email autofill, keyboard submission,
+large text and scrolling. The registration terms and privacy links show update
+notices until the policy content is available.
 
 ## Home UI
 
