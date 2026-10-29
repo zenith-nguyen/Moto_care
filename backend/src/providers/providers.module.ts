@@ -12,9 +12,10 @@ import { ProviderSkill } from './provider-skill.entity';
 import { Skill } from './skill.entity';
 import { ProviderProfilesService } from './provider-profiles.service';
 import { AdminProviderDirectoryController, ProviderDirectoryController } from './provider-directory.controller';
+import { OrdersModule } from '../orders/orders.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Provider, ProviderSkill, Skill, OrderOffer, Order, User]), RealtimeModule],
+  imports: [TypeOrmModule.forFeature([Provider, ProviderSkill, Skill, OrderOffer, Order, User]), RealtimeModule, OrdersModule],
   controllers: [ProvidersController, ProviderApplicationsController, ProviderDirectoryController, AdminProviderDirectoryController],
   providers: [ProvidersService, ProviderProfilesService],
   exports: [ProviderProfilesService],

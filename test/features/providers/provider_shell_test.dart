@@ -55,11 +55,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tài khoản').last);
     await tester.pumpAndSettle();
-    expect(find.text('Hồ sơ nghề nghiệp'), findsOneWidget);
-    expect(find.text('Cứu hộ xe máy tại TP.HCM'), findsOneWidget);
-    expect(find.text('4 năm'), findsOneWidget);
-    expect(find.text('Vá lốp'), findsOneWidget);
-    expect(find.byTooltip('Chỉnh sửa hồ sơ Thợ'), findsOneWidget);
+    expect(find.text('Thợ cứu hộ REVO'), findsOneWidget);
+    expect(find.textContaining('4 năm kinh nghiệm'), findsOneWidget);
+    expect(find.text('Sửa hồ sơ'), findsOneWidget);
   });
 
   testWidgets('pending provider sees the saved approval state', (tester) async {

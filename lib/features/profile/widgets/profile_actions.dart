@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/application/session_controller.dart';
 import '../providers/profile_actions_provider.dart';
 import '../providers/profile_provider.dart';
 import '../services/profile_account_service.dart';
@@ -83,8 +84,17 @@ class ProfileActions {
         !context.mounted) {
       return;
     }
+    // signOut() flips the session to signed-out synchronously, so navigate
+    // right away and let the remote/token cleanup finish in the background.
+    final router = GoRouter.of(context);
+    final signOut = ref.read(sessionControllerProvider.notifier).signOut();
     ref.read(profileProvider.notifier).clearSession();
-    context.go('/login');
+    router.go('/login');
+    try {
+      await signOut;
+    } catch (_) {
+      // Best-effort: the local session is already cleared.
+    }
   }
 
   Future<void> deleteAccount() async {

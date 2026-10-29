@@ -37,6 +37,8 @@ import { ReviewsService } from '../src/reviews/reviews.service';
 import { OrdersService } from '../src/orders/orders.service';
 import { OrdersQueryService } from '../src/orders/application/orders-query.service';
 import { Provider } from '../src/providers/provider.entity';
+import { ProviderSkill } from '../src/providers/provider-skill.entity';
+import { Skill } from '../src/providers/skill.entity';
 import { ProvidersService } from '../src/providers/providers.service';
 import { User } from '../src/users/user.entity';
 import { UsersService } from '../src/users/users.service';
@@ -95,7 +97,7 @@ describe('Orders and matching on PostGIS', () => {
       username: process.env.DATABASE_USER,
       password: process.env.DATABASE_PASSWORD,
       database: testDatabase,
-      entities: [User, Provider, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, WithdrawalPayout, SepayPayoutWebhookEvent, Review, PasswordResetCode, Vehicle],
+      entities: [User, Provider, ProviderSkill, Skill, IncidentType, Order, OrderOffer, OrderPriceProposal, Payment, PaymentAdjustment, Message, Wallet, WalletTransaction, WithdrawalRequest, WithdrawalPayout, SepayPayoutWebhookEvent, Review, PasswordResetCode, Vehicle],
       synchronize: false,
       logging: false,
     });
@@ -130,6 +132,7 @@ describe('Orders and matching on PostGIS', () => {
       database.getRepository(OrderOffer),
       database.getRepository(User),
       config,
+      matching,
     );
     passwordRecovery = new PasswordRecoveryService(
       database,
@@ -441,7 +444,7 @@ describe('Orders and matching on PostGIS', () => {
     await expect(messages.list(created.id, outsider.user.id)).rejects.toBeInstanceOf(NotFoundException);
     const providerService = new ProvidersService(
       database.getRepository(Provider), database.getRepository(OrderOffer), database.getRepository(User),
-      new ConfigService({ PROVIDER_LOCATION_MAX_AGE_SECONDS: 120 }), database.getRepository(Order),
+      new ConfigService({ PROVIDER_LOCATION_MAX_AGE_SECONDS: 120 }), matching, database.getRepository(Order),
       { providerLocation } as unknown as RealtimePublisher,
     );
     await providerService.updateOrderLocation(assigned.user.id, created.id, { latitude: 10.778, longitude: 106.702 });
@@ -881,7 +884,12 @@ describe('Orders and matching on PostGIS', () => {
     const offers = await providersService.pendingOffers(selected.user.id);
     expect(offers).toHaveLength(1);
     expect(offers[0].orderId).toBe(result.id);
-    expect(await providersService.pendingOffers(other.user.id)).toHaveLength(0);
+    // Broadcast matching offers the order to every nearby provider, but each
+    // provider only sees their own offer.
+    const otherOffers = await providersService.pendingOffers(other.user.id);
+    expect(otherOffers).toHaveLength(1);
+    expect(otherOffers[0].orderId).toBe(result.id);
+    expect(otherOffers[0].id).not.toBe(offers[0].id);
     await providersService.updateStatus(selected.user.id, false);
     await database.getRepository(Provider).update(selected.provider.id, { lastSeenAt: new Date(Date.now() - 300_000) });
     await expect(providersService.updateStatus(selected.user.id, true)).rejects.toThrow();

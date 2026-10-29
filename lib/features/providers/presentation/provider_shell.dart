@@ -40,8 +40,6 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
   bool _offerDialogOpen = false;
   bool _offersInitialized = false;
 
-  static const _titles = ['Tổng quan', 'Đơn cứu hộ', 'Ví sandbox', 'Tài khoản'];
-
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionControllerProvider);
@@ -63,26 +61,17 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
       backgroundColor: _index == 0
           ? RevoBrandColors.surface
           : RevoBrandColors.bg,
-      appBar: AppBar(
-        title: Text(_titles[_index]),
-        actions: [
-          IconButton(
-            tooltip: 'Tải lại dữ liệu',
-            onPressed: _index == 3
-                ? () => ref.invalidate(professionalProfileProvider)
-                : _refreshCurrent,
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-        ],
-      ),
-      body: IndexedStack(
-        index: _index,
-        children: const [
-          ProviderHomeTab(),
-          _ProviderOrdersPage(),
-          _ProviderWalletPage(),
-          _ProviderAccountPage(),
-        ],
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(
+          index: _index,
+          children: const [
+            ProviderHomeTab(),
+            _ProviderOrdersPage(),
+            _ProviderWalletPage(),
+            _ProviderAccountPage(),
+          ],
+        ),
       ),
       bottomNavigationBar: _RevoBottomNav(
         currentIndex: _index,
@@ -94,14 +83,6 @@ class _ProviderShellState extends ConsumerState<ProviderShell> {
         },
       ),
     );
-  }
-
-  void _refreshCurrent() {
-    if (_index == 2) {
-      ref.read(providerWalletControllerProvider.notifier).refresh();
-    } else {
-      ref.read(providerWorkControllerProvider.notifier).refresh();
-    }
   }
 
   void _maybeShowIncomingOffer(ProviderWorkState? state) {
@@ -338,8 +319,15 @@ class _PendingProviderApprovalPage extends ConsumerWidget {
   }
 }
 
-enum _OrderFilter { all, active, done }
+enum _OrderFilter { all, active, completed, cancelled }
 
+const _ordersSecondary = RevoBrandColors.inactive;
+const _ordersPale = RevoBrandColors.surfaceSoft;
+
+/// Provider Orders tab rebuilt to match the final REVO mechanic reference:
+/// pill tabs with live counts, search field, status chips and a sort popup.
+/// Presentation only: the list is still the real [providerWorkControllerProvider]
+/// orders and each card keeps the existing detail-route navigation.
 class _ProviderOrdersPage extends ConsumerStatefulWidget {
   const _ProviderOrdersPage();
 
@@ -349,19 +337,58 @@ class _ProviderOrdersPage extends ConsumerStatefulWidget {
 }
 
 class _ProviderOrdersPageState extends ConsumerState<_ProviderOrdersPage> {
+  final _search = TextEditingController();
+  final _searchFocus = FocusNode();
   _OrderFilter _filter = _OrderFilter.all;
+  bool _sortNewest = true;
 
-  bool _matches(OrderSummary order) => switch (_filter) {
+  @override
+  void dispose() {
+    _search.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
+
+  bool _inFilter(OrderSummary order, _OrderFilter filter) => switch (filter) {
     _OrderFilter.all => true,
     _OrderFilter.active => providerOrderIsActive(order.status),
-    _OrderFilter.done => order.status.isTerminal,
+    _OrderFilter.completed =>
+      order.status == OrderStatus.completed || order.status == OrderStatus.paid,
+    _OrderFilter.cancelled =>
+      order.status == OrderStatus.cancelled ||
+          order.status == OrderStatus.refundPending ||
+          order.status == OrderStatus.refunded,
   };
 
-  String _label(_OrderFilter filter) => switch (filter) {
-    _OrderFilter.all => 'Tất cả',
-    _OrderFilter.active => 'Đang xử lý',
-    _OrderFilter.done => 'Hoàn tất',
-  };
+  bool _matchesSearch(OrderSummary order) {
+    final key = _search.text.trim().toLowerCase();
+    if (key.isEmpty) return true;
+    final haystack = '${order.code} ${providerOrderStatusLabel(order.status)}'
+        .toLowerCase();
+    return haystack.contains(key);
+  }
+
+  bool get _filtering =>
+      _filter != _OrderFilter.all || _search.text.trim().isNotEmpty;
+
+  void _clear() => setState(() {
+    _filter = _OrderFilter.all;
+    _search.clear();
+  });
+
+  static const _chipLabels = [
+    (_OrderFilter.all, 'Tất cả'),
+    (_OrderFilter.active, 'Đang làm'),
+    (_OrderFilter.completed, 'Hoàn thành'),
+    (_OrderFilter.cancelled, 'Đã hủy'),
+  ];
+
+  // Pill tabs mirror the reference: "Đã hủy" lives only in the chip row.
+  static const _tabLabels = [
+    (_OrderFilter.all, 'Tất cả'),
+    (_OrderFilter.active, 'Đang làm'),
+    (_OrderFilter.completed, 'Hoàn thành'),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -373,38 +400,53 @@ class _ProviderOrdersPageState extends ConsumerState<_ProviderOrdersPage> {
         onRetry: () => ref.invalidate(providerWorkControllerProvider),
       ),
       data: (state) {
-        final filtered = state.orders.where(_matches).toList(growable: false);
+        final all = state.orders;
+        final shown =
+            all
+                .where((o) => _inFilter(o, _filter) && _matchesSearch(o))
+                .toList()
+              ..sort(
+                (a, b) => _sortNewest
+                    ? b.createdAt.compareTo(a.createdAt)
+                    : a.createdAt.compareTo(b.createdAt),
+              );
         return RefreshIndicator(
           onRefresh: () =>
               ref.read(providerWorkControllerProvider.notifier).refresh(),
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(20),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             children: [
-              Wrap(
-                spacing: 8,
+              _pillTabs(all),
+              const SizedBox(height: 12),
+              _banner(),
+              const SizedBox(height: 12),
+              _searchBar(),
+              const SizedBox(height: 10),
+              _chipsRow(),
+              const SizedBox(height: 10),
+              Row(
                 children: [
-                  for (final filter in _OrderFilter.values)
-                    ChoiceChip(
-                      label: Text(_label(filter)),
-                      selected: _filter == filter,
-                      onSelected: (_) => setState(() => _filter = filter),
+                  Expanded(
+                    child: Text(
+                      '${shown.length} đơn hàng',
+                      style: RevoTypography.caption.copyWith(
+                        fontSize: 12,
+                        color: _ordersSecondary,
+                      ),
                     ),
+                  ),
+                  _sortButton(),
                 ],
               ),
-              const SizedBox(height: 16),
-              if (filtered.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.only(top: 40),
-                  child: _EmptyCard(
-                    icon: Icons.receipt_long_outlined,
-                    text: 'Chưa có đơn phù hợp.',
-                  ),
-                )
+              const SizedBox(height: 10),
+              if (shown.isEmpty)
+                _ordersEmpty(all.isNotEmpty)
               else
-                for (final order in filtered) ...[
+                for (final order in shown) ...[
                   _OrderCard(order: order),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                 ],
             ],
           ),
@@ -412,52 +454,376 @@ class _ProviderOrdersPageState extends ConsumerState<_ProviderOrdersPage> {
       },
     );
   }
+
+  Widget _pillTabs(List<OrderSummary> all) {
+    int count(_OrderFilter f) => all.where((o) => _inFilter(o, f)).length;
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: _ordersPale,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          for (final (f, label) in _tabLabels)
+            Expanded(
+              child: Semantics(
+                selected: _filter == f,
+                button: true,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(22),
+                  onTap: () => setState(() => _filter = f),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 11,
+                      horizontal: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _filter == f
+                          ? RevoBrandColors.primary
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: Text(
+                      '$label (${count(f)})',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: _filter == f
+                            ? FontWeight.w600
+                            : FontWeight.w500,
+                        color: _filter == f ? Colors.white : _ordersSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _banner() => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: _ordersPale,
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quản lý công việc của bạn',
+          style: RevoTypography.label.copyWith(fontSize: 14),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'Theo dõi các đơn đang xử lý và lịch sử công việc.',
+          style: RevoTypography.caption.copyWith(
+            fontSize: 11.5,
+            color: _ordersSecondary,
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _searchBar() => TextField(
+    controller: _search,
+    focusNode: _searchFocus,
+    onChanged: (_) => setState(() {}),
+    textInputAction: TextInputAction.search,
+    style: const TextStyle(fontSize: 13),
+    decoration: InputDecoration(
+      hintText: 'Tìm kiếm theo mã đơn hoặc trạng thái...',
+      hintMaxLines: 2,
+      filled: true,
+      fillColor: RevoBrandColors.light,
+      prefixIcon: const Icon(
+        Icons.search_rounded,
+        size: 22,
+        color: _ordersSecondary,
+      ),
+      suffixIcon: _search.text.isEmpty
+          ? null
+          : IconButton(
+              tooltip: 'Xóa từ khóa',
+              onPressed: () => setState(_search.clear),
+              icon: const Icon(
+                Icons.close_rounded,
+                size: 20,
+                color: _ordersSecondary,
+              ),
+            ),
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: RevoBrandColors.border, width: .8),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: RevoBrandColors.primary),
+      ),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+    ),
+  );
+
+  Widget _chipsRow() => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    child: Row(
+      children: [
+        for (final (f, label) in _chipLabels) ...[
+          ChoiceChip(
+            label: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: _filter == f ? Colors.white : RevoBrandColors.ink,
+              ),
+            ),
+            showCheckmark: false,
+            selected: _filter == f,
+            selectedColor: RevoBrandColors.primary,
+            backgroundColor: _ordersPale,
+            side: BorderSide.none,
+            onSelected: (_) => setState(() => _filter = f),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ],
+    ),
+  );
+
+  Widget _sortButton() => PopupMenuButton<bool>(
+    tooltip: 'Sắp xếp',
+    initialValue: _sortNewest,
+    onSelected: (v) => setState(() => _sortNewest = v),
+    itemBuilder: (_) => const [
+      PopupMenuItem(value: true, child: Text('Mới nhất')),
+      PopupMenuItem(value: false, child: Text('Cũ nhất')),
+    ],
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: RevoBrandColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: RevoBrandColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.swap_vert_rounded,
+            size: 18,
+            color: RevoBrandColors.ink,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            _sortNewest ? 'Mới nhất' : 'Cũ nhất',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: RevoBrandColors.ink,
+            ),
+          ),
+          const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 18,
+            color: RevoBrandColors.ink,
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _ordersEmpty(bool hasAny) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: RevoBrandColors.surface,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: RevoBrandColors.border, width: .7),
+    ),
+    child: Column(
+      children: [
+        const Icon(Icons.search_off_rounded, size: 28, color: _ordersSecondary),
+        const SizedBox(height: 8),
+        Text(
+          'Chưa có đơn hàng phù hợp',
+          textAlign: TextAlign.center,
+          style: RevoTypography.label.copyWith(fontSize: 14),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          hasAny
+              ? 'Thử thay đổi từ khóa hoặc bộ lọc.'
+              : 'Các đơn bạn nhận sẽ hiển thị tại đây.',
+          textAlign: TextAlign.center,
+          style: RevoTypography.caption.copyWith(color: _ordersSecondary),
+        ),
+        if (_filtering) ...[
+          const SizedBox(height: 8),
+          TextButton(onPressed: _clear, child: const Text('Xóa bộ lọc')),
+        ],
+      ],
+    ),
+  );
 }
 
+/// Richer order card: status badge + money block. Vehicle plate and address are
+/// intentionally omitted because the repo [OrderSummary] model does not expose
+/// those fields (never invented). Keeps the real detail-route navigation.
 class _OrderCard extends StatelessWidget {
   const _OrderCard({required this.order});
 
   final OrderSummary order;
 
+  (String, Color, Color) get _badge {
+    final label = providerOrderStatusLabel(order.status);
+    return switch (order.status) {
+      OrderStatus.completed || OrderStatus.paid => (
+        label,
+        RevoBrandColors.successDark,
+        RevoBrandColors.successSoft,
+      ),
+      OrderStatus.cancelled ||
+      OrderStatus.refundPending ||
+      OrderStatus.refunded => (
+        label,
+        RevoBrandColors.dangerDark,
+        RevoBrandColors.dangerSoft,
+      ),
+      _ => (label, RevoBrandColors.primary, RevoBrandColors.surfaceSoft),
+    };
+  }
+
+  Widget _money() {
+    // Money semantics by lifecycle: earning when settled, quote while active,
+    // explicit "no income" for cancelled/refunded orders.
+    if (order.status == OrderStatus.cancelled ||
+        order.status == OrderStatus.refundPending ||
+        order.status == OrderStatus.refunded) {
+      return Text(
+        'Không ghi nhận thu nhập',
+        textAlign: TextAlign.end,
+        style: RevoTypography.caption.copyWith(
+          fontSize: 11,
+          color: _ordersSecondary,
+        ),
+      );
+    }
+    final earned =
+        order.status == OrderStatus.completed ||
+        order.status == OrderStatus.paid;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          earned ? 'Thu nhập' : 'Báo giá',
+          style: RevoTypography.caption.copyWith(
+            fontSize: 11,
+            color: _ordersSecondary,
+          ),
+        ),
+        Text(
+          formatProviderMoney(order.finalPrice ?? order.estimatedPrice),
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: RevoBrandColors.ink,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final (badgeLabel, badgeColor, badgeBg) = _badge;
     return Card(
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         onTap: () => context.push('/provider/orders/${order.id}'),
         child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
+          padding: const EdgeInsets.all(14),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: badgeBg,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  Icons.receipt_long_rounded,
+                  color: badgeColor,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       order.code,
                       style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: RevoBrandColors.ink,
                       ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _StatusChip(status: order.status),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(formatProviderDateTime(order.createdAt)),
-                  Text(
-                    formatProviderMoney(
-                      order.finalPrice ?? order.estimatedPrice,
+                    const SizedBox(height: 3),
+                    Text(
+                      formatProviderDateTime(order.createdAt),
+                      style: RevoTypography.caption.copyWith(
+                        fontSize: 12,
+                        color: _ordersSecondary,
+                      ),
                     ),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 112),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badgeBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        badgeLabel,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: badgeColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _money(),
+                  ],
+                ),
               ),
             ],
           ),
@@ -787,7 +1153,6 @@ class _ProviderWalletPageState extends ConsumerState<_ProviderWalletPage> {
             const SizedBox(height: 12),
             TextField(
               controller: controller,
-              autofocus: true,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -1253,211 +1618,570 @@ class _ProviderAccountPage extends ConsumerWidget {
     );
   }
 
+  void _comingSoon(BuildContext context, [String? message]) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message ?? 'Tính năng sẽ sớm có.')));
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(sessionControllerProvider);
     final user = state is SessionSignedIn ? state.session.user : null;
     final profile = ref.watch(professionalProfileProvider);
     final weekly = ref.watch(providerWeeklyStatsProvider);
-    final tierName = _providerTierName(profile.asData?.value.tier);
+    final profileValue = profile.asData?.value;
+    final tierName = _providerTierName(profileValue?.tier);
+    final rating = weekly.asData?.value.averageRating;
+    final reviewCount = weekly.asData?.value.reviewCount ?? 0;
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       children: [
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [RevoBrandColors.primary, RevoBrandColors.primaryDeep],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x33317CBB),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white24,
-                    child: Icon(
-                      Icons.handyman_rounded,
-                      size: 30,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user?.name ?? 'Tài khoản thợ',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                          ),
-                        ),
-                        if (user?.phone != null)
-                          Text(
-                            user!.phone!,
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                        if (tierName != null) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white24,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.workspace_premium_rounded,
-                                  size: 14,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Hạng $tierName',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              weekly.when(
-                loading: () =>
-                    _HeaderStatRow(orders: '—', rating: '—', income: '—'),
-                error: (_, _) =>
-                    _HeaderStatRow(orders: '—', rating: '—', income: '—'),
-                data: (s) => _HeaderStatRow(
-                  orders: '${s.completedOrders}',
-                  rating: s.averageRating == null
-                      ? '—'
-                      : s.averageRating!.toStringAsFixed(1),
-                  income: formatProviderMoney(s.creditedAmount),
-                ),
-              ),
-            ],
-          ),
+        _profileCard(
+          context,
+          ref,
+          user: user,
+          profile: profileValue,
+          rating: rating,
+          reviewCount: reviewCount,
+          tierName: tierName,
         ),
-        const SizedBox(height: 16),
-        profile.when(
-          loading: () =>
-              const Card(child: ListTile(title: Text('Đang tải hồ sơ Thợ...'))),
-          error: (_, _) => Card(
-            child: ListTile(
-              title: const Text('Chưa tải được hồ sơ Thợ'),
-              subtitle: const Text('Kiểm tra kết nối rồi tải lại.'),
-              trailing: IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () => ref.invalidate(professionalProfileProvider),
-              ),
-            ),
+        const SizedBox(height: 12),
+        _statsCard(weekly),
+        const SizedBox(height: 14),
+        _quickActions(context, ref, profileValue),
+        _group('Hồ sơ & năng lực', [
+          _row(
+            context,
+            Icons.person_outline,
+            'Thông tin hồ sơ',
+            profileValue == null
+                ? () => _comingSoon(context, 'Đang tải hồ sơ Thợ...')
+                : () => _editProfile(context, ref, profileValue),
+            subtitle: 'Giới thiệu, kinh nghiệm & bán kính nhận đơn',
           ),
-          data: (value) => Card(
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.verified_user_outlined),
-                  title: const Text('Hồ sơ nghề nghiệp'),
-                  subtitle: Text(
-                    value.bio.isEmpty ? 'Chưa có giới thiệu' : value.bio,
-                  ),
-                  trailing: IconButton(
-                    tooltip: 'Chỉnh sửa hồ sơ Thợ',
-                    icon: const Icon(Icons.edit_outlined),
-                    onPressed: () => _editProfile(context, ref, value),
-                  ),
-                ),
-                ListTile(
-                  title: const Text('Kinh nghiệm'),
-                  trailing: Text('${value.yearsOfExperience} năm'),
-                ),
-                ListTile(
-                  title: const Text('Bán kính nhận đơn'),
-                  trailing: Text('${value.serviceRadiusKm} km'),
-                ),
-                ListTile(
-                  title: const Text('Dịch vụ / kỹ năng'),
-                  subtitle: Text(
-                    value.skills.isEmpty
-                        ? 'Chưa có dịch vụ được đăng ký'
-                        : value.skills.join(', '),
-                  ),
-                  trailing: IconButton(
-                    tooltip: 'Quản lý dịch vụ',
-                    icon: const Icon(Icons.tune_rounded),
-                    onPressed: () => _manageSkills(context, ref, value),
-                  ),
-                ),
-              ],
-            ),
+          _row(
+            context,
+            Icons.build_outlined,
+            'Quản lý dịch vụ',
+            profileValue == null
+                ? () => _comingSoon(context, 'Đang tải hồ sơ Thợ...')
+                : () => _manageSkills(context, ref, profileValue),
+            subtitle: profileValue == null || profileValue.skills.isEmpty
+                ? 'Chọn dịch vụ bạn nhận'
+                : profileValue.skills.join(', '),
           ),
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.insights_rounded),
-                title: const Text('Thống kê & đánh giá'),
-                subtitle: const Text('Thu nhập tuần, đánh giá và hạng thợ'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/provider/stats'),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.notifications_rounded),
-                title: const Text('Thông báo'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/provider/notifications'),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.support_agent_rounded),
-                title: const Text('Hỗ trợ'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => context.push('/provider/support'),
-              ),
-            ],
+          _row(
+            context,
+            Icons.workspace_premium_outlined,
+            'Hạng thợ & quyền lợi',
+            () => context.push('/provider/stats'),
+            subtitle: tierName == null ? 'Tiến độ lên hạng' : 'Hạng $tierName',
           ),
-        ),
-        const SizedBox(height: 24),
-        OutlinedButton.icon(
-          onPressed: () =>
+        ]),
+        _group('Hoạt động công việc', [
+          _row(
+            context,
+            Icons.insights_rounded,
+            'Thống kê & đánh giá',
+            () => context.push('/provider/stats'),
+            subtitle: 'Thu nhập tuần, đánh giá và hạng thợ',
+          ),
+        ]),
+        _group('Tài chính', [
+          _row(
+            context,
+            Icons.account_balance_wallet_outlined,
+            'Ví & lịch sử giao dịch',
+            () => _comingSoon(context, 'Mở tab Ví để xem số dư và giao dịch.'),
+          ),
+          _row(
+            context,
+            Icons.payments_outlined,
+            'Rút tiền',
+            () => _comingSoon(context, 'Mở tab Ví để gửi yêu cầu rút tiền.'),
+          ),
+        ]),
+        _group('Hệ thống', [
+          _row(
+            context,
+            Icons.notifications_none_rounded,
+            'Thông báo',
+            () => context.push('/provider/notifications'),
+          ),
+          _row(
+            context,
+            Icons.support_agent_rounded,
+            'Trợ giúp & hỗ trợ',
+            () => context.push('/provider/support'),
+          ),
+          _row(
+            context,
+            Icons.info_outline_rounded,
+            'Giới thiệu REVO',
+            () => _comingSoon(context),
+          ),
+          _row(
+            context,
+            Icons.description_outlined,
+            'Điều khoản & cam kết',
+            () => _comingSoon(context),
+          ),
+        ]),
+        const SizedBox(height: 12),
+        _LogoutCard(
+          onLogout: () =>
               ref.read(sessionControllerProvider.notifier).signOut(),
-          icon: const Icon(Icons.logout_rounded),
-          label: const Text('Đăng xuất'),
         ),
+        const SizedBox(height: 10),
+        const Text(
+          'Dữ liệu hồ sơ và thống kê lấy trực tiếp từ hệ thống REVO.',
+          textAlign: TextAlign.center,
+          style: RevoTypography.caption,
+        ),
+        const SizedBox(height: 12),
       ],
     );
   }
+
+  Widget _profileCard(
+    BuildContext context,
+    WidgetRef ref, {
+    required AppUser? user,
+    required ProfessionalProfile? profile,
+    required double? rating,
+    required int reviewCount,
+    required String? tierName,
+  }) {
+    final name = user?.name ?? 'Tài khoản thợ';
+    final verified = user != null;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFF1F7FC)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFD9E8F5)),
+        boxShadow: RevoShadows.soft,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 68,
+                height: 68,
+                decoration: const BoxDecoration(
+                  color: RevoBrandColors.surfaceSoft,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  _initials(name),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: RevoBrandColors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: RevoBrandColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    const Text(
+                      'Thợ cứu hộ REVO',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: RevoBrandColors.textSubtle,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        if (verified)
+                          const Icon(
+                            Icons.verified_rounded,
+                            color: RevoBrandColors.primary,
+                            size: 16,
+                          ),
+                        Text(
+                          verified ? 'Đã xác minh' : 'Chờ xác minh',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: RevoBrandColors.primary,
+                          ),
+                        ),
+                        const Icon(
+                          Icons.star_rounded,
+                          color: RevoBrandColors.warning,
+                          size: 16,
+                        ),
+                        Text(
+                          rating == null
+                              ? '— ($reviewCount)'
+                              : '${rating.toStringAsFixed(1)} ($reviewCount)',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: RevoBrandColors.textSubtle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              const Icon(
+                Icons.handyman_outlined,
+                size: 17,
+                color: RevoBrandColors.primary,
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  profile == null
+                      ? 'Đang tải hồ sơ nghề nghiệp...'
+                      : '${profile.yearsOfExperience} năm kinh nghiệm • '
+                            'Bán kính ${profile.serviceRadiusKm} km',
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: RevoBrandColors.textSubtle,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                borderRadius: BorderRadius.circular(RevoRadius.pill),
+                onTap: profile == null
+                    ? () => _comingSoon(context, 'Đang tải hồ sơ Thợ...')
+                    : () => _editProfile(context, ref, profile),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(RevoRadius.pill),
+                    border: Border.all(color: const Color(0xFFCFE2F3)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Sửa hồ sơ',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: RevoBrandColors.primary,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 16,
+                        color: RevoBrandColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statsCard(AsyncValue<ProviderWeeklyStats> weekly) {
+    final stats = weekly.asData?.value;
+    final orders = stats == null ? '—' : '${stats.completedOrders}';
+    final rating = stats?.averageRating == null
+        ? '—'
+        : stats!.averageRating!.toStringAsFixed(1);
+    final income = stats == null
+        ? '—'
+        : formatProviderMoney(stats.creditedAmount);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 10),
+      decoration: BoxDecoration(
+        color: RevoBrandColors.surface,
+        borderRadius: BorderRadius.circular(RevoRadius.md),
+        border: Border.all(color: RevoBrandColors.border),
+      ),
+      child: Column(
+        children: [
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _stat(orders, 'Đơn hoàn thành')),
+                const VerticalDivider(
+                  width: 1,
+                  thickness: .7,
+                  color: RevoBrandColors.border,
+                ),
+                Expanded(child: _stat(rating, 'Điểm đánh giá')),
+                const VerticalDivider(
+                  width: 1,
+                  thickness: .7,
+                  color: RevoBrandColors.border,
+                ),
+                Expanded(child: _stat(income, 'Thu nhập tuần')),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Số liệu tuần này theo giờ Việt Nam',
+            textAlign: TextAlign.center,
+            style: RevoTypography.caption.copyWith(fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _stat(String value, String label) => Column(
+    children: [
+      FittedBox(
+        child: Text(
+          value,
+          style: const TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.w700,
+            color: RevoBrandColors.ink,
+          ),
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        label,
+        textAlign: TextAlign.center,
+        style: RevoTypography.caption.copyWith(fontSize: 11),
+      ),
+    ],
+  );
+
+  Widget _quickActions(
+    BuildContext context,
+    WidgetRef ref,
+    ProfessionalProfile? profile,
+  ) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _quick(
+        Icons.bar_chart_rounded,
+        'Thống kê',
+        () => context.push('/provider/stats'),
+      ),
+      _quick(
+        Icons.notifications_none_rounded,
+        'Thông báo',
+        () => context.push('/provider/notifications'),
+      ),
+      _quick(
+        Icons.build_outlined,
+        'Dịch vụ',
+        profile == null
+            ? () => _comingSoon(context, 'Đang tải hồ sơ Thợ...')
+            : () => _manageSkills(context, ref, profile),
+      ),
+      _quick(
+        Icons.support_agent_rounded,
+        'Hỗ trợ',
+        () => context.push('/provider/support'),
+      ),
+    ],
+  );
+
+  Widget _quick(IconData icon, String label, VoidCallback onTap) => Expanded(
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: const BoxDecoration(
+                color: RevoBrandColors.surfaceSoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: RevoBrandColors.primary, size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  Widget _group(String title, List<Widget> rows) => Padding(
+    padding: const EdgeInsets.only(top: 20, bottom: 2),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            height: 1.3,
+            color: RevoBrandColors.ink,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: RevoBrandColors.surface,
+            borderRadius: BorderRadius.circular(RevoRadius.md),
+            border: Border.all(color: RevoBrandColors.border),
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < rows.length; i++) ...[
+                if (i > 0) const Divider(height: 1, thickness: .7, indent: 48),
+                rows[i],
+              ],
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+
+  Widget _row(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    String? subtitle,
+  }) => Material(
+    type: MaterialType.transparency,
+    child: ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      minLeadingWidth: 36,
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: const BoxDecoration(
+          color: RevoBrandColors.surfaceSoft,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 20, color: RevoBrandColors.primary),
+      ),
+      title: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: RevoBrandColors.ink,
+        ),
+      ),
+      subtitle: subtitle == null
+          ? null
+          : Text(
+              subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RevoTypography.caption.copyWith(fontSize: 11.5),
+            ),
+      trailing: const Icon(
+        Icons.chevron_right_rounded,
+        size: 18,
+        color: RevoBrandColors.textSubtle,
+      ),
+      onTap: onTap,
+    ),
+  );
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    if (parts.isEmpty) return 'T';
+    if (parts.length == 1) {
+      return parts.first.characters.first.toUpperCase();
+    }
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
+  }
+}
+
+class _LogoutCard extends StatelessWidget {
+  const _LogoutCard({required this.onLogout});
+
+  final VoidCallback onLogout;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: RevoBrandColors.surface,
+      borderRadius: BorderRadius.circular(RevoRadius.md),
+      border: Border.all(color: RevoBrandColors.border),
+    ),
+    child: Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: const BoxDecoration(
+            color: RevoBrandColors.dangerSoft,
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.logout_rounded,
+            size: 20,
+            color: RevoBrandColors.dangerDark,
+          ),
+        ),
+        title: const Text(
+          'Đăng xuất',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: RevoBrandColors.dangerDark,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          size: 18,
+          color: RevoBrandColors.dangerDark,
+        ),
+        onTap: onLogout,
+      ),
+    ),
+  );
 }
 
 String? _providerTierName(String? tier) => switch (tier?.toUpperCase()) {
@@ -1467,77 +2191,6 @@ String? _providerTierName(String? tier) => switch (tier?.toUpperCase()) {
   'PLATINUM' => 'Bạch Kim',
   _ => null,
 };
-
-class _HeaderStatRow extends StatelessWidget {
-  const _HeaderStatRow({
-    required this.orders,
-    required this.rating,
-    required this.income,
-  });
-
-  final String orders;
-  final String rating;
-  final String income;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _HeaderStat(label: 'Đơn tuần này', value: orders),
-        const _HeaderStatDivider(),
-        _HeaderStat(label: 'Đánh giá', value: rating),
-        const _HeaderStatDivider(),
-        _HeaderStat(label: 'Thu nhập tuần', value: income),
-      ],
-    );
-  }
-}
-
-class _HeaderStat extends StatelessWidget {
-  const _HeaderStat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeaderStatDivider extends StatelessWidget {
-  const _HeaderStatDivider();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 1,
-    height: 28,
-    margin: const EdgeInsets.symmetric(horizontal: 4),
-    color: Colors.white24,
-  );
-}
 
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title, required this.count});
@@ -1570,37 +2223,6 @@ class _SectionTitle extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-
-  final OrderStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (status) {
-      OrderStatus.completed || OrderStatus.paid => RevoBrandColors.success,
-      OrderStatus.cancelled ||
-      OrderStatus.refundPending ||
-      OrderStatus.refunded => RevoBrandColors.dangerDark,
-      _ => RevoBrandColors.warning,
-    };
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          providerOrderStatusLabel(status),
-          style: TextStyle(color: color, fontWeight: FontWeight.w700),
-        ),
-      ),
     );
   }
 }

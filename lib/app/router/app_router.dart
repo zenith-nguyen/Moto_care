@@ -10,6 +10,7 @@ import '../../features/admin/presentation/admin_finance_screen.dart';
 import '../../features/admin/presentation/admin_order_detail_screen.dart';
 import '../../features/admin/presentation/admin_orders_screen.dart';
 import '../../features/admin/presentation/admin_provider_approval_screen.dart';
+import '../../features/admin/presentation/admin_provider_detail_screen.dart';
 import '../../features/admin/presentation/admin_reconciliation_screen.dart';
 import '../../features/admin/presentation/admin_shell.dart';
 import '../../features/admin/revo/admin_dashboard_screen.dart';
@@ -181,6 +182,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AdminAccountScreen(),
           ),
         ],
+      ),
+      GoRoute(
+        path: '/admin/providers/:id',
+        builder: (context, state) => AdminProviderDetailScreen(
+          providerId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+        ),
       ),
       GoRoute(
         path: '/admin/orders/:orderId',

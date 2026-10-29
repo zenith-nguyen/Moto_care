@@ -119,12 +119,28 @@ class _Header extends ConsumerWidget {
     final unread =
         ref.watch(notificationInboxControllerProvider).value?.unreadCount ?? 0;
 
-    void toggle(bool value) {
+    Future<void> toggle(bool value) async {
       if (busy) return;
       final controller = ref.read(
         providerLocationTrackingControllerProvider.notifier,
       );
-      value ? controller.goOnline() : controller.goOffline();
+      if (value) {
+        await controller.goOnline();
+      } else {
+        await controller.goOffline();
+      }
+      if (!context.mounted) return;
+      final failure = ref
+          .read(providerLocationTrackingControllerProvider)
+          .value
+          ?.lastFailure;
+      if (failure != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể cập nhật trạng thái nhận đơn: $failure'),
+          ),
+        );
+      }
     }
 
     return Row(
@@ -228,7 +244,9 @@ class _Header extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Quận 1, TP.HCM',
+                          online
+                              ? 'Vị trí GPS hiện tại'
+                              : 'Bật nhận đơn để định vị',
                           style: _t(
                             10,
                             weight: FontWeight.w500,
@@ -1099,7 +1117,14 @@ class _NearbyJobCard extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: () {},
+                      onPressed: () => ScaffoldMessenger.of(context)
+                          .showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Đơn mẫu minh họa. Đơn thật sẽ hiện ở đây khi có khách đặt gần bạn.',
+                              ),
+                            ),
+                          ),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF0F172A),
                         foregroundColor: Colors.white,

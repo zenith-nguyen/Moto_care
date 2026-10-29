@@ -7,6 +7,8 @@ import { OrderStatus } from '../common/enums/order-status.enum';
 import { Order } from '../orders/order.entity';
 import { Payment } from '../payments/payment.entity';
 import { Provider } from '../providers/provider.entity';
+import { ProviderSkill } from '../providers/provider-skill.entity';
+import { Skill } from '../providers/skill.entity';
 import { User } from '../users/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -76,10 +78,31 @@ export class AdminService {
     const providers = await this.database.getRepository(Provider).find({
       where: { approvalStatus: ApprovalStatus.PENDING }, relations: { user: true }, order: { id: 'ASC' },
     });
+    const ids = providers.map((provider) => provider.id);
+    const skillRows = ids.length
+      ? await this.database
+          .getRepository(ProviderSkill)
+          .createQueryBuilder('ps')
+          .innerJoin(Skill, 'skill', 'skill.id = ps.skillId')
+          .select('ps.providerId', 'providerId')
+          .addSelect('skill.name', 'name')
+          .where('ps.providerId IN (:...ids)', { ids })
+          .orderBy('skill.name', 'ASC')
+          .getRawMany<{ providerId: number; name: string }>()
+      : [];
+    const skillsByProvider = new Map<number, string[]>();
+    for (const row of skillRows) {
+      const list = skillsByProvider.get(row.providerId) ?? [];
+      list.push(row.name);
+      skillsByProvider.set(row.providerId, list);
+    }
     return providers.map((provider) => ({
       id: provider.id, userId: provider.userId, name: provider.user.name,
       email: provider.user.email, phone: provider.user.phone,
       approvalStatus: provider.approvalStatus, documentUrl: provider.documentUrl,
+      bio: provider.bio, yearsOfExperience: provider.yearsOfExperience,
+      serviceRadiusKm: provider.serviceRadiusKm, tier: provider.tier,
+      createdAt: provider.createdAt, skills: skillsByProvider.get(provider.id) ?? [],
     }));
   }
 

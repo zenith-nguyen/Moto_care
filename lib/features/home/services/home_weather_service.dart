@@ -39,10 +39,12 @@ class HttpHomeWeatherService implements HomeWeatherService {
     if (json['source'] != 'OPEN_METEO' || temperature == null || code == null) {
       throw StateError('Live weather is currently unavailable');
     }
+    final isDay = json['isDay'];
     return HomeWeather(
       temperatureCelsius: temperature,
       condition: _condition(code),
       description: _description(code),
+      isNight: isDay == false || isDay == 0,
     );
   }
 

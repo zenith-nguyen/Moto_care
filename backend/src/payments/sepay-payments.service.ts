@@ -140,15 +140,15 @@ export class SepayPaymentsService {
       await manager.getRepository(Payment).save(payment);
       order.status = OrderStatus.PENDING_MATCH;
       await manager.getRepository(Order).save(order);
-      const offer = await this.matching.matchLockedOrder(manager, order);
+      const offers = await this.matching.matchLockedOrder(manager, order);
       await this.audit(manager, payload, payloadSha256, payment.id, 'APPLIED');
-      return { changed: true, orderId: order.id, status: order.status, offer };
+      return { changed: true, orderId: order.id, status: order.status, offers };
     });
 
     if (result.changed && result.orderId && result.status) {
       await this.realtime?.orderStatusChanged(result.orderId, result.status);
-      if (result.offer) {
-        await this.realtime?.offerCreated(result.offer.providerId, result.orderId, result.offer.id, result.offer.expiresAt);
+      for (const offer of result.offers) {
+        await this.realtime?.offerCreated(offer.providerId, result.orderId, offer.id, offer.expiresAt);
       }
     }
     return { success: true };
