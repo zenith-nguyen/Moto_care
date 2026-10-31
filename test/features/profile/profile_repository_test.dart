@@ -26,7 +26,7 @@ void main() {
 
       await HttpProfileRepository(api).update(
         fullName: '  Zenith  ',
-        phoneNumber: ' 0367518550 ',
+        phoneNumber: ' 0987654321 ',
         emergencyContactName: ' Than ',
         emergencyContactPhone: ' 0912345678 ',
         medicalNote: ' Di ung thuoc A ',
@@ -38,7 +38,7 @@ void main() {
       expect(api.lastPath, '/users/me');
       expect(api.lastData, {
         'name': 'Zenith',
-        'phone': '0367518550',
+        'phone': '0987654321',
         'emergencyContactName': 'Than',
         'emergencyContactPhone': '0912345678',
         'medicalNote': 'Di ung thuoc A',
@@ -53,7 +53,7 @@ Map<String, dynamic> _profileJson() => {
   'id': 7,
   'name': 'Zenith',
   'email': 'zenith@example.com',
-  'phone': '0367518550',
+  'phone': '0987654321',
   'emergencyContactName': 'Than',
   'emergencyContactPhone': '0912345678',
   'medicalNote': 'Di ung thuoc A',
