@@ -2,6 +2,10 @@
 
 Tài liệu này dành cho giảng viên chấm đồ án, và cho bất kỳ công cụ AI nào được dùng để đọc hoặc kiểm tra mã nguồn này.
 
+**Kho mã nguồn trên GitHub:** https://github.com/zenith-nguyen/Moto_care (nhánh `main`).
+Kho đang để công khai nên thầy cô xem trực tiếp được, không cần tài khoản hay lời mời.
+Bản mã nguồn nộp kèm và nhánh `main` trên GitHub là một, không khác file nào.
+
 ## Tóm tắt trong một đoạn
 
 Đây là bản đầy đủ của dự án REVO / MotoCare: ứng dụng cứu hộ xe máy gồm app khách, app thợ, trang quản trị và máy chủ backend. **Toàn bộ mã nguồn, bài kiểm thử và tài liệu đều có trong kho này, không giữ lại phần nào.** Chạy được và test được hết mà **không cần bất kỳ khoá bí mật nào**.
@@ -53,7 +57,7 @@ docker compose up -d
 cp .env.example .env
 npm ci
 npm run migration:run
-npm run seed                  # tạo tài khoản mẫu cho 3 vai trò
+npm run seed                  # tạo 5 tài khoản mẫu, xem mục "Tài khoản đăng nhập sẵn"
 npm run start:dev
 
 # App khách (máy ảo Android)
@@ -65,9 +69,43 @@ flutter run --flavor customer -t lib/main.dart
 flutter run --flavor provider -t lib/main_provider.dart
 ```
 
-Trang quản trị không phải ứng dụng riêng: đăng nhập bằng tài khoản có quyền `ADMIN` ngay trong app khách thì vào giao diện quản trị.
-
 Tài liệu mô tả API có sẵn tại `http://localhost:3000/docs` khi backend chạy ngoài chế độ production.
+
+## Ba vai trò nằm ở đâu
+
+Hệ thống có ba vai trò nhưng chỉ có **hai ứng dụng**:
+
+| Vai trò | Mở ở đâu |
+|---|---|
+| Khách hàng | App khách (`lib/main.dart`, flavor `customer`) |
+| Quản trị viên | **Cũng trong app khách.** Đăng nhập bằng tài khoản quyền `ADMIN` thì app tự mở giao diện quản trị thay vì màn hình khách |
+| Thợ cứu hộ | App thợ (`lib/main_provider.dart`, flavor `provider`), cài song song được vì khác mã ứng dụng |
+
+Làm vậy để tránh dựng thêm một ứng dụng thứ ba chỉ để quản trị, trong khi quản trị viên và khách hàng dùng chung phần đăng nhập, hồ sơ và thông báo.
+
+## Tài khoản đăng nhập sẵn
+
+Lệnh `npm run seed` ở trên tạo sẵn 5 tài khoản. Với cấu hình mẫu trong `.env.example`, mật khẩu của cả 5 tài khoản là:
+
+```
+MotoCareDev123!
+```
+
+| Email | Vai trò | Đăng nhập ở |
+|---|---|---|
+| `customer@motocare.local` | Khách hàng | App khách |
+| `admin@motocare.local` | **Quản trị viên** | App khách |
+| `provider.q1@motocare.local` | Thợ, khu vực Quận 1 | App thợ |
+| `provider.binhthanh@motocare.local` | Thợ, Bình Thạnh | App thợ |
+| `provider.phunhuan@motocare.local` | Thợ, Phú Nhuận | App thợ |
+
+Đây là tài khoản mẫu cho máy cục bộ, không phải tài khoản thật trên hệ thống đang chạy.
+
+**Gợi ý thử nhanh một đơn cứu hộ từ đầu tới cuối:** mở hai máy ảo, một máy đăng nhập app thợ bằng `provider.q1@motocare.local` rồi bật nhận đơn, máy còn lại đăng nhập app khách bằng `customer@motocare.local` rồi tạo yêu cầu cứu hộ. Đơn sẽ hiện sang máy thợ. Đăng nhập `admin@motocare.local` để xem đơn đó trong trang quản trị.
+
+## Về hai file APK nộp kèm
+
+Hai file `.apk` trong thư mục nộp được dựng để trỏ về máy chủ của sinh viên, mà máy chủ đó đặt trên máy cá nhân nên không bật suốt. **Nếu APK không đăng nhập được thì nguyên nhân là máy chủ đang tắt, không phải lỗi ứng dụng.** Thầy cô cần xem ứng dụng chạy thì dựng cục bộ theo hướng dẫn phía trên, hoặc nhắn em bật máy chủ lên.
 
 ## Về thanh toán: phần duy nhất bị giữ lại
 
