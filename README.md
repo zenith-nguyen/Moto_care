@@ -37,6 +37,10 @@ and [`GO-LIVE.md`](GO-LIVE.md)).
 
 Project guides, contribution rules, AI instructions, CI/CD, and release procedures are maintained in [`docs/`](docs/README.md).
 
+Course reviewers: [`CHAM-DIEM.md`](CHAM-DIEM.md) (Vietnamese) is the grading entry
+point. It shows how to run the apps and the whole test suite without credentials,
+and documents the one piece of configuration that is deliberately withheld.
+
 ## Run locally
 
 The Android build declares two flavors, so a flavor and an entrypoint are always

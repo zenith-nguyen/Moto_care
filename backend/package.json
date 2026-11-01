@@ -8,7 +8,9 @@
   "overrides": {
     "handlebars": "^4.7.10",
     "multer": "^2.5.0",
-    "body-parser": "^2.4.0"
+    "body-parser": "^2.4.0",
+    "glob": "^14.0.3",
+    "minimatch": "^11.0.3"
   },
   "scripts": {
     "build": "nest build",
@@ -61,7 +63,7 @@
     "dotenv": "^18.0.4",
     "firebase-admin": "^14.5.0",
     "helmet": "^8.3.0",
-    "joi": "^18.2.9",
+    "joi": "^18.3.1",
     "nodemailer": "^10.2.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
