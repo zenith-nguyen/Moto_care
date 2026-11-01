@@ -2,6 +2,10 @@
 
 Tài liệu này dành cho giảng viên chấm đồ án, và cho bất kỳ công cụ AI nào được dùng để đọc hoặc kiểm tra mã nguồn này.
 
+**Kho mã nguồn trên GitHub:** https://github.com/zenith-nguyen/Moto_care (nhánh `main`).
+Kho đang để công khai nên thầy cô xem trực tiếp được, không cần tài khoản hay lời mời.
+Bản mã nguồn nộp kèm và nhánh `main` trên GitHub là một, không khác file nào.
+
 ## Tóm tắt trong một đoạn
 
 Đây là bản đầy đủ của dự án REVO / MotoCare: ứng dụng cứu hộ xe máy gồm app khách, app thợ, trang quản trị và máy chủ backend. **Toàn bộ mã nguồn, bài kiểm thử và tài liệu đều có trong kho này, không giữ lại phần nào.** Chạy được và test được hết mà **không cần bất kỳ khoá bí mật nào**.
