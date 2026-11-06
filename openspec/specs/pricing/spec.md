@@ -5,6 +5,14 @@ Defines how the price of a rescue order is quoted before the customer pays: the 
 
 ## Requirements
 
+### Requirement: The incident type catalog is published to clients
+The system SHALL expose at `GET /incident-types`, to any authenticated client, every currently active incident type with its identifier, code, display name and current base price, in ascending identifier order, and SHALL omit incident types that are not active.
+
+#### Scenario: A client lists the incidents it may request help for
+- **WHEN** an authenticated client calls `GET /incident-types`
+- **THEN** the active incident types are returned in ascending identifier order, each with its identifier, code, name and base price
+- **AND** an incident type that is not active does not appear
+
 ### Requirement: An order price is quoted from a base price and a weather multiplier
 The system SHALL compute the estimated price of an order as the active incident type's base price multiplied by a weather multiplier, SHALL perform the whole computation in integer minor currency units rather than floating point, SHALL round the result to the nearest minor unit with halves rounded up, and SHALL report the base price, the estimated price, the weather surcharge (estimated price minus base price) and the multiplier applied.
 
@@ -29,14 +37,14 @@ The system SHALL classify the observed conditions into a severity band and SHALL
 - **THEN** the band is severe and the estimated price is twenty percent above the base price
 
 ### Requirement: Severity is classified from a current-conditions observation at the order location
-The system SHALL obtain the current weather for the customer's coordinates from the configured external current-conditions provider, SHALL require weather code, temperature, precipitation, rain and wind readings to all be present and within plausible ranges before using an observation, and SHALL report with each quote which provider the observation came from and when it was observed.
+The system SHALL obtain the current weather for the customer's coordinates from the external current-conditions provider the platform integrates with, SHALL require the observation time together with weather code, temperature, precipitation, rain and wind readings to all be present, readable and within plausible ranges before using an observation, and SHALL report the source of the observation and the time it was observed with each quote.
 
 #### Scenario: The provider returns a complete observation
 - **WHEN** the provider answers within the configured request timeout with all required readings
 - **THEN** the observation is classified into a severity band and reported with its source and observation time
 
 #### Scenario: The provider answers with an incomplete or implausible reading
-- **WHEN** a required reading is missing, is not a finite number or falls outside its plausible range
+- **WHEN** a required reading is missing, is not a finite number or falls outside its plausible range, or the observation time is missing or unreadable
 - **THEN** the observation is discarded and the quote falls back to neutral pricing
 
 ### Requirement: Pricing stays neutral when live weather is off or unreachable
@@ -51,11 +59,16 @@ The system SHALL treat weather pricing as switched off unless it is explicitly e
 - **THEN** the observation is reported as unavailable with no measurements and the estimated price equals the base price
 
 ### Requirement: Observations are cached per approximate location
-The system SHALL cache each observation under the customer's coordinates rounded to two decimal places for the configured time to live, SHALL reuse a cached observation that has not expired instead of calling the provider again, and SHALL keep the cache bounded by discarding the oldest entry once it is full.
+The system SHALL cache the observation it ends up using, including the neutral observation produced by a failed lookup, under the customer's coordinates rounded to two decimal places for the configured time to live, SHALL reuse a cached observation that has not expired instead of calling the provider again, and SHALL keep the cache bounded by discarding the oldest entry once it is full.
 
 #### Scenario: A second order is quoted nearby within the cache window
 - **WHEN** another quote is requested for coordinates that round to the same two decimal places before the cached entry expires
 - **THEN** the cached observation is reused and no new provider request is made
+
+#### Scenario: A failed lookup is cached as neutral
+- **WHEN** the provider is unreachable, times out or answers unusably for a coordinate
+- **THEN** the neutral observation is cached under that coordinate for the configured time to live
+- **AND** quotes for coordinates that round to the same two decimal places stay neutral, without a new provider request, until that entry expires
 
 #### Scenario: The cached observation has expired
 - **WHEN** the cached entry's time to live has passed

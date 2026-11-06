@@ -22,7 +22,7 @@ The system SHALL let a customer account submit exactly one application to become
 - **THEN** it receives the stored application with its approval status, or NONE when it has never applied
 
 ### Requirement: Single administrative review of an application
-The system SHALL let an administrator approve or reject a pending application exactly once; approval promotes the account to an active provider, and rejection never changes a customer applicant's account.
+The system SHALL let an administrator approve or reject a pending application exactly once; approval promotes the account to an active provider, and rejection leaves a customer applicant's own account untouched. Either outcome SHALL leave the mechanic record marked offline.
 
 #### Scenario: Approval
 - **WHEN** an administrator approves a pending application
@@ -70,8 +70,41 @@ The system SHALL keep every skill a provider claims unverified until an administ
 - **WHEN** an administrator changes a provider's tier to STANDARD, SILVER, GOLD or PLATINUM
 - **THEN** the new tier is stored and shown wherever that provider's profile is presented
 
+### Requirement: The skill catalog is owned by administrators
+The system SHALL offer providers only the active skills of the shared catalog to claim from, and SHALL let only an administrator see the whole catalog including deactivated skills, add a skill under a code that is not already taken, and rename or deactivate an existing skill. Deactivating a skill SHALL leave the claims that already reference it in place while making it neither claimable nor verifiable.
+
+#### Scenario: Provider reads the catalog
+- **WHEN** a signed-in client asks for the skills a provider may claim
+- **THEN** only the active catalog skills are returned, each with its code and name
+
+#### Scenario: Administrator adds a skill under a code already in use
+- **WHEN** an administrator creates or renames a catalog skill with a code that already belongs to another skill
+- **THEN** the request is rejected with 409 and the catalog is unchanged
+
+### Requirement: Approved mechanics maintain their own profile
+The system SHALL let a mechanic read their own profile and change their own biography, years of experience and preferred service radius, leaving every omitted field unchanged, and SHALL NOT let them change their own tier or the verification status of any skill they claim.
+
+#### Scenario: Mechanic edits their own profile
+- **WHEN** a mechanic sends new values for any of biography, years of experience or preferred service radius
+- **THEN** only those fields are stored and the profile is returned with its unchanged tier and claimed skills
+
+#### Scenario: Account without a mechanic profile
+- **WHEN** an account that has no mechanic profile asks for its own mechanic profile
+- **THEN** the request returns 404
+
+### Requirement: Weekly operating summary for a mechanic
+The system SHALL give a mechanic a summary of one Monday-to-Monday week in the platform's local time zone covering the orders they completed, the number and average of the reviews written about them in that week, and the amounts credited to and debited from their earnings, defaulting to the current week.
+
+#### Scenario: Mechanic opens the weekly summary
+- **WHEN** a mechanic asks for their weekly statistics without naming a week
+- **THEN** the current local week is summarised, reporting its start, its exclusive end, the completed order count, the review count and average, and the credited and debited amounts
+
+#### Scenario: A week that does not start on a Monday
+- **WHEN** the requested week start is not a valid date falling on a Monday
+- **THEN** the request is rejected with 400
+
 ### Requirement: Assigned-provider profile visible to the customer
-The system SHALL show the customer of an order that has an assigned provider a profile containing that provider's name, biography, years of experience, service radius, tier, verified skills only and rating summary, and SHALL NOT include their phone number.
+The system SHALL show the customer of an order that has an assigned provider a profile containing that provider's name, biography, years of experience, service radius, tier, verified skills only and rating summary over all their reviews, and SHALL NOT include their phone number. That phone number SHALL be reachable only through the order's participant contact exchange.
 
 #### Scenario: Customer views the assigned mechanic
 - **WHEN** the customer or the assigned provider of an order that is accepted through completed requests the assigned provider's profile
@@ -94,7 +127,7 @@ The system SHALL let each participant of a completed order leave exactly one rat
 
 #### Scenario: Provider reads their own reviews
 - **WHEN** a provider lists the reviews written about them
-- **THEN** up to the 50 newest reviews are returned together with the total count and the average rating
+- **THEN** up to the 50 newest reviews are returned together with the number of reviews returned and the average rating of those returned reviews
 
 ### Requirement: Read-only service-location directory
 The system SHALL expose the shared directory of repair shops, charging stations, fuel stations and parts stores to signed-in clients as read-only map data, returning only active entries and supporting a filter by type.
@@ -105,7 +138,7 @@ The system SHALL expose the shared directory of repair shops, charging stations,
 - **AND** partners are listed first, then verified entries, then the rest by name
 
 #### Scenario: Unusable viewport
-- **WHEN** the requested bounds are inverted or span more than one degree in either direction
+- **WHEN** the requested bounds are inverted or empty in either direction, or span more than one degree in either direction
 - **THEN** the request is rejected with 400
 
 #### Scenario: Proximity query

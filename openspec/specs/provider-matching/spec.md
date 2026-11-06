@@ -11,6 +11,7 @@ The system SHALL consider a mechanic for an order only when their account is act
 #### Scenario: A nearby, idle, recently-seen mechanic is considered
 - **WHEN** matching runs for an order and an approved, online mechanic with an active account was last seen inside the freshness limit and within the match radius
 - **THEN** that mechanic is among the candidates, ordered by distance from the customer with the closest first
+- **AND** reach is judged by the platform's single configured match radius, never by the service radius a mechanic states on their own profile
 
 #### Scenario: A mechanic is stale, busy or already engaged
 - **WHEN** the mechanic's last position is older than the freshness limit, or they already hold an open offer, or they are already on an order in `ACCEPTED`, `ARRIVED`, `IN_PROGRESS`, `AWAITING_PRICE_APPROVAL`, `PRICE_DISPUTED`, `AWAITING_PAYMENT` or `PAID`
@@ -30,14 +31,14 @@ The system SHALL create one offer per eligible mechanic in the same pass, each e
 
 #### Scenario: No mechanic is eligible
 - **WHEN** matching runs and no mechanic qualifies
-- **THEN** no offer is created and the order stays in `PENDING_MATCH`, reported to the customer as not matched yet with an invitation to retry later
+- **THEN** no offer is created and the order keeps the status it already had, reported to the customer as not matched yet with an invitation to retry later
 
 ### Requirement: Going online requires a fresh position and resumes waiting orders
-The system SHALL refuse to mark a mechanic online unless their profile is approved, their account is active and their last known position is within the freshness limit, and SHALL re-run matching for orders still waiting for a mechanic as soon as a mechanic comes online.
+The system SHALL refuse to mark a mechanic online unless their profile is approved, their account is active and their last known position is within the freshness limit, and SHALL re-run matching for the 30 longest-waiting unassigned orders as soon as a mechanic comes online.
 
 #### Scenario: Mechanic goes online with a fresh position
 - **WHEN** an approved, active mechanic with a recent position posts their availability as online
-- **THEN** they are marked online and matching is re-run for orders still waiting without an assigned mechanic, so a previously unmatched order can reach them
+- **THEN** they are marked online and matching is re-run for the 30 longest-waiting orders that have no assigned mechanic, so a previously unmatched order can reach them
 
 #### Scenario: Mechanic goes online without a usable position
 - **WHEN** the mechanic has never reported a position or their last one is older than the freshness limit
@@ -82,11 +83,15 @@ The system SHALL mark a rejected offer as rejected, and SHALL return the order t
 - **THEN** the order returns to `PENDING_MATCH` and matching runs again immediately, which may reach mechanics who were not reachable before
 
 ### Requirement: Offers expire on their own and release the order
-The system SHALL expire an offer once its lifetime has passed, SHALL do so without any party acting, SHALL notify the mechanic the offer is gone, and SHALL apply the same release rule as rejection so the order reopens for matching only when no offer on it is still open.
+The system SHALL expire an offer shortly after its lifetime has passed, by a recurring sweep rather than any party acting, SHALL treat an offer as already gone from the moment its expiry time is reached even before the sweep records it, SHALL notify the mechanic the offer is gone, and SHALL apply the same release rule as rejection so the order reopens for matching only when no offer on it is still open.
 
 #### Scenario: Nobody answers a broadcast offer
 - **WHEN** an open offer passes its expiry
 - **THEN** it is marked expired, its mechanic is told it is gone, and the order's status is published to its watchers
+
+#### Scenario: An offer is used between its expiry time and the sweep
+- **WHEN** a mechanic lists or accepts an offer whose expiry has passed but which the sweep has not yet marked expired
+- **THEN** the offer is absent from their pending offers and the acceptance is rejected with 409 stating the offer has expired
 
 #### Scenario: The last open offer expires
 - **WHEN** the expired offer was the only one still open on the order

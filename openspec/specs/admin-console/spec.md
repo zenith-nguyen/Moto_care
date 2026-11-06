@@ -14,22 +14,22 @@ The system SHALL open the admin shell when an account whose role is administrato
 
 #### Scenario: Non-administrator reaches an admin screen
 - **WHEN** a customer or provider session opens an administrative route or calls an administrative endpoint
-- **THEN** access is refused and the client is sent back to sign-in
+- **THEN** the administrative endpoint is refused with 403 and the signed-in client is sent to the area of its own role, while a signed-out visitor is sent to sign-in
 
 #### Scenario: Self-registration as administrator
 - **WHEN** a registration request asks for the administrator role
 - **THEN** it is rejected with 400
 
 ### Requirement: Operational dashboard over a bounded period
-The system SHALL report, for a requested period, the account, provider and order counts and the platform money positions, and SHALL mark every dashboard response as sandbox data. The period defaults to the last seven days ending now and may not start after its end or span more than 366 days.
+The system SHALL report, for a requested period, the account, provider and order counts and the platform money positions, and SHALL mark every dashboard response as sandbox data. The period defaults to the last seven days ending now and may not start at or after its end or span more than 366 days.
 
 #### Scenario: Summary for the default period
 - **WHEN** an administrator opens the dashboard summary without naming a period
-- **THEN** the last seven days are reported: accounts by role and accounts created in the period, providers by approval status with how many are online and how many have a fresh position, orders grouped by status with a completion rate, and the money positions for amounts collected, currently held, settled to providers, pending refund, refunded, provider wallet balances, pending withdrawals and amounts withdrawn
+- **THEN** the last seven days are reported: accounts by role and accounts created in the period, providers by approval status with how many are online and how many have a fresh position, orders grouped by status with a completion rate, and the money positions for amounts collected, currently held, settled to providers, pending refund, refunded, the value of the work completed in the period, provider wallet balances with their locked and available parts, pending withdrawals and amounts withdrawn
 
 #### Scenario: Daily series
 - **WHEN** an administrator requests the daily series for a period
-- **THEN** one row per calendar day in Asia/Ho_Chi_Minh is returned, each with orders created, orders completed, amount collected, amount settled to providers, amount refunded and amount withdrawn, including days with no activity
+- **THEN** one row per calendar day in Asia/Ho_Chi_Minh is returned, each with orders created, orders whose earnings were settled to a provider, amount collected, amount settled to providers, amount refunded and amount withdrawn, including days with no activity
 
 #### Scenario: Invalid period
 - **WHEN** the requested period starts at or after its end, or spans more than 366 days
@@ -44,7 +44,7 @@ The system SHALL give an administrator the 50 most recent orders and the full de
 
 #### Scenario: Single order detail
 - **WHEN** an administrator opens one order
-- **THEN** its incident type, status, price breakdown of estimate, extra cost, discount and final price, pickup location, customer contact details and assigned provider with their last known position are returned
+- **THEN** its incident type, status, price breakdown of estimate, extra cost, discount and final price, pickup location, the customer's contact details and home address, and the assigned provider with their phone number and last known position are returned
 - **AND** an unknown order returns 404
 
 ### Requirement: Reconciliation of orders against payments and settlements
@@ -59,11 +59,11 @@ The system SHALL return a paginated, point-in-time consistent reconciliation of 
 - **THEN** only orders whose payment has that status are returned, newest first, together with the total number of matching orders and the number of pages for that same filter
 
 ### Requirement: Resolution of disputed final prices
-The system SHALL show the final-price proposals a customer has disputed and SHALL let an administrator approve or reject each one once, recording who decided and the stated reason.
+The system SHALL show the final-price proposals a mechanic has escalated after the customer rejected them, and SHALL let an administrator approve or reject each one once, recording who decided and the stated reason.
 
 #### Scenario: Reviewing the queue
 - **WHEN** an administrator opens the disputed price queue
-- **THEN** up to 50 disputed proposals are returned, longest waiting first, with their order and the proposed final price
+- **THEN** up to 50 escalated proposals are returned, longest waiting first, with their order and the proposed final price
 
 #### Scenario: Deciding a dispute
 - **WHEN** an administrator approves or rejects a disputed proposal with a reason
@@ -71,7 +71,7 @@ The system SHALL show the final-price proposals a customer has disputed and SHAL
 
 #### Scenario: Deciding again
 - **WHEN** the same proposal is decided a second time
-- **THEN** the already recorded outcome is returned unchanged, and a proposal that is no longer awaiting resolution is refused with 409
+- **THEN** the already recorded outcome is returned unchanged, whichever decision is resubmitted, and a proposal that is not awaiting resolution is refused with 409
 
 ### Requirement: Withdrawal and payout decisions
 The system SHALL let an administrator approve or reject each pending provider withdrawal once, and separately confirm or flag the bank payout that follows an approval, without changing any customer payment state.
@@ -90,7 +90,7 @@ The system SHALL let an administrator approve or reject each pending provider wi
 - **THEN** the payout moves to manual review with that reason and stays in the pending payout queue
 
 ### Requirement: Refunds are simulated only
-The system SHALL let an administrator return money to a customer only as a simulated refund of a demo payment, and SHALL NOT perform any real bank transfer.
+The system SHALL let an administrator return money to a customer only as a simulated refund of a demo payment, SHALL NOT perform any real bank transfer, and SHALL refuse every refund with 403 when the service runs in production or when demo mode is switched off.
 
 #### Scenario: Full refund queue
 - **WHEN** an administrator opens the refund queue
@@ -99,6 +99,10 @@ The system SHALL let an administrator return money to a customer only as a simul
 #### Scenario: Refunding an order
 - **WHEN** an administrator refunds an order that is awaiting a refund and was paid with a demo payment
 - **THEN** the payment and the order become refunded, the refund time is recorded, participants see the new order status, and repeating the call returns the same already refunded result
+
+#### Scenario: Refunds are unavailable outside demo mode
+- **WHEN** an administrator tries to refund an order while the service runs in production or with demo mode switched off
+- **THEN** the request is refused with 403 and no money moves
 
 #### Scenario: Refunding an approved price reduction
 - **WHEN** an administrator settles one of the up to 50 approved price reductions awaiting a refund

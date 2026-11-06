@@ -38,6 +38,17 @@ The system SHALL authenticate a POST /auth/login request by matching the submitt
 - **WHEN** the credentials are correct but the account is suspended
 - **THEN** the response is 401 and no access token is issued
 
+### Requirement: Rate limits on the authentication endpoints
+The system SHALL limit each authentication endpoint per calling network address, allowing at most 5 registrations, 10 sign-ins, 3 password-reset requests and 10 password resets per minute, and SHALL answer 429 beyond that limit without checking the submitted credentials or code.
+
+#### Scenario: Too many sign-in attempts from one network address
+- **WHEN** an eleventh sign-in attempt arrives from the same network address within a minute
+- **THEN** the response is 429, the credentials are not checked and no access token is issued
+
+#### Scenario: Too many password-reset requests from one network address
+- **WHEN** a fourth password-reset request arrives from the same network address within a minute
+- **THEN** the response is 429 instead of the usual 202 and no email is sent
+
 ### Requirement: Failed sign-in lockout
 The system SHALL count consecutive failed sign-in attempts per account and SHALL temporarily lock the account for 15 minutes after the fifth consecutive failure, clearing the counter and the lock on the next successful sign-in.
 
@@ -106,7 +117,7 @@ The system SHALL accept POST /auth/password/reset with the email address, the si
 - **THEN** that code is marked used and can no longer be redeemed even if the correct value is submitted afterwards
 
 ### Requirement: Mobile session lifecycle
-The mobile apps SHALL keep the access token in the device's secure storage, restore the session on launch by re-reading the signed-in account, route the signed-in account to the area of its role, and discard the stored token whenever the session becomes invalid.
+The mobile apps SHALL keep the access token in the device's secure storage, restore the session on launch by re-reading the signed-in account, route the signed-in account to the area of its role, and discard the stored token whenever the session is rejected, while keeping it when the account cannot be re-read because the server is unavailable.
 
 #### Scenario: App restart with a stored token
 - **WHEN** the app starts and a token is present in secure storage
@@ -116,6 +127,10 @@ The mobile apps SHALL keep the access token in the device's secure storage, rest
 #### Scenario: Role not served by this app build
 - **WHEN** a sign-in or a restored session returns a role that the running app build does not serve, such as a provider account in the customer app
 - **THEN** the stored token is discarded, the person stays signed out and is told to use the app for that role
+
+#### Scenario: Session cannot be restored because the server is unavailable
+- **WHEN** the app starts with a stored token and re-reading the account fails for a reason other than a rejected token, such as the server being unreachable or answering with a server error
+- **THEN** the stored token is kept, the person is neither signed in nor signed out, and the app offers to retry instead of opening any guarded route
 
 #### Scenario: Server rejects the token
 - **WHEN** any request returns 401, or the person signs out

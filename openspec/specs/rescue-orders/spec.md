@@ -6,7 +6,7 @@ Covers the life of one customer roadside-assistance order, from the moment a cus
 ## Requirements
 
 ### Requirement: Order creation quotes a price and awaits prepayment
-The system SHALL create a customer order in status `AWAITING_PREPAYMENT` with a snapshot of the incident base price, the weather surcharge, the resulting estimated price and the customer's vehicle, and SHALL open a prepayment for the estimated amount without offering the order to any mechanic.
+The system SHALL create a customer order in status `AWAITING_PREPAYMENT` with a snapshot of the incident base price, the weather surcharge, the resulting estimated price and the customer's vehicle when one is chosen or stored as the default, and SHALL open a prepayment for the estimated amount without offering the order to any mechanic.
 
 #### Scenario: Customer requests assistance for an active incident type
 - **WHEN** a customer posts to `POST /orders` with an active incident type and a valid latitude/longitude
@@ -20,6 +20,14 @@ The system SHALL create a customer order in status `AWAITING_PREPAYMENT` with a 
 #### Scenario: Customer account is not active
 - **WHEN** the requesting customer's account is not in active standing
 - **THEN** the request is rejected with 403 and no order is created
+
+#### Scenario: The customer names no vehicle
+- **WHEN** the customer requests assistance without naming a vehicle and has no default vehicle in their garage
+- **THEN** the order is still created and quoted, and its vehicle details are reported as empty
+
+#### Scenario: The named vehicle is not the customer's
+- **WHEN** the customer names a vehicle that is not in their own garage
+- **THEN** the request is rejected with 404 and no order is created
 
 ### Requirement: Confirmed prepayment releases the order to matching
 The system SHALL move an order from `AWAITING_PREPAYMENT` to `PENDING_MATCH` only once its prepayment is recorded as paid for exactly the estimated amount, and SHALL immediately attempt to reach mechanics for it.
@@ -35,7 +43,8 @@ The system SHALL move an order from `AWAITING_PREPAYMENT` to `PENDING_MATCH` onl
 
 #### Scenario: Confirmed amount differs from the estimate
 - **WHEN** the recorded prepayment amount is not equal to the order's estimated price
-- **THEN** the confirmation is rejected with 409 and the order stays in `AWAITING_PREPAYMENT`
+- **THEN** a simulated confirmation is rejected with 409
+- **AND** a bank transaction is acknowledged but recorded as an amount mismatch, and in both cases the order stays in `AWAITING_PREPAYMENT`
 
 ### Requirement: Every status change passes the transition guard
 The system SHALL allow an order to move only along the declared transitions of its status machine, and SHALL reject any other change with 409 rather than writing the new status.
@@ -52,6 +61,30 @@ The system SHALL allow an order to move only along the declared transitions of i
 - **WHEN** the order is already `COMPLETED`, `CANCELLED` or `REFUNDED`
 - **THEN** no further status change is accepted
 
+### Requirement: Participants read only their own orders
+The system SHALL return to a signed-in customer or mechanic only the orders they are party to: a list of their 30 most recent orders newest first, and a full view of one order carrying its pricing snapshot, payment state, any price proposal and adjustment, and the assigned mechanic's last reported position while the order is active.
+
+#### Scenario: Caller lists their own orders
+- **WHEN** a customer or a mechanic calls `GET /orders`
+- **THEN** only their own 30 most recent orders are returned newest first, each with its status, vehicle details and pricing
+
+#### Scenario: Caller opens one order
+- **WHEN** a participant calls `GET /orders/:orderId`
+- **THEN** the full order is returned with its pricing, payment, price proposal and adjustment
+- **AND** a caller who is neither the order's customer nor a mechanic holding a live offer or the assignment is refused with 404
+
+### Requirement: Participants exchange phone numbers only while an assigned order is active
+The system SHALL give each participant of an assigned order the other participant's name and phone number only while the order is accepted, arrived, in progress, awaiting price approval, disputed, awaiting payment or paid, and SHALL refuse the exchange at any other time. This exchange SHALL be the only place an order discloses a participant's phone number.
+
+#### Scenario: Participant asks for the other side's contact
+- **WHEN** the customer or the assigned mechanic calls `GET /orders/:orderId/participant-contact` while the order is in one of those active statuses
+- **THEN** the other participant's name and phone number are returned
+
+#### Scenario: The order is unassigned, closed or the caller is a stranger
+- **WHEN** the order has no assigned mechanic, or the caller is not one of its two participants
+- **THEN** the request is refused with 404
+- **AND** the same request on an assigned order that has left those active statuses is refused with 409
+
 ### Requirement: Customers may attach incident photos while the order is open
 The system SHALL let only the order's customer attach incident photos, SHALL cap an order at six photos, and SHALL refuse new photos once the order is completed, cancelled, awaiting refund or refunded. Stored photos SHALL be readable only by the order's customer and its assigned mechanic.
 
@@ -62,6 +95,10 @@ The system SHALL let only the order's customer attach incident photos, SHALL cap
 #### Scenario: The photo limit or a closed order blocks the upload
 - **WHEN** the order already holds six photos, or the order is completed, cancelled, awaiting refund or refunded
 - **THEN** the upload is rejected with 409
+
+#### Scenario: The assigned mechanic tries to attach a photo
+- **WHEN** the order's assigned mechanic posts an image to the order's photos
+- **THEN** the upload is refused with 403 while the mechanic keeps read access to the photos already attached
 
 #### Scenario: Someone who is not a participant reads the photos
 - **WHEN** a caller who is neither the customer nor the assigned mechanic lists or fetches a photo of the order

@@ -19,7 +19,7 @@ The system SHALL let the signed-in account change, through PATCH /users/me, only
 #### Scenario: Partial update
 - **WHEN** the request supplies only some of the editable fields
 - **THEN** only those fields are stored and the response is 200 with the full updated profile
-- **AND** an email address, role or status sent in the same request has no effect
+- **AND** a request that also carries an email address, role or account status is rejected with 400 and nothing at all is stored
 
 #### Scenario: Clearing an optional field
 - **WHEN** an emergency contact name, emergency contact phone, medical note, home address or work address is sent as an empty value
@@ -52,12 +52,12 @@ The system SHALL expose the vehicle garage at /users/me/vehicles to customer acc
 - **THEN** access is denied and no vehicle data is returned
 
 ### Requirement: Vehicle registration
-The system SHALL add a vehicle to the signed-in customer's garage through POST /users/me/vehicles with a vehicle type, brand, model and licence plate, normalising the plate to upper case without spaces and keeping it unique across the whole platform.
+The system SHALL add a vehicle to the signed-in customer's garage through POST /users/me/vehicles with a vehicle type, brand, model and licence plate and optionally a colour, tyre type, engine type and a request to make it the default, normalising the plate to upper case without spaces and keeping it unique across the whole platform.
 
 #### Scenario: First vehicle becomes the default
 - **WHEN** a customer adds a vehicle while the garage is empty, or asks for the new vehicle to be the default
 - **THEN** the new vehicle is stored as the default and any previous default stops being the default
-- **AND** the response is 201 with the stored vehicle, its tyre type defaulting to tubed and its engine type defaulting to electric for an electric motorbike and to petrol otherwise
+- **AND** the response is 201 with the stored vehicle, its tyre type defaulting to tubed and its engine type defaulting to electric for an electric motorbike and to gas otherwise
 
 #### Scenario: Plate already registered
 - **WHEN** the normalised licence plate already exists on any vehicle
@@ -68,7 +68,7 @@ The system SHALL add a vehicle to the signed-in customer's garage through POST /
 - **THEN** the request is rejected with 400
 
 ### Requirement: Vehicle update and default selection
-The system SHALL update only a vehicle that belongs to the signed-in customer through PATCH /users/me/vehicles/{vehicleId}, and SHALL keep exactly one default vehicle in the garage at a time.
+The system SHALL update only a vehicle that belongs to the signed-in customer through PATCH /users/me/vehicles/{vehicleId}, SHALL keep exactly one default vehicle in the garage at a time, and SHALL keep a motorbike's vehicle type and its engine type consistent with each other.
 
 #### Scenario: Promoting another vehicle to default
 - **WHEN** a customer marks one of its vehicles as the default
@@ -77,6 +77,10 @@ The system SHALL update only a vehicle that belongs to the signed-in customer th
 #### Scenario: Unsetting the current default
 - **WHEN** a customer tries to clear the default flag on the vehicle that is currently the default
 - **THEN** the request is rejected with 409 and the customer is told to promote another vehicle instead
+
+#### Scenario: Changing only the engine type of a motorbike
+- **WHEN** a customer changes the engine type of a vehicle that is a motorbike or an electric motorbike, without sending a vehicle type
+- **THEN** the vehicle type follows the new engine type, becoming an electric motorbike for an electric engine and a motorbike otherwise
 
 #### Scenario: Vehicle of another customer
 - **WHEN** the vehicle identifier does not belong to the signed-in customer
