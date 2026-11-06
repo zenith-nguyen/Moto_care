@@ -31,6 +31,8 @@ This folder is the single source of truth for technical guides, collaboration ru
 - [`AI_GUIDE.md`](AI_GUIDE.md): mandatory rules for coding agents.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): branches, commits, and pull requests.
 - [`DEPENDENCIES.md`](DEPENDENCIES.md): approved dependencies and usage boundaries.
+- [`SETUP.md`](SETUP.md): run the whole system from a fresh clone, with no credentials.
+- [`SPECS.md`](SPECS.md): the OpenSpec behavioural specs in `openspec/`, how to read them and how to propose a change.
 - [`WORKFLOW.md`](WORKFLOW.md): branch protection, CI/CD, and versioning.
 - [`UI_INTEGRATION_GUARDRAILS.md`](UI_INTEGRATION_GUARDRAILS.md): safe Flutter UI handoff and integration checklist.
 - [`PR22_CUSTOMER_UI_REVIEW.md`](PR22_CUSTOMER_UI_REVIEW.md): merge risk assessment and safe extraction plan for Customer UI PR #22.
