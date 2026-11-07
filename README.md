@@ -38,6 +38,13 @@ and [`GO-LIVE.md`](GO-LIVE.md)).
 
 Project guides, contribution rules, AI instructions, CI/CD, and release procedures are maintained in [`docs/`](docs/README.md).
 
+[`openspec/specs/`](openspec/specs/) holds the behavioural specification: one
+capability per directory, each requirement written as a testable statement with
+its scenarios, in [OpenSpec](https://github.com/Fission-AI/OpenSpec) format. The
+`docs/` guides explain how the code is built; the specs state what it must do.
+See [`docs/SPECS.md`](docs/SPECS.md) for how to read them and how to propose a
+behaviour change.
+
 Course reviewers: [`CHAM-DIEM.md`](CHAM-DIEM.md) (Vietnamese) is the grading entry
 point. It shows how to run the apps and the whole test suite without credentials,
 and documents the one piece of configuration that is deliberately withheld.

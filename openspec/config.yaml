@@ -1,0 +1,34 @@
+schema: spec-driven
+
+context: |
+  MotoCare / REVO is a motorbike roadside-assistance platform: one Flutter
+  codebase producing a customer app and a provider (mechanic) app, plus a
+  NestJS + PostgreSQL/PostGIS API in backend/. The admin console is not a third
+  app: signing into the customer app with an ADMIN account opens the admin
+  shell, so admin work must stay inside the customer flavor.
+
+  Write all OpenSpec artifacts in English, matching the repository's code,
+  commits and pull requests. End-user strings in the apps are Vietnamese.
+
+  Money constraints that override convenience: amounts are integer minor units,
+  never floating point; incoming payments are confirmed only by a verified SePay
+  webhook, never by the client claiming it paid; payouts to mechanics and
+  refunds stay manual and human-approved, so no change may introduce an
+  automatic outbound transfer. Live payment mode is a deliberate, owner-only
+  switch.
+
+  The repository is public. No artifact may contain a real bank account number,
+  account holder name, webhook secret, SMTP password, JWT secret, deployment
+  hostname, or any value copied from backend/.env or its backups.
+
+  Protected branches (main, cam-thu, thanh-vy) require a pull request, a review
+  and green CI, and they enforce linear history. Branch names must satisfy
+  .github/workflows/pr-policy.yml.
+
+rules:
+  proposal:
+    - State what is explicitly out of scope.
+    - Call out any effect on money handling, authentication or stored personal
+      data, or state plainly that there is none.
+  tasks:
+    - Include the verification commands a reviewer can run, not just code steps.

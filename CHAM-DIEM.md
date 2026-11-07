@@ -42,9 +42,26 @@ Cần Docker:
 cd backend
 docker compose up -d
 cp .env.example .env          # giá trị mẫu trong file là đủ để chạy
+npm ci
 npm run migration:run
+
+# Nhóm kiểm thử này dùng một database riêng, không đụng vào database phát triển.
+# Tạo và nạp lược đồ cho nó một lần:
+docker compose exec postgres psql -U motocare -d postgres \
+  -c "CREATE DATABASE motocare_local_test;"
+docker compose exec postgres psql -U motocare -d motocare_local_test \
+  -c "CREATE EXTENSION postgis;"
+DATABASE_NAME=motocare_local_test npm run migration:run
+
 npm run test:db
 ```
+
+Tên database kiểm thử phải khớp mẫu `motocare_*test`, đã đặt sẵn trong
+`.env.example`. Nếu báo lỗi `relation ... does not exist` thì nghĩa là lược đồ
+chưa được nạp vào database kiểm thử, chạy lại dòng `DATABASE_NAME=... migration:run`.
+
+Toàn bộ quy trình trên đã được chạy thử lại từ một bản tải mới ngày 07/11/2026:
+66 bài kiểm thử đơn vị và 48 bài kiểm thử database đều đạt.
 
 Cấu hình mà GitHub Actions dùng để chạy nhóm kiểm thử này nằm ở `.github/workflows/backend-ci.yml`, phần `env`. Toàn bộ giá trị trong đó là giá trị giả, dùng riêng cho kiểm thử. Có thể chép lại y nguyên.
 
